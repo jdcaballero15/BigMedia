@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+frontend/node_modules/
+frontend/dist/
+370 - OC 0001-00002111 - BigMedia - Exhibición - Arajet - Sept 2026.pdf
+Historias de usuario - Sistema de reservas OOH (desarrollo a medida).md
