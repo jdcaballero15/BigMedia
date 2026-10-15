@@ -1,0 +1,72 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #17223b;
+  background: #f5f7fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.shell {
+  width: min(100%, 680px);
+}
+
+.eyebrow {
+  color: #395dc5;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.8rem, 7vw, 5rem);
+  letter-spacing: -0.06em;
+}
+
+.intro {
+  max-width: 34rem;
+  margin: 1rem 0 2.5rem;
+  color: #506079;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.status-card {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1.4rem;
+  border: 1px solid #dce3ef;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 14px 40px rgb(23 34 59 / 5%);
+}
+
+.status-dot {
+  flex: 0 0 auto;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-top: 0.28rem;
+  border-radius: 50%;
+  background: #e7ad32;
+}
+
+.status-dot--available { background: #2b9c65; }
+.status-dot--unavailable { background: #d54d57; }
+.status-card strong { font-size: 1rem; }
+.status-card p { margin: 0.35rem 0 0; color: #60708a; line-height: 1.5; }
+.footnote { margin-top: 2rem; color: #78869a; font-size: 0.9rem; }
