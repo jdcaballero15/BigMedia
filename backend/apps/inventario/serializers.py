@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import EstadoCartel, Formato, Proveedor, Zona
+from .models import Cartel, EstadoCartel, Formato, Proveedor, Zona
 
 
 class CatalogoSerializer(serializers.ModelSerializer):
@@ -44,3 +44,46 @@ class EstadoCartelSerializer(CatalogoSerializer):
         model = EstadoCartel
         fields = ["id", "codigo", "nombre", "operativo", "es_baja", "activo"]
         read_only_fields = ["codigo"]
+
+
+class CartelSerializer(serializers.ModelSerializer):
+    nombre_visible = serializers.CharField(read_only=True)
+    formato_nombre = serializers.CharField(source="formato.nombre", read_only=True)
+    zona_nombre = serializers.CharField(source="zona.nombre", read_only=True)
+    proveedor_nombre = serializers.CharField(source="proveedor.nombre", read_only=True)
+    estado_nombre = serializers.CharField(source="estado.nombre", read_only=True)
+
+    class Meta:
+        model = Cartel
+        fields = [
+            "id", "formato", "formato_nombre", "zona", "zona_nombre", "proveedor",
+            "proveedor_nombre", "estado", "estado_nombre", "direccion", "tamano",
+            "capacidad", "tarifa_lista", "foto_url", "nombre_visible", "creado_en",
+            "actualizado_en",
+        ]
+        read_only_fields = ["creado_en", "actualizado_en"]
+        extra_kwargs = {
+            "capacidad": {"required": False, "min_value": 1},
+            "estado": {"required": False},
+            "tarifa_lista": {"required": False, "allow_null": True, "min_value": 0},
+        }
+
+    def validate_direccion(self, value):
+        direccion = value.strip()
+        if not direccion:
+            raise serializers.ValidationError("Ingresá una dirección.")
+        return direccion
+
+    def validate(self, attrs):
+        for field in ("formato", "zona", "proveedor", "estado"):
+            value = attrs.get(field)
+            if value is not None and not value.activo:
+                raise serializers.ValidationError({field: "Seleccioná una opción activa."})
+        return attrs
+
+    def create(self, validated_data):
+        if "capacidad" not in validated_data:
+            validated_data["capacidad"] = validated_data["formato"].capacidad_predeterminada
+        if "estado" not in validated_data:
+            validated_data["estado"] = EstadoCartel.objects.get(codigo="activo")
+        return super().create(validated_data)

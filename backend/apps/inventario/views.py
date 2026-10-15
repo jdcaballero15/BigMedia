@@ -1,7 +1,8 @@
 from rest_framework import permissions, viewsets
 
-from .models import EstadoCartel, Formato, Proveedor, Zona
+from .models import Cartel, EstadoCartel, Formato, Proveedor, Zona, normalizar_busqueda
 from .serializers import (
+    CartelSerializer,
     EstadoCartelSerializer,
     FormatoSerializer,
     ProveedorSerializer,
@@ -47,3 +48,26 @@ class ZonaViewSet(CatalogoViewSet):
 class EstadoCartelViewSet(CatalogoViewSet):
     queryset = EstadoCartel.objects.all()
     serializer_class = EstadoCartelSerializer
+
+
+class CartelViewSet(CatalogoViewSet):
+    queryset = Cartel.objects.select_related("formato", "zona", "proveedor", "estado")
+    serializer_class = CartelSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset.all()
+        if self.action != "list":
+            return queryset
+        params = self.request.query_params
+        if params.get("incluir_bajas") != "1":
+            queryset = queryset.filter(estado__es_baja=False)
+        for field in ("zona", "formato", "estado"):
+            if params.get(field):
+                queryset = queryset.filter(**{field + "_id": params[field]})
+        if params.get("modalidad"):
+            queryset = queryset.filter(formato__modalidad=params["modalidad"])
+        if params.get("q"):
+            queryset = queryset.filter(
+                direccion_busqueda__icontains=normalizar_busqueda(params["q"].strip())
+            )
+        return queryset
