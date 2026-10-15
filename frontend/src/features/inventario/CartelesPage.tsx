@@ -28,10 +28,10 @@ export default function CartelesPage() {
   useEffect(() => {
     let active = true
     void Promise.all([
-      apiGet<Formato[]>('/api/inventario/formatos/'),
-      apiGet<Catalogo[]>('/api/inventario/zonas/'),
-      apiGet<Estado[]>('/api/inventario/estados/'),
-      apiGet<Proveedor[]>('/api/inventario/proveedores/'),
+      apiGet<Formato[]>('/api/inventario/formatos/?incluir_inactivos=1'),
+      apiGet<Catalogo[]>('/api/inventario/zonas/?incluir_inactivos=1'),
+      apiGet<Estado[]>('/api/inventario/estados/?incluir_inactivos=1'),
+      apiGet<Proveedor[]>('/api/inventario/proveedores/?incluir_inactivos=1'),
     ]).then(([formatos, zonas, estados, proveedores]) => {
       if (active) setCatalogos({ formatos, zonas, estados, proveedores })
     }).catch(() => { if (active) setError('No se pudieron cargar los filtros.') })

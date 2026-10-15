@@ -91,6 +91,13 @@ def test_inactive_catalogs_are_rejected_on_create_but_preserved_on_edit(operativ
     assert changed.status_code == 200
     assert changed.json()["formato"] == formato.pk
 
+    changed_with_unchanged_reference = operativo_client.patch(
+        f"/api/inventario/carteles/{cartel_id}/",
+        data=json.dumps({"formato": formato.pk, "direccion": "Av. San Martín 1238"}),
+        content_type="application/json",
+    )
+    assert changed_with_unchanged_reference.status_code == 200
+
 
 @pytest.mark.django_db
 def test_filters_search_without_accents_and_excludes_bajas(operativo_client):
@@ -137,6 +144,17 @@ def test_inactive_provider_zone_and_state_cannot_be_used_on_new_cartel(operativo
     estado.activo = False
     estado.save()
     assert "estado" in nuevo_cartel(operativo_client, estado=estado.pk).json()
+
+
+@pytest.mark.django_db
+def test_inactive_default_state_is_rejected_on_create(operativo_client):
+    activo = EstadoCartel.objects.get(codigo="activo")
+    activo.activo = False
+    activo.save()
+    response = nuevo_cartel(operativo_client)
+    assert response.status_code == 400
+    assert "estado" in response.json()
+    assert Cartel.objects.count() == 0
 
 
 @pytest.mark.django_db

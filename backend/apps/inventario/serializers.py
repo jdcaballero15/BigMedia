@@ -77,7 +77,10 @@ class CartelSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         for field in ("formato", "zona", "proveedor", "estado"):
             value = attrs.get(field)
-            if value is not None and not value.activo:
+            unchanged = self.instance is not None and value is not None and getattr(
+                self.instance, f"{field}_id"
+            ) == value.pk
+            if value is not None and not value.activo and not unchanged:
                 raise serializers.ValidationError({field: "Seleccioná una opción activa."})
         return attrs
 
@@ -85,5 +88,8 @@ class CartelSerializer(serializers.ModelSerializer):
         if "capacidad" not in validated_data:
             validated_data["capacidad"] = validated_data["formato"].capacidad_predeterminada
         if "estado" not in validated_data:
-            validated_data["estado"] = EstadoCartel.objects.get(codigo="activo")
+            estado = EstadoCartel.objects.filter(codigo="activo", activo=True).first()
+            if estado is None:
+                raise serializers.ValidationError({"estado": "Seleccioná un estado activo."})
+            validated_data["estado"] = estado
         return super().create(validated_data)

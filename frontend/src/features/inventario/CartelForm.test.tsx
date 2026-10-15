@@ -31,6 +31,15 @@ test('editar formato no pisa la capacidad ya guardada', () => {
   expect((screen.getByLabelText('Capacidad') as HTMLInputElement).value).toBe('8')
 })
 
+test('conserva una referencia inactiva al editar un cartel', async () => {
+  const onSave = vi.fn().mockResolvedValue(undefined)
+  render(<CartelForm {...props} cartel={cartel} formatos={[{ ...formatos[0], activo: false }, formatos[1]]} onSave={onSave} />)
+  expect(screen.getByRole('option', { name: 'Séxtuples (inactivo)' })).toBeDefined()
+  fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'Nueva dirección' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar cartel' }))
+  await waitFor(() => expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ formato: 1, direccion: 'Nueva dirección' })))
+})
+
 test('muestra el error de campo devuelto por la API', async () => {
   const onSave = vi.fn().mockRejectedValue(new ApiError(400, { direccion: ['Ingresá una dirección.'] }))
   render(<CartelForm {...props} cartel={cartel} onSave={onSave} />)
