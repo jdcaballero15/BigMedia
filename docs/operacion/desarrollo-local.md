@@ -17,7 +17,7 @@ Copy-Item .env.example .env
 Reemplazá `POSTGRES_PASSWORD` y `DJANGO_SECRET_KEY` en `.env` por valores locales propios. Nunca subas `.env` a Git. Luego:
 
 ```powershell
-docker compose up -d db
+docker compose up -d --wait db
 docker compose ps
 ```
 
@@ -41,6 +41,14 @@ En otra terminal:
 ```powershell
 backend/.venv/Scripts/python.exe -m pytest backend/tests -q
 backend/.venv/Scripts/python.exe backend/manage.py check
+```
+
+Para probar la conexión real a PostgreSQL y las migraciones en una base de pruebas:
+
+```powershell
+$env:BIGMEDIA_RUN_DB_TESTS = '1'
+backend/.venv/Scripts/python.exe -m pytest backend/tests/test_postgres_integration.py -q
+Remove-Item Env:BIGMEDIA_RUN_DB_TESTS
 ```
 
 `http://127.0.0.1:8000/api/health/` responde `{"status":"ok"}` si la API accede a PostgreSQL y HTTP 503 si no puede conectarse.
