@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Login from './app/Login'
 import CartelesPage from './features/inventario/CartelesPage'
+import CatalogosPage from './features/inventario/CatalogosPage'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import './App.css'
 
@@ -8,6 +9,7 @@ type Session = { status: 'checking' | 'anonymous' | 'offline' | 'ready'; usernam
 
 function App() {
   const [session, setSession] = useState<Session>({ status: 'checking', username: '' })
+  const [page, setPage] = useState<'carteles' | 'catalogos'>('carteles')
 
   useEffect(() => {
     let active = true
@@ -30,8 +32,8 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="topbar"><div className="brand-mark">BM<span>.</span></div><div className="topbar-title"><strong>Big Media</strong><small>Sistema de carteles</small></div><div className="topbar-user"><span>{session.username}</span><button className="button-ghost" onClick={() => void signOut()}>Salir</button></div></header>
-      <main className="app-main"><CartelesPage /></main>
+      <header className="topbar"><div className="brand-mark">BM<span>.</span></div><div className="topbar-title"><strong>Big Media</strong><small>Sistema de carteles</small></div><nav className="topnav" aria-label="Navegación"><button className={page === 'carteles' ? 'active' : ''} onClick={() => setPage('carteles')}>Carteles</button><button className={page === 'catalogos' ? 'active' : ''} onClick={() => setPage('catalogos')}>Catálogos</button></nav><div className="topbar-user"><span>{session.username}</span><button className="button-ghost" onClick={() => void signOut()}>Salir</button></div></header>
+      <main className="app-main">{page === 'carteles' ? <CartelesPage /> : <CatalogosPage />}</main>
     </div>
   )
 }

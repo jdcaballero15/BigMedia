@@ -4,7 +4,7 @@ Monorepo del sistema de inventario, campañas y reservas de publicidad de vía p
 
 ## Estado
 
-La base de desarrollo contiene una aplicación React + TypeScript, una API Django REST Framework y PostgreSQL mediante Docker Compose. Las historias funcionales todavía no están implementadas; en particular, esta versión **no permite confirmar reservas**.
+La base de desarrollo contiene una aplicación React + TypeScript, una API Django REST Framework y PostgreSQL mediante Docker Compose. El primer módulo funcional permite iniciar sesión y administrar el inventario de carteles y sus catálogos. Las campañas y reservas siguen pendientes; esta versión **no permite confirmar reservas ni calcula disponibilidad**.
 
 ## Carpetas
 

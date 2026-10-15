@@ -1,4 +1,5 @@
 from rest_framework import permissions, viewsets
+from rest_framework.exceptions import ValidationError
 
 from .models import Cartel, EstadoCartel, Formato, Proveedor, Zona, normalizar_busqueda
 from .serializers import (
@@ -63,7 +64,10 @@ class CartelViewSet(CatalogoViewSet):
             queryset = queryset.filter(estado__es_baja=False)
         for field in ("zona", "formato", "estado"):
             if params.get(field):
-                queryset = queryset.filter(**{field + "_id": params[field]})
+                value = params[field]
+                if not value.isdecimal() or int(value) < 1:
+                    raise ValidationError({field: "Debe ser un ID numérico positivo."})
+                queryset = queryset.filter(**{field + "_id": int(value)})
         if params.get("modalidad"):
             queryset = queryset.filter(formato__modalidad=params["modalidad"])
         if params.get("q"):

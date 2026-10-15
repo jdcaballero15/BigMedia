@@ -163,3 +163,10 @@ def test_operativo_group_has_cartel_permissions(operativo_client):
     assert operativo.has_perm("inventario.view_cartel")
     assert operativo.has_perm("inventario.add_cartel")
     assert operativo.has_perm("inventario.change_cartel")
+
+
+@pytest.mark.django_db
+def test_invalid_numeric_filter_returns_field_error(operativo_client):
+    response = operativo_client.get("/api/inventario/carteles/?zona=no-existe")
+    assert response.status_code == 400
+    assert "zona" in response.json()

@@ -111,3 +111,16 @@ tr:last-child td { border-bottom: 0; }
 .auth-form button:disabled { opacity: .6; }
 @media (max-width: 900px) { .filters { grid-template-columns: repeat(2, minmax(140px, 1fr)); } }
 @media (max-width: 560px) { .topbar { padding: 0 1rem; }.topbar-user span { display: none; }.filters { grid-template-columns: 1fr; }.checkline { padding: 0; } }
+.topnav { display: flex; gap: .4rem; margin-left: 2rem; }
+.topnav button, .tabs button { border: 0; border-radius: 8px; background: transparent; color: #bbc2cb; padding: .65rem .9rem; }
+.topnav button.active, .tabs button.active { background: #3b3527; color: #ffba2a; }
+.topnav button:hover, .tabs button:hover { color: white; }
+.tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.5rem; border-bottom: 1px solid #36393e; padding-bottom: .7rem; }
+.edit-form { padding: 1.4rem; margin-bottom: 1.4rem; }
+.form-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.form-heading h3 { margin: 0; }
+.form-grid { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.2rem; }
+.form-grid .wide { grid-column: 1 / -1; }
+.row-actions { display: flex; gap: .4rem; }
+@media (max-width: 900px) { .form-grid { grid-template-columns: repeat(2, minmax(140px, 1fr)); }.topnav { margin-left: 0; } }
+@media (max-width: 620px) { .topbar { height: auto; min-height: 76px; flex-wrap: wrap; padding-block: .7rem; }.topnav { order: 3; width: 100%; }.form-grid { grid-template-columns: 1fr; }.row-actions { flex-wrap: wrap; } }

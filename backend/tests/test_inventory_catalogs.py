@@ -103,3 +103,20 @@ def test_anonymous_and_unprivileged_users_cannot_write():
     denied = client.post("/api/inventario/proveedores/", data=payload, content_type="application/json")
     assert denied.status_code == 403
     assert not Proveedor.objects.filter(nombre="Sin permiso").exists()
+
+
+@pytest.mark.django_db
+def test_operativo_write_without_csrf_is_rejected():
+    from django.contrib.auth.models import Group
+
+    user = get_user_model().objects.create_user(username="seba", password="clave-segura-123")
+    user.groups.add(Group.objects.get(name="Operativo"))
+    client = Client(enforce_csrf_checks=True)
+    client.force_login(user)
+    response = client.post(
+        "/api/inventario/proveedores/",
+        data=json.dumps({"nombre": "No autorizado"}),
+        content_type="application/json",
+    )
+    assert response.status_code == 403
+    assert not Proveedor.objects.filter(nombre="No autorizado").exists()
