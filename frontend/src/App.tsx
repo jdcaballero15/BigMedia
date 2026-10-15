@@ -1,60 +1,38 @@
 import { useEffect, useState } from 'react'
+import Login from './app/Login'
+import CartelesPage from './features/inventario/CartelesPage'
+import { ApiError, apiGet, apiWrite } from './shared/api'
 import './App.css'
 
-type ApiStatus = 'checking' | 'available' | 'unavailable'
+type Session = { status: 'checking' | 'anonymous' | 'offline' | 'ready'; username: string }
 
 function App() {
-  const [apiStatus, setApiStatus] = useState<ApiStatus>('checking')
+  const [session, setSession] = useState<Session>({ status: 'checking', username: '' })
 
   useEffect(() => {
-    const controller = new AbortController()
-
-    async function checkApi() {
-      try {
-        const response = await fetch('/api/health/', { signal: controller.signal })
-        if (!response.ok) {
-          setApiStatus('unavailable')
-          return
-        }
-
-        const data: { status?: string } = await response.json()
-        setApiStatus(data.status === 'ok' ? 'available' : 'unavailable')
-      } catch {
-        if (!controller.signal.aborted) setApiStatus('unavailable')
-      }
-    }
-
-    void checkApi()
-    return () => controller.abort()
+    let active = true
+    void apiGet<{ username: string }>('/api/auth/me/')
+      .then((user) => { if (active) setSession({ status: 'ready', username: user.username }) })
+      .catch((error: unknown) => {
+        if (active) setSession({ status: error instanceof ApiError && error.status === 401 ? 'anonymous' : 'offline', username: '' })
+      })
+    return () => { active = false }
   }, [])
 
-  const statusLabel = {
-    checking: 'Comprobando API',
-    available: 'API disponible',
-    unavailable: 'API no disponible',
-  }[apiStatus]
+  async function signOut() {
+    await apiWrite('/api/auth/logout/', 'POST')
+    setSession({ status: 'anonymous', username: '' })
+  }
+
+  if (session.status === 'checking') return <main className="auth-shell"><p>Comprobando sesión…</p></main>
+  if (session.status === 'offline') return <main className="auth-shell"><h1>Big Media</h1><p role="alert">No se pudo conectar con la API.</p></main>
+  if (session.status === 'anonymous') return <Login onLogin={(username) => setSession({ status: 'ready', username })} />
 
   return (
-    <main className="page">
-      <div className="shell">
-        <p className="eyebrow">Sistema de reservas OOH</p>
-        <h1>Big Media</h1>
-        <p className="intro">
-          Base de desarrollo del sistema de inventario, campañas y reservas de
-          publicidad de vía pública.
-        </p>
-
-        <section className="status-card" aria-label="Estado del entorno">
-          <span className={`status-dot status-dot--${apiStatus}`} aria-hidden="true" />
-          <div>
-            <strong>{statusLabel}</strong>
-            <p>La conexión con la API y PostgreSQL se comprueba al abrir esta página.</p>
-          </div>
-        </section>
-
-        <p className="footnote">El sistema funcional está en preparación.</p>
-      </div>
-    </main>
+    <div className="app-shell">
+      <header className="topbar"><div className="brand-mark">BM<span>.</span></div><div className="topbar-title"><strong>Big Media</strong><small>Sistema de carteles</small></div><div className="topbar-user"><span>{session.username}</span><button className="button-ghost" onClick={() => void signOut()}>Salir</button></div></header>
+      <main className="app-main"><CartelesPage /></main>
+    </div>
   )
 }
 
