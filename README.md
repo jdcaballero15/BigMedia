@@ -17,6 +17,8 @@ La base de desarrollo contiene una aplicación React + TypeScript, una API Djang
 
 Abrí la carpeta raíz `bigMedia` en VS Code. Seguí [desarrollo local](docs/operacion/desarrollo-local.md) para instalar dependencias y ejecutar los tres componentes.
 
+Todo cambio se integra a `main` mediante Pull Request. Consultá el [flujo de trabajo](CONTRIBUTING.md) antes de comenzar una tarea.
+
 ## Reglas de trabajo
 
 La API será la autoridad para confirmar reservas. La disponibilidad se protegerá con transacciones en PostgreSQL y pruebas de concurrencia. Las decisiones pendientes de Seba y Administración deben registrarse en `docs/decisiones/` antes de cerrar las reglas afectadas. No se cargan datos personales reales en desarrollo o pruebas.
