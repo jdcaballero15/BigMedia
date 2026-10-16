@@ -9,9 +9,12 @@ description = "API del sistema de reservas OOH de Big Media Argentina"
 requires-python = ">=3.12"
 dependencies = [
     "Django>=5.2,<6",
+    "dj-database-url>=2,<4",
     "djangorestframework>=3.16,<4",
+    "gunicorn>=23,<25",
     "psycopg[binary]>=3.2,<4",
     "python-dotenv>=1,<2",
+    "whitenoise>=6,<8",
 ]
 
 [project.optional-dependencies]
