@@ -19,6 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "PyYAML>=6,<7",
     "pytest>=8,<10",
     "pytest-django>=4.10,<5",
 ]
