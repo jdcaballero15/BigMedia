@@ -13,9 +13,13 @@ La base de desarrollo contiene una aplicación React + TypeScript, una API Djang
 - `docs/requisitos/`: historias de usuario vigentes.
 - `docs/superpowers/`: diseño y plan de la primera entrega.
 - `docs/operacion/`: pasos para ejecutar el proyecto.
+- `docs/arquitectura/`: organización del monorepo y límites entre módulos.
+- `.github/`: controles automáticos para los PR.
 - `analytics/`: futuras vistas SQL y archivos de Power BI.
 
 Abrí la carpeta raíz `bigMedia` en VS Code. Seguí [desarrollo local](docs/operacion/desarrollo-local.md) para instalar dependencias y ejecutar los tres componentes.
+
+Para preparar la versión online, seguí [despliegue en Render](docs/operacion/despliegue-render.md). El Blueprint del repositorio define recursos pagos, pero **todavía no están creados**. Consultá también la [estructura del repositorio](docs/arquitectura/estructura-repo.md).
 
 ## Reglas de trabajo
 
