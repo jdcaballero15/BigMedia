@@ -25,6 +25,6 @@ Para preparar la versión online, seguí [despliegue en Render](docs/operacion/d
 
 ## Reglas de trabajo
 
-La API será la autoridad para confirmar reservas. La disponibilidad se protegerá con transacciones en PostgreSQL y pruebas de concurrencia. Las decisiones pendientes de Seba y Administración deben registrarse en `docs/decisiones/` antes de cerrar las reglas afectadas. No se cargan datos personales reales en desarrollo o pruebas.
+La API será la autoridad para confirmar reservas. La disponibilidad se protegerá con transacciones en PostgreSQL y pruebas de concurrencia. Las decisiones pendientes de Seba y Administración deben registrarse en `docs/aidlc/reglas-de-negocio.md` antes de cerrar las reglas afectadas. No se cargan datos personales reales en desarrollo o pruebas.
 
 El PDF de orden de compra que está en la carpeta local es una referencia privada y no forma parte del repositorio. Las historias originales siguen allí; Git guarda una copia en `docs/aidlc/inputs/`.

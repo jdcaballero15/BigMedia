@@ -27,7 +27,7 @@ Un séxtuple es fijo pero tiene cupos (HU-009). La interfaz decide la forma de m
 
 | Estado | Bloquea en pantalla | Bloquea al confirmar otra | Cómo se dibuja |
 | --- | --- | --- | --- |
-| Pendiente | Sí (HU-028) | Según decisión [D-02](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-02-una-reserva-pendiente-bloquea-a-otras); hoy no | Rayado y etiqueta "Pendiente" |
+| Pendiente | Sí (HU-028) | Según decisión [D-02](../../reglas-de-negocio.md#rn-002-una-reserva-pendiente-bloquea-a-otras-d-02); hoy no | Rayado y etiqueta "Pendiente" |
 | Confirmada | Sí | Sí | Relleno y etiqueta "Confirmada" |
 | Finalizada | No (ya pasó) | No | Gris, solo en el histórico |
 | Cancelada | No | No | Oculta por defecto; visible con el filtro "incluir canceladas" |
@@ -41,9 +41,9 @@ Cuando el operativo pregunta por un rango (por ejemplo, del 1/11 al 30/11), un c
 - Exclusivo: `Libre del 1/11 al 19/11 · Ocupado del 20/11 al 30/11`.
 - Con cupos: `Mínimo 3 libres de 20 en el rango` o `Lleno del 15/11 al 18/11`.
 
-Cómo se cuentan los cupos depende de la decisión [D-03](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-03-cómo-se-cuentan-los-cupos-dentro-de-un-rango): con conteo simple, "mínimo libres" es la capacidad menos las reservas que tocan el rango; con pico diario, es la capacidad menos el día más cargado. El texto de la interfaz es el mismo en los dos casos.
+Cómo se cuentan los cupos depende de la decisión [D-03](../../reglas-de-negocio.md#rn-003-cómo-se-cuentan-los-cupos-dentro-de-un-rango-d-03): con conteo simple, "mínimo libres" es la capacidad menos las reservas que tocan el rango; con pico diario, es la capacidad menos el día más cargado. El texto de la interfaz es el mismo en los dos casos.
 
-Si el día de borde es inclusivo (decisión [D-01](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-01-día-límite-entre-reservas-día-de-borde)), un rango que empieza el mismo día en que termina otra reserva se muestra como superpuesto en ese día.
+Si el día de borde es inclusivo (decisión [D-01](../../reglas-de-negocio.md#rn-001-día-límite-entre-reservas-día-de-borde-d-01)), un rango que empieza el mismo día en que termina otra reserva se muestra como superpuesto en ese día.
 
 ## Mapa del recorrido
 
@@ -100,7 +100,7 @@ El operativo agrega líneas de formato con cantidad, por ejemplo "Gran Formato �
 - La cantidad es opcional.
 - No se puede repetir un formato. Si lo intenta: *"Esta campaña ya tiene una línea de Séxtuples. Cambiá su cantidad en lugar de agregar otra."*
 
-En una línea de un formato con cupos, la cantidad cuenta **posiciones**, es decir, reservas: un cupo de LED o un slot de séxtuple. Si una marca puede comprar más de un cupo en el mismo cartel (decisiones [D-04](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-04-cupos-de-los-led) y [D-05](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-05-slots-de-los-séxtuples)), hay que revisar esta definición.
+En una línea de un formato con cupos, la cantidad cuenta **posiciones**, es decir, reservas: un cupo de LED o un slot de séxtuple. Si una marca puede comprar más de un cupo en el mismo cartel (decisiones [D-04](../../reglas-de-negocio.md#rn-004-cupos-de-los-led-d-04) y [D-05](../../reglas-de-negocio.md#rn-005-slots-de-los-séxtuples-d-05)), hay que revisar esta definición.
 
 ## Paso 3 — Agregar carteles y detectar superposiciones
 
@@ -212,7 +212,7 @@ Séxtuples            40           40         0          38           2
 
 ## Paso 6 — Completar la campaña
 
-Antes de confirmar hay que cargar cliente que factura, marca y fechas (propuesta de HU-059, decisión [D-11](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-11-se-puede-confirmar-una-campaña-incompleta)). La ficha muestra qué falta antes de que el operativo lo intente:
+Antes de confirmar hay que cargar cliente que factura, marca y fechas (propuesta de HU-059, decisión [D-11](../../reglas-de-negocio.md#rn-011-se-puede-confirmar-una-campaña-incompleta-d-11)). La ficha muestra qué falta antes de que el operativo lo intente:
 
 *"Para confirmar la campaña falta: marca."*
 
@@ -291,7 +291,7 @@ Cancelar siempre se permite y libera el cupo (HU-037). Pide una confirmación si
 
 *"¿Cancelar Marca Ejemplo - Av. Ejemplo 123 6x3 - Nov 2026? El cartel quedará libre del 01/11 al 30/11."*
 
-Las reglas que faltan (motivo, cancelar la campaña entera, reservas en curso) dependen de la decisión [D-06](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-06-reglas-de-cancelación).
+Las reglas que faltan (motivo, cancelar la campaña entera, reservas en curso) dependen de la decisión [D-06](../../reglas-de-negocio.md#rn-006-reglas-de-cancelación-d-06).
 
 ## Reglas de interfaz
 
@@ -307,13 +307,13 @@ Las reglas que faltan (motivo, cancelar la campaña entera, reservas en curso) d
 
 | Decisión | Qué cambia |
 | --- | --- |
-| [D-01 Día de borde](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-01-día-límite-entre-reservas-día-de-borde) | Si el día compartido aparece como superposición en los avisos y en el calendario |
-| [D-02 Pendiente](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-02-una-reserva-pendiente-bloquea-a-otras) | Si un cartel con Pendientes ajenas es seleccionable con aviso o no disponible |
-| [D-03 Conteo de cupos](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-03-cómo-se-cuentan-los-cupos-dentro-de-un-rango) | El número "mínimo libres" en carteles con cupos |
-| [D-04 LED](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-04-cupos-de-los-led) y [D-05 Séxtuples](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-05-slots-de-los-séxtuples) | Si una reserva puede ocupar varios cupos o un slot concreto. Haría falta elegir cantidad o posición en el paso 3 |
-| [D-06 Cancelación](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-06-reglas-de-cancelación) | Confirmación de cancelación, motivo y efecto de cancelar la campaña |
-| [D-11 Campaña incompleta](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-11-se-puede-confirmar-una-campaña-incompleta) | Si el paso 6 es obligatorio antes del 7 |
-| [D-13 Vista a futuro](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-13-vista-de-disponibilidad-a-futuro-pregunta-20) | Si el paso 0 usa el calendario o solo la vista actual |
+| [D-01 Día de borde](../../reglas-de-negocio.md#rn-001-día-límite-entre-reservas-día-de-borde-d-01) | Si el día compartido aparece como superposición en los avisos y en el calendario |
+| [D-02 Pendiente](../../reglas-de-negocio.md#rn-002-una-reserva-pendiente-bloquea-a-otras-d-02) | Si un cartel con Pendientes ajenas es seleccionable con aviso o no disponible |
+| [D-03 Conteo de cupos](../../reglas-de-negocio.md#rn-003-cómo-se-cuentan-los-cupos-dentro-de-un-rango-d-03) | El número "mínimo libres" en carteles con cupos |
+| [D-04 LED](../../reglas-de-negocio.md#rn-004-cupos-de-los-led-d-04) y [D-05 Séxtuples](../../reglas-de-negocio.md#rn-005-slots-de-los-séxtuples-d-05) | Si una reserva puede ocupar varios cupos o un slot concreto. Haría falta elegir cantidad o posición en el paso 3 |
+| [D-06 Cancelación](../../reglas-de-negocio.md#rn-006-reglas-de-cancelación-d-06) | Confirmación de cancelación, motivo y efecto de cancelar la campaña |
+| [D-11 Campaña incompleta](../../reglas-de-negocio.md#rn-011-se-puede-confirmar-una-campaña-incompleta-d-11) | Si el paso 6 es obligatorio antes del 7 |
+| [D-13 Vista a futuro](../../reglas-de-negocio.md#rn-013-vista-de-disponibilidad-a-futuro-pregunta-20-d-13) | Si el paso 0 usa el calendario o solo la vista actual |
 
 ## Preguntas de UX para la demo con Seba y Ale
 
