@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: bigmedia_test
+          POSTGRES_USER: bigmedia_test
+          POSTGRES_PASSWORD: local-ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bigmedia_test -d bigmedia_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DJANGO_SECRET_KEY: test-only-ci-secret-key-with-enough-characters-123456789
+      DJANGO_DEBUG: 'false'
+      POSTGRES_DB: bigmedia_test
+      POSTGRES_USER: bigmedia_test
+      POSTGRES_PASSWORD: local-ci-only-password
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      BIGMEDIA_RUN_DB_TESTS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: |
+          python -m pip install -e './backend[dev]'
+          npm ci --prefix frontend
+      - name: Check frontend
+        run: |
+          npm test --prefix frontend
+          npm run lint --prefix frontend
+          npm run build --prefix frontend
+      - name: Check backend with PostgreSQL
+        run: |
+          python -m pytest backend/tests -q
+          python backend/manage.py check
+      - name: Build production image
+        run: docker build -t bigmedia:ci .

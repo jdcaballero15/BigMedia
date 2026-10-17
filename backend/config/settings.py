@@ -3,15 +3,22 @@
 import os
 from pathlib import Path
 
+import dj_database_url
 from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIST = BASE_DIR / "frontend_dist"
 load_dotenv(BASE_DIR.parent / ".env")
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
-DEBUG = os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+PRODUCTION = os.environ.get("DJANGO_ENV") == "production"
+DEBUG = not PRODUCTION and os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
+ALLOWED_HOSTS = (
+    [os.environ["RENDER_EXTERNAL_HOSTNAME"]]
+    if PRODUCTION
+    else ["127.0.0.1", "localhost"]
+)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -33,12 +40,14 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+if PRODUCTION:
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [FRONTEND_DIST] if FRONTEND_DIST.exists() else [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -61,6 +70,13 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT", "5433"),
     }
 }
+if PRODUCTION:
+    DATABASES = {"default": dj_database_url.parse(os.environ["DATABASE_URL"])}
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 3600
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -74,5 +90,14 @@ TIME_ZONE = "America/Argentina/Buenos_Aires"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [FRONTEND_DIST] if FRONTEND_DIST.exists() else []
+if PRODUCTION:
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        },
+    }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
