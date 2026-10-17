@@ -1,0 +1,50 @@
+name: Pedido de Seba
+description: Algo que Seba pidió, reportó o comentó por WhatsApp o en una llamada.
+title: "[Pedido] "
+labels: ["pedido"]
+body:
+  - type: input
+    id: fecha
+    attributes:
+      label: Fecha del pedido
+      placeholder: "2026-10-20"
+    validations:
+      required: true
+  - type: dropdown
+    id: canal
+    attributes:
+      label: Canal
+      options:
+        - WhatsApp
+        - Llamada
+        - Reunión
+        - Lo vio usando el sistema
+    validations:
+      required: true
+  - type: textarea
+    id: pedido
+    attributes:
+      label: Qué pidió, con sus palabras
+      description: Copiá el mensaje o resumí lo que dijo. Sin datos personales de clientes.
+    validations:
+      required: true
+  - type: input
+    id: pantalla
+    attributes:
+      label: Pantalla o proceso afectado
+      placeholder: "Carteles, catálogos, reservas…"
+  - type: dropdown
+    id: urgencia
+    attributes:
+      label: Urgencia
+      options:
+        - Le impide trabajar
+        - Le molesta pero puede seguir
+        - Idea para más adelante
+    validations:
+      required: true
+  - type: textarea
+    id: adjuntos
+    attributes:
+      label: Capturas o adjuntos
+      description: Arrastrá capturas acá si las mandó.
