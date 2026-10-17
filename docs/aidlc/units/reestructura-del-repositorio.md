@@ -2138,4 +2138,4 @@ Render despliega `main` solo con los checks en verde (`autoDeployTrigger: checks
 
 - Gate 1 (plan): 2026-10-17 — aprobado por Juan Diego
 - Gate 2 (verificación): 2026-10-17 — aprobado por Juan Diego. 131 enlaces revisados, 0 rotos; sin cambios en `backend/` ni `frontend/`.
-- Gate 3 (PR): pendiente de número
+- Gate 3 (PR): #4 (PR 1, `docs/reestructura-gobernanza` → `develop`)
