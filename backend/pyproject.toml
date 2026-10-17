@@ -26,7 +26,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["config*"]
+include = ["config*", "apps*"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"

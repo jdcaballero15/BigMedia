@@ -4,7 +4,7 @@ Monorepo del sistema de inventario, campañas y reservas de publicidad de vía p
 
 ## Estado
 
-La base de desarrollo contiene una aplicación React + TypeScript, una API Django REST Framework y PostgreSQL mediante Docker Compose. Las historias funcionales todavía no están implementadas; en particular, esta versión **no permite confirmar reservas**.
+La base de desarrollo contiene una aplicación React + TypeScript, una API Django REST Framework y PostgreSQL mediante Docker Compose. El primer módulo funcional permite iniciar sesión y administrar el inventario de carteles y sus catálogos. Las campañas y reservas siguen pendientes; esta versión **no permite confirmar reservas ni calcula disponibilidad**.
 
 ## Carpetas
 
@@ -18,6 +18,8 @@ La base de desarrollo contiene una aplicación React + TypeScript, una API Djang
 - `analytics/`: futuras vistas SQL y archivos de Power BI.
 
 Abrí la carpeta raíz `bigMedia` en VS Code. Seguí [desarrollo local](docs/operacion/desarrollo-local.md) para instalar dependencias y ejecutar los tres componentes.
+
+Todo cambio se integra a `main` mediante Pull Request. Consultá el [flujo de trabajo](CONTRIBUTING.md) antes de comenzar una tarea.
 
 Para preparar la versión online, seguí [despliegue en Render](docs/operacion/despliegue-render.md). El Blueprint del repositorio define recursos pagos, pero **todavía no están creados**. Consultá también la [estructura del repositorio](docs/arquitectura/estructura-repo.md).
 
