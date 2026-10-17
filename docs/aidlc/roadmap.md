@@ -15,7 +15,11 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 
 ## Próximas
 
-1. A definir con Juan Diego según lo que Seba necesite usar primero.
+1. **E3 Clientes, marcas y CRM** — empezar por lo que piden las campañas: clientes (HU-016) y marcas (HU-017).
+2. **E4 Campañas** — HU-023 a HU-027. Una campaña agrupa reservas y se arma con marca y cliente que factura.
+3. **E5 Reservas y motor de disponibilidad** — HU-028 a HU-040. Es el objetivo central; cada reserva pertenece a una campaña, por eso va después de E3 y E4.
+
+El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
 ## Más adelante
 

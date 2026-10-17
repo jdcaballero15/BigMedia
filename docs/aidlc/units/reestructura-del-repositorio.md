@@ -4,7 +4,7 @@
 - **Rama:** `docs/reestructura-gobernanza` + `chore/gates-de-calidad` · **Fecha:** 2026-10-16
 - **Origen:** migrado desde `docs/superpowers/` el 2026-10-16. El contenido no se modificó, salvo el nivel de los encabezados y los enlaces que dejaron de resolver.
 
-**Avance:** Tareas 1–9 hechas; Tarea 10 en curso (falta definir «Próximas» del roadmap y los gates 2 y 3). Sigue la Tarea 11 en `chore/gates-de-calidad`.
+**Avance:** Tareas 1–10 hechas (PR 1 abierto contra `develop`). Sigue la Tarea 11 en `chore/gates-de-calidad`.
 
 ## Diseño
 
@@ -2137,5 +2137,5 @@ Render despliega `main` solo con los checks en verde (`autoDeployTrigger: checks
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-17 — aprobado por Juan Diego
-- Gate 2 (verificación): pendiente
-- Gate 3 (PR): pendiente
+- Gate 2 (verificación): 2026-10-17 — aprobado por Juan Diego. 131 enlaces revisados, 0 rotos; sin cambios en `backend/` ni `frontend/`.
+- Gate 3 (PR): pendiente de número
