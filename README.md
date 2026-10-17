@@ -10,7 +10,7 @@ La base de desarrollo contiene una aplicación React + TypeScript, una API Djang
 
 - `frontend/`: aplicación web y pruebas de interfaz.
 - `backend/`: API, configuración de Django y pruebas.
-- `docs/requisitos/`: historias de usuario vigentes.
+- `docs/aidlc/inputs/`: historias de usuario vigentes.
 - `docs/superpowers/`: diseño y plan de la primera entrega.
 - `docs/operacion/`: pasos para ejecutar el proyecto.
 - `docs/arquitectura/`: organización del monorepo y límites entre módulos.
@@ -27,4 +27,4 @@ Para preparar la versión online, seguí [despliegue en Render](docs/operacion/d
 
 La API será la autoridad para confirmar reservas. La disponibilidad se protegerá con transacciones en PostgreSQL y pruebas de concurrencia. Las decisiones pendientes de Seba y Administración deben registrarse en `docs/decisiones/` antes de cerrar las reglas afectadas. No se cargan datos personales reales en desarrollo o pruebas.
 
-El PDF de orden de compra que está en la carpeta local es una referencia privada y no forma parte del repositorio. Las historias originales siguen allí; Git guarda una copia en `docs/requisitos/`.
+El PDF de orden de compra que está en la carpeta local es una referencia privada y no forma parte del repositorio. Las historias originales siguen allí; Git guarda una copia en `docs/aidlc/inputs/`.

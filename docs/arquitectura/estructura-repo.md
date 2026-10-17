@@ -6,7 +6,7 @@ Big Media usa un monorepo. La [estructura de CheatSheet](https://github.com/chea
 | --- | --- |
 | `backend/` | API Django, modelos, migraciones, autenticación y pruebas. Las aplicaciones de negocio viven en `backend/apps/<modulo>/` cuando se implementan. |
 | `frontend/` | Web React + TypeScript. Cada flujo de negocio vive en `frontend/src/features/<modulo>/`; `app/` compone pantallas y `shared/` contiene código realmente compartido. |
-| `docs/requisitos/` | Historias de usuario y reglas acordadas. |
+| `docs/aidlc/inputs/` | Historias de usuario, plantillas de importación y recorrido de UX. |
 | `docs/arquitectura/` | Decisiones de estructura y límites de módulos. |
 | `docs/operacion/` | Desarrollo local, despliegue y recuperación. |
 | `docs/superpowers/` | Especificaciones y planes de implementación. |

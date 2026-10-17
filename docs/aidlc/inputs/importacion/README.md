@@ -19,7 +19,7 @@ Las plantillas no traen filas de ejemplo con datos: no hay que inventar carteles
 Antes de importar tienen que existir en el sistema:
 
 1. **Los formatos** "PPL o Gran Formato" y "Séxtuples", activos, con su capacidad por defecto (HU-009).
-2. **Las zonas.** La zona es obligatoria y la lista de departamentos todavía no está confirmada (decisión [D-08](../decisiones/2026-10-15-pendientes-seba-ale.md#d-08-lista-de-zonas-departamentos)). Sin zonas no se puede importar ningún cartel.
+2. **Las zonas.** La zona es obligatoria y la lista de departamentos todavía no está confirmada (decisión [D-08](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-08-lista-de-zonas-departamentos)). Sin zonas no se puede importar ningún cartel.
 3. **Los proveedores** que se nombren en el archivo (HU-008). El importador no crea proveedores nuevos, para que un error de tipeo no genere un proveedor duplicado.
 4. **Los estados de cartel**, si el archivo trae la columna `estado` (HU-012).
 
@@ -39,7 +39,7 @@ Solo un usuario con rol Administrador puede importar (HU-015).
 Las planillas actuales están en formato visual (HU-015). Para transformarlas:
 
 1. Copiar cada posición a una fila de la plantilla, sin completar datos que la planilla no tenga.
-2. Si un color, un resaltado o una celda combinada significa algo (estado, proveedor, cliente actual), pasarlo a la columna que corresponda o anotarlo en `ref_origen`. Preguntarle a Seba qué significa cada color antes de descartarlo (decisión [D-09](../decisiones/2026-10-15-pendientes-seba-ale.md#d-09-contenido-real-de-los-relevamientos)).
+2. Si un color, un resaltado o una celda combinada significa algo (estado, proveedor, cliente actual), pasarlo a la columna que corresponda o anotarlo en `ref_origen`. Preguntarle a Seba qué significa cada color antes de descartarlo (decisión [D-09](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-09-contenido-real-de-los-relevamientos)).
 3. Completar `ref_origen` con la hoja y la fila de origen (por ejemplo `GF hoja 1 fila 12`) para poder volver a la planilla cuando una fila se rechace.
 4. Dejar vacío lo que no se sabe. Es mejor un cartel incompleto que un dato inventado.
 
@@ -70,7 +70,7 @@ Las mismas columnas, con `slots` en lugar de `tamano`:
 | --- | --- | --- | --- |
 | `slots` | Sí | Número entero mayor o igual a 1 | Capacidad del cartel (HU-015) |
 
-En los séxtuples la cantidad de slots es a la vez la capacidad y parte de la identidad del cartel (HU-010). Cómo se trata un cambio de slots depende de la decisión [D-05](../decisiones/2026-10-15-pendientes-seba-ale.md#d-05-slots-de-los-séxtuples).
+En los séxtuples la cantidad de slots es a la vez la capacidad y parte de la identidad del cartel (HU-010). Cómo se trata un cambio de slots depende de la decisión [D-05](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-05-slots-de-los-séxtuples).
 
 ## Normalización
 
@@ -107,7 +107,7 @@ Señala casos que pueden ser el mismo cartel escrito distinto. No bloquea por s�
 2. **Intersecciones en otro orden.** "Calle A y Calle B" contra "Calle B y Calle A": se ordenan las partes separadas por ` y ` o `esquina` antes de comparar.
 3. **Errores de tipeo.** Dos direcciones del mismo formato con similitud alta (por ejemplo, distancia de edición de 1 o 2 caracteres) y el mismo tamaño o slots.
 4. **Misma dirección, distinto tamaño o slots.** Puede ser otro cartel (otra cara) o un error. Pasa a revisión.
-5. **Tamaño invertido.** `6x3` contra `3x6` en la misma dirección. Pasa a revisión hasta confirmar que el orden es siempre ancho x alto (decisión [D-09](../decisiones/2026-10-15-pendientes-seba-ale.md#d-09-contenido-real-de-los-relevamientos)).
+5. **Tamaño invertido.** `6x3` contra `3x6` en la misma dirección. Pasa a revisión hasta confirmar que el orden es siempre ancho x alto (decisión [D-09](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-09-contenido-real-de-los-relevamientos)).
 
 ### Qué hace el importador en cada caso
 
@@ -171,11 +171,11 @@ Cada cartel creado queda auditado con el origen "importación", el nombre del ar
 
 | Decisión | Qué cambia en la importación |
 | --- | --- |
-| [D-05 Séxtuples](../decisiones/2026-10-15-pendientes-seba-ale.md#d-05-slots-de-los-séxtuples) | Si los slots dejan de ser parte de la identidad, la clave pasa a ser solo la dirección |
-| [D-07 Propiedad](../decisiones/2026-10-15-pendientes-seba-ale.md#d-07-propiedad-de-los-carteles) | Podrían sumarse columnas de tipo de propiedad y tarifa de costo |
-| [D-08 Zonas](../decisiones/2026-10-15-pendientes-seba-ale.md#d-08-lista-de-zonas-departamentos) | Sin la lista no se puede importar |
-| [D-09 Relevamientos](../decisiones/2026-10-15-pendientes-seba-ale.md#d-09-contenido-real-de-los-relevamientos) | Formato del tamaño, significado de colores, abreviaturas reales, caras dobles |
-| [D-10 Estados](../decisiones/2026-10-15-pendientes-seba-ale.md#d-10-estados-físicos-y-carteles-fuera-de-servicio-preguntas-9-y-18) | Valores válidos de la columna `estado` |
+| [D-05 Séxtuples](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-05-slots-de-los-séxtuples) | Si los slots dejan de ser parte de la identidad, la clave pasa a ser solo la dirección |
+| [D-07 Propiedad](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-07-propiedad-de-los-carteles) | Podrían sumarse columnas de tipo de propiedad y tarifa de costo |
+| [D-08 Zonas](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-08-lista-de-zonas-departamentos) | Sin la lista no se puede importar |
+| [D-09 Relevamientos](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-09-contenido-real-de-los-relevamientos) | Formato del tamaño, significado de colores, abreviaturas reales, caras dobles |
+| [D-10 Estados](../../../decisiones/2026-10-15-pendientes-seba-ale.md#d-10-estados-físicos-y-carteles-fuera-de-servicio-preguntas-9-y-18) | Valores válidos de la columna `estado` |
 
 ## Fuera de alcance
 
