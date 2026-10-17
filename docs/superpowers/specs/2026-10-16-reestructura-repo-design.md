@@ -275,8 +275,8 @@ E0 (base) y E2 (inventario, sin la importación de HU-015) figuran como hechas; 
 | `convenciones` (solo PR) | Valida rama contra destino según la tabla de ramas y el formato de cada commit | Rama mal nombrada o con destino incorrecto; commit fuera de formato |
 | `lint-python` | `ruff format --check` y `ruff check` | Formato o reglas de ruff |
 | `tipos` | `mypy --strict` con `django-stubs` y `djangorestframework-stubs` | Código sin tipar o tipos inconsistentes |
-| `migraciones` | `manage.py makemigrations --check --dry-run` y `manage.py check --deploy` con settings de producción | Modelo cambiado sin migración; configuración insegura |
-| `tests-backend` | pytest contra PostgreSQL 17 en un service container, coverage mínimo de 80 % | Test fallido, coverage bajo el umbral, o algún test salteado por falta de base |
+| `check-deploy` | `manage.py check --deploy --fail-level WARNING` con settings de producción | Configuración insegura |
+| `tests-backend` | `manage.py makemigrations --check --dry-run` y pytest contra PostgreSQL 17 en un service container, coverage mínimo de 80 % | Modelo cambiado sin migración, test fallido, coverage bajo el umbral, o algún test salteado por falta de base |
 | `frontend` | Prettier, oxlint, `tsc --noEmit`, vitest con coverage mínimo de 80 %, `vite build` | Cualquiera de esos pasos |
 | `secretos` | gitleaks sobre el árbol de trabajo | Credencial detectada |
 | `imagen` | `docker build` del Dockerfile de producción | La imagen no compila |
@@ -290,7 +290,7 @@ Render sigue desplegando `main` con `autoDeployTrigger: checksPass`, de modo que
 - **`requirements-dev.txt`:** versiones fijas de ruff, mypy, django-stubs, djangorestframework-stubs, pytest, pytest-django, pytest-cov y pre-commit. Actualizarlas es un cambio deliberado, en su propio PR.
 - **`.pre-commit-config.yaml`:** trailing whitespace, fin de archivo, YAML/TOML/JSON válidos, conflictos de merge, archivos grandes, `detect-private-key`, `no-commit-to-branch` para `main` y `develop`, ruff y gitleaks. mypy queda solo en CI porque con stubs de Django es lento.
 - **`.gitleaks.toml`:** reglas por defecto, con allowlist para `.env.example` y archivos Markdown.
-- **Frontend:** Prettier con su configuración e ignore; scripts `typecheck`, `format`, `format:check` y `test:coverage`; umbral de coverage en `vite.config.ts`. `strict: true` ya está activo en TypeScript.
+- **Frontend:** Prettier con su configuración e ignore; scripts `typecheck`, `format`, `format:check` y `test:coverage`; umbral de coverage en `vite.config.ts`. TypeScript 6 ya aplica el modo estricto por defecto; se declara `"strict": true` explícito en `tsconfig.app.json` y `tsconfig.node.json`.
 
 ### Tests siempre contra PostgreSQL
 
