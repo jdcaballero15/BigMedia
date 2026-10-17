@@ -6,7 +6,8 @@ export default defineConfig(({ command }) => ({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://127.0.0.1:8000',
+      // Conserva el Host del navegador para que Django acepte el Origin en el chequeo CSRF.
+      '/api': { target: 'http://127.0.0.1:8000', changeOrigin: false },
     },
   },
   test: {
