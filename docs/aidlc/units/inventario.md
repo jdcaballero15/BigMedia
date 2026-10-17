@@ -1,4 +1,52 @@
-# Big Media Inventory Implementation Plan
+# Unidad: Inventario
+
+- **Estado:** mergeada · **Épica:** E2 Inventario de soportes
+- **Rama:** `feat/inventario` · **Fecha:** 2026-10-17
+- **Origen:** migrado desde `docs/superpowers/` el 2026-10-16. El contenido no se modificó.
+
+## Diseño
+
+Estado: para revisión de Juan Diego, 15 de octubre de 2026.
+
+### Propósito y alcance
+
+Esta entrega permite a Seba y Ale registrar y consultar los espacios publicitarios disponibles para vender. Es la base de datos operativa que luego usarán campañas y reservas. Cubre HU-008 a HU-014 de las historias de usuario, excepto las reglas que requieren reservas existentes. La importación CSV de HU-015 será una entrega posterior cuando estén disponibles las planillas tabulares.
+
+La entrega incluye API y pantallas para proveedores, formatos, zonas y carteles. Los usuarios pueden crear, editar, inactivar y filtrar registros. No se cargan carteles ficticios. El estado inicial de las futuras campañas será **Borrador**; este módulo no crea campañas ni cotizaciones.
+
+### Modelo de datos
+
+- **Proveedor:** nombre único obligatorio, descripción del servicio opcional, activo/inactivo. Se conserva al inactivarlo.
+- **Formato:** nombre único obligatorio, modalidad fija o digital, capacidad predeterminada entera mayor o igual a 1, dimensiones opcionales, activo/inactivo. Se crean PPL/Gran Formato, Banderolas, Séxtuples, LED, Mediano Formato, Monocolumnas y Carteleras; solo LED se marca digital inicialmente. La capacidad predeterminada de cada formato se deja en 1 como valor conservador y editable hasta confirmar los valores reales, especialmente para LED y séxtuples.
+- **Zona:** nombre único obligatorio y activo/inactivo. La lista inicial, confirmada por Juan Diego a partir de la pantalla actual, contiene nueve departamentos: Ciudad, Godoy Cruz, Maipú, Luján de Cuyo, Guaymallén, Las Heras, San Martín, Rivadavia y San Carlos. «Todos» es una opción de filtro, no una zona guardada.
+- **Estado físico:** catálogo administrable con Activo, En mantenimiento, De baja, Apagado y Vidrio destruido. Solo Activo será seleccionable en nuevas reservas cuando ese módulo exista. Se conserva todo estado histórico.
+- **Cartel:** identificador interno, formato, dirección, zona, proveedor opcional, tamaño opcional, capacidad entera mayor o igual a 1, tarifa de lista no negativa, estado físico, enlace opcional de foto y fechas de creación/actualización. La capacidad se copia del formato al crear y después se puede editar sin alterar automáticamente un cartel existente. El nombre visible se compone de dirección y tamaño o cantidad de slots; el identificador interno no aparece como nombre comercial.
+
+No se ofrece `DELETE` en la API ni en las pantallas. Las referencias históricas quedan intactas. Las restricciones de unicidad se aplican en PostgreSQL y los errores se devuelven con nombres de campo legibles.
+
+### API y pantallas
+
+La API Django REST Framework expondrá colecciones bajo `/api/inventario/` para proveedores, formatos, zonas, estados y carteles. Permitirá listar, consultar uno, crear y actualizar. Inactivar un catálogo o poner un cartel de baja se hará mediante actualización de estado. La lista de carteles aceptará filtros combinables por zona, formato, modalidad, estado y texto parcial de dirección; excluirá las bajas por defecto y ofrecerá incluirlas. El texto se comparará sin distinguir mayúsculas ni tildes.
+
+React tendrá una sección **Carteles** con tabla, filtros y formulario de alta/edición. Mostrará nombre legible, formato, zona, proveedor, capacidad, tarifa y estado. Tendrá pantallas sencillas para administrar los catálogos. Al elegir un formato en un cartel nuevo, precargará su capacidad; el servidor repetirá esa regla para que también funcione por API. Las validaciones aparecen junto al campo afectado.
+
+### Acceso y límites
+
+El sistema usará usuarios y sesiones de Django. Las operaciones de inventario exigirán inicio de sesión; los cambios requerirán un usuario autorizado para operar. Esta primera entrega tendrá un rol operativo único mediante grupo de Django y un administrador. La política más detallada de HU-003 a HU-005 se especificará en la etapa de seguridad antes de poner el sistema en producción.
+
+Como todavía no existen reservas, esta entrega no puede comprobar ocupación ni validar una reducción de capacidad contra reservas futuras. La modificación de capacidad se centralizará en un servicio para agregar esa validación y su auditoría al implementar reservas. La tarifa del cartel será solo el precio vigente de referencia; cada reserva futura guardará una copia del precio para preservar el histórico.
+
+### Errores y pruebas
+
+La API rechazará campos obligatorios ausentes, capacidad menor que 1, tarifa negativa, nombres duplicados y referencias a catálogos inactivos en carteles nuevos. Si falla una escritura, no quedará un registro parcial. Se probarán modelos, API autenticada, filtros combinados, búsqueda sin tildes, baja lógica y los formularios principales. Se ejecutarán migraciones y pruebas sobre PostgreSQL real, además de lint y compilación del frontend.
+
+### Decisiones pendientes
+
+Los valores reales de capacidad de LED y séxtuples y los estados físicos adicionales requieren confirmación de Big Media. No se inventarán carteles ni tarifas. La regla para reducir capacidad con reservas vigentes se cerrará junto con el motor de reservas. El tratamiento del día de borde entre reservas también se definirá antes de construir ese motor.
+
+## Plan ejecutado
+
+## Big Media Inventory Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -10,7 +58,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-15-bigmedia-inventario-design.md`.
 
-## Global Constraints
+### Global Constraints
 
 - No inventar carteles ni tarifas. Sembrar solo los siete formatos, nueve departamentos y cinco estados confirmados o descritos en la especificación.
 - «Todos» es únicamente el filtro sin zona seleccionada.
@@ -20,7 +68,7 @@
 - No agregar campañas, cotizaciones, reservas, importación CSV ni reportes en esta entrega.
 - No tocar `docs/decisiones/`, `docs/importacion/` ni `docs/ux/`, que pueden pertenecer al trabajo paralelo de Claude.
 
-## Review Focus
+### Review Focus
 
 1. Una petición anónima o sin CSRF no puede modificar catálogos ni carteles; verificar 401/403 y que no se crea el registro.
 2. Una referencia a formato, zona o proveedor inactivo no se acepta en un cartel nuevo; una referencia histórica puede permanecer al editar otro campo.
@@ -30,7 +78,7 @@
 
 ---
 
-## Mapa de archivos
+### Mapa de archivos
 
 - `backend/config/auth_views.py`: sesión, CSRF, login y logout.
 - `backend/apps/inventario/models.py`: proveedores, formatos, zonas, estados y carteles; propiedades legibles y normalización de dirección.
@@ -44,7 +92,7 @@
 - `frontend/src/app/`: login y navegación; `frontend/src/App.tsx` integra pantallas.
 - `docs/operacion/desarrollo-local.md`: alta del primer usuario y uso del módulo.
 
-### Task 1: Sesión operativa protegida
+#### Task 1: Sesión operativa protegida
 
 **Files:** Create `backend/config/auth_views.py`, `backend/tests/test_auth.py`; modify `backend/config/urls.py`, `backend/config/settings.py`.
 
@@ -73,7 +121,7 @@ def me(request):
 - [ ] **Step 4: Run GREEN.** `python -m pytest tests/test_auth.py -q`; Expected: las cinco pruebas pasan. `python manage.py check`; Expected: cero errores.
 - [ ] **Step 5: Commit.** `git add backend/config backend/tests/test_auth.py` y `git commit -m "feat: add session authentication"`.
 
-### Task 2: Catálogos de inventario y datos iniciales
+#### Task 2: Catálogos de inventario y datos iniciales
 
 **Files:** Create `backend/apps/__init__.py`, `backend/apps/inventario/{__init__,apps,models,serializers,views,urls}.py`, migraciones y `backend/tests/test_inventory_catalogs.py`; modify `backend/config/settings.py`, `backend/config/urls.py`, `backend/pyproject.toml` para incluir el paquete `apps*`.
 
@@ -105,7 +153,7 @@ class Formato(models.Model):
 - [ ] **Step 5: Run GREEN.** `python -m pytest tests/test_inventory_catalogs.py -q`; Expected: todas pasan. `python manage.py check`; Expected: cero errores.
 - [ ] **Step 6: Commit.** Agregar solo archivos del módulo, configuración y prueba; `git commit -m "feat: add inventory catalogs"`.
 
-### Task 3: Carteles, reglas y búsqueda
+#### Task 3: Carteles, reglas y búsqueda
 
 **Files:** Modify `backend/apps/inventario/models.py`, `serializers.py`, `views.py`, `urls.py`; create migración y `backend/tests/test_carteles.py`.
 
@@ -136,7 +184,7 @@ def normalizar_busqueda(valor: str) -> str:
 - [ ] **Step 4: Run GREEN.** `python manage.py makemigrations inventario`, revisar SQL/esquema, `python manage.py migrate --noinput`, `python -m pytest tests/test_carteles.py -q`; Expected: todas pasan. Ejecutar la suite backend completa con `BIGMEDIA_RUN_DB_TESTS=1`; Expected: sin fallos.
 - [ ] **Step 5: Commit.** `git commit -m "feat: add posters and inventory search"` con archivos explícitos.
 
-### Task 4: Inicio de sesión y listado de carteles en React
+#### Task 4: Inicio de sesión y listado de carteles en React
 
 **Files:** Create `frontend/src/shared/api.ts`, `frontend/src/app/Login.tsx`, `frontend/src/features/inventario/CartelesPage.tsx` y sus pruebas; modify `frontend/src/App.tsx`, `App.css`, `index.css`.
 
@@ -156,7 +204,7 @@ test('muestra el inventario luego de iniciar sesión', async () => {
 - [ ] **Step 4: Run GREEN.** `npm test -- --reporter=dot`, `npm run lint`, `npm run build`; Expected: sin fallos.
 - [ ] **Step 5: Commit.** `git commit -m "feat: show authenticated inventory"`.
 
-### Task 5: Formularios operativos y guía de uso
+#### Task 5: Formularios operativos y guía de uso
 
 **Files:** Create `frontend/src/features/inventario/CartelForm.tsx`, `CatalogosPage.tsx` y pruebas; modify `CartelesPage.tsx`, `frontend/src/App.tsx`, `docs/operacion/desarrollo-local.md`.
 
@@ -177,6 +225,6 @@ test('precarga capacidad al elegir formato en un cartel nuevo', async () => {
 - [ ] **Step 4: Run GREEN.** `npm test -- --reporter=dot`, `npm run lint`, `npm run build`; Expected: sin fallos. Correr `python -m pytest tests -q` y `python manage.py check` con PostgreSQL; Expected: sin fallos.
 - [ ] **Step 5: Commit.** `git commit -m "feat: edit inventory from web"` con los archivos del task.
 
-## Verificación final
+### Verificación final
 
 Desde una base vacía, `python manage.py migrate --noinput` siembra exactamente las nueve zonas de la captura. Con un usuario Operativo se crea un cartel, aparece en la lista y se encuentra con filtros. Se puede editar, inactivar y consultar su ficha; no se puede borrar. Ejecutar suite backend con PostgreSQL real, suite frontend, lint y build. Revisar que `git status` conserve intactos los documentos paralelos sin agregarlos a commits de este plan.
