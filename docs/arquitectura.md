@@ -73,7 +73,7 @@ Los límites vienen de la unidad [`base-del-repositorio`](aidlc/units/base-del-r
 
 | App | Responsabilidad | Riesgo dominante | Estado |
 | --- | --- | --- | --- |
-| `usuarios` | Cuentas, sesión y permisos. | Acceso no autorizado a datos o acciones. | planificada |
+| `usuarios` | Cuentas, sesión y permisos. | Acceso no autorizado a datos o acciones. | iniciada (solo el comando `asegurar_admin`) |
 | `inventario` | Formatos, proveedores, zonas, carteles, estados físicos y capacidad. | Capacidad mal cargada, que luego rompe la disponibilidad. | implementada |
 | `clientes` | Clientes pagadores, marcas, contactos e interacciones. | Datos personales mal tratados. | planificada |
 | `campanias` | Campañas y posiciones solicitadas por formato. | Posiciones inconsistentes con lo vendido. | planificada |

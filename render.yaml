@@ -1,24 +1,23 @@
-# Production resources. Applying this Blueprint creates paid services.
-# See docs/operacion/despliegue-render.md before connecting it to Render.
+# Recursos de producción en el plan gratis de Render, mientras se valida el sistema.
+# Límites: la web se duerme tras 15 minutos sin tráfico y la base gratis vence a los 30 días.
+# Ver docs/operacion/despliegue-render.md antes de conectarlo y para pasar al plan pago.
 databases:
   - name: bigmedia-db
-    plan: 0.1c-256mb
+    plan: free
     region: virginia
     postgresMajorVersion: '17'
-    diskSizeGB: 5
-    storageAutoscalingEnabled: true
     ipAllowList: []
 
 services:
   - type: web
     name: bigmedia-web
     runtime: docker
-    plan: 0.5c-512mb
+    plan: free
     region: virginia
     branch: main
     autoDeployTrigger: checksPass
     healthCheckPath: /api/health/
-    preDeployCommand: python manage.py migrate --noinput
+    # El plan gratis no admite preDeployCommand: la imagen migra al arrancar (backend/arrancar.sh).
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -30,3 +29,8 @@ services:
         value: production
       - key: DJANGO_DEBUG
         value: 'false'
+      # Render los pide al crear el Blueprint; nunca se guardan en Git.
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
