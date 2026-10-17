@@ -45,9 +45,9 @@
 
 > `chore/render-deploy` está abierta en otro worktree (`C:/Users/Juan Diego/Documents/Codex/2026-10-14/mej/work/bigmedia-inventario`). No se puede hacer checkout de ella en el worktree principal: la resolución de conflictos se hace en ese worktree o en uno temporal.
 
-- [ ] **Paso 1: Confirmar con Juan Diego** que se pueden abrir y mergear los tres PRs ahora, en este orden: `docs/decisiones-importacion-ux`, `feat/inventario`, `chore/render-deploy`.
+- [x] **Paso 1: Confirmar con Juan Diego** que se pueden abrir y mergear los tres PRs ahora, en este orden: `docs/decisiones-importacion-ux`, `feat/inventario`, `chore/render-deploy`.
 
-- [ ] **Paso 2: Abrir y mergear los dos primeros PRs** (entran sin conflictos):
+- [x] **Paso 2: Abrir y mergear los dos primeros PRs** (entran sin conflictos):
 
 ```bash
 git fetch origin
@@ -59,7 +59,7 @@ gh pr merge feat/inventario --merge
 
 Si `feat/inventario` ya tiene un PR abierto, usar ese en lugar de crear otro (`gh pr list --head feat/inventario`).
 
-- [ ] **Paso 3: Actualizar `chore/render-deploy` con `main` y resolver los dos conflictos**
+- [x] **Paso 3: Actualizar `chore/render-deploy` con `main` y resolver los dos conflictos**
 
 ```bash
 git worktree add ../bm-render chore/render-deploy   # o trabajar en el worktree de Codex
@@ -93,7 +93,7 @@ urlpatterns = [
 
 Resolver `README.md` conservando ambos párrafos, primero el de `CONTRIBUTING.md` y luego el de Render, separados por una línea en blanco.
 
-- [ ] **Paso 4: Verificar la integración**
+- [x] **Paso 4: Verificar la integración**
 
 Con PostgreSQL levantado (`docker compose up -d --wait db`):
 
@@ -104,7 +104,7 @@ cd frontend && npm test && npm run lint && npm run build
 
 Esperado: todo en verde (los tests de base de datos pueden aparecer como salteados; eso se corrige en la Tarea 12).
 
-- [ ] **Paso 5: Commit, push y PR** (con autorización de Juan Diego)
+- [x] **Paso 5: Commit, push y PR** (con autorización de Juan Diego)
 
 ```bash
 git add README.md backend/config/urls.py
@@ -114,7 +114,7 @@ gh pr create --base main --head chore/render-deploy --title "feat(infra): deploy
 gh pr merge chore/render-deploy --merge
 ```
 
-- [ ] **Paso 6: Crear `develop`**
+- [x] **Paso 6: Crear `develop`**
 
 ```bash
 git fetch origin
