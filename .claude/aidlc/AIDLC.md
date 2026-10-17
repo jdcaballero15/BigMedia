@@ -37,7 +37,7 @@ Las historias y las reglas pueden cambiar.
 ## 5. De dónde sale el trabajo
 
 - Una épica de `docs/aidlc/roadmap.md`.
-- Un issue triado con etiqueta `pedido`, `bug` o `regla`.
+- Un issue triado: la salida está anotada en un comentario y el issue lleva su etiqueta de salida (`regla`, `bug`, o `pedido` con el PR de historias enlazado). Ver el triage en `workflow.md`.
 
 ## 6. Retomar
 

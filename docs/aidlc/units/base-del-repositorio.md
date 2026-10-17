@@ -2,7 +2,7 @@
 
 - **Estado:** mergeada · **Épica:** E0 Plataforma base
 - **Rama:** `main (inicial)` · **Fecha:** 2026-10-15
-- **Origen:** migrado desde `docs/superpowers/` el 2026-10-16. El contenido no se modificó.
+- **Origen:** migrado desde `docs/superpowers/` el 2026-10-16. El contenido no se modificó, salvo el nivel de los encabezados y los enlaces que dejaron de resolver.
 
 ## Diseño
 

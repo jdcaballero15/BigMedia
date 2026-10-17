@@ -1,8 +1,8 @@
 # Unidad: Despliegue en Render
 
-- **Estado:** mergeada · **Épica:** Infraestructura
+- **Estado:** mergeada · **Épica:** E0 Plataforma base
 - **Rama:** `chore/render-deploy` · **Fecha:** 2026-10-17
-- **Origen:** migrado desde `docs/superpowers/` el 2026-10-16. El contenido no se modificó.
+- **Origen:** migrado desde `docs/superpowers/` el 2026-10-16. El contenido no se modificó, salvo el nivel de los encabezados y los enlaces que dejaron de resolver.
 
 ## Diseño
 

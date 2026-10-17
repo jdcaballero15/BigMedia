@@ -20,7 +20,7 @@ Un proceso que trata las historias de usuario como insumos cerrados no sirve ac�
 - **Catálogo de reglas:** [`reglas-de-negocio.md`](../aidlc/reglas-de-negocio.md), una tabla con IDs `RN-xxx` que nunca se reutilizan y estados `pendiente`, `provisoria`, `confirmada` o `reemplazada por RN-xxx`. Lo `provisoria` se implementa como parámetro configurable cuando se puede.
 - **Historias vivas:** `docs/aidlc/inputs/historias-de-usuario.md` es la fuente de verdad. Los IDs `HU-xxx` no se reutilizan ni se renumeran, y cada cambio deja una entrada en `docs/aidlc/inputs/registro-de-cambios.md`.
 - **Pedidos:** se cargan como issues con la plantilla "Pedido de Seba" y se clasifican en una de cuatro salidas: cambia una regla, es una historia nueva o ajustada, es un bug o se descarta con motivo. El PR que lo resuelve lo cierra con `Closes #N`.
-- **Unidades de ajuste:** los cambios chicos se planifican como unidades `ajuste-<tema>`.
+- **Unidades de ajuste:** un cambio a una unidad ya mergeada se planifica como una unidad nueva `ajuste-<tema>`; los cambios triviales (más chicos que su plan) se hacen directo, en rama y por PR.
 - **Roadmap corto:** [`roadmap.md`](../aidlc/roadmap.md) lista la épica actual y las dos o tres siguientes, y se reordena cuando cambian las prioridades.
 - Los cambios de reglas de negocio no llevan ADR salvo que cambien la arquitectura o una regla de `CLAUDE.md`.
 

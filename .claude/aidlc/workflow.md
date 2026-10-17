@@ -25,7 +25,7 @@ docs/aidlc/
 
 ## 3. Paso 0 (Origen) y Paso 1 (Encuadre), sin gate
 
-- **Origen:** una épica del roadmap o un issue triado.
+- **Origen:** una épica del roadmap o un issue triado (ver §8).
 - **Encuadre:** leé las historias, las reglas y el registro de cambios involucrados. Decí en tres líneas: app dueña, capas que toca, y si hay migraciones o reglas nuevas.
 - Si la app dueña no está clara, preguntá en español con opciones concretas.
 
@@ -78,21 +78,31 @@ Corré los mismos comandos de la Definition of Done de `CLAUDE.md` §7 y pegá l
 Solo cuando se pida:
 
 - Completá la plantilla de PR y agregá `Closes #N` si hay issue.
-- Actualizá `docs/aidlc/units.md`: `en revisión` y, al mergear, `mergeada`.
-- Actualizá `docs/aidlc/reglas-de-negocio.md` si cambió una regla.
+- Actualizá `docs/aidlc/units.md`: `en revisión` al abrir el PR, y `mergeada` en el último commit del mismo PR, antes del merge. Si se olvidó, va en el próximo PR `docs/`.
+- Si la unidad aplica una regla, actualizá en `docs/aidlc/reglas-de-negocio.md` solo la columna "Dónde vive" y sus tests. El valor o el estado de la regla y la entrada del registro de cambios van en un PR `docs/historias-<descripcion>` (ver §9).
 
 ## 8. Triage de pedidos
 
-Cada issue `pedido` termina en una de cuatro salidas:
+Cada issue `pedido` termina en una de cuatro salidas, cada una con su etiqueta de salida:
 
-1. Cambia una regla.
-2. Historia nueva o ajustada.
-3. Bug.
-4. Descartado, con motivo.
+| Salida | Etiqueta de salida |
+| --- | --- |
+| 1. Cambia una regla | `regla` |
+| 2. Historia nueva o ajustada | se queda con `pedido`, más un comentario que enlaza el PR `docs/historias-<descripcion>` |
+| 3. Bug | `bug` |
+| 4. Descartado, con motivo | `descartado` |
 
-El issue se etiqueta y, si se acepta, se convierte en una unidad.
+Un issue está **triado** cuando su salida está anotada en un comentario y lleva su etiqueta de salida. Un issue que solo tiene `pedido`, sin ese comentario, todavía no está triado. Si se acepta, se convierte en una unidad.
 
-## 9. Diferencias con el AI-DLC original de CheatSheet
+## 9. Cambiar una historia o una regla
+
+- El cambio va en un PR `docs/historias-<descripcion>`, sin código, con una fila en `docs/aidlc/inputs/registro-de-cambios.md`. Ahí se cambian el valor y el estado de una regla.
+- Un PR de código que aplica una regla solo actualiza la columna "Dónde vive" de esa regla y sus tests.
+- Los IDs (`HU-xxx`, `RN-xxx`) nunca se reutilizan ni se renumeran. Una historia nueva toma el siguiente número libre; una eliminada se marca `(retirada AAAA-MM-DD: motivo)` y una fusionada, `(fusionada en HU-xxx)`.
+- Si el cambio mueve historias entre épicas o afecta unidades, el mismo PR actualiza `docs/aidlc/roadmap.md` y `docs/aidlc/units.md`.
+- Cuando se toca una historia, sus reglas se referencian por ID (`RN-xxx`) en lugar de repetirse. No se reescribe el documento completo por adelantado.
+
+## 10. Diferencias con el AI-DLC original de CheatSheet
 
 - Historias y reglas son insumos vivos: cambian por PR `docs/` con registro, sin ADR.
 - El roadmap es corto y se reordena; no reparte todo el catálogo al inicio.

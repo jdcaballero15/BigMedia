@@ -1,8 +1,10 @@
 # Unidad: Reestructura del repositorio
 
-- **Estado:** en curso · **Épica:** Infraestructura
+- **Estado:** en curso · **Épica:** — (unidad técnica)
 - **Rama:** `docs/reestructura-gobernanza` + `chore/gates-de-calidad` · **Fecha:** 2026-10-16
-- **Origen:** migrado desde `docs/superpowers/` el 2026-10-16. El contenido no se modificó.
+- **Origen:** migrado desde `docs/superpowers/` el 2026-10-16. El contenido no se modificó, salvo el nivel de los encabezados y los enlaces que dejaron de resolver.
+
+**Avance:** Tareas 1–9 hechas; Tarea 10 en curso (falta definir «Próximas» del roadmap y los gates 2 y 3). Sigue la Tarea 11 en `chore/gates-de-calidad`.
 
 ## Diseño
 
@@ -479,7 +481,7 @@ git worktree remove ../bm-render   # si se creó en el paso 3
 **Interfaces:**
 - Produce: las rutas nuevas de `docs/aidlc/inputs/`, que usan las Tareas 3, 4, 6 y 8.
 
-- [ ] **Paso 1: Crear la rama e integrar el spec**
+- [x] **Paso 1: Crear la rama e integrar el spec**
 
 ```bash
 git switch develop && git pull
@@ -487,7 +489,7 @@ git switch -c docs/reestructura-gobernanza
 git merge --no-edit docs/reestructura-repo
 ```
 
-- [ ] **Paso 2: Mover con historia**
+- [x] **Paso 2: Mover con historia**
 
 ```bash
 mkdir -p docs/aidlc/inputs/importacion docs/aidlc/inputs/ux
@@ -496,7 +498,7 @@ git mv docs/importacion/README.md docs/importacion/plantilla-gran-formato.csv do
 git mv docs/ux/recorrido-disponibilidad-y-reservas.md docs/aidlc/inputs/ux/
 ```
 
-- [ ] **Paso 3: Crear `docs/aidlc/inputs/registro-de-cambios.md`**
+- [x] **Paso 3: Crear `docs/aidlc/inputs/registro-de-cambios.md`**
 
 ```markdown
 # Registro de cambios de las historias de usuario
@@ -510,7 +512,7 @@ marca `(retirada AAAA-MM-DD: motivo)` y una fusionada `(fusionada en HU-xxx)`.
 | 2026-10-16 | Equipo | — | todas | Las historias pasan a esta carpeta y este documento se vuelve la fuente de verdad. El contenido no cambia. | — |
 ```
 
-- [ ] **Paso 4: Corregir los enlaces relativos dentro de los archivos movidos y de los que apuntan a ellos**
+- [x] **Paso 4: Corregir los enlaces relativos dentro de los archivos movidos y de los que apuntan a ellos**
 
 Buscar referencias viejas:
 
@@ -525,7 +527,7 @@ Reemplazos esperados (ajustar la profundidad relativa según el archivo que enla
 
 Los archivos de `docs/decisiones/` y `docs/superpowers/` se reescriben en las Tareas 3 y 4; no hace falta corregirlos acá.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add -A docs
@@ -542,13 +544,13 @@ git commit -m "docs: move requirements and inputs to aidlc folder"
 - Consume: `docs/decisiones/2026-10-15-pendientes-seba-ale.md` (D-01…D-16 y el bloque de Administración).
 - Produce: IDs `RN-001`…`RN-026` que usan las Tareas 4, 7, 9 y 13.
 
-- [ ] **Paso 1: Mover el archivo para conservar la historia y reescribirlo**
+- [x] **Paso 1: Mover el archivo para conservar la historia y reescribirlo**
 
 ```bash
 git mv docs/decisiones/2026-10-15-pendientes-seba-ale.md docs/aidlc/reglas-de-negocio.md
 ```
 
-- [ ] **Paso 2: Escribir la cabecera y la tabla resumen**
+- [x] **Paso 2: Escribir la cabecera y la tabla resumen**
 
 Reemplazar el título y la introducción por:
 
@@ -582,7 +584,7 @@ Después, la tabla resumen con columnas `ID | Regla | Estado | Valor actual | Or
 
 Origen por defecto: "Documento de historias (decisión D-xx del 15/10/2026)".
 
-- [ ] **Paso 3: Conservar el detalle**
+- [x] **Paso 3: Conservar el detalle**
 
 Debajo de la tabla, una sección por regla (`### RN-001 Día límite entre reservas (D-01)`, …) con el contenido de la decisión original **sin cambios**: pregunta, preguntas de apoyo, opciones, default, qué bloquea y la línea de respuesta. Conservar también las secciones "Cómo se priorizó" (P1/P2/P3, como columna o nota) y adaptar "Cómo registrar una respuesta":
 
@@ -600,7 +602,7 @@ Debajo de la tabla, una sección por regla (`### RN-001 Día límite entre reser
 
 Corregir los enlaces internos: `../requisitos/historias-de-usuario.md` → `inputs/historias-de-usuario.md`; `../importacion/README.md` → `inputs/importacion/README.md`; `../ux/...` → `inputs/ux/...`.
 
-- [ ] **Paso 4: Verificar que no se perdió ninguna decisión**
+- [x] **Paso 4: Verificar que no se perdió ninguna decisión**
 
 ```bash
 for d in $(seq -w 1 15); do grep -q "(D-$d)" docs/aidlc/reglas-de-negocio.md || echo "Falta D-$d"; done
@@ -609,7 +611,7 @@ grep -c "^### RN-" docs/aidlc/reglas-de-negocio.md
 
 Esperado: ninguna línea "Falta" y `26`.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add -A docs
@@ -627,7 +629,7 @@ git commit -m "docs: turn pending decisions into business rules catalog"
 - Consume: specs y planes de `docs/superpowers/`.
 - Produce: los nombres de unidad usados en `units.md`.
 
-- [ ] **Paso 1: Fusionar cada spec con su plan**
+- [x] **Paso 1: Fusionar cada spec con su plan**
 
 Correspondencia:
 
@@ -658,7 +660,7 @@ Para `reestructura-del-repositorio`, el estado es `en curso` y la rama `docs/ree
 
 `plans/2026-10-16-reestructura-repo-arreglos.patch` **no** se mueve ni se borra en este paso: se borra al final de la Tarea 13 (la Tarea 13 lo lee desde la rama `docs/reestructura-repo`).
 
-- [ ] **Paso 2: Escribir `docs/aidlc/units.md`**
+- [x] **Paso 2: Escribir `docs/aidlc/units.md`**
 
 ```markdown
 # Mapa de unidades
@@ -680,7 +682,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 - HU-015 (importación de inventario) queda fuera de la unidad `inventario` hasta tener los relevamientos (RN-009).
 ```
 
-- [ ] **Paso 3: Escribir `docs/aidlc/roadmap.md`**
+- [x] **Paso 3: Escribir `docs/aidlc/roadmap.md`**
 
 ```markdown
 # Roadmap
@@ -718,7 +720,7 @@ E5 es el núcleo: si hay que recortar alcance, se recorta alrededor de ella y nu
 
 > La sección "Próximas" la completa Juan Diego antes de mergear el PR 1. El ejecutor le pregunta qué épica sigue y la escribe; no la elige por su cuenta.
 
-- [ ] **Paso 4: Verificar que `docs/superpowers/` solo conserva el patch**
+- [x] **Paso 4: Verificar que `docs/superpowers/` solo conserva el patch**
 
 ```bash
 git ls-files docs/superpowers
@@ -726,7 +728,7 @@ git ls-files docs/superpowers
 
 Esperado: solo `docs/superpowers/plans/2026-10-16-reestructura-repo-arreglos.patch`.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add -A docs
@@ -742,7 +744,7 @@ git commit -m "docs: migrate specs and plans to aidlc units"
 - Consume: rutas de `docs/aidlc/` de las Tareas 2–4.
 - Produce: `@.claude/aidlc/AIDLC.md`, importado por `CLAUDE.md` en la Tarea 8.
 
-- [ ] **Paso 1: Escribir `.claude/aidlc/AIDLC.md`** (en español, máximo ~80 líneas), con estas secciones y contenido:
+- [x] **Paso 1: Escribir `.claude/aidlc/AIDLC.md`** (en español, máximo ~80 líneas), con estas secciones y contenido:
 
 1. **Qué es:** el workflow de desarrollo del repositorio; se aplica a toda funcionalidad, corrección, refactor o migración sin que haga falta pedirlo. Al recibir trabajo de desarrollo, decir en una línea qué unidad es y cargar `.claude/aidlc/workflow.md`.
 2. **Los tres gates:** Gate 1 plan de unidad (nada se escribe en `backend/` ni `frontend/` sin aprobación); Gate 2 verificación (correr los comandos de CI y reportar la salida real; esperar a Juan Diego); Gate 3 PR (push y PR solo cuando se pidan). Entre gates no se inventan aprobaciones extra.
@@ -752,7 +754,7 @@ git commit -m "docs: migrate specs and plans to aidlc units"
 6. **Retomar:** si `docs/aidlc/units.md` tiene una unidad `en curso`, leer su plan y retomarla sin volver a preguntar lo que el plan ya registra.
 7. **Trabajo trivial:** conversación sin cambios no lleva gates; un cambio más chico que su plan (typo, versión) se declara en una línea y se hace directo, siempre en rama y por PR.
 
-- [ ] **Paso 2: Escribir `.claude/aidlc/workflow.md`** (en español), con:
+- [x] **Paso 2: Escribir `.claude/aidlc/workflow.md`** (en español), con:
 
 1. **Insumos y su estado:** tabla con `docs/arquitectura.md` y `docs/adr/` (decididos; cambian por ADR), `CLAUDE.md` y `docs/estandares-de-codigo.md` (decididos), `docs/gestion-de-configuracion.md` (decidido), `docs/aidlc/inputs/historias-de-usuario.md` y `docs/aidlc/reglas-de-negocio.md` (**vivos**; cambian por PR `docs/` con registro).
 2. **Documentos de trabajo:** árbol de `docs/aidlc/` y para qué sirve cada uno (roadmap corto, `units.md` como mapa y estado, `units/<unidad>.md` como plan y registro de gates).
@@ -792,7 +794,7 @@ git commit -m "docs: migrate specs and plans to aidlc units"
 8. **Triage de pedidos:** cada issue `pedido` termina en una de cuatro salidas (cambia una regla, historia nueva o ajustada, bug, descartado con motivo); el issue se etiqueta y, si se acepta, se convierte en una unidad.
 9. **Diferencias con el AI-DLC original de CheatSheet:** insumos vivos, roadmap corto, unidades de ajuste, plan de una página.
 
-- [ ] **Paso 3: Commit**
+- [x] **Paso 3: Commit**
 
 ```bash
 git add .claude/aidlc
@@ -809,7 +811,7 @@ git commit -m "docs: add evolutive AI-DLC workflow"
 - Consume: spec, secciones "Gobernanza", "CI y calidad" y "Requisitos evolutivos".
 - Produce: los enlaces que usan `CLAUDE.md` (Tarea 8), los ADRs (Tarea 7) y el PR template (Tarea 9).
 
-- [ ] **Paso 1: `docs/arquitectura.md`**, con:
+- [x] **Paso 1: `docs/arquitectura.md`**, con:
   1. Estilo: monolito modular Django + DRF; una API, una base PostgreSQL; frontend React servido por la misma imagen en producción (resumen de `despliegue-render`). Integrar acá lo que tenga `docs/arquitectura/estructura-repo.md` y luego `git rm` ese archivo.
   2. Árbol del repositorio (el de la sección "Estructura resultante" del spec).
   3. Tabla de apps: nombre, responsabilidad (copiar de "Límites entre módulos" de la unidad `base-del-repositorio`), riesgo dominante, estado (`inventario` implementada; el resto, planificada).
@@ -817,7 +819,7 @@ git commit -m "docs: add evolutive AI-DLC workflow"
   5. Regla crítica de disponibilidad (copiar de la unidad `base-del-repositorio`) y referencia a RN-001…RN-003.
   6. Frontend: `src/app/` (arranque, sesión), `src/features/<app>/` con los mismos nombres de app, `src/shared/` (cliente HTTP, UI común). El frontend no decide reglas de negocio.
 
-- [ ] **Paso 2: `docs/estandares-de-codigo.md`**: versión larga de `CLAUDE.md` §3 y §5. Para cada regla: enunciado, ejemplo correcto, ejemplo incorrecto y **cómo se verifica** (ruff + regla, mypy, CI, pre-commit o revisión). Incluir obligatoriamente:
+- [x] **Paso 2: `docs/estandares-de-codigo.md`**: versión larga de `CLAUDE.md` §3 y §5. Para cada regla: enunciado, ejemplo correcto, ejemplo incorrecto y **cómo se verifica** (ruff + regla, mypy, CI, pre-commit o revisión). Incluir obligatoriamente:
   - Python: tipado completo (`mypy --strict`); `Decimal` para dinero con `quantize(Decimal("0.01"), ROUND_HALF_UP)`; fechas con zona (`DTZ`); sin `print` (`T20`); sin `except Exception` (`BLE`); excepciones específicas; funciones ≤ 50 líneas y complejidad ≤ 10 (`C90`).
   - Django: reglas de negocio en servicios o en el modelo, no en vistas; confirmaciones que dependen de disponibilidad dentro de `transaction.atomic()` con bloqueo de fila; baja lógica, nunca `DELETE` desde la API; toda migración revisada y comprobada en CI.
   - `type: ignore` solo con código y comentario; las decisiones de configuración de ADR-0004 (RUF012 ignorado, migraciones excluidas, excepciones en tests).
@@ -825,7 +827,7 @@ git commit -m "docs: add evolutive AI-DLC workflow"
   - Tests: siempre contra PostgreSQL; sin red; nombre `test_<qué>_<condición>_<resultado>` en código nuevo; marcador `regla`; todo bug empieza con un test que lo reproduce; coverage mínimo.
   - Datos: nunca datos personales reales; nunca credenciales en código.
 
-- [ ] **Paso 3: `docs/gestion-de-configuracion.md`**, con:
+- [x] **Paso 3: `docs/gestion-de-configuracion.md`**, con:
   1. Ramas (tabla del spec) y ciclo `feature` → `develop` → `main`; hotfix.
   2. Commits (formato, tipos, módulos).
   3. Entornos: local (Compose + `backend/.env`), CI (service container), producción (Render desde `main`). Staging: no existe; ver ADR-0002.
@@ -834,9 +836,9 @@ git commit -m "docs: add evolutive AI-DLC workflow"
   6. **Configuración manual en GitHub**, paso a paso: proteger `main` y `develop` (Settings → Branches → Add rule: *Require a pull request before merging*, *Require status checks to pass* con todos los jobs del CI, *Do not allow bypassing*); poner `develop` como rama por defecto para que los PRs apunten ahí; crear las etiquetas `pedido`, `bug`, `regla`, `descartado` con `gh label create <nombre> --color <hex> --description "<texto>"`.
   7. Incorporar el contenido útil de `CONTRIBUTING.md` (trabajo en paralelo, no usar `--force`, qué hacer si falla el push) y luego `git rm CONTRIBUTING.md`.
 
-- [ ] **Paso 4: `docs/README.md`**: tabla con cada documento de `docs/` y para qué sirve (como el `docs/README.md` de CheatSheet), más `operacion/` y `aidlc/`. Aclarar que historias y reglas son insumos vivos.
+- [x] **Paso 4: `docs/README.md`**: tabla con cada documento de `docs/` y para qué sirve (como el `docs/README.md` de CheatSheet), más `operacion/` y `aidlc/`. Aclarar que historias y reglas son insumos vivos.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add -A docs CONTRIBUTING.md
@@ -851,7 +853,7 @@ git commit -m "docs: add architecture, standards and configuration guides"
 **Interfaces:**
 - Consume: spec, sección "ADRs"; borrador de decisiones de la sección "Decisiones de configuración" de abajo.
 
-- [ ] **Paso 1: `docs/adr/0000-plantilla.md`**
+- [x] **Paso 1: `docs/adr/0000-plantilla.md`**
 
 ```markdown
 # ADR-NNNN — <Título en una línea, en imperativo>
@@ -912,9 +914,9 @@ Marcar lo que hay que actualizar y hacerlo en el mismo PR.
 - Documentos, PRs, issues o ADRs relacionados.
 ```
 
-- [ ] **Paso 2: `docs/adr/README.md`**: traducción del README de ADRs de CheatSheet (qué es, cuándo escribir uno, cómo, reglas). Cambios: la lista de "cuándo" agrega "cambiar el modelo de ramas o los entornos" y aclara que **los cambios de reglas de negocio no llevan ADR** salvo que cambien la arquitectura o una regla de `CLAUDE.md`. Índice con los cuatro ADRs, todos `Aceptado`, fecha 2026-10-16.
+- [x] **Paso 2: `docs/adr/README.md`**: traducción del README de ADRs de CheatSheet (qué es, cuándo escribir uno, cómo, reglas). Cambios: la lista de "cuándo" agrega "cambiar el modelo de ramas o los entornos" y aclara que **los cambios de reglas de negocio no llevan ADR** salvo que cambien la arquitectura o una regla de `CLAUDE.md`. Índice con los cuatro ADRs, todos `Aceptado`, fecha 2026-10-16.
 
-- [ ] **Paso 3: escribir los cuatro ADRs** con la plantilla. Contenido mínimo de cada uno:
+- [x] **Paso 3: escribir los cuatro ADRs** con la plantilla. Contenido mínimo de cada uno:
 
   - **0001 — Organizar el repositorio como monolito modular Django.** Contexto: base existente Django + React, equipo chico, CheatSheet como referencia. Decisión: apps de Django como módulos, frontend por `features/<app>`, qué va en la raíz y qué en cada paquete (tabla del CLAUDE.md de CheatSheet adaptada: raíz = `pyproject.toml`, `requirements-dev.txt`, `.pre-commit-config.yaml`, `.gitleaks.toml`, `compose.yaml`, `Dockerfile`, `render.yaml`, `CLAUDE.md`, `README.md`, `docs/`, `.claude/`, `.github/`; paquete = `backend/pyproject.toml`, `backend/.env.example`, `frontend/package.json` y su configuración). Alternativas: hexagonal por bounded context como CheatSheet (descartada: duplica capas sobre el ORM de Django para un equipo chico y requisitos inestables); servicios separados (descartada: sin necesidad de escalar por separado); límites verificados por herramienta como `import-linter` (descartada por ahora; reconsiderar si las apps crecen).
   - **0002 — Usar GitFlow con `develop`.** Decisión: tabla de ramas del spec; `main` despliega a producción. Staging: no se implementa; se describe qué haría falta (servicio web + base en Render conectados a `develop`, un segundo Blueprint o servicio en `render.yaml`, job `deploy-staging` con `needs:` sobre todos los gates y `if: github.ref == 'refs/heads/develop'`, secretos en GitHub) y cuándo conviene (cuando Seba pruebe cambios antes de producción). Alternativa: trunk a `main` (descartada por elección de Juan Diego: separar integración de producción).
@@ -928,7 +930,7 @@ Marcar lo que hay que actualizar y hacerlo en el mismo PR.
 - `security.W005` y `security.W021` silenciados en producción: el dominio es un subdominio de `onrender.com` que no controlamos y el preload de HSTS es difícil de revertir. Se revisa si se usa un dominio propio.
 - Frontend: el umbral de 80 % aplica a líneas y sentencias; funciones y ramas se informan.
 
-- [ ] **Paso 4: Commit**
+- [x] **Paso 4: Commit**
 
 ```bash
 git add docs/adr
@@ -944,7 +946,7 @@ git commit -m "docs: add architecture decision records"
 **Interfaces:**
 - Consume: `.claude/aidlc/AIDLC.md` (Tarea 5), documentos de las Tareas 6 y 7.
 
-- [ ] **Paso 1: Escribir `CLAUDE.md`** con las secciones 0–9 de la sección "Gobernanza → CLAUDE.md" del spec, en español. Requisitos concretos:
+- [x] **Paso 1: Escribir `CLAUDE.md`** con las secciones 0–9 de la sección "Gobernanza → CLAUDE.md" del spec, en español. Requisitos concretos:
   - Primera línea de contenido: el archivo es normativo y gana ante cualquier otra instrucción de estilo; la versión larga está en `docs/estandares-de-codigo.md`.
   - Política de idioma (spec, "Política de idioma").
   - §0 contiene la línea `@.claude/aidlc/AIDLC.md` sola, para que Claude Code la importe.
@@ -965,9 +967,9 @@ git commit -m "feat(inventario): allow capacity override per poster"
   - §8 reglas para agentes (las cinco del spec) y: "nunca bajar un umbral ni excluir archivos para que pase CI".
   - §9 comandos de instalación (`py -3.12 -m venv .venv`, `pip install -r requirements-dev.txt`, `pip install -e backend/`, `pre-commit install`, `npm ci --prefix frontend`) y de verificación.
 
-- [ ] **Paso 2: Reducir `README.md`** a: qué es el sistema (dos oraciones), estado actual (inventario disponible; reservas no implementadas), cómo arrancar (enlace a `docs/operacion/desarrollo-local.md`), cómo se trabaja (enlaces a `CLAUDE.md`, `docs/README.md`, `docs/aidlc/roadmap.md`) y la nota sobre el PDF privado y el documento original de historias fuera de Git.
+- [x] **Paso 2: Reducir `README.md`** a: qué es el sistema (dos oraciones), estado actual (inventario disponible; reservas no implementadas), cómo arrancar (enlace a `docs/operacion/desarrollo-local.md`), cómo se trabaja (enlaces a `CLAUDE.md`, `docs/README.md`, `docs/aidlc/roadmap.md`) y la nota sobre el PDF privado y el documento original de historias fuera de Git.
 
-- [ ] **Paso 3: Commit**
+- [x] **Paso 3: Commit**
 
 ```bash
 git add CLAUDE.md README.md
@@ -980,7 +982,7 @@ git commit -m "docs: add repository constitution"
 - Modificar: `.github/pull_request_template.md`
 - Crear: `.github/ISSUE_TEMPLATE/pedido.yml`, `.github/ISSUE_TEMPLATE/config.yml`
 
-- [ ] **Paso 1: `.github/pull_request_template.md`**
+- [x] **Paso 1: `.github/pull_request_template.md`**
 
 ```markdown
 ## Descripción
@@ -1037,7 +1039,7 @@ Closes #
 <!-- Comandos y resultado, o capturas para cambios de interfaz. -->
 ```
 
-- [ ] **Paso 2: `.github/ISSUE_TEMPLATE/pedido.yml`**
+- [x] **Paso 2: `.github/ISSUE_TEMPLATE/pedido.yml`**
 
 ```yaml
 name: Pedido de Seba
@@ -1092,13 +1094,13 @@ body:
       description: Arrastrá capturas acá si las mandó.
 ```
 
-- [ ] **Paso 3: `.github/ISSUE_TEMPLATE/config.yml`**
+- [x] **Paso 3: `.github/ISSUE_TEMPLATE/config.yml`**
 
 ```yaml
 blank_issues_enabled: true
 ```
 
-- [ ] **Paso 4: Validar el YAML**
+- [x] **Paso 4: Validar el YAML**
 
 ```bash
 python -c "import yaml,sys; [yaml.safe_load(open(p, encoding='utf-8')) for p in sys.argv[1:]]; print('YAML válido')" .github/ISSUE_TEMPLATE/pedido.yml .github/ISSUE_TEMPLATE/config.yml
@@ -1106,7 +1108,7 @@ python -c "import yaml,sys; [yaml.safe_load(open(p, encoding='utf-8')) for p in 
 
 Esperado: `YAML válido`.
 
-- [ ] **Paso 5: Commit**
+- [x] **Paso 5: Commit**
 
 ```bash
 git add .github
@@ -1117,7 +1119,7 @@ git commit -m "docs: add pull request and issue templates"
 
 **Archivos:** ninguno nuevo.
 
-- [ ] **Paso 1: Verificar enlaces relativos en todo el Markdown**
+- [x] **Paso 1: Verificar enlaces relativos en todo el Markdown**
 
 ```bash
 python - <<'EOF'
@@ -1138,7 +1140,7 @@ EOF
 
 Esperado: sin salida y código 0. Corregir cada enlace roto y volver a correr.
 
-- [ ] **Paso 2: Verificar que no quedaron carpetas viejas ni código tocado**
+- [x] **Paso 2: Verificar que no quedaron carpetas viejas ni código tocado**
 
 ```bash
 ls docs
@@ -1226,6 +1228,7 @@ select = [
     "BLE",      # sin except Exception
     "RUF",      # reglas propias de ruff
     "DJ",       # Django
+    "PGH",       # sin noqa ni type: ignore generales (ADR-0004)
 ]
 ignore = [
     "ANN401",   # Any solo en los bordes del sistema
@@ -1254,6 +1257,7 @@ mypy_path = "backend"
 explicit_package_bases = true
 plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
 exclude = ['/migrations/']
+enable_error_code = ["ignore-without-code"]
 
 [[tool.mypy.overrides]]
 module = ["tests.*"]
@@ -2129,3 +2133,9 @@ gh pr create --base main --head develop --title "chore: release repository restr
 ```
 
 Render despliega `main` solo con los checks en verde (`autoDeployTrigger: checksPass`).
+
+## Registro de gates
+
+- Gate 1 (plan): 2026-10-17 — aprobado por Juan Diego
+- Gate 2 (verificación): pendiente
+- Gate 3 (PR): pendiente

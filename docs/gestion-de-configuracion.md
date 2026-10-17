@@ -18,6 +18,7 @@ Ramas, commits, entornos, credenciales y CI. Es la versión larga de las seccion
 - `<descripcion>` va en kebab-case.
 - Módulos válidos: `usuarios`, `inventario`, `clientes`, `campanias`, `reservas`, `costos`, `facturacion`, `auditoria`, `frontend`, `infra` y `docs`.
 - `main` es producción y despliega en Render; `develop` integra y solo corre CI.
+- Los PRs de release (`develop` → `main`) y de sincronización (`chore/infra-sincronizar-main-…` → `develop`) se integran con merge commit, nunca con squash, para que las ramas no diverjan.
 
 ### Ciclo
 

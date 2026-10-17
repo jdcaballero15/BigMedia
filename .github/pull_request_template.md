@@ -21,16 +21,19 @@ Closes #
 ## Reglas de negocio
 
 - Reglas que este PR aplica o cambia: <!-- RN-xxx, o "ninguna" -->
-- [ ] Si cambió una regla, se actualizó `docs/aidlc/reglas-de-negocio.md` (y el registro de cambios si cambió una historia)
+- [ ] Si es un PR `docs/historias-…` que cambia una historia o una regla, hay fila en `docs/aidlc/inputs/registro-de-cambios.md`
+- [ ] Si es un PR de código que aplica una regla, solo se actualizó su columna "Dónde vive" en `docs/aidlc/reglas-de-negocio.md` (el valor o el estado de una regla cambian en un PR `docs/historias-…`)
 - [ ] Los tests nuevos que verifican una regla llevan `@pytest.mark.regla("RN-xxx")`
 
 ## Definition of Done
 
 - [ ] `ruff format --check . && ruff check .`
 - [ ] `mypy backend`
-- [ ] `pytest` en verde y coverage ≥ 80 %
+- [ ] `pytest --cov` en verde y coverage ≥ 80 %
+- [ ] Ningún test salteado
 - [ ] `python backend/manage.py makemigrations --check --dry-run`
 - [ ] Frontend: `format:check`, `lint`, `typecheck`, `test:coverage`, `build`
+- [ ] gitleaks sin hallazgos
 - [ ] La rama sigue el formato y apunta a la base correcta
 - [ ] Los commits siguen Conventional Commits
 

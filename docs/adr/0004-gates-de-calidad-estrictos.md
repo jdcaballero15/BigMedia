@@ -27,7 +27,7 @@ Hasta ahora el código existente no tenía verificación automática de formato,
 ### Decisiones de configuración
 
 - **`RUF012` ignorado.** Django y DRF declaran listas mutables como atributos de clase (`Meta.ordering`, `fields`, `permission_classes`). Pasarlas a tuplas cambia las opciones de los modelos y genera migraciones; anotarlas con `ClassVar` agrega ruido.
-- **Migraciones excluidas de ruff y mypy.** Es código generado y el único archivo excluido de las herramientas.
+- **Migraciones excluidas de ruff y mypy.** Es código generado y el único código propio excluido de ruff y mypy.
 - **Excepciones en tests.** Se permiten `S101`, `S105`, `S106` y `S603` (subprocesos con `sys.executable` en los tests de settings de producción), y las anotaciones son opcionales. mypy relaja `disallow_untyped_defs`, `disallow_incomplete_defs` y `disallow_untyped_calls` solo en `tests.*`.
 - **`security.W005` y `security.W021` silenciados solo en producción.** El dominio es un subdominio de `onrender.com` que no controlamos y el preload de HSTS es difícil de revertir. Se revisa si se usa un dominio propio.
 - **`PGH` en ruff y `ignore-without-code` en mypy.** Ruff suma `PGH003` (`type: ignore` genérico) y `PGH004` (`noqa` genérico); mypy habilita `enable_error_code = ["ignore-without-code"]`, que `strict` no incluye. Así ningún `type: ignore` queda sin código y ningún `# noqa` es general.
