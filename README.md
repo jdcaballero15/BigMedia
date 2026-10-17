@@ -1,30 +1,21 @@
 # Big Media Argentina
 
-Monorepo del sistema de inventario, campañas y reservas de publicidad de vía pública.
+Sistema de inventario, campañas y reservas de publicidad de vía pública. Es un monorepo con una API Django REST Framework sobre PostgreSQL y una aplicación web React + TypeScript.
 
 ## Estado
 
-La base de desarrollo contiene una aplicación React + TypeScript, una API Django REST Framework y PostgreSQL mediante Docker Compose. El primer módulo funcional permite iniciar sesión y administrar el inventario de carteles y sus catálogos. Las campañas y reservas siguen pendientes; esta versión **no permite confirmar reservas ni calcula disponibilidad**.
+El inventario está disponible: inicio de sesión y administración de carteles y sus catálogos. Las campañas y las reservas **no están implementadas**: esta versión no permite confirmar reservas ni calcula disponibilidad.
 
-## Carpetas
+## Cómo arrancar
 
-- `frontend/`: aplicación web y pruebas de interfaz.
-- `backend/`: API, configuración de Django y pruebas.
-- `docs/aidlc/inputs/`: historias de usuario vigentes.
-- `docs/superpowers/`: diseño y plan de la primera entrega.
-- `docs/operacion/`: pasos para ejecutar el proyecto.
-- `docs/arquitectura.md`: organización del monorepo y límites entre módulos.
-- `.github/`: controles automáticos para los PR.
-- `analytics/`: futuras vistas SQL y archivos de Power BI.
+Seguí [desarrollo local](docs/operacion/desarrollo-local.md) para instalar dependencias y ejecutar base, API y frontend. Abrí la carpeta raíz `bigMedia` en VS Code. Para la versión online, [despliegue en Render](docs/operacion/despliegue-render.md).
 
-Abrí la carpeta raíz `bigMedia` en VS Code. Seguí [desarrollo local](docs/operacion/desarrollo-local.md) para instalar dependencias y ejecutar los tres componentes.
+## Cómo se trabaja
 
-Todo cambio se integra a `main` mediante Pull Request. Consultá el [flujo de trabajo](docs/gestion-de-configuracion.md) antes de comenzar una tarea.
+- [`CLAUDE.md`](CLAUDE.md): reglas del repositorio (ramas GitFlow, commits, estándares y Definition of Done). Los cambios se integran por Pull Request a `develop`; `main` recibe solo releases y hotfixes.
+- [`docs/README.md`](docs/README.md): índice de la documentación.
+- [`docs/aidlc/roadmap.md`](docs/aidlc/roadmap.md): qué se está haciendo y qué viene.
 
-Para preparar la versión online, seguí [despliegue en Render](docs/operacion/despliegue-render.md). El Blueprint del repositorio define recursos pagos, pero **todavía no están creados**. Consultá también la [arquitectura del repositorio](docs/arquitectura.md).
+## Material fuera de Git
 
-## Reglas de trabajo
-
-La API será la autoridad para confirmar reservas. La disponibilidad se protegerá con transacciones en PostgreSQL y pruebas de concurrencia. Las decisiones pendientes de Seba y Administración deben registrarse en `docs/aidlc/reglas-de-negocio.md` antes de cerrar las reglas afectadas. No se cargan datos personales reales en desarrollo o pruebas.
-
-El PDF de orden de compra que está en la carpeta local es una referencia privada y no forma parte del repositorio. Las historias originales siguen allí; Git guarda una copia en `docs/aidlc/inputs/`.
+El PDF de orden de compra de la carpeta local es una referencia privada y no forma parte del repositorio. Las historias originales también siguen fuera de Git; el repositorio guarda una copia en `docs/aidlc/inputs/`.
