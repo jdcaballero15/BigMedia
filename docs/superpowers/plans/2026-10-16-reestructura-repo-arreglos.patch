@@ -371,18 +371,6 @@ index 1f45910..41f70e4 100644
 +        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
      }
  DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-diff --git a/backend/config/urls.py b/backend/config/urls.py
-index ce06a83..89edb70 100644
---- a/backend/config/urls.py
-+++ b/backend/config/urls.py
-@@ -7,7 +7,6 @@ from django.views.generic import TemplateView
- from config.auth_views import login_view, logout_view, me
- from config.health import health
- 
--
- urlpatterns = [
-     path("admin/", admin.site.urls),
-     path("api/health/", health, name="health"),
 diff --git a/backend/config/wsgi.py b/backend/config/wsgi.py
 index e2fbd58..27c0377 100644
 --- a/backend/config/wsgi.py
@@ -423,17 +411,38 @@ index 8e7ac79..f1aba79 100644
 +if __name__ == "__main__":
      main()
 diff --git a/backend/tests/conftest.py b/backend/tests/conftest.py
-index 7e6ee6a..2c596c1 100644
+index 7e6ee6a..2b44129 100644
 --- a/backend/tests/conftest.py
 +++ b/backend/tests/conftest.py
-@@ -1,4 +1,5 @@
+@@ -1,14 +1,34 @@
++import psycopg
  import pytest
-+from django.db import OperationalError, connection
++from django.conf import settings
  from django.contrib.auth import get_user_model
  from django.contrib.auth.models import Group
  from django.test import Client
-@@ -6,10 +7,19 @@ from django.test import Client
  
+ 
++def pytest_sessionstart(session: pytest.Session) -> None:
++    """Stop the run when PostgreSQL is unreachable instead of failing test by test."""
++    database = settings.DATABASES["default"]
++    try:
++        psycopg.connect(
++            dbname=database["NAME"],
++            user=database["USER"],
++            password=database["PASSWORD"],
++            host=database["HOST"],
++            port=database["PORT"],
++            connect_timeout=3,
++        ).close()
++    except psycopg.OperationalError as error:
++        pytest.exit(
++            "PostgreSQL no está disponible. Levantalo con `docker compose up -d db` "
++            f"y revisá backend/.env. Detalle: {error}",
++            returncode=3,
++        )
++
++
  @pytest.fixture
  def operativo_client(db):
 -    user = get_user_model().objects.create_user(
@@ -443,18 +452,6 @@ index 7e6ee6a..2c596c1 100644
      user.groups.add(Group.objects.get(name="Operativo"))
      client = Client()
      client.force_login(user)
-     return client
-+
-+
-+def pytest_sessionstart(session: pytest.Session) -> None:
-+    try:
-+        connection.ensure_connection()
-+    except OperationalError as error:
-+        pytest.exit(
-+            "PostgreSQL no está disponible. Levantalo con `docker compose up -d db` "
-+            f"y revisá backend/.env. Detalle: {error}",
-+            returncode=3,
-+        )
 diff --git a/backend/tests/test_carteles.py b/backend/tests/test_carteles.py
 index 9f951d6..89421c2 100644
 --- a/backend/tests/test_carteles.py
@@ -717,51 +714,64 @@ index 5358c64..8fbc1f4 100644
  ROOT = Path(__file__).resolve().parents[2]
  
  
-diff --git a/pyproject.toml b/pyproject.toml
+diff --git a/frontend/src/app/Login.test.tsx b/frontend/src/app/Login.test.tsx
 new file mode 100644
-index 0000000..af1ae10
+index 0000000..3a06157
 --- /dev/null
-+++ b/pyproject.toml
-@@ -0,0 +1,42 @@
-+[tool.ruff]
-+target-version = "py312"
-+line-length = 100
-+extend-exclude = ["frontend/node_modules", "**/migrations"]
++++ b/frontend/src/app/Login.test.tsx
+@@ -0,0 +1,55 @@
++import { afterEach, expect, test, vi } from 'vitest'
++import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
++import Login from './Login'
 +
-+[tool.ruff.lint]
-+select = ["E","W","F","I","UP","B","S","ANN","PT","C90","SIM","RET","ARG","PTH","DTZ","T20","BLE","RUF","DJ"]
-+ignore = ["ANN401","E501","RUF012"]
++afterEach(() => {
++  cleanup()
++  vi.unstubAllGlobals()
++})
 +
-+[tool.ruff.lint.per-file-ignores]
-+"**/tests/**/*.py" = ["S101","S105","S106","S603","ANN201","ANN001","ARG001"]
-+"**/migrations/*.py" = ["E501","RUF012","ANN"]
++function completarYEnviar(usuario: string, clave: string) {
++  fireEvent.change(screen.getByLabelText('Usuario'), { target: { value: usuario } })
++  fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: clave } })
++  fireEvent.click(screen.getByRole('button', { name: 'Ingresar' }))
++}
 +
-+[tool.mypy]
-+python_version = "3.12"
-+strict = true
-+warn_unreachable = true
-+mypy_path = "backend"
-+explicit_package_bases = true
-+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
-+exclude = ['/migrations/']
++test('envía las credenciales y avisa el usuario que ingresó', async () => {
++  const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ username: 'seba' }) })
++  vi.stubGlobal('fetch', fetchMock)
++  const onLogin = vi.fn()
 +
-+[[tool.mypy.overrides]]
-+module = ["tests.*"]
-+disallow_untyped_defs = false
-+disallow_incomplete_defs = false
-+disallow_untyped_calls = false
++  render(<Login onLogin={onLogin} />)
++  completarYEnviar('seba', 'clave-de-prueba')
 +
-+[[tool.mypy.overrides]]
-+module = ["dj_database_url.*"]
-+ignore_missing_imports = true
++  await waitFor(() => expect(onLogin).toHaveBeenCalledWith('seba'))
++  const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
++  expect(url).toBe('/api/auth/login/')
++  expect(JSON.parse(init.body as string)).toEqual({ username: 'seba', password: 'clave-de-prueba' })
++})
 +
-+[tool.django-stubs]
-+django_settings_module = "config.settings"
++test('muestra el error de la API cuando las credenciales son incorrectas', async () => {
++  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
++    ok: false, status: 401, json: async () => ({ detail: 'Usuario o contraseña incorrectos.' }),
++  }))
++  const onLogin = vi.fn()
 +
-+[tool.pytest.ini_options]
-+DJANGO_SETTINGS_MODULE = "config.settings"
-+pythonpath = ["backend"]
-+testpaths = ["backend/tests"]
-+python_files = ["test_*.py"]
-+addopts = ["--strict-markers", "--strict-config", "-ra"]
-+markers = ["regla(id): verifica la regla de negocio indicada (RN-xxx) de docs/aidlc/reglas-de-negocio.md"]
++  render(<Login onLogin={onLogin} />)
++  completarYEnviar('seba', 'mala')
++
++  expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Usuario o contraseña incorrectos.')
++  expect(onLogin).not.toHaveBeenCalled()
++  expect(screen.getByRole('button', { name: 'Ingresar' })).toHaveProperty('disabled', false)
++})
++
++test('deshabilita el botón mientras espera la respuesta', async () => {
++  let responder: (value: unknown) => void = () => {}
++  vi.stubGlobal('fetch', vi.fn(() => new Promise((resolve) => { responder = resolve })))
++
++  render(<Login onLogin={vi.fn()} />)
++  completarYEnviar('seba', 'clave-de-prueba')
++
++  const boton = await screen.findByRole('button', { name: 'Ingresando…' })
++  expect(boton).toHaveProperty('disabled', true)
++  responder({ ok: true, status: 200, json: async () => ({ username: 'seba' }) })
++  await screen.findByRole('button', { name: 'Ingresar' })
++})
