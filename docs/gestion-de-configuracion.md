@@ -29,7 +29,7 @@ Ramas, commits, entornos, credenciales y CI. Es la versión larga de las seccion
 
 ### Hotfix
 
-Para una emergencia en producción: rama `hotfix/<descripcion>` desde `main`, PR hacia `main` y, una vez integrado, merge de `main` a `develop` (por PR) para que no se pierda el arreglo. Un hotfix también lleva su test que reproduce el error.
+Para una emergencia en producción: rama `hotfix/<descripcion>` desde `main`, PR hacia `main` y, una vez integrado, creá `chore/infra-sincronizar-main-<AAAAMMDD>` desde `main` y abrí un PR hacia `develop` para que no se pierda el arreglo. (El job `convenciones` rechaza PRs de `main` o de `hotfix/*` hacia `develop`, por eso la sincronización va en una rama `chore/`.) Un hotfix también lleva su test que reproduce el error.
 
 ### Trabajo en paralelo y push rechazado
 

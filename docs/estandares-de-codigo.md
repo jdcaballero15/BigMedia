@@ -32,7 +32,7 @@ valor = campo.get()  # type: ignore[attr-defined]  # el stub de DRF no declara g
 valor = campo.get()  # type: ignore
 ```
 
-Verificación: mypy (`warn_unused_ignores` y `ignore-without-code`) y revisión del PR. Tampoco se usa `# noqa` general.
+Verificación: mypy con `ignore-without-code` (habilitado con `enable_error_code`, porque `strict` no lo incluye) y ruff `PGH003` (`type: ignore` genérico). Tampoco se usa `# noqa` general: lo verifica ruff `PGH004`.
 
 ### Dinero con `Decimal`
 
@@ -106,7 +106,7 @@ Verificación: ruff `C90` (`max-complexity = 10`). El límite de 50 líneas lo v
 
 ### Otras reglas de ruff
 
-Se aplican `E`, `W`, `F`, `I`, `UP`, `B`, `S`, `ANN`, `PT`, `C90`, `SIM`, `RET`, `ARG`, `PTH`, `DTZ`, `T20`, `BLE`, `RUF` y `DJ`, con línea de 100 caracteres y Python 3.12. Verificación: `ruff format --check` y `ruff check` en el job `lint-python` y en pre-commit.
+Se aplican `E`, `W`, `F`, `I`, `UP`, `B`, `S`, `ANN`, `PT`, `C90`, `SIM`, `RET`, `ARG`, `PTH`, `DTZ`, `T20`, `BLE`, `RUF`, `DJ` y `PGH`, con línea de 100 caracteres y Python 3.12. Verificación: `ruff format --check` y `ruff check` en el job `lint-python` y en pre-commit.
 
 ## Django
 
@@ -177,6 +177,7 @@ Las herramientas están configuradas con estas decisiones (detalle y alternativa
 - **Migraciones excluidas de ruff y mypy.** Es código generado y el único archivo excluido de las herramientas.
 - **Excepciones en tests.** Se permiten `S101`, `S105`, `S106` y `S603` (subprocesos con `sys.executable` en los tests de settings de producción), y las anotaciones son opcionales. mypy relaja `disallow_untyped_defs`, `disallow_incomplete_defs` y `disallow_untyped_calls` solo en `tests.*`.
 - **`security.W005` y `security.W021` silenciados solo en producción.** El dominio es un subdominio de `onrender.com` que no controlamos y el preload de HSTS es difícil de revertir. Se revisa si se usa un dominio propio.
+- **`PGH` en ruff y `ignore-without-code` en mypy.** Ruff suma la familia `PGH` (`PGH003` para `type: ignore` genérico, `PGH004` para `noqa` genérico) y mypy habilita `enable_error_code = ["ignore-without-code"]`, que `strict` no incluye.
 - **Frontend: el umbral de 80 % aplica a líneas y sentencias.** Funciones y ramas se informan sin umbral.
 
 ## TypeScript
@@ -193,7 +194,7 @@ function total(items: Item[]): number { ... }
 function total(items: any) { ... }   // @ts-ignore arriba
 ```
 
-Verificación: job `frontend` del CI (`prettier --check`, oxlint, `tsc --noEmit`) y pre-commit.
+Verificación: Prettier y oxlint en el job `frontend` del CI; `tsc --noEmit` con `strict` detecta los `any` implícitos. Los `any` explícitos y los `@ts-ignore` no los detecta ninguna herramienta: los verifica la revisión del PR.
 
 ## Tests
 
