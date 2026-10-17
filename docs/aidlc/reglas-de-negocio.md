@@ -1,8 +1,20 @@
-# Decisiones pendientes para consultar con Seba y Ale
+# Reglas de negocio
 
-15 de octubre de 2026 · Fuente: [historias de usuario](../requisitos/historias-de-usuario.md)
+Catálogo vivo de las reglas que el sistema aplica, con su estado. Cuando una regla cambia, se
+actualiza acá, en la historia afectada y en el registro de cambios
+([`inputs/registro-de-cambios.md`](inputs/registro-de-cambios.md)), en el mismo PR.
 
-Este documento ordena por prioridad las decisiones de negocio que todavía no están cerradas en las historias de usuario. Para cada una indica qué parte del sistema queda bloqueada, qué default se usa mientras tanto y dónde anotar la respuesta.
+- **Estados:** `pendiente` (sin respuesta ni valor usable) · `provisoria` (se usa un valor razonable
+  hasta que Big Media confirme) · `confirmada` · `reemplazada por RN-xxx`.
+- **IDs:** nunca se reutilizan. Las reglas que vienen de las decisiones del 15/10 conservan su
+  número viejo entre paréntesis (D-xx).
+- **Tests:** los que verifican una regla llevan `@pytest.mark.regla("RN-xxx")`.
+  `pytest -m regla` los lista todos.
+- Lo que está en `provisoria` se implementa, en lo posible, como parámetro configurable (HU-001).
+
+15 de octubre de 2026 · Fuente: [historias de usuario](inputs/historias-de-usuario.md)
+
+Este catálogo ordena por prioridad las reglas de negocio que nacieron como decisiones pendientes en las historias de usuario. Para cada una indica qué parte del sistema queda bloqueada, qué default se usa mientras tanto y dónde anotar la respuesta.
 
 Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa lista numerada no está en el repositorio; acá se las nombra por tema y se conserva el número entre paréntesis cuando la historia lo menciona.
 
@@ -14,32 +26,42 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 
 ## Resumen
 
-| Nº | Decisión | Prioridad | Responde | Bloquea | Default mientras tanto |
-| --- | --- | --- | --- | --- | --- |
-| D-01 | Día límite entre reservas (día de borde) | P1 | Seba y Ale | Validación de solapamiento, pruebas, calendario | Inclusivo: el día compartido se pisa |
-| D-02 | ¿Una reserva Pendiente bloquea a otras? | P1 | Seba y Ale | Validación, selección de carteles, confirmación en bloque | Ocupa cupo solo visualmente; bloqueo duro al confirmar |
-| D-03 | Cómo se cuentan los cupos dentro de un rango | P1 | Seba y Ale | Validación en carteles con cupos, ocupación | Se cuentan todas las reservas que tocan el rango |
-| D-04 | Cupos de los LED | P1 | Seba y Ale | Modelo de cartel y reserva, validación, reportes | Capacidad editable por cartel; una reserva = un cupo |
-| D-05 | Slots de los séxtuples | P1 | Seba y Ale | Identidad del cartel, importación, validación | Capacidad = slots relevados; una reserva = un slot genérico |
-| D-06 | Reglas de cancelación | P1 | Seba y Ale | Ciclo de vida de reserva y campaña, reportes de ingresos | Cancelar siempre se permite y libera el cupo |
-| D-07 | Propiedad de los carteles | P1 | Gonzalo y Diego, con datos de Seba y Ale | Modelo de cartel, costos, rentabilidad, importación | Costos solo de impresión y fijación |
-| D-08 | Lista de zonas (departamentos) | P2 | Seba y Ale | Importación del inventario, alta de carteles | Lista vacía y administrable |
-| D-09 | Contenido real de los relevamientos | P2 | Seba y Ale | Importación del inventario | Sin carga hasta tener los archivos |
-| D-10 | Estados físicos y reservas de carteles fuera de servicio | P2 | Seba y Ale | Estados del cartel, alertas, bloqueo de reservas | Alertar y bloquear reservas nuevas |
-| D-11 | ¿Se puede confirmar una campaña incompleta? | P2 | Seba y Ale | Confirmación de campaña, reportes | Se exigen cliente, marca y fechas |
-| D-12 | Reservas con fechas pasadas | P2 | Seba y Ale | Importación histórica, alta manual | No se permite a mano; histórico solo por importación |
-| D-13 | ¿Hace falta la vista de disponibilidad a futuro? | P3 | Seba y Ale | Calendario de disponibilidad | Se construye como Should |
-| D-14 | Cambio de pagador de una marca | P3 | Seba y Ale | Cliente que factura de la campaña | Se deduce siempre de la marca |
-| D-15 | Intermediario formal y sus contactos | P3 | Seba y Ale | Clientes y contactos | Tipo aparte con contactos múltiples |
-| D-16 | Otras preguntas menores | P3 | Seba y Ale | Ver detalle | Ver detalle |
+| ID | Regla | Estado | Valor actual | Origen | HUs | Dónde vive |
+| --- | --- | --- | --- | --- | --- | --- |
+| RN-001 | Día límite entre reservas | `provisoria` | Inclusivo: el día compartido se pisa | Documento de historias (decisión D-01 del 15/10/2026) | HU-001, HU-031, HU-033, HU-040, HU-042, HU-051 | Sin implementar |
+| RN-002 | ¿Una reserva Pendiente bloquea a otras? | `provisoria` | Ocupa cupo solo visualmente; bloqueo duro al confirmar | Documento de historias (decisión D-02 del 15/10/2026) | HU-001, HU-031, HU-033, HU-041, HU-042, HU-056, HU-059 | Sin implementar |
+| RN-003 | Cómo se cuentan los cupos dentro de un rango | `provisoria` | Se cuentan todas las reservas que tocan el rango | Documento de historias (decisión D-03 del 15/10/2026) | HU-031, HU-032, HU-034, HU-040, HU-042, HU-056 | Sin implementar |
+| RN-004 | Cupos de los LED | `provisoria` | Capacidad editable por cartel; una reserva = un cupo | Documento de historias (decisión D-04 del 15/10/2026) | HU-011, HU-028, HU-031, HU-034, HU-040, HU-048, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
+| RN-005 | Slots de los séxtuples | `provisoria` | Capacidad = slots relevados; una reserva = un slot genérico | Documento de historias (decisión D-05 del 15/10/2026) | HU-010, HU-011, HU-015, HU-030, HU-031, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
+| RN-006 | Reglas de cancelación | `provisoria` | Cancelar siempre se permite y libera el cupo | Documento de historias (decisión D-06 del 15/10/2026) | HU-024, HU-035, HU-037, HU-045, HU-051, HU-058, HU-060 | Sin implementar |
+| RN-007 | Propiedad de los carteles | `provisoria` | Costos solo de impresión y fijación | Documento de historias (decisión D-07 del 15/10/2026) | HU-010, HU-015, HU-043, HU-044, HU-046 | Sin implementar |
+| RN-008 | Lista de zonas (departamentos) | `confirmada` | Los nueve departamentos (Ciudad, Godoy Cruz, Maipú, Luján de Cuyo, Guaymallén, Las Heras, San Martín, Rivadavia, San Carlos) | Juan Diego, 15/10/2026, diseño de inventario | HU-010, HU-013, HU-014, HU-015, HU-048 | Migración `inventario/0002_catalogos_iniciales`, catálogo editable |
+| RN-009 | Contenido real de los relevamientos | `pendiente` | Sin carga hasta tener los archivos | Documento de historias (decisión D-09 del 15/10/2026) | HU-015 | Sin implementar |
+| RN-010 | Estados físicos y carteles fuera de servicio | `provisoria` | Alertar y bloquear reservas nuevas | Documento de historias (decisión D-10 del 15/10/2026) | HU-012, HU-039 | Modelo `EstadoCartel`, migración `0002_catalogos_iniciales` (los cinco estados) |
+| RN-011 | ¿Se puede confirmar una campaña incompleta? | `provisoria` | Se exigen cliente, marca y fechas | Documento de historias (decisión D-11 del 15/10/2026) | HU-024, HU-030, HU-049, HU-059 | Sin implementar |
+| RN-012 | Reservas con fechas pasadas | `provisoria` | No se permite a mano; histórico solo por importación | Documento de historias (decisión D-12 del 15/10/2026) | HU-038, HU-048, HU-049 | Sin implementar |
+| RN-013 | Vista de disponibilidad a futuro | `provisoria` | Se construye como Should | Documento de historias (decisión D-13 del 15/10/2026) | HU-041, HU-042 | Sin implementar |
+| RN-014 | Cambio de pagador de una marca | `provisoria` | Se deduce siempre de la marca | Documento de historias (decisión D-14 del 15/10/2026) | HU-027 | Sin implementar |
+| RN-015 | Intermediario formal y sus contactos | `provisoria` | Tipo aparte con contactos múltiples | Documento de historias (decisión D-15 del 15/10/2026) | HU-016, HU-068 | Sin implementar |
+| RN-016 | Grupo económico | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-017, HU-022, HU-050 | Sin implementar |
+| RN-017 | Cambio de razón social de un cliente directo | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-018 | Sin implementar |
+| RN-018 | Interacciones antes de la campaña | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-020 | Sin implementar |
+| RN-019 | Dimensiones estándar por formato | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-009 | Sin implementar |
+| RN-020 | Formatos sin relevamiento | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-015 | Sin implementar |
+| RN-021 | Usuarios | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-004, HU-005 | Sin implementar |
+| RN-022 | Administración usa el sistema o recibe planilla | `provisoria` | Recibe planilla y avisos por correo; Seba carga el número de factura | Documento de historias (bloque Administración del 15/10/2026) | HU-065, HU-066, HU-067 | Sin implementar |
+| RN-023 | Alícuotas de IVA y listas Gob/Priv y F/V | `provisoria` | 21% por defecto, editable; listas administrables | Documento de historias (bloque Administración del 15/10/2026) | HU-060, HU-061 | Sin implementar |
+| RN-024 | Columnas de la planilla de facturación | `provisoria` | Se reproducen tal cual; las nuevas van al final | Documento de historias (bloque Administración del 15/10/2026) | HU-066 | Sin implementar |
+| RN-025 | Envío de ítems completos con incompletos en el mes | `provisoria` | Sí; los incompletos se listan con lo que les falta | Documento de historias (bloque Administración del 15/10/2026) | HU-066 | Sin implementar |
+| RN-026 | Corrección de ítems ya facturados | `pendiente` | Sin definir | Documento de historias (bloque Administración del 15/10/2026) | HU-067 | Sin implementar |
 
-Las preguntas que corresponden a Administración (facturación) están al final, en un bloque aparte.
+Las reglas de Administración (facturación) están al final, en un bloque aparte.
 
 ---
 
 ## P1 — Bloquean el núcleo
 
-### D-01 Día límite entre reservas (día de borde)
+### RN-001 Día límite entre reservas (día de borde) (D-01)
 
 **Pregunta.** Si una reserva termina el 15 y la siguiente empieza el 15 en el mismo cartel, ¿chocan o no?
 
@@ -69,7 +91,7 @@ Aunque sea configurable, la respuesta define el valor inicial con el que se carg
 
 **Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
-### D-02 ¿Una reserva Pendiente bloquea a otras?
+### RN-002 ¿Una reserva Pendiente bloquea a otras? (D-02)
 
 **Pregunta.** Si dos campañas cotizan el mismo cartel en las mismas fechas, ¿la primera que lo cargó lo tiene asegurado o gana la primera que confirma?
 
@@ -90,7 +112,7 @@ Aunque sea configurable, la respuesta define el valor inicial con el que se carg
 
 **Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
-### D-03 Cómo se cuentan los cupos dentro de un rango
+### RN-003 Cómo se cuentan los cupos dentro de un rango (D-03)
 
 Esta pregunta surge de leer HU-031 y no figura como pendiente en las historias. Solo importa en carteles con más de un cupo (LED y séxtuples).
 
@@ -112,7 +134,7 @@ Con capacidad 1 las dos opciones dan el mismo resultado, así que no afecta a lo
 
 **Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
-### D-04 Cupos de los LED
+### RN-004 Cupos de los LED (D-04)
 
 **Preguntas.**
 
@@ -136,7 +158,7 @@ Con capacidad 1 las dos opciones dan el mismo resultado, así que no afecta a lo
 
 **Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
-### D-05 Slots de los séxtuples
+### RN-005 Slots de los séxtuples (D-05)
 
 **Preguntas.**
 
@@ -152,14 +174,14 @@ Con capacidad 1 las dos opciones dan el mismo resultado, así que no afecta a lo
 
 **Bloquea.**
 
-- Clave para detectar duplicados en la importación de los 226 séxtuples (HU-015, ver [importación](../importacion/README.md)).
+- Clave para detectar duplicados en la importación de los 226 séxtuples (HU-015, ver [importación](inputs/importacion/README.md)).
 - Nombre legible del cartel (HU-010) y de la reserva (HU-030).
 - Reducción de capacidad con reservas a futuro (HU-011).
 - Validación (HU-031) y creación en bloque (HU-057).
 
 **Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
-### D-06 Reglas de cancelación
+### RN-006 Reglas de cancelación (D-06)
 
 Hoy las historias dicen que cancelar siempre se permite, no borra y libera el cupo (HU-037). Faltan varias reglas que cambian datos y reportes.
 
@@ -185,7 +207,7 @@ Hoy las historias dicen que cancelar siempre se permite, no borra y libera el cu
 
 **Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
-### D-07 Propiedad de los carteles
+### RN-007 Propiedad de los carteles (D-07)
 
 Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pueden adelantar el dato práctico: qué carteles son de terceros.
 
@@ -210,7 +232,7 @@ Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pue
 
 ## P2 — Bloquean una historia Must o la carga inicial
 
-### D-08 Lista de zonas (departamentos)
+### RN-008 Lista de zonas (departamentos) (D-08)
 
 **Pregunta.** ¿Cuáles son los 9 departamentos de Mendoza en los que hay carteles, escritos exactamente como los usan? ¿Hace falta una zona más fina, como un barrio o un corredor?
 
@@ -218,9 +240,9 @@ Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pue
 
 **Default.** Lista vacía y administrable.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** Los nueve departamentos: Ciudad, Godoy Cruz, Maipú, Luján de Cuyo, Guaymallén, Las Heras, San Martín, Rivadavia y San Carlos. Se cargan como catálogo editable · **Fecha:** 15/10/2026 · **Quién respondió:** Juan Diego, en el diseño de inventario
 
-### D-09 Contenido real de los relevamientos
+### RN-009 Contenido real de los relevamientos (D-09)
 
 **Preguntas.**
 
@@ -230,13 +252,13 @@ Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pue
 4. ¿Las planillas tienen tarifa de lista, proveedor o foto, o eso se completa después?
 5. ¿Hay carteles que figuran dos veces a propósito, por ejemplo dos caras en la misma dirección?
 
-**Bloquea.** La transformación a la [plantilla CSV](../importacion/README.md) y las reglas de duplicados (HU-015).
+**Bloquea.** La transformación a la [plantilla CSV](inputs/importacion/README.md) y las reglas de duplicados (HU-015).
 
 **Default.** No se carga nada hasta tener los archivos. No se inventan datos.
 
 **Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
-### D-10 Estados físicos y carteles fuera de servicio (preguntas 9 y 18)
+### RN-010 Estados físicos y carteles fuera de servicio (preguntas 9 y 18) (D-10)
 
 **Preguntas.**
 
@@ -250,7 +272,7 @@ Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pue
 
 **Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
-### D-11 ¿Se puede confirmar una campaña incompleta?
+### RN-011 ¿Se puede confirmar una campaña incompleta? (D-11)
 
 **Pregunta.** ¿Alguna vez confirman una campaña sin saber todavía la marca o quién factura?
 
@@ -260,7 +282,7 @@ Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pue
 
 **Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
-### D-12 Reservas con fechas pasadas (preguntas 8 y 11)
+### RN-012 Reservas con fechas pasadas (preguntas 8 y 11) (D-12)
 
 **Preguntas.**
 
@@ -277,26 +299,73 @@ Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pue
 
 ## P3 — Ajustan detalles
 
-### D-13 Vista de disponibilidad a futuro (pregunta 20)
+### RN-013 Vista de disponibilidad a futuro (pregunta 20) (D-13)
 
-¿Les alcanza con ver qué está libre hoy (HU-041) o necesitan el calendario de meses (HU-042)? Si alcanza la vista actual, HU-042 baja a Could. Afecta el [recorrido de UX](../ux/recorrido-disponibilidad-y-reservas.md), que hoy usa el calendario como punto de consulta.
+¿Les alcanza con ver qué está libre hoy (HU-041) o necesitan el calendario de meses (HU-042)? Si alcanza la vista actual, HU-042 baja a Could. Afecta el [recorrido de UX](inputs/ux/recorrido-disponibilidad-y-reservas.md), que hoy usa el calendario como punto de consulta.
 
-### D-14 Cambio de pagador de una marca (preguntas 14 y 15)
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+
+### RN-014 Cambio de pagador de una marca (preguntas 14 y 15) (D-14)
 
 ¿Una marca cambia de agencia? ¿La misma marca se compra a veces por dos clientes distintos? Si ambas respuestas son "nunca", se descarta HU-027.
 
-### D-15 Intermediario formal y sus contactos
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+
+### RN-015 Intermediario formal y sus contactos (D-15)
 
 ¿Qué distingue a un intermediario formal de uno común? ¿Qué datos llevan sus contactos? Afecta HU-016 y HU-068.
 
-### D-16 Otras preguntas menores
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
-- **Grupo económico (pregunta 16):** ¿quieren agrupar marcas de un mismo grupo? Afecta HU-017, HU-022 y HU-050.
-- **Cambio de razón social de un cliente directo (pregunta 19):** ¿la marca homónima debe actualizarse sola? Afecta HU-018.
-- **Interacciones antes de la campaña (pregunta 12):** ¿registran llamadas con una marca antes de que exista una campaña? Afecta HU-020.
-- **Dimensiones estándar por formato:** ¿cada formato tiene un tamaño fijo? Afecta HU-009.
-- **Formatos sin relevamiento:** ¿cuándo habrá datos de Banderolas, Mediano Formato, Monocolumnas y Carteleras? Afecta HU-015.
-- **Usuarios:** ¿quién más, además de Seba y Ale, va a usar el sistema? Afecta HU-004 y HU-005.
+### RN-016 Grupo económico (D-16)
+
+Pregunta menor del bloque «Otras preguntas menores» de D-16.
+
+**Grupo económico (pregunta 16):** ¿quieren agrupar marcas de un mismo grupo? Afecta HU-017, HU-022 y HU-050.
+
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+### RN-017 Cambio de razón social de un cliente directo (D-16)
+
+Pregunta menor del bloque «Otras preguntas menores» de D-16.
+
+**Cambio de razón social de un cliente directo (pregunta 19):** ¿la marca homónima debe actualizarse sola? Afecta HU-018.
+
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+### RN-018 Interacciones antes de la campaña (D-16)
+
+Pregunta menor del bloque «Otras preguntas menores» de D-16.
+
+**Interacciones antes de la campaña (pregunta 12):** ¿registran llamadas con una marca antes de que exista una campaña? Afecta HU-020.
+
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+### RN-019 Dimensiones estándar por formato (D-16)
+
+Pregunta menor del bloque «Otras preguntas menores» de D-16.
+
+**Dimensiones estándar por formato:** ¿cada formato tiene un tamaño fijo? Afecta HU-009.
+
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+### RN-020 Formatos sin relevamiento (D-16)
+
+Pregunta menor del bloque «Otras preguntas menores» de D-16.
+
+**Formatos sin relevamiento:** ¿cuándo habrá datos de Banderolas, Mediano Formato, Monocolumnas y Carteleras? Afecta HU-015.
+
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+### RN-021 Usuarios (D-16)
+
+Pregunta menor del bloque «Otras preguntas menores» de D-16.
+
+**Usuarios:** ¿quién más, además de Seba y Ale, va a usar el sistema? Afecta HU-004 y HU-005.
+
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
 ---
 
@@ -304,17 +373,64 @@ Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pue
 
 Estas preguntas las responden Seba y Administración. Se listan para no perderlas.
 
-| Tema | Historias | Default |
-| --- | --- | --- |
-| ¿Administración usa el sistema o solo recibe la planilla? ¿Quién pasa un ítem a Facturado? | HU-065, HU-066, HU-067 | Recibe planilla y avisos por correo; Seba carga el número de factura |
-| Alícuotas de IVA y valores de Gob/Priv y F/V | HU-060, HU-061 | 21% por defecto, editable; listas administrables |
-| Columnas exactas de la planilla actual | HU-066 | Se reproducen tal cual; las nuevas van al final |
-| ¿Se envían los ítems completos aunque haya incompletos en el mes? | HU-066 | Sí; los incompletos se listan con lo que les falta |
-| ¿Qué pasa si hay que corregir un ítem ya Facturado? | HU-067 | Sin definir |
+### RN-022 Administración usa el sistema o recibe planilla
+
+**Tema.** ¿Administración usa el sistema o solo recibe la planilla? ¿Quién pasa un ítem a Facturado?
+
+**Historias.** HU-065, HU-066, HU-067.
+
+**Default.** Recibe planilla y avisos por correo; Seba carga el número de factura.
+
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+### RN-023 Alícuotas de IVA y listas Gob/Priv y F/V
+
+**Tema.** Alícuotas de IVA y valores de Gob/Priv y F/V
+
+**Historias.** HU-060, HU-061.
+
+**Default.** 21% por defecto, editable; listas administrables.
+
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+### RN-024 Columnas de la planilla de facturación
+
+**Tema.** Columnas exactas de la planilla actual
+
+**Historias.** HU-066.
+
+**Default.** Se reproducen tal cual; las nuevas van al final.
+
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+### RN-025 Envío de ítems completos con incompletos en el mes
+
+**Tema.** ¿Se envían los ítems completos aunque haya incompletos en el mes?
+
+**Historias.** HU-066.
+
+**Default.** Sí; los incompletos se listan con lo que les falta.
+
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+### RN-026 Corrección de ítems ya facturados
+
+**Tema.** ¿Qué pasa si hay que corregir un ítem ya Facturado?
+
+**Historias.** HU-067.
+
+**Default.** Sin definir.
+
+**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+
+---
 
 ## Cómo registrar una respuesta
 
-1. Completar los campos **Respuesta**, **Fecha** y **Quién respondió** de la decisión.
-2. Si la respuesta cambia una historia, anotar qué historia y qué cambia, y actualizar `docs/requisitos/historias-de-usuario.md` en un cambio aparte.
-3. Si la respuesta es un parámetro configurable (D-01, D-02), anotar también el valor inicial para producción.
-4. No cerrar en código una regla afectada mientras su decisión siga pendiente (regla del README).
+1. Cargar o actualizar el issue del pedido (plantilla "Pedido de Seba").
+2. En un PR `docs/historias-<descripcion>`: cambiar el estado y el valor de la regla, completar
+   **Respuesta**, **Fecha** y **Quién respondió**, actualizar las historias afectadas y agregar
+   una fila al registro de cambios.
+3. Si la regla es un parámetro configurable (RN-001, RN-002), anotar el valor inicial para producción.
+4. Si ya hay código que aplica la regla, el cambio de código va en una unidad aparte
+   (`ajuste-<tema>`) que cierra el issue.
