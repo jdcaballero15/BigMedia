@@ -31,8 +31,11 @@ Desde la raíz:
 py -3.12 -m venv backend/.venv
 backend/.venv/Scripts/python.exe -m pip install -e './backend[dev]'
 backend/.venv/Scripts/python.exe backend/manage.py migrate
+backend/.venv/Scripts/python.exe backend/manage.py createsuperuser
 backend/.venv/Scripts/python.exe backend/manage.py runserver 127.0.0.1:8000
 ```
+
+La migración crea los siete formatos, los nueve departamentos y los estados físicos. No crea carteles reales. Ingresá a `http://127.0.0.1:8000/admin/` con el superusuario para crear usuarios de Seba y Ale y asignarlos al grupo **Operativo**. El grupo permite administrar el inventario; cualquier usuario autenticado puede consultarlo. Las bajas de carteles se hacen cambiando su estado a **De baja**, y los catálogos se inactivan sin borrar el registro.
 
 Si `ensurepip` falla porque Windows deniega la ruta temporal, establecé `TEMP` y `TMP` a una carpeta escribible dentro del proyecto antes de crear el entorno virtual.
 
@@ -70,6 +73,8 @@ npm test
 npm run lint
 npm run build
 ```
+
+Iniciá sesión con un usuario creado en Django. En **Carteles** podés filtrar por departamento, formato, modalidad y estado, buscar por dirección, crear o editar carteles y darles de baja. En **Catálogos** podés agregar o editar departamentos, formatos, proveedores y estados físicos. La capacidad de cada cartel se puede ajustar al cargarlo; los formatos parten de capacidad 1 hasta tener el relevamiento real. Ningún cartel debe cargarse con datos ficticios en la base operativa.
 
 ## Repositorio y datos
 

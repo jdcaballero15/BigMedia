@@ -11,8 +11,8 @@ La entrega incluye API y pantallas para proveedores, formatos, zonas y carteles.
 ## Modelo de datos
 
 - **Proveedor:** nombre único obligatorio, descripción del servicio opcional, activo/inactivo. Se conserva al inactivarlo.
-- **Formato:** nombre único obligatorio, modalidad fija o digital, capacidad predeterminada entera mayor o igual a 1, dimensiones opcionales, activo/inactivo. Se crean los siete nombres del documento de requisitos. La capacidad predeterminada de cada formato se deja en 1 como valor conservador y editable hasta confirmar los valores reales, especialmente para LED y séxtuples.
-- **Zona:** nombre único obligatorio y activo/inactivo. La lista empieza vacía hasta que Big Media confirme los departamentos que usa.
+- **Formato:** nombre único obligatorio, modalidad fija o digital, capacidad predeterminada entera mayor o igual a 1, dimensiones opcionales, activo/inactivo. Se crean PPL/Gran Formato, Banderolas, Séxtuples, LED, Mediano Formato, Monocolumnas y Carteleras; solo LED se marca digital inicialmente. La capacidad predeterminada de cada formato se deja en 1 como valor conservador y editable hasta confirmar los valores reales, especialmente para LED y séxtuples.
+- **Zona:** nombre único obligatorio y activo/inactivo. La lista inicial, confirmada por Juan Diego a partir de la pantalla actual, contiene nueve departamentos: Ciudad, Godoy Cruz, Maipú, Luján de Cuyo, Guaymallén, Las Heras, San Martín, Rivadavia y San Carlos. «Todos» es una opción de filtro, no una zona guardada.
 - **Estado físico:** catálogo administrable con Activo, En mantenimiento, De baja, Apagado y Vidrio destruido. Solo Activo será seleccionable en nuevas reservas cuando ese módulo exista. Se conserva todo estado histórico.
 - **Cartel:** identificador interno, formato, dirección, zona, proveedor opcional, tamaño opcional, capacidad entera mayor o igual a 1, tarifa de lista no negativa, estado físico, enlace opcional de foto y fechas de creación/actualización. La capacidad se copia del formato al crear y después se puede editar sin alterar automáticamente un cartel existente. El nombre visible se compone de dirección y tamaño o cantidad de slots; el identificador interno no aparece como nombre comercial.
 
@@ -36,4 +36,4 @@ La API rechazará campos obligatorios ausentes, capacidad menor que 1, tarifa ne
 
 ## Decisiones pendientes
 
-Los valores reales de capacidad de LED y séxtuples, las zonas definitivas y los estados físicos adicionales requieren confirmación de Big Media. No se inventarán valores de inventario. La regla para reducir capacidad con reservas vigentes se cerrará junto con el motor de reservas. El tratamiento del día de borde entre reservas también se definirá antes de construir ese motor.
+Los valores reales de capacidad de LED y séxtuples y los estados físicos adicionales requieren confirmación de Big Media. No se inventarán carteles ni tarifas. La regla para reducir capacidad con reservas vigentes se cerrará junto con el motor de reservas. El tratamiento del día de borde entre reservas también se definirá antes de construir ese motor.
