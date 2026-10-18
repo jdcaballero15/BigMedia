@@ -2139,3 +2139,4 @@ Render despliega `main` solo con los checks en verde (`autoDeployTrigger: checks
 - Gate 1 (plan): 2026-10-17 — aprobado por Juan Diego
 - Gate 2 (verificación): 2026-10-17 — aprobado por Juan Diego. 131 enlaces revisados, 0 rotos; sin cambios en `backend/` ni `frontend/`.
 - Gate 3 (PR): #4 (PR 1, `docs/reestructura-gobernanza` → `develop`)
+- Gate 2 (verificación, PR 2): 2026-10-18 — aprobado por Juan Diego. pre-commit OK; ruff y mypy sin observaciones; 45 tests contra PostgreSQL, cobertura 85,57 %; guarda sin base: código 3; frontend 14 tests, cobertura 80,83 % sentencias / 82,94 % líneas, build OK; imagen Docker OK; gitleaks sin hallazgos.
