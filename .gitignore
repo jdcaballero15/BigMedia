@@ -15,3 +15,8 @@ Historias de usuario - Sistema de reservas OOH (desarrollo a medida).md
 /work/
 
 backend/*.egg-info/
+
+.venv/
+.coverage
+coverage.xml
+frontend/coverage/

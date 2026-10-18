@@ -1,0 +1,15 @@
+# Herramientas de desarrollo y CI (no son dependencias de la aplicación).
+# Versiones fijas: CI y todas las máquinas ven exactamente lo mismo.
+# Actualizarlas es un cambio deliberado, en su propio PR.
+
+ruff==0.14.2
+mypy==1.18.2
+django-stubs==6.1.2
+django-stubs-ext==6.1.2
+djangorestframework-stubs==3.18.1
+types-PyYAML==6.0.12.20260906
+pytest==9.1.1
+pytest-django==4.14.0
+pytest-cov==7.1.0
+PyYAML==6.0.3
+pre-commit==4.7.0
