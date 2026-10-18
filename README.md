@@ -12,6 +12,7 @@ Seguí [desarrollo local](docs/operacion/desarrollo-local.md) para instalar depe
 
 ## Cómo se trabaja
 
+- [`docs/guia-para-socios.md`](docs/guia-para-socios.md): explicación para un socio sin conocimientos de software.
 - [`CLAUDE.md`](CLAUDE.md): reglas del repositorio (ramas GitFlow, commits, estándares y Definition of Done). Los cambios se integran por Pull Request a `develop`; `main` recibe solo releases y hotfixes.
 - [`docs/README.md`](docs/README.md): índice de la documentación.
 - [`docs/aidlc/roadmap.md`](docs/aidlc/roadmap.md): qué se está haciendo y qué viene.
