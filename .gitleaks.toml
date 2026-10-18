@@ -5,4 +5,4 @@ useDefault = true
 [allowlist]
 description = "Plantillas, documentación y valores de prueba que no son secretos."
 paths = ['''\.env\.example$''', '''.*\.md$''']
-regexes = ['''test-only-[A-Za-z0-9-]+''', '''solo-pruebas[A-Za-z0-9-]*''', '''replace-with-local-[a-z-]+''']
+regexes = ['''test-only-[A-Za-z0-9-]+''', '''solo-pruebas[A-Za-z0-9-]*''', '''replace-with-local-[a-z-]+''', '''clave-segura-123''']
