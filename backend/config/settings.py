@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIST = BASE_DIR / "frontend_dist"
-load_dotenv(BASE_DIR.parent / ".env")
+ENV_FILE = BASE_DIR / ".env"
+load_dotenv(ENV_FILE)
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 PRODUCTION = os.environ.get("DJANGO_ENV") == "production"
@@ -78,6 +79,9 @@ if PRODUCTION:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 3600
+    # El dominio es un subdominio de onrender.com que no controlamos y el preload de HSTS es
+    # difícil de revertir. Revisar si se usa un dominio propio (ADR-0004).
+    SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
