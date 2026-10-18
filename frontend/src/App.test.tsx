@@ -4,12 +4,20 @@ import App from './App'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 test('pide iniciar sesión cuando no hay usuario', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-    ok: false, status: 401, json: async () => ({ detail: 'Iniciá sesión.' }),
-  }))
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ detail: 'Iniciá sesión.' }),
+    }),
+  )
 
   render(<App />)
 
@@ -18,19 +26,30 @@ test('pide iniciar sesión cuando no hay usuario', async () => {
 })
 
 test('muestra carteles después de reconocer la sesión', async () => {
-  vi.stubGlobal('fetch', vi.fn(async (input: string) => {
-    if (input === '/api/auth/me/') return ok({ username: 'seba' })
-    if (input.includes('/carteles/')) return ok([{
-      id: 11, nombre_visible: 'Av. San Martín 1234 · 6 slots',
-      formato_nombre: 'Séxtuples', zona_nombre: 'Ciudad', estado_nombre: 'Activo',
-      proveedor_nombre: 'Vía Pública Norte', capacidad: 6, tarifa_lista: '150000.00',
-    }])
-    if (input.includes('/formatos/')) return ok([{ id: 1, nombre: 'Séxtuples' }])
-    if (input.includes('/zonas/')) return ok([{ id: 1, nombre: 'Ciudad' }])
-    if (input.includes('/estados/')) return ok([{ id: 1, nombre: 'Activo' }])
-    if (input.includes('/proveedores/')) return ok([])
-    throw new Error(`URL inesperada: ${input}`)
-  }))
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'seba' })
+      if (input.includes('/carteles/'))
+        return ok([
+          {
+            id: 11,
+            nombre_visible: 'Av. San Martín 1234 · 6 slots',
+            formato_nombre: 'Séxtuples',
+            zona_nombre: 'Ciudad',
+            estado_nombre: 'Activo',
+            proveedor_nombre: 'Vía Pública Norte',
+            capacidad: 6,
+            tarifa_lista: '150000.00',
+          },
+        ])
+      if (input.includes('/formatos/')) return ok([{ id: 1, nombre: 'Séxtuples' }])
+      if (input.includes('/zonas/')) return ok([{ id: 1, nombre: 'Ciudad' }])
+      if (input.includes('/estados/')) return ok([{ id: 1, nombre: 'Activo' }])
+      if (input.includes('/proveedores/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
 
   render(<App />)
 
@@ -60,16 +79,22 @@ test('combina filtros de zona, formato y modalidad en la consulta', async () => 
   fireEvent.change(screen.getByLabelText('Modalidad'), { target: { value: 'digital' } })
 
   await waitFor(() => {
-    expect(fetchMock.mock.calls.some(([url]) =>
-      String(url).includes('zona=1') && String(url).includes('formato=2') && String(url).includes('modalidad=digital')
-    )).toBe(true)
+    expect(
+      fetchMock.mock.calls.some(
+        ([url]) =>
+          String(url).includes('zona=1') &&
+          String(url).includes('formato=2') &&
+          String(url).includes('modalidad=digital'),
+      ),
+    ).toBe(true)
   })
 })
 
 test('crea un cartel desde la pantalla y envía la capacidad del formato', async () => {
   const fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
     if (input === '/api/auth/me/') return ok({ username: 'seba' })
-    if (input.includes('/formatos/')) return ok([{ id: 1, nombre: 'Séxtuples', capacidad_predeterminada: 6 }])
+    if (input.includes('/formatos/'))
+      return ok([{ id: 1, nombre: 'Séxtuples', capacidad_predeterminada: 6 }])
     if (input.includes('/zonas/')) return ok([{ id: 1, nombre: 'Ciudad' }])
     if (input.includes('/estados/')) return ok([{ id: 1, codigo: 'activo', nombre: 'Activo' }])
     if (input.includes('/proveedores/')) return ok([])
@@ -86,13 +111,21 @@ test('crea un cartel desde la pantalla y envía la capacidad del formato', async
   await within(form).findByRole('option', { name: 'Séxtuples' })
   fireEvent.change(within(form).getByLabelText('Formato'), { target: { value: '1' } })
   fireEvent.change(within(form).getByLabelText('Zona'), { target: { value: '1' } })
-  fireEvent.change(within(form).getByLabelText('Dirección'), { target: { value: 'Av. Libertador 100' } })
+  fireEvent.change(within(form).getByLabelText('Dirección'), {
+    target: { value: 'Av. Libertador 100' },
+  })
   fireEvent.click(within(form).getByRole('button', { name: 'Guardar cartel' }))
 
-  await waitFor(() => expect(fetchMock.mock.calls.some(([url, options]) =>
-    String(url) === '/api/inventario/carteles/' && options?.method === 'POST'
-    && JSON.parse(String(options.body)).capacidad === 6,
-  )).toBe(true))
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, options]) =>
+          String(url) === '/api/inventario/carteles/' &&
+          options?.method === 'POST' &&
+          JSON.parse(String(options.body)).capacidad === 6,
+      ),
+    ).toBe(true),
+  )
 })
 
 test('crea un proveedor desde catálogos sin borrar el histórico', async () => {
@@ -116,10 +149,16 @@ test('crea un proveedor desde catálogos sin borrar el histórico', async () => 
   fireEvent.change(within(form).getByLabelText('Nombre'), { target: { value: 'Proveedor Norte' } })
   fireEvent.click(within(form).getByRole('button', { name: 'Guardar' }))
 
-  await waitFor(() => expect(fetchMock.mock.calls.some(([url, options]) =>
-    String(url) === '/api/inventario/proveedores/' && options?.method === 'POST'
-    && JSON.parse(String(options.body)).nombre === 'Proveedor Norte',
-  )).toBe(true))
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, options]) =>
+          String(url) === '/api/inventario/proveedores/' &&
+          options?.method === 'POST' &&
+          JSON.parse(String(options.body)).nombre === 'Proveedor Norte',
+      ),
+    ).toBe(true),
+  )
 })
 
 test('inactiva un proveedor conservando su registro', async () => {
@@ -129,7 +168,8 @@ test('inactiva un proveedor conservando su registro', async () => {
     if (input.includes('/formatos/')) return ok([])
     if (input.includes('/zonas/')) return ok([])
     if (input.includes('/estados/')) return ok([])
-    if (input.includes('/proveedores/7/') && options?.method === 'PATCH') return ok({ id: 7, nombre: 'Norte', activo: false })
+    if (input.includes('/proveedores/7/') && options?.method === 'PATCH')
+      return ok({ id: 7, nombre: 'Norte', activo: false })
     if (input.includes('/proveedores/')) return ok([{ id: 7, nombre: 'Norte', activo: true }])
     throw new Error(`URL inesperada: ${input}`)
   })
@@ -142,10 +182,16 @@ test('inactiva un proveedor conservando su registro', async () => {
   await screen.findByText('Norte')
   fireEvent.click(screen.getByRole('button', { name: 'Inactivar' }))
 
-  await waitFor(() => expect(fetchMock.mock.calls.some(([url, options]) =>
-    String(url) === '/api/inventario/proveedores/7/' && options?.method === 'PATCH'
-    && JSON.parse(String(options.body)).activo === false,
-  )).toBe(true))
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, options]) =>
+          String(url) === '/api/inventario/proveedores/7/' &&
+          options?.method === 'PATCH' &&
+          JSON.parse(String(options.body)).activo === false,
+      ),
+    ).toBe(true),
+  )
 })
 
 test('da de baja un cartel y permite consultar las bajas', async () => {
@@ -154,12 +200,27 @@ test('da de baja un cartel y permite consultar las bajas', async () => {
     if (input.includes('/formatos/')) return ok([])
     if (input.includes('/zonas/')) return ok([])
     if (input.includes('/proveedores/')) return ok([])
-    if (input.includes('/estados/')) return ok([{ id: 1, nombre: 'Activo', es_baja: false }, { id: 3, nombre: 'De baja', es_baja: true }])
-    if (input.includes('/carteles/11/') && options?.method === 'PATCH') return ok({ id: 11, estado: 3 })
-    if (input.includes('/carteles/')) return ok([{
-      id: 11, nombre_visible: 'San Martín 1234', formato_nombre: 'PPL', zona_nombre: 'Ciudad',
-      proveedor_nombre: null, estado_nombre: 'Activo', estado: 1, capacidad: 1, tarifa_lista: null,
-    }])
+    if (input.includes('/estados/'))
+      return ok([
+        { id: 1, nombre: 'Activo', es_baja: false },
+        { id: 3, nombre: 'De baja', es_baja: true },
+      ])
+    if (input.includes('/carteles/11/') && options?.method === 'PATCH')
+      return ok({ id: 11, estado: 3 })
+    if (input.includes('/carteles/'))
+      return ok([
+        {
+          id: 11,
+          nombre_visible: 'San Martín 1234',
+          formato_nombre: 'PPL',
+          zona_nombre: 'Ciudad',
+          proveedor_nombre: null,
+          estado_nombre: 'Activo',
+          estado: 1,
+          capacidad: 1,
+          tarifa_lista: null,
+        },
+      ])
     throw new Error(`URL inesperada: ${input}`)
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -169,12 +230,20 @@ test('da de baja un cartel y permite consultar las bajas', async () => {
   await screen.findByText('San Martín 1234')
   await screen.findByRole('option', { name: 'De baja' })
   fireEvent.click(screen.getByRole('button', { name: 'Dar de baja' }))
-  await waitFor(() => expect(fetchMock.mock.calls.some(([url, options]) =>
-    String(url) === '/api/inventario/carteles/11/' && options?.method === 'PATCH'
-    && JSON.parse(String(options.body)).estado === 3,
-  )).toBe(true))
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, options]) =>
+          String(url) === '/api/inventario/carteles/11/' &&
+          options?.method === 'PATCH' &&
+          JSON.parse(String(options.body)).estado === 3,
+      ),
+    ).toBe(true),
+  )
   fireEvent.click(screen.getByLabelText('Incluir bajas'))
-  await waitFor(() => expect(fetchMock.mock.calls.some(([url]) =>
-    String(url).includes('/carteles/?incluir_bajas=1'),
-  )).toBe(true))
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url).includes('/carteles/?incluir_bajas=1')),
+    ).toBe(true),
+  )
 })

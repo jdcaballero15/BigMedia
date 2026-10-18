@@ -14,11 +14,19 @@ function App() {
   useEffect(() => {
     let active = true
     void apiGet<{ username: string }>('/api/auth/me/')
-      .then((user) => { if (active) setSession({ status: 'ready', username: user.username }) })
-      .catch((error: unknown) => {
-        if (active) setSession({ status: error instanceof ApiError && error.status === 401 ? 'anonymous' : 'offline', username: '' })
+      .then((user) => {
+        if (active) setSession({ status: 'ready', username: user.username })
       })
-    return () => { active = false }
+      .catch((error: unknown) => {
+        if (active)
+          setSession({
+            status: error instanceof ApiError && error.status === 401 ? 'anonymous' : 'offline',
+            username: '',
+          })
+      })
+    return () => {
+      active = false
+    }
   }, [])
 
   async function signOut() {
@@ -26,13 +34,53 @@ function App() {
     setSession({ status: 'anonymous', username: '' })
   }
 
-  if (session.status === 'checking') return <main className="auth-shell"><p>Comprobando sesión…</p></main>
-  if (session.status === 'offline') return <main className="auth-shell"><h1>Big Media</h1><p role="alert">No se pudo conectar con la API.</p></main>
-  if (session.status === 'anonymous') return <Login onLogin={(username) => setSession({ status: 'ready', username })} />
+  if (session.status === 'checking')
+    return (
+      <main className="auth-shell">
+        <p>Comprobando sesión…</p>
+      </main>
+    )
+  if (session.status === 'offline')
+    return (
+      <main className="auth-shell">
+        <h1>Big Media</h1>
+        <p role="alert">No se pudo conectar con la API.</p>
+      </main>
+    )
+  if (session.status === 'anonymous')
+    return <Login onLogin={(username) => setSession({ status: 'ready', username })} />
 
   return (
     <div className="app-shell">
-      <header className="topbar"><div className="brand-mark">BM<span>.</span></div><div className="topbar-title"><strong>Big Media</strong><small>Sistema de carteles</small></div><nav className="topnav" aria-label="Navegación"><button className={page === 'carteles' ? 'active' : ''} onClick={() => setPage('carteles')}>Carteles</button><button className={page === 'catalogos' ? 'active' : ''} onClick={() => setPage('catalogos')}>Catálogos</button></nav><div className="topbar-user"><span>{session.username}</span><button className="button-ghost" onClick={() => void signOut()}>Salir</button></div></header>
+      <header className="topbar">
+        <div className="brand-mark">
+          BM<span>.</span>
+        </div>
+        <div className="topbar-title">
+          <strong>Big Media</strong>
+          <small>Sistema de carteles</small>
+        </div>
+        <nav className="topnav" aria-label="Navegación">
+          <button
+            className={page === 'carteles' ? 'active' : ''}
+            onClick={() => setPage('carteles')}
+          >
+            Carteles
+          </button>
+          <button
+            className={page === 'catalogos' ? 'active' : ''}
+            onClick={() => setPage('catalogos')}
+          >
+            Catálogos
+          </button>
+        </nav>
+        <div className="topbar-user">
+          <span>{session.username}</span>
+          <button className="button-ghost" onClick={() => void signOut()}>
+            Salir
+          </button>
+        </div>
+      </header>
       <main className="app-main">{page === 'carteles' ? <CartelesPage /> : <CatalogosPage />}</main>
     </div>
   )

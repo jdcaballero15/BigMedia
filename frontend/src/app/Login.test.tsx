@@ -14,7 +14,9 @@ function completarYEnviar(usuario: string, clave: string) {
 }
 
 test('envía las credenciales y avisa el usuario que ingresó', async () => {
-  const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ username: 'seba' }) })
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValue({ ok: true, status: 200, json: async () => ({ username: 'seba' }) })
   vi.stubGlobal('fetch', fetchMock)
   const onLogin = vi.fn()
 
@@ -28,22 +30,38 @@ test('envía las credenciales y avisa el usuario que ingresó', async () => {
 })
 
 test('muestra el error de la API cuando las credenciales son incorrectas', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-    ok: false, status: 401, json: async () => ({ detail: 'Usuario o contraseña incorrectos.' }),
-  }))
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ detail: 'Usuario o contraseña incorrectos.' }),
+    }),
+  )
   const onLogin = vi.fn()
 
   render(<Login onLogin={onLogin} />)
   completarYEnviar('seba', 'mala')
 
-  expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Usuario o contraseña incorrectos.')
+  expect(await screen.findByRole('alert')).toHaveProperty(
+    'textContent',
+    'Usuario o contraseña incorrectos.',
+  )
   expect(onLogin).not.toHaveBeenCalled()
   expect(screen.getByRole('button', { name: 'Ingresar' })).toHaveProperty('disabled', false)
 })
 
 test('deshabilita el botón mientras espera la respuesta', async () => {
   let responder: (value: unknown) => void = () => {}
-  vi.stubGlobal('fetch', vi.fn(() => new Promise((resolve) => { responder = resolve })))
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      () =>
+        new Promise((resolve) => {
+          responder = resolve
+        }),
+    ),
+  )
 
   render(<Login onLogin={vi.fn()} />)
   completarYEnviar('seba', 'clave-de-prueba')
