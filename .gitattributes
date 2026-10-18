@@ -1,6 +1,6 @@
 # Los scripts de shell corren dentro de la imagen Linux: siempre con fin de línea LF.
 *.sh text eol=lf
 
-# Prettier exige LF: el frontend se extrae siempre con LF aunque core.autocrlf=true.
-frontend/** text eol=lf
+# Prettier exige LF: los archivos de texto del frontend se extraen con LF aunque core.autocrlf=true; git detecta los binarios solos.
+frontend/** text=auto eol=lf
 frontend/**/*.png binary
