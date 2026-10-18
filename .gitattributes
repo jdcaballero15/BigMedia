@@ -1,2 +1,5 @@
 # Los scripts de shell corren dentro de la imagen Linux: siempre con fin de línea LF.
 *.sh text eol=lf
+
+# Prettier exige LF: el frontend se extrae siempre con LF aunque core.autocrlf=true.
+frontend/** text eol=lf
