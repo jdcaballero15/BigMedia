@@ -19,4 +19,4 @@ RUN DJANGO_ENV=production \
     python manage.py collectstatic --noinput
 
 EXPOSE 10000
-CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-10000}"]
+CMD ["sh", "arrancar.sh"]
