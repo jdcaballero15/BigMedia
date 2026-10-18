@@ -3,21 +3,21 @@
 import json
 
 from django.contrib.auth import authenticate, login, logout
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
 
 @ensure_csrf_cookie
-def me(request):
+def me(request: HttpRequest) -> JsonResponse:
     if not request.user.is_authenticated:
         return JsonResponse({"detail": "Iniciá sesión."}, status=401)
-    return JsonResponse({"username": request.user.username})
+    return JsonResponse({"username": request.user.get_username()})
 
 
 @require_POST
 @csrf_protect
-def login_view(request):
+def login_view(request: HttpRequest) -> JsonResponse:
     try:
         payload = json.loads(request.body)
     except (ValueError, UnicodeDecodeError):
@@ -29,11 +29,11 @@ def login_view(request):
     if user is None:
         return JsonResponse({"detail": "Usuario o contraseña incorrectos."}, status=401)
     login(request, user)
-    return JsonResponse({"username": user.username})
+    return JsonResponse({"username": user.get_username()})
 
 
 @require_POST
 @csrf_protect
-def logout_view(request):
+def logout_view(request: HttpRequest) -> JsonResponse:
     logout(request)
     return JsonResponse({"status": "ok"})

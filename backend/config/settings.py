@@ -2,10 +2,10 @@
 
 import os
 from pathlib import Path
+from typing import Any
 
 import dj_database_url
 from dotenv import load_dotenv
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIST = BASE_DIR / "frontend_dist"
@@ -16,9 +16,7 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 PRODUCTION = os.environ.get("DJANGO_ENV") == "production"
 DEBUG = not PRODUCTION and os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
 ALLOWED_HOSTS = (
-    [os.environ["RENDER_EXTERNAL_HOSTNAME"]]
-    if PRODUCTION
-    else ["127.0.0.1", "localhost"]
+    [os.environ["RENDER_EXTERNAL_HOSTNAME"]] if PRODUCTION else ["127.0.0.1", "localhost"]
 )
 
 INSTALLED_APPS = [
@@ -62,7 +60,7 @@ TEMPLATES = [
 ]
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
+DATABASES: dict[str, Any] = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("POSTGRES_DB", "bigmedia"),
@@ -101,8 +99,6 @@ STATICFILES_DIRS = [FRONTEND_DIST] if FRONTEND_DIST.exists() else []
 if PRODUCTION:
     STORAGES = {
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
-        },
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
     }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

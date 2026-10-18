@@ -3,7 +3,6 @@ from rest_framework.routers import DefaultRouter
 
 from .views import CartelViewSet, EstadoCartelViewSet, FormatoViewSet, ProveedorViewSet, ZonaViewSet
 
-
 router = DefaultRouter()
 router.register("proveedores", ProveedorViewSet, basename="proveedor")
 router.register("formatos", FormatoViewSet, basename="formato")
