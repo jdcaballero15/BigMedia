@@ -4,7 +4,7 @@
 - **Rama:** `docs/reestructura-gobernanza` + `chore/gates-de-calidad` · **Fecha:** 2026-10-16
 - **Origen:** migrado desde `docs/superpowers/` el 2026-10-16. El contenido no se modificó, salvo el nivel de los encabezados y los enlaces que dejaron de resolver.
 
-**Avance:** Tareas 1–10 hechas (PR 1 abierto contra `develop`). Sigue la Tarea 11 en `chore/gates-de-calidad`.
+**Avance:** Tareas 1–15 hechas; Tarea 16 en curso (Gate 2 y PR 2).
 
 ## Diseño
 

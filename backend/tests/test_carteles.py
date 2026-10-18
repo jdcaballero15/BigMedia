@@ -1,6 +1,7 @@
 import json
 
 import pytest
+
 from apps.inventario.models import Cartel, EstadoCartel, Formato, Proveedor, Zona
 
 MISSING = object()

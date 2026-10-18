@@ -5,6 +5,8 @@
 [tool.ruff]
 target-version = "py312"
 line-length = 100
+# Raíz del código: apps, config y tests son imports propios (first-party).
+src = ["backend"]
 # Las migraciones son código generado por Django.
 extend-exclude = ["frontend/node_modules", "**/migrations"]
 
@@ -84,9 +86,6 @@ source = ["backend"]
 omit = [
     "backend/tests/*",
     "*/migrations/*",
-    "backend/manage.py",
-    "backend/config/asgi.py",
-    "backend/config/wsgi.py",
 ]
 
 [tool.coverage.report]

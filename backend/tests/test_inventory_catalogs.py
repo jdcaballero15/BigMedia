@@ -1,9 +1,10 @@
 import json
 
 import pytest
-from apps.inventario.models import EstadoCartel, Formato, Proveedor, Zona
 from django.contrib.auth import get_user_model
 from django.test import Client
+
+from apps.inventario.models import EstadoCartel, Formato, Proveedor, Zona
 
 
 @pytest.mark.django_db

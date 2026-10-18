@@ -61,11 +61,11 @@ Los tests corren siempre contra PostgreSQL. Con la base levantada (`docker compo
 .venv/Scripts/python.exe -m pytest
 ```
 
-Si la base no está levantada, la suite se detiene con un único mensaje que lo explica, en lugar de salear tests o llenar la salida de errores. Las convenciones de los tests están en [`backend/tests/README.md`](../../backend/tests/README.md).
+Si la base no está levantada, la suite se detiene con un único mensaje que lo explica, en lugar de saltear tests o llenar la salida de errores. Las convenciones de los tests están en [`backend/tests/README.md`](../../backend/tests/README.md).
 
 ## Verificación completa
 
-Antes de dar un cambio por terminado, corré los comandos de la Definition of Done de [`CLAUDE.md`](../../CLAUDE.md) (§7 y §9), desde la raíz:
+Antes de dar un cambio por terminado, corré los comandos de la Definition of Done de [`CLAUDE.md`](../../CLAUDE.md) (§7 y §9), desde la raíz y desde una rama de trabajo (el hook `no-commit-to-branch` hace fallar `pre-commit run --all-files` en `main` y `develop`):
 
 ```powershell
 .venv/Scripts/ruff.exe format --check .
@@ -74,6 +74,12 @@ Antes de dar un cambio por terminado, corré los comandos de la Definition of Do
 .venv/Scripts/python.exe backend/manage.py makemigrations --check --dry-run
 .venv/Scripts/python.exe -m pytest --cov
 .venv/Scripts/pre-commit.exe run --all-files
+```
+
+El hook de gitleaks de pre-commit revisa solo los cambios preparados (staged). La revisión completa del árbol la hace el job `secretos` del CI; si tenés el binario de gitleaks instalado, el equivalente local es:
+
+```powershell
+gitleaks detect --source . --no-git --redact
 ```
 
 ## Frontend
@@ -86,13 +92,17 @@ npm ci
 npm run dev
 ```
 
-Abrí la URL que muestra Vite, normalmente `http://localhost:5173`. El proxy de desarrollo dirige `/api/` hacia Django. Para verificar el frontend:
+Abrí la URL que muestra Vite, normalmente `http://localhost:5173`. El proxy de desarrollo dirige `/api/` hacia Django. Para verificar el frontend (los mismos pasos que el job `frontend` del CI), desde `frontend/`:
 
 ```powershell
-npm test
+npm run format:check
 npm run lint
+npm run typecheck
+npm run test:coverage
 npm run build
 ```
+
+> En un clon de Windows existente con `core.autocrlf=true`, `npm run format:check` puede marcar archivos que no tocaste (por los finales de línea CRLF). Corré una vez `npm run format` en `frontend/`: Git no muestra diferencias porque `.gitattributes` los guarda como LF.
 
 Iniciá sesión con un usuario creado en Django. En **Carteles** podés filtrar por departamento, formato, modalidad y estado, buscar por dirección, crear o editar carteles y darles de baja. En **Catálogos** podés agregar o editar departamentos, formatos, proveedores y estados físicos. La capacidad de cada cartel se puede ajustar al cargarlo; los formatos parten de capacidad 1 hasta tener el relevamiento real. Ningún cartel debe cargarse con datos ficticios en la base operativa.
 

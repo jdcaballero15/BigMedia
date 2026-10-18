@@ -70,18 +70,18 @@ Para una emergencia en producción: rama `hotfix/<descripcion>` desde `main`, PR
 
 `.github/workflows/ci.yml` corre en pull requests y pushes a `develop` y `main`. Los mensajes de error están en español.
 
-| Job | Qué hace | Falla cuando |
-| --- | --- | --- |
-| `convenciones` (solo PR) | Valida rama contra destino según la tabla de ramas y el formato de cada commit | Rama mal nombrada o con destino incorrecto; commit fuera de formato |
-| `lint-python` | `ruff format --check` y `ruff check` | Formato o reglas de ruff |
-| `tipos` | `mypy --strict` con `django-stubs` y `djangorestframework-stubs` | Código sin tipar o tipos inconsistentes |
-| `check-deploy` | `manage.py check --deploy --fail-level WARNING` con settings de producción | Configuración insegura |
-| `tests-backend` | `manage.py makemigrations --check --dry-run` y pytest contra PostgreSQL 17 en un service container, coverage mínimo de 80 % | Modelo cambiado sin migración, test fallido, coverage bajo el umbral, o algún test salteado por falta de base |
-| `frontend` | Prettier, oxlint, `tsc --noEmit`, vitest con coverage mínimo de 80 %, `vite build` | Cualquiera de esos pasos |
-| `secretos` | gitleaks sobre el árbol de trabajo | Credencial detectada |
-| `imagen` | `docker build` del Dockerfile de producción | La imagen no compila |
+| Job | Nombre en GitHub | Qué hace | Falla cuando |
+| --- | --- | --- | --- |
+| `convenciones` (solo PR) | Convenciones (rama y commits) | Prueba el validador y valida rama contra destino según la tabla de ramas y el formato de cada commit | Validador roto; rama mal nombrada o con destino incorrecto; commit fuera de formato |
+| `lint-python` | Lint Python (ruff) | `ruff format --check` y `ruff check` | Formato o reglas de ruff |
+| `tipos` | Tipos (mypy --strict) | `mypy --strict` con `django-stubs` y `djangorestframework-stubs` | Código sin tipar o tipos inconsistentes |
+| `check-deploy` | Configuración de producción (check --deploy) | `manage.py check --deploy --fail-level WARNING` con settings de producción | Configuración insegura |
+| `tests-backend` | Tests backend (PostgreSQL) | `manage.py makemigrations --check --dry-run` y pytest contra PostgreSQL 17 en un service container, coverage mínimo de 80 % | Modelo cambiado sin migración, test fallido, coverage bajo el umbral, o algún test salteado por falta de base |
+| `frontend` | Frontend | `npm run format:check` (Prettier), `lint` (oxlint), `typecheck` (`tsc -b`), `test:coverage` (vitest, mínimo de 80 % en líneas y sentencias) y `build` | Cualquiera de esos pasos |
+| `secretos` | Credenciales (gitleaks) | gitleaks sobre el árbol de trabajo | Credencial detectada |
+| `imagen` | Imagen de producción | `docker build` del Dockerfile de producción | La imagen no compila |
 
-Estos jobs los incorpora el PR `chore/gates-de-calidad`. Las versiones fijas de las herramientas están en `requirements-dev.txt`; actualizarlas es un cambio deliberado, en su propio PR.
+Las versiones fijas de las herramientas están en `requirements-dev.txt`; actualizarlas es un cambio deliberado, en su propio PR.
 
 ## 6. Configuración manual en GitHub
 
@@ -94,7 +94,7 @@ Repetí estos pasos para cada rama:
 1. Abrí el repositorio en GitHub → **Settings** → **Branches** → **Add rule** (o **Add branch ruleset**).
 2. En *Branch name pattern* escribí `main` (y después repetí con `develop`).
 3. Activá **Require a pull request before merging**.
-4. Activá **Require status checks to pass before merging** y agregá todos los jobs del CI: `convenciones`, `lint-python`, `tipos`, `check-deploy`, `tests-backend`, `frontend`, `secretos` e `imagen`.
+4. Activá **Require status checks to pass before merging** y agregá los ocho checks del CI con el nombre que muestra GitHub: **Convenciones (rama y commits)**, **Lint Python (ruff)**, **Tipos (mypy --strict)**, **Configuración de producción (check --deploy)**, **Tests backend (PostgreSQL)**, **Frontend**, **Credenciales (gitleaks)** e **Imagen de producción**.
 5. Activá **Do not allow bypassing the above settings**.
 6. Guardá con **Create**.
 
