@@ -80,4 +80,4 @@ Iniciá sesión con un usuario creado en Django. En **Carteles** podés filtrar 
 
 Los archivos `.env`, entornos virtuales, dependencias instaladas, compilados y el PDF privado están ignorados por Git. Usá datos ficticios o anonimizados en desarrollo y pruebas.
 
-Si `git push` falla por credenciales, los commits locales permanecen intactos. Iniciá sesión en GitHub con el método habitual del equipo y luego ejecutá `git push -u origin main`; no uses `--force`.
+Si `git push` falla por credenciales, los commits locales permanecen intactos. Iniciá sesión en GitHub con el método habitual del equipo y luego ejecutá `git push -u origin <tu-rama>` y abrí el PR a `develop` (`main` solo recibe releases y hotfixes; ver [gestión de configuración](../gestion-de-configuracion.md)); no uses `--force`.
