@@ -15,7 +15,10 @@ export default function Login({ onLogin }: LoginProps) {
     setBusy(true)
     setError('')
     try {
-      const user = await apiWrite<{ username: string }>('/api/auth/login/', 'POST', { username, password })
+      const user = await apiWrite<{ username: string }>('/api/auth/login/', 'POST', {
+        username,
+        password,
+      })
       onLogin(user.username)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudo iniciar sesión.')
@@ -26,16 +29,41 @@ export default function Login({ onLogin }: LoginProps) {
 
   return (
     <div className="auth-shell">
-      <div className="brand-mark">BM<span>.</span></div>
+      <div className="brand-mark">
+        BM<span>.</span>
+      </div>
       <p className="eyebrow">Big Media Argentina</p>
       <h1>Inventario de carteles</h1>
       <p className="muted">Ingresá con tu usuario para administrar los espacios publicitarios.</p>
       <form className="card auth-form" onSubmit={(event) => void submit(event)}>
         <h2>Ingresar</h2>
-        <label>Usuario<input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required /></label>
-        <label>Contraseña<input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
-        {error && <p className="error" role="alert">{error}</p>}
-        <button type="submit" disabled={busy}>{busy ? 'Ingresando…' : 'Ingresar'}</button>
+        <label>
+          Usuario
+          <input
+            autoComplete="username"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            required
+          />
+        </label>
+        <label>
+          Contraseña
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+        </label>
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+        <button type="submit" disabled={busy}>
+          {busy ? 'Ingresando…' : 'Ingresar'}
+        </button>
       </form>
     </div>
   )

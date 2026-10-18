@@ -3,8 +3,10 @@ export class ApiError extends Error {
   fields: Record<string, string[]>
 
   constructor(status: number, payload: unknown) {
-    const data = typeof payload === 'object' && payload !== null ? payload as Record<string, unknown> : {}
-    const detail = typeof data.detail === 'string' ? data.detail : 'No se pudo completar la operación.'
+    const data =
+      typeof payload === 'object' && payload !== null ? (payload as Record<string, unknown>) : {}
+    const detail =
+      typeof data.detail === 'string' ? data.detail : 'No se pudo completar la operación.'
     super(detail)
     this.status = status
     this.fields = Object.fromEntries(
@@ -30,11 +32,17 @@ export async function apiGet<T>(path: string): Promise<T> {
   return parseResponse<T>(await fetch(path, { credentials: 'same-origin' }))
 }
 
-export async function apiWrite<T>(path: string, method: 'POST' | 'PATCH', body?: unknown): Promise<T> {
-  return parseResponse<T>(await fetch(path, {
-    method,
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
-    body: JSON.stringify(body ?? {}),
-  }))
+export async function apiWrite<T>(
+  path: string,
+  method: 'POST' | 'PATCH',
+  body?: unknown,
+): Promise<T> {
+  return parseResponse<T>(
+    await fetch(path, {
+      method,
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+      body: JSON.stringify(body ?? {}),
+    }),
+  )
 }

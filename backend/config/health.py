@@ -1,10 +1,10 @@
 """Availability of the API and its primary database."""
 
 from django.db import OperationalError, connection
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
 
 
-def health(request):
+def health(_request: HttpRequest) -> JsonResponse:
     try:
         connection.ensure_connection()
     except OperationalError:

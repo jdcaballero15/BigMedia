@@ -2,8 +2,6 @@
 
 Versión larga de las secciones 3 y 5 de [`CLAUDE.md`](../CLAUDE.md). Para cada regla: qué dice, un ejemplo correcto, uno incorrecto y **cómo se verifica**. La configuración exacta vive en `pyproject.toml` (raíz) y en la configuración del frontend; la justificación, en [ADR-0004](adr/0004-gates-de-calidad-estrictos.md).
 
-> Las herramientas de verificación (ruff, mypy, pre-commit, gitleaks y los jobs nuevos del CI) se activan con el PR `chore/gates-de-calidad`. Las reglas valen desde ahora; "Cómo se verifica" indica quién las hace cumplir una vez activas.
-
 Si una regla estorba, no se desactiva para pasar el CI: se discute y, si corresponde, se cambia con un ADR.
 
 ## Python
@@ -175,7 +173,7 @@ Las herramientas están configuradas con estas decisiones (detalle y alternativa
 
 - **`RUF012` ignorado.** Django y DRF declaran listas mutables como atributos de clase (`Meta.ordering`, `fields`, `permission_classes`). Pasarlas a tuplas cambia las opciones de los modelos y genera migraciones; anotarlas con `ClassVar` agrega ruido.
 - **Migraciones excluidas de ruff y mypy.** Es código generado y el único código propio excluido de ruff y mypy.
-- **Excepciones en tests.** Se permiten `S101`, `S105`, `S106` y `S603` (subprocesos con `sys.executable` en los tests de settings de producción), y las anotaciones son opcionales. mypy relaja `disallow_untyped_defs`, `disallow_incomplete_defs` y `disallow_untyped_calls` solo en `tests.*`.
+- **Excepciones en tests.** En `**/tests/**/*.py` ruff ignora `S101`, `S105`, `S106`, `S603` (subprocesos con `sys.executable` en los tests de settings de producción), `ANN001` y `ANN201` (anotaciones de parámetros y retornos opcionales) y `ARG001` (fixtures de pytest que se piden solo por su efecto). mypy relaja `disallow_untyped_defs`, `disallow_incomplete_defs` y `disallow_untyped_calls` solo en `tests.*`.
 - **`security.W005` y `security.W021` silenciados solo en producción.** El dominio es un subdominio de `onrender.com` que no controlamos y el preload de HSTS es difícil de revertir. Se revisa si se usa un dominio propio.
 - **`PGH` en ruff y `ignore-without-code` en mypy.** Ruff suma la familia `PGH` (`PGH003` para `type: ignore` genérico, `PGH004` para `noqa` genérico) y mypy habilita `enable_error_code = ["ignore-without-code"]`, que `strict` no incluye.
 - **Frontend: el umbral de 80 % aplica a líneas y sentencias.** Funciones y ramas se informan sin umbral.
@@ -194,7 +192,7 @@ function total(items: Item[]): number { ... }
 function total(items: any) { ... }   // @ts-ignore arriba
 ```
 
-Verificación: Prettier y oxlint en el job `frontend` del CI; `tsc --noEmit` con `strict` detecta los `any` implícitos. Los `any` explícitos y los `@ts-ignore` no los detecta ninguna herramienta: los verifica la revisión del PR.
+Verificación: Prettier y oxlint en el job `frontend` del CI; `npm run typecheck` (`tsc -b`) con `strict` detecta los `any` implícitos. Los `any` explícitos y los `@ts-ignore` no los detecta ninguna herramienta: los verifica la revisión del PR.
 
 ## Tests
 

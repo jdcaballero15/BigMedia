@@ -4,11 +4,10 @@ import pytest
 
 from apps.inventario.models import Cartel, EstadoCartel, Formato, Proveedor, Zona
 
-
 MISSING = object()
 
 
-def nuevo_cartel(client, *, formato=MISSING, zona=MISSING, **changes):
+def nuevo_cartel(client, *, formato=MISSING, zona=MISSING, **changes: object):
     if formato is MISSING:
         formato = Formato.objects.get(nombre="Séxtuples")
     if zona is MISSING:
@@ -26,6 +25,7 @@ def nuevo_cartel(client, *, formato=MISSING, zona=MISSING, **changes):
 
 
 @pytest.mark.django_db
+@pytest.mark.regla("RN-005")
 def test_cartel_inherits_capacity_and_shows_readable_name(operativo_client):
     formato = Formato.objects.get(nombre="Séxtuples")
     formato.capacidad_predeterminada = 6
@@ -48,7 +48,8 @@ def test_capacity_can_be_overridden_and_not_reset_when_format_changes(operativo_
     led = Formato.objects.get(nombre="LED")
     changed = operativo_client.patch(
         f"/api/inventario/carteles/{cartel_id}/",
-        data=json.dumps({"formato": led.pk}), content_type="application/json",
+        data=json.dumps({"formato": led.pk}),
+        content_type="application/json",
     )
     assert changed.status_code == 200
     assert changed.json()["capacidad"] == 8
@@ -56,7 +57,7 @@ def test_capacity_can_be_overridden_and_not_reset_when_format_changes(operativo_
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "changes,field",
+    ("changes", "field"),
     [
         ({"direccion": " "}, "direccion"),
         ({"formato": None}, "formato"),
@@ -82,11 +83,13 @@ def test_inactive_catalogs_are_rejected_on_create_but_preserved_on_edit(operativ
     formato.save()
 
     rejected = nuevo_cartel(operativo_client)
-    assert rejected.status_code == 400 and "formato" in rejected.json()
+    assert rejected.status_code == 400
+    assert "formato" in rejected.json()
 
     changed = operativo_client.patch(
         f"/api/inventario/carteles/{cartel_id}/",
-        data=json.dumps({"direccion": "Av. San Martín 1236"}), content_type="application/json",
+        data=json.dumps({"direccion": "Av. San Martín 1236"}),
+        content_type="application/json",
     )
     assert changed.status_code == 200
     assert changed.json()["formato"] == formato.pk
@@ -116,7 +119,8 @@ def test_filters_search_without_accents_and_excludes_bajas(operativo_client):
     baja = EstadoCartel.objects.get(codigo="baja")
     operativo_client.patch(
         f"/api/inventario/carteles/{third.json()['id']}/",
-        data=json.dumps({"estado": baja.pk}), content_type="application/json",
+        data=json.dumps({"estado": baja.pk}),
+        content_type="application/json",
     )
 
     filtered = operativo_client.get(
@@ -125,7 +129,9 @@ def test_filters_search_without_accents_and_excludes_bajas(operativo_client):
     assert [row["id"] for row in filtered.json()] == [first.json()["id"]]
     assert len(operativo_client.get("/api/inventario/carteles/").json()) == 2
     assert len(operativo_client.get("/api/inventario/carteles/?incluir_bajas=1").json()) == 3
-    assert operativo_client.get(f"/api/inventario/carteles/{third.json()['id']}/").status_code == 200
+    assert (
+        operativo_client.get(f"/api/inventario/carteles/{third.json()['id']}/").status_code == 200
+    )
 
 
 @pytest.mark.django_db
@@ -164,7 +170,8 @@ def test_cartel_can_be_marked_baja_but_never_deleted(operativo_client):
     baja = EstadoCartel.objects.get(codigo="baja")
     changed = operativo_client.patch(
         f"/api/inventario/carteles/{cartel_id}/",
-        data=json.dumps({"estado": baja.pk}), content_type="application/json",
+        data=json.dumps({"estado": baja.pk}),
+        content_type="application/json",
     )
     assert changed.status_code == 200
     assert operativo_client.delete(f"/api/inventario/carteles/{cartel_id}/").status_code == 405

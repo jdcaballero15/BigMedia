@@ -1,5 +1,10 @@
+from typing import Any
+
+from django.db.models import QuerySet
 from rest_framework import permissions, viewsets
 from rest_framework.exceptions import ValidationError
+from rest_framework.request import Request
+from rest_framework.views import APIView
 
 from .models import Cartel, EstadoCartel, Formato, Proveedor, Zona, normalizar_busqueda
 from .serializers import (
@@ -12,7 +17,7 @@ from .serializers import (
 
 
 class PuedeOperarInventario(permissions.BasePermission):
-    def has_permission(self, request, view):
+    def has_permission(self, request: Request, _view: APIView) -> bool:
         if not request.user or not request.user.is_authenticated:
             return False
         if request.method in permissions.SAFE_METHODS:
@@ -20,12 +25,14 @@ class PuedeOperarInventario(permissions.BasePermission):
         return request.user.is_superuser or request.user.groups.filter(name="Operativo").exists()
 
 
-class CatalogoViewSet(viewsets.ModelViewSet):
+class InventarioViewSet(viewsets.ModelViewSet[Any]):
     permission_classes = [permissions.IsAuthenticated, PuedeOperarInventario]
     http_method_names = ["get", "post", "patch", "head", "options"]
 
-    def get_queryset(self):
-        queryset = self.queryset.all()
+
+class CatalogoViewSet(InventarioViewSet):
+    def get_queryset(self) -> QuerySet[Any]:
+        queryset = super().get_queryset()
         if self.action == "list" and self.request.query_params.get("incluir_inactivos") != "1":
             queryset = queryset.filter(activo=True)
         return queryset
@@ -51,12 +58,12 @@ class EstadoCartelViewSet(CatalogoViewSet):
     serializer_class = EstadoCartelSerializer
 
 
-class CartelViewSet(CatalogoViewSet):
+class CartelViewSet(InventarioViewSet):
     queryset = Cartel.objects.select_related("formato", "zona", "proveedor", "estado")
     serializer_class = CartelSerializer
 
-    def get_queryset(self):
-        queryset = self.queryset.all()
+    def get_queryset(self) -> QuerySet[Any]:
+        queryset = super().get_queryset()
         if self.action != "list":
             return queryset
         params = self.request.query_params

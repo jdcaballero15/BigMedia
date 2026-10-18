@@ -1,16 +1,107 @@
 name: CI
 
+# Se ejecuta en cada PR y push a develop y main. Un PR no se puede mergear si falla un job.
+# Las reglas están en CLAUDE.md y docs/estandares-de-codigo.md; las versiones de las
+# herramientas, en requirements-dev.txt.
+
 on:
   pull_request:
-    branches: [main]
+    branches: [develop, main]
   push:
-    branches: [main]
+    branches: [develop, main]
 
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "24"
+
 jobs:
-  verify:
+  convenciones:
+    name: Convenciones (rama y commits)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Probar el validador
+        run: bash .github/scripts/test_validar_convenciones.sh
+      - name: Validar nombre y destino de la rama
+        env:
+          RAMA: ${{ github.head_ref }}
+          DESTINO: ${{ github.base_ref }}
+        run: |
+          bash .github/scripts/validar_convenciones.sh rama "$RAMA" "$DESTINO" \
+            || { echo "::error::Nombre o destino de rama inválido."; exit 1; }
+      - name: Validar los commits
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          fallos=0
+          while IFS= read -r asunto; do
+            [ -n "$asunto" ] || continue
+            bash .github/scripts/validar_convenciones.sh commit "$asunto" \
+              || { echo "::error::$asunto"; fallos=1; }
+          done < <(git log --format=%s "$BASE..$HEAD")
+          exit "$fallos"
+
+  lint-python:
+    name: Lint Python (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - run: ruff format --check --diff .
+      - run: ruff check --output-format=github .
+
+  tipos:
+    name: Tipos (mypy --strict)
+    runs-on: ubuntu-latest
+    env:
+      # El plugin de django-stubs importa los settings.
+      DJANGO_SECRET_KEY: test-only-ci-secret-key-with-enough-characters-123456789
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt -e backend/
+      - run: mypy backend
+
+  check-deploy:
+    name: Configuración de producción (check --deploy)
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_ENV: production
+      DJANGO_SECRET_KEY: test-only-production-secret-key-with-enough-characters-123
+      RENDER_EXTERNAL_HOSTNAME: bigmedia.onrender.com
+      DATABASE_URL: postgresql://test-only:test-only@localhost:5432/test-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - run: pip install -e backend/
+      - run: python backend/manage.py check --deploy --fail-level WARNING
+
+  tests-backend:
+    name: Tests backend (PostgreSQL)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -18,47 +109,75 @@ jobs:
         env:
           POSTGRES_DB: bigmedia_test
           POSTGRES_USER: bigmedia_test
-          POSTGRES_PASSWORD: local-ci-only-password
+          POSTGRES_PASSWORD: test-only-ci-password
         ports:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U bigmedia_test -d bigmedia_test"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
+          --health-interval 5s --health-timeout 3s --health-retries 10
     env:
       DJANGO_SECRET_KEY: test-only-ci-secret-key-with-enough-characters-123456789
-      DJANGO_DEBUG: 'false'
+      DJANGO_DEBUG: "false"
       POSTGRES_DB: bigmedia_test
       POSTGRES_USER: bigmedia_test
-      POSTGRES_PASSWORD: local-ci-only-password
+      POSTGRES_PASSWORD: test-only-ci-password
       DB_HOST: 127.0.0.1
-      DB_PORT: '5432'
-      BIGMEDIA_RUN_DB_TESTS: '1'
+      DB_PORT: "5432"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-          cache-dependency-path: backend/pyproject.toml
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt -e backend/
+      - name: Verificar que no faltan migraciones
+        run: python backend/manage.py makemigrations --check --dry-run
+      - name: Tests y coverage
+        run: pytest --cov --cov-report=term-missing | tee pytest.txt
+      - name: Verificar que no se salteó ningún test
+        run: |
+          if grep -qE "[0-9]+ skipped" pytest.txt; then
+            echo "::error::Hay tests salteados. En CI todos deben correr contra PostgreSQL."
+            exit 1
+          fi
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Install dependencies
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:coverage
+      - run: npm run build
+
+  secretos:
+    name: Credenciales (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar gitleaks
         run: |
-          python -m pip install -e './backend[dev]'
-          npm ci --prefix frontend
-      - name: Check frontend
-        run: |
-          npm test --prefix frontend
-          npm run lint --prefix frontend
-          npm run build --prefix frontend
-      - name: Check backend with PostgreSQL
-        run: |
-          python -m pytest backend/tests -q
-          python backend/manage.py check
-      - name: Build production image
-        run: docker build -t bigmedia:ci .
+          VERSION=8.21.2
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          sudo mv gitleaks /usr/local/bin/
+      - run: gitleaks detect --source . --no-git --redact -v
+
+  imagen:
+    name: Imagen de producción
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t bigmedia:ci .

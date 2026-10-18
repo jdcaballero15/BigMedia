@@ -7,7 +7,6 @@ from django.views.generic import TemplateView
 from config.auth_views import login_view, logout_view, me
 from config.health import health
 
-
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/health/", health, name="health"),

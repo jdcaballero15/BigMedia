@@ -13,7 +13,7 @@ from django.core.management.base import BaseCommand, CommandError
 class Command(BaseCommand):
     help = "Crea el superusuario de DJANGO_SUPERUSER_USERNAME si no existe."
 
-    def handle(self, *args: object, **options: object) -> None:
+    def handle(self, *_args: object, **_options: object) -> None:
         usuario = os.environ.get("DJANGO_SUPERUSER_USERNAME", "").strip()
         if not usuario:
             self.stdout.write("Sin DJANGO_SUPERUSER_USERNAME: no se crea administrador.")

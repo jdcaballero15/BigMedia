@@ -79,4 +79,4 @@ inventario real.
 - Revisar **Deploys** y **Logs** cuando falle un build, migración o chequeo de salud.
 - Vigilar uso de disco, factura y disponibilidad de recuperación en el panel.
 - Integrar cambios solo por PR según GitFlow ([gestión de configuración](../gestion-de-configuracion.md)): rama de trabajo → PR a `develop`; `main` solo recibe releases desde `develop` y hotfixes; CI prueba backend, frontend y construcción de la imagen antes del despliegue automático.
-- Mantener datos reales fuera de bases de desarrollo y pruebas locales. El entorno local usa `.env` y Docker Compose según [desarrollo local](desarrollo-local.md).
+- Mantener datos reales fuera de bases de desarrollo y pruebas locales. El entorno local usa `backend/.env` y Docker Compose según [desarrollo local](desarrollo-local.md).

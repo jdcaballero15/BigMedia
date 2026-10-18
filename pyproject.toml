@@ -1,0 +1,96 @@
+# Configuración de las herramientas de Python para todo el repositorio.
+# Las reglas están explicadas en docs/estandares-de-codigo.md y ADR-0004.
+# Las dependencias de la aplicación viven en backend/pyproject.toml.
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+# Raíz del código: apps, config y tests son imports propios (first-party).
+src = ["backend"]
+# Las migraciones son código generado por Django.
+extend-exclude = ["frontend/node_modules", "**/migrations"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # orden de imports
+    "UP",       # sintaxis moderna
+    "B",        # bugbear
+    "S",        # seguridad (bandit)
+    "ANN",      # anotaciones de tipos
+    "PT",       # pytest
+    "C90",      # complejidad ciclomática
+    "SIM",      # simplificaciones
+    "RET",      # returns
+    "ARG",      # argumentos sin usar
+    "PTH",      # pathlib
+    "DTZ",      # fechas sin zona horaria
+    "T20",      # sin print()
+    "BLE",      # sin except Exception
+    "RUF",      # reglas propias de ruff
+    "DJ",       # Django
+    "PGH",       # sin noqa ni type: ignore generales (ADR-0004)
+]
+ignore = [
+    "ANN401",   # Any solo en los bordes del sistema
+    "E501",     # el largo de línea lo maneja el formateador
+    "RUF012",   # Django y DRF declaran listas como atributos de clase (ADR-0004)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# S603: los tests de settings de producción lanzan sys.executable en un subproceso.
+"**/tests/**/*.py" = ["S101", "S105", "S106", "S603", "ANN001", "ANN201", "ARG001"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+show_error_codes = true
+pretty = true
+mypy_path = "backend"
+explicit_package_bases = true
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+exclude = ['/migrations/']
+enable_error_code = ["ignore-without-code"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+
+[tool.django-stubs]
+django_settings_module = "config.settings"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+pythonpath = ["backend"]
+testpaths = ["backend/tests"]
+python_files = ["test_*.py"]
+addopts = ["--strict-markers", "--strict-config", "-ra"]
+markers = [
+    "regla(id): verifica la regla de negocio RN-xxx de docs/aidlc/reglas-de-negocio.md",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["backend"]
+omit = [
+    "backend/tests/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+# Mínimo del proyecto. Bajarlo requiere un ADR (ADR-0004).
+fail_under = 80
+show_missing = true
+skip_covered = true
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedError"]

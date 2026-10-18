@@ -2,22 +2,21 @@
 
 import os
 from pathlib import Path
+from typing import Any
 
 import dj_database_url
 from dotenv import load_dotenv
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIST = BASE_DIR / "frontend_dist"
-load_dotenv(BASE_DIR.parent / ".env")
+ENV_FILE = BASE_DIR / ".env"
+load_dotenv(ENV_FILE)
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 PRODUCTION = os.environ.get("DJANGO_ENV") == "production"
 DEBUG = not PRODUCTION and os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
 ALLOWED_HOSTS = (
-    [os.environ["RENDER_EXTERNAL_HOSTNAME"]]
-    if PRODUCTION
-    else ["127.0.0.1", "localhost"]
+    [os.environ["RENDER_EXTERNAL_HOSTNAME"]] if PRODUCTION else ["127.0.0.1", "localhost"]
 )
 
 INSTALLED_APPS = [
@@ -61,7 +60,7 @@ TEMPLATES = [
 ]
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
+DATABASES: dict[str, Any] = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("POSTGRES_DB", "bigmedia"),
@@ -78,6 +77,9 @@ if PRODUCTION:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 3600
+    # El dominio es un subdominio de onrender.com que no controlamos y el preload de HSTS es
+    # difícil de revertir. Revisar si se usa un dominio propio (ADR-0004).
+    SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -97,8 +99,6 @@ STATICFILES_DIRS = [FRONTEND_DIST] if FRONTEND_DIST.exists() else []
 if PRODUCTION:
     STORAGES = {
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
-        },
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
     }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
