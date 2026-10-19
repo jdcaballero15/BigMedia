@@ -74,7 +74,7 @@ export default function MarcaForm({ marca, clientes, rubros, onSave, onCancel }:
             <option value="">Seleccionar</option>
             {vigentes(clientes, marca?.cliente).map((item) => (
               <option key={item.id} value={item.id}>
-                {item.nombre}
+                {item.nombre_visible}
                 {item.activo ? '' : ' (inactivo)'}
               </option>
             ))}

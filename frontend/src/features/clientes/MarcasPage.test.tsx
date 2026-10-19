@@ -8,8 +8,23 @@ const fail = (status: number, data: unknown) => ({ ok: false, status, json: asyn
 
 const base = { razon_social: '', cuit: '', tipo_nombre: 'Intermediario', telefono: '', correo: '' }
 const clientes: Cliente[] = [
-  { ...base, id: 1, nombre: 'Agencia Andes', tipo: 'intermediario', activo: true },
-  { ...base, id: 2, nombre: 'Agencia Cerrada', tipo: 'intermediario', activo: false },
+  {
+    ...base,
+    id: 1,
+    nombre: 'Agencia Andes',
+    nombre_visible: 'Agencia Andes',
+    tipo: 'intermediario',
+    activo: true,
+  },
+  { ...base, id: 6, nombre: '', nombre_visible: 'Cliente sin nombre #6', tipo: '', activo: true },
+  {
+    ...base,
+    id: 2,
+    nombre: 'Agencia Cerrada',
+    nombre_visible: 'Agencia Cerrada',
+    tipo: 'intermediario',
+    activo: false,
+  },
 ]
 const rubros: Rubro[] = [
   { id: 3, nombre: 'Bebidas', activo: true },
@@ -59,6 +74,7 @@ test('lista las marcas y filtra por cliente, rubro y nombre', async () => {
   expect(within(tabla).getByText('Agencia Andes')).toBeDefined()
   const filtros = screen.getByRole('search', { name: 'Filtros de marcas' })
   await within(filtros).findByRole('option', { name: 'Agencia Andes' })
+  expect(within(filtros).getByRole('option', { name: 'Cliente sin nombre #6' })).toBeDefined()
   fireEvent.change(within(filtros).getByLabelText('Cliente'), { target: { value: '1' } })
   fireEvent.change(within(filtros).getByLabelText('Rubro'), { target: { value: '3' } })
   fireEvent.change(within(filtros).getByLabelText('Buscar'), { target: { value: 'agua' } })

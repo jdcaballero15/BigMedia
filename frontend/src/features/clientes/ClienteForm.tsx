@@ -9,7 +9,7 @@ export type ClienteInput = {
   nombre: string
   razon_social: string
   cuit: string
-  tipo?: TipoCliente
+  tipo: TipoCliente | ''
   telefono: string
   correo: string
   activo: boolean
@@ -43,8 +43,7 @@ export default function ClienteForm({ cliente, onSave, onCancel }: Props) {
         nombre: nombre.trim(),
         razon_social: razonSocial.trim(),
         cuit: cuit.trim(),
-        // Sin tipo elegido no se envía: la API responde con su mensaje de obligatorio.
-        ...(tipo ? { tipo } : {}),
+        tipo,
         telefono: telefono.trim(),
         correo: correo.trim(),
         activo,
@@ -72,17 +71,13 @@ export default function ClienteForm({ cliente, onSave, onCancel }: Props) {
       </div>
       <div className="form-grid">
         <label>
-          Nombre de fantasía
-          <input value={nombre} onChange={(event) => setNombre(event.target.value)} required />
+          Nombre
+          <input value={nombre} onChange={(event) => setNombre(event.target.value)} />
           <FieldErrors messages={errors.nombre} />
         </label>
         <label>
           Razón social
-          <input
-            value={razonSocial}
-            onChange={(event) => setRazonSocial(event.target.value)}
-            required
-          />
+          <input value={razonSocial} onChange={(event) => setRazonSocial(event.target.value)} />
           <FieldErrors messages={errors.razon_social} />
         </label>
         <label>
@@ -100,9 +95,8 @@ export default function ClienteForm({ cliente, onSave, onCancel }: Props) {
           <select
             value={tipo}
             onChange={(event) => setTipo(event.target.value as TipoCliente | '')}
-            required
           >
-            <option value="">Seleccionar</option>
+            <option value="">Sin tipo</option>
             {TIPOS_CLIENTE.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
@@ -131,7 +125,9 @@ export default function ClienteForm({ cliente, onSave, onCancel }: Props) {
         </label>
       </div>
       {!cliente && tipo === 'directo' && (
-        <p className="muted">Al guardarlo se crea también una marca con su nombre.</p>
+        <p className="muted">
+          Si tiene nombre, al guardarlo se crea también una marca con ese nombre.
+        </p>
       )}
       {generalError && (
         <p className="error" role="alert">

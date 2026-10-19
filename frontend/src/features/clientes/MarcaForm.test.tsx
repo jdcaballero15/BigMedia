@@ -6,8 +6,23 @@ import { ApiError } from '../../shared/api'
 
 const base = { razon_social: '', cuit: '', tipo_nombre: 'Intermediario', telefono: '', correo: '' }
 const clientes: Cliente[] = [
-  { ...base, id: 1, nombre: 'Agencia Andes', tipo: 'intermediario', activo: true },
-  { ...base, id: 2, nombre: 'Agencia Cerrada', tipo: 'intermediario', activo: false },
+  {
+    ...base,
+    id: 1,
+    nombre: 'Agencia Andes',
+    nombre_visible: 'Agencia Andes',
+    tipo: 'intermediario',
+    activo: true,
+  },
+  { ...base, id: 6, nombre: '', nombre_visible: 'Cliente sin nombre #6', tipo: '', activo: true },
+  {
+    ...base,
+    id: 2,
+    nombre: 'Agencia Cerrada',
+    nombre_visible: 'Agencia Cerrada',
+    tipo: 'intermediario',
+    activo: false,
+  },
 ]
 const rubros: Rubro[] = [
   { id: 3, nombre: 'Bebidas', activo: true },
@@ -32,6 +47,7 @@ test('una marca nueva solo ofrece clientes y rubros activos', () => {
   render(<MarcaForm clientes={clientes} rubros={rubros} onSave={vi.fn()} onCancel={vi.fn()} />)
   expect(screen.getByRole('heading', { name: 'Nueva marca' })).toBeDefined()
   expect(screen.getByRole('option', { name: 'Agencia Andes' })).toBeDefined()
+  expect(screen.getByRole('option', { name: 'Cliente sin nombre #6' })).toBeDefined()
   expect(screen.queryByRole('option', { name: /Agencia Cerrada/ })).toBeNull()
   expect(screen.queryByRole('option', { name: /Viejo rubro/ })).toBeNull()
 })

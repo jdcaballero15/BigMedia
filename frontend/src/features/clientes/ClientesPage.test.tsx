@@ -13,6 +13,7 @@ const agencia: Cliente = {
   cuit: '30712345678',
   tipo: 'intermediario',
   tipo_nombre: 'Intermediario',
+  nombre_visible: 'Agencia Andes',
   telefono: '261 400 0000',
   correo: '',
   activo: true,
@@ -98,6 +99,29 @@ test('combina el filtro por tipo con los inactivos y avisa si no hay resultados'
   )
 })
 
+test('muestra el nombre visible de un cliente sin nombre ni tipo', async () => {
+  const sinNombre: Cliente = {
+    ...agencia,
+    id: 3,
+    nombre: '',
+    nombre_visible: 'Cliente sin nombre #3',
+    razon_social: '',
+    tipo: '',
+    tipo_nombre: '',
+  }
+  mockFetch((url) => {
+    if (url === '/api/clientes/clientes/') return ok([sinNombre])
+    if (url.startsWith('/api/clientes/marcas/?cliente=3')) return ok([])
+    return undefined
+  })
+  render(<ClientesPage />)
+
+  expect(await screen.findByText('Cliente sin nombre #3')).toBeDefined()
+  expect(screen.getByText('Sin tipo')).toBeDefined()
+  fireEvent.click(screen.getByRole('button', { name: 'Ver marcas' }))
+  expect(screen.getByRole('heading', { name: 'Marcas de Cliente sin nombre #3' })).toBeDefined()
+})
+
 test('muestra un error si no se pueden cargar los clientes', async () => {
   mockFetch(() => fail(500, {}))
   render(<ClientesPage />)
@@ -109,6 +133,7 @@ test('al crear un cliente directo muestra la marca que creó la API', async () =
     ...agencia,
     id: 2,
     nombre: 'Bodega Sol',
+    nombre_visible: 'Bodega Sol',
     razon_social: 'Bodega Sol SA',
     cuit: '',
     tipo: 'directo',
@@ -125,7 +150,7 @@ test('al crear un cliente directo muestra la marca que creó la API', async () =
 
   fireEvent.click(await screen.findByRole('button', { name: 'Nuevo cliente' }))
   const form = screen.getByRole('form', { name: 'Formulario de cliente' })
-  fireEvent.change(within(form).getByLabelText('Nombre de fantasía'), {
+  fireEvent.change(within(form).getByLabelText('Nombre'), {
     target: { value: 'Bodega Sol' },
   })
   fireEvent.change(within(form).getByLabelText('Razón social'), {
@@ -140,6 +165,37 @@ test('al crear un cliente directo muestra la marca que creó la API', async () =
   expect(screen.queryByRole('form', { name: 'Formulario de cliente' })).toBeNull()
   const post = fetchMock.mock.calls.find(([, options]) => options?.method === 'POST')
   expect(body(post?.[1])).toMatchObject({ nombre: 'Bodega Sol', tipo: 'directo' })
+})
+
+test('un cliente directo sin nombre no muestra aviso de marca creada', async () => {
+  const creado: Cliente = {
+    ...agencia,
+    id: 4,
+    nombre: '',
+    nombre_visible: 'Cliente sin nombre #4',
+    razon_social: '',
+    cuit: '',
+    tipo: 'directo',
+    tipo_nombre: 'Directo',
+  }
+  const fetchMock = mockFetch((url, options) => {
+    if (url === '/api/clientes/clientes/' && options?.method === 'POST') return ok(creado)
+    if (url === '/api/clientes/clientes/') return ok([])
+    if (url === '/api/clientes/marcas/?cliente=4&incluir_inactivos=1') return ok([])
+    return undefined
+  })
+  render(<ClientesPage />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Nuevo cliente' }))
+  const form = screen.getByRole('form', { name: 'Formulario de cliente' })
+  fireEvent.change(within(form).getByLabelText('Tipo'), { target: { value: 'directo' } })
+  fireEvent.click(within(form).getByRole('button', { name: 'Guardar cliente' }))
+
+  expect(await screen.findByText('Este cliente todavía no tiene marcas.')).toBeDefined()
+  expect(screen.getByRole('heading', { name: 'Marcas de Cliente sin nombre #4' })).toBeDefined()
+  expect(screen.queryByText(/Se creó la marca/)).toBeNull()
+  const post = fetchMock.mock.calls.find(([, options]) => options?.method === 'POST')
+  expect(body(post?.[1])).toMatchObject({ nombre: '', tipo: 'directo' })
 })
 
 test('la ficha de un intermediario lista todas sus marcas', async () => {

@@ -135,7 +135,7 @@ export default function MarcasPage() {
             <option value="">Todos</option>
             {clientes.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.nombre}
+                {item.nombre_visible}
                 {item.activo ? '' : ' (inactivo)'}
               </option>
             ))}

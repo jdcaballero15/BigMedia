@@ -13,8 +13,11 @@ export type Cliente = {
   nombre: string
   razon_social: string
   cuit: string
-  tipo: TipoCliente
+  /** `""` = sin tipo. */
+  tipo: TipoCliente | ''
   tipo_nombre: string
+  /** El nombre, o "Cliente sin nombre #<id>" si no tiene. */
+  nombre_visible: string
   telefono: string
   correo: string
   activo: boolean

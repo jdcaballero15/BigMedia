@@ -11,6 +11,7 @@ const cliente: Cliente = {
   cuit: '20123456786',
   tipo: 'intermediario',
   tipo_nombre: 'Intermediario',
+  nombre_visible: 'Café Mendoza',
   telefono: '261 555 0000',
   correo: 'hola@cafe.com.ar',
   activo: true,
@@ -24,7 +25,7 @@ afterEach(() => {
 test('envía los datos del cliente nuevo sin espacios sobrantes', async () => {
   const onSave = vi.fn().mockResolvedValue(undefined)
   render(<ClienteForm onSave={onSave} onCancel={vi.fn()} />)
-  fireEvent.change(screen.getByLabelText('Nombre de fantasía'), {
+  fireEvent.change(screen.getByLabelText('Nombre'), {
     target: { value: ' Bodega Sol ' },
   })
   fireEvent.change(screen.getByLabelText('Razón social'), { target: { value: 'Bodega Sol SA' } })
@@ -49,7 +50,7 @@ test('envía los datos del cliente nuevo sin espacios sobrantes', async () => {
 test('avisa que un cliente directo nuevo crea su marca', () => {
   render(<ClienteForm onSave={vi.fn()} onCancel={vi.fn()} />)
   fireEvent.change(screen.getByLabelText('Tipo'), { target: { value: 'directo' } })
-  expect(screen.getByText(/se crea también una marca con su nombre/)).toBeDefined()
+  expect(screen.getByText(/se crea también una marca con ese nombre/)).toBeDefined()
 })
 
 test('precarga el cliente al editar y permite inactivarlo', async () => {
@@ -83,15 +84,23 @@ test('muestra junto al campo los errores de validación de la API', async () => 
   expect(screen.getByRole('alert').textContent).toBe('No se pudo completar la operación.')
 })
 
-test('sin tipo elegido no lo envía, para que la API pida elegirlo', async () => {
-  const onSave = vi
-    .fn()
-    .mockRejectedValue(new ApiError(400, { tipo: ['Elegí un tipo de cliente.'] }))
+test('todos los campos son opcionales: sin tipo envía tipo vacío', async () => {
+  const onSave = vi.fn().mockResolvedValue(undefined)
   render(<ClienteForm onSave={onSave} onCancel={vi.fn()} />)
-  fireEvent.change(screen.getByLabelText('Nombre de fantasía'), { target: { value: 'Sin tipo' } })
+  expect(screen.getByRole('option', { name: 'Sin tipo' })).toBeDefined()
+  expect(document.querySelectorAll('[required]')).toHaveLength(0)
   fireEvent.click(screen.getByRole('button', { name: 'Guardar cliente' }))
-  expect(await screen.findByText('Elegí un tipo de cliente.')).toBeDefined()
-  expect(onSave.mock.calls[0][0]).not.toHaveProperty('tipo')
+  await waitFor(() =>
+    expect(onSave).toHaveBeenCalledWith({
+      nombre: '',
+      razon_social: '',
+      cuit: '',
+      tipo: '',
+      telefono: '',
+      correo: '',
+      activo: true,
+    }),
+  )
 })
 
 test('cancelar avisa al contenedor', () => {

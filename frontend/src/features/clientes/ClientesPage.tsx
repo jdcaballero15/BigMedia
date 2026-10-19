@@ -34,7 +34,7 @@ function MarcasDelCliente({
     }
   }, [cliente.id, revision])
 
-  const titulo = `Marcas de ${cliente.nombre}`
+  const titulo = `Marcas de ${cliente.nombre_visible}`
   return (
     <section className="card edit-form" aria-label={titulo}>
       <div className="form-heading">
@@ -43,7 +43,8 @@ function MarcasDelCliente({
           Cerrar
         </button>
       </div>
-      {recienCreado && cliente.tipo === 'directo' && carga.marcas.length > 0 && (
+      {/* Un cliente recién creado solo tiene marcas si la API creó su homónima. */}
+      {recienCreado && carga.marcas.length > 0 && (
         <p className="notice" role="status">
           Se creó la marca «{carga.marcas[0].nombre}» para este cliente directo.
         </p>
@@ -132,7 +133,8 @@ export default function ClientesPage() {
   }
 
   async function inactivar(cliente: Cliente) {
-    if (!window.confirm(`¿Inactivar a ${cliente.nombre}? Sus datos y marcas se conservan.`)) return
+    if (!window.confirm(`¿Inactivar a ${cliente.nombre_visible}? Sus datos y marcas se conservan.`))
+      return
     try {
       await apiWrite(`/api/clientes/clientes/${cliente.id}/`, 'PATCH', { activo: false })
       setRevision((current) => current + 1)
@@ -233,11 +235,13 @@ export default function ClientesPage() {
               {clientes.map((item) => (
                 <tr key={item.id}>
                   <td className="primary-cell">
-                    {item.nombre}
-                    <small className="cell-detail">{item.razon_social}</small>
+                    {item.nombre_visible}
+                    {item.razon_social && (
+                      <small className="cell-detail">{item.razon_social}</small>
+                    )}
                   </td>
                   <td>{item.cuit || '—'}</td>
-                  <td>{item.tipo_nombre}</td>
+                  <td>{item.tipo_nombre || 'Sin tipo'}</td>
                   <td>{item.telefono || '—'}</td>
                   <td>{item.correo || '—'}</td>
                   <td>{item.activo ? 'Activo' : 'Inactivo'}</td>
