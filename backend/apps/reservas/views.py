@@ -1,8 +1,10 @@
+from datetime import date
 from typing import cast
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import QuerySet
+from django.utils import timezone
 from rest_framework import permissions, viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
@@ -115,3 +117,40 @@ class DisponibilidadView(APIView):
             for fila in queryset.values(*services.CAMPOS_DISPONIBILIDAD)
         ]
         return Response(filas)
+
+
+class CalendarioView(APIView):
+    """Calendario de disponibilidad a futuro: carteles por mes (HU-042)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, request: Request) -> Response:
+        params = request.query_params
+        hoy = timezone.localdate()
+        desde = self._fecha(params.get("desde"), hoy)
+        # Por defecto, 3 columnas: el mes actual y los dos siguientes.
+        hasta = self._fecha(params.get("hasta"), services.sumar_meses(desde, 2))
+        if hasta < desde:
+            raise ValidationError(
+                {"hasta": "La fecha de fin no puede ser anterior a la de inicio."}
+            )
+        if services.sumar_meses(desde, services.MESES_CALENDARIO_MAX) < hasta:
+            raise ValidationError(
+                {"hasta": f"El rango no puede superar los {services.MESES_CALENDARIO_MAX} meses."}
+            )
+        zona = _id_positivo(params["zona"], "zona") if params.get("zona") else None
+        formato = _id_positivo(params["formato"], "formato") if params.get("formato") else None
+        return Response(
+            services.calendario_disponibilidad(
+                desde, hasta, zona=zona, formato=formato, modalidad=params.get("modalidad")
+            )
+        )
+
+    @staticmethod
+    def _fecha(valor: str | None, por_defecto: date) -> date:
+        if not valor:
+            return por_defecto
+        try:
+            return date.fromisoformat(valor)
+        except ValueError as error:
+            raise ValidationError({"fecha": "Formato de fecha inválido (AAAA-MM-DD)."}) from error
