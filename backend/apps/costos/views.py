@@ -22,15 +22,24 @@ def _id_positivo(valor: str, campo: str) -> int:
 class CostoViewSet(viewsets.ModelViewSet[Costo]):
     permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
     http_method_names = ["get", "post", "patch", "head", "options"]
-    queryset = Costo.objects.select_related("proveedor")
+    queryset = Costo.objects.select_related(
+        "proveedor", "reserva__cartel__formato", "reserva__campania"
+    )
     serializer_class = CostoSerializer
 
     def get_queryset(self) -> QuerySet[Costo]:
         queryset = super().get_queryset()
-        if self.action == "list" and self.request.query_params.get("reserva"):
-            queryset = queryset.filter(
-                reserva_id=_id_positivo(self.request.query_params["reserva"], "reserva")
-            )
+        if self.action != "list":
+            return queryset
+        params = self.request.query_params
+        if params.get("reserva"):
+            queryset = queryset.filter(reserva_id=_id_positivo(params["reserva"], "reserva"))
+        if params.get("proveedor"):
+            queryset = queryset.filter(proveedor_id=_id_positivo(params["proveedor"], "proveedor"))
+        if params.get("tipo"):
+            if params["tipo"] not in Costo.Tipo.values:
+                raise ValidationError({"tipo": "Tipo de costo desconocido."})
+            queryset = queryset.filter(tipo=params["tipo"])
         return queryset
 
 

@@ -26,3 +26,9 @@ export type Margen = {
   margen: string
   porcentaje: number | null
 }
+
+export type CostoListado = Costo & {
+  cartel_nombre: string
+  campania: number
+  campania_nombre: string
+}

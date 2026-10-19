@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { ApiError, apiGet, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 
-type Categoria = 'zonas' | 'proveedores' | 'formatos' | 'estados'
+export type Categoria = 'zonas' | 'proveedores' | 'formatos' | 'estados'
 type Registro = {
   id: number
   nombre: string
@@ -30,8 +30,20 @@ const singularLabels: Record<Categoria, string> = {
   estados: 'estado',
 }
 
-export default function CatalogosPage() {
-  const [categoria, setCategoria] = useState<Categoria>('zonas')
+type Props = {
+  categorias?: Categoria[]
+  seccion?: string
+  titulo?: string
+  descripcion?: string
+}
+
+export default function CatalogosPage({
+  categorias = ['zonas', 'estados'],
+  seccion = 'Configuración',
+  titulo = 'Catálogos',
+  descripcion = 'Administrá departamentos y estados físicos.',
+}: Props) {
+  const [categoria, setCategoria] = useState<Categoria>(categorias[0])
   const [rows, setRows] = useState<Registro[]>([])
   const [editing, setEditing] = useState<Registro | 'new' | null>(null)
   const [nombre, setNombre] = useState('')
@@ -126,27 +138,29 @@ export default function CatalogosPage() {
     <section>
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Inventario</p>
-          <h2>Catálogos</h2>
-          <p className="muted">Administrá departamentos, proveedores, formatos y estados.</p>
+          <p className="eyebrow">{seccion}</p>
+          <h2>{titulo}</h2>
+          <p className="muted">{descripcion}</p>
         </div>
       </div>
-      <div className="tabs">
-        {(Object.keys(categoryLabels) as Categoria[]).map((item) => (
-          <button
-            key={item}
-            className={item === categoria ? 'active' : ''}
-            onClick={() => {
-              setCategoria(item)
-              setEditing(null)
-            }}
-          >
-            {categoryLabels[item] === 'Proveedores' ? 'Proveedores' : categoryLabels[item]}
-          </button>
-        ))}
-      </div>
+      {categorias.length > 1 && (
+        <div className="tabs">
+          {categorias.map((item) => (
+            <button
+              key={item}
+              className={item === categoria ? 'active' : ''}
+              onClick={() => {
+                setCategoria(item)
+                setEditing(null)
+              }}
+            >
+              {categoryLabels[item]}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="section-heading">
-        <h3>{categoryLabels[categoria]}</h3>
+        <h3>{categorias.length > 1 ? categoryLabels[categoria] : ''}</h3>
         <button className="button-primary" onClick={() => openForm('new')}>
           Nuevo {singularLabels[categoria]}
         </button>
