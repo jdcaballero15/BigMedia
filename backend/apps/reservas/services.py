@@ -1,10 +1,11 @@
 """Reglas de negocio de reservas."""
 
 from datetime import date, timedelta
+from typing import Any
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db.models import Count
+from django.db.models import Count, F, Q, QuerySet
 from django.utils import timezone
 
 from apps.inventario.models import Cartel
@@ -38,6 +39,63 @@ def ocupacion_del_cartel(cartel: Cartel, dia: date | None = None) -> dict[str, i
         fecha_fin__gte=dia,
     ).aggregate(total=Count("id"))["total"]
     return {"cartel": cartel.pk, "capacidad": cartel.capacidad, "ocupados": ocupados}
+
+
+def carteles_con_ocupacion_hoy(dia: date | None = None) -> QuerySet[Cartel]:
+    """Carteles no dados de baja, con `ocupados` y `cupos_libres` (hoy) anotados (HU-041).
+
+    Ordenados por cupos libres. Se filtra y se consume con `.values(...)` en la vista.
+    """
+    dia = dia or timezone.localdate()
+    ocupados_hoy = Count(
+        "reservas",
+        filter=Q(
+            reservas__estado__in=Reserva.ESTADOS_QUE_OCUPAN,
+            reservas__fecha_inicio__lte=dia,
+            reservas__fecha_fin__gte=dia,
+        ),
+    )
+    return (
+        Cartel.objects.filter(estado__es_baja=False)
+        .annotate(ocupados=ocupados_hoy)
+        .annotate(cupos_libres=F("capacidad") - F("ocupados"))
+        .order_by("-cupos_libres", "direccion", "id")
+    )
+
+
+def _nombre_visible_de_fila(fila: dict[str, Any]) -> str:
+    """Replica `Cartel.nombre_visible` a partir de los campos de un `.values()`."""
+    if fila["formato__nombre"] == "Séxtuples":
+        return f"{fila['direccion']} · {fila['capacidad']} slots"
+    if fila["tamano"]:
+        return f"{fila['direccion']} · {fila['tamano']}"
+    return str(fila["direccion"])
+
+
+def fila_disponibilidad(fila: dict[str, Any]) -> dict[str, Any]:
+    """Arma la fila de salida de la vista de disponibilidad (HU-041)."""
+    return {
+        "id": fila["id"],
+        "nombre_visible": _nombre_visible_de_fila(fila),
+        "formato_nombre": fila["formato__nombre"],
+        "zona_nombre": fila["zona__nombre"],
+        "modalidad": fila["formato__modalidad"],
+        "capacidad": fila["capacidad"],
+        "ocupados": fila["ocupados"],
+        "libre": fila["ocupados"] < fila["capacidad"],
+    }
+
+
+CAMPOS_DISPONIBILIDAD = (
+    "id",
+    "direccion",
+    "tamano",
+    "capacidad",
+    "ocupados",
+    "formato__nombre",
+    "formato__modalidad",
+    "zona__nombre",
+)
 
 
 def _estados_que_bloquean() -> set[str]:
