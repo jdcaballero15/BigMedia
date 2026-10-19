@@ -6,11 +6,12 @@ import CatalogosPage from './features/inventario/CatalogosPage'
 import ClientesPage from './features/clientes/ClientesPage'
 import MarcasPage from './features/clientes/MarcasPage'
 import CampaniasPage from './features/campanias/CampaniasPage'
+import DisponibilidadPage from './features/disponibilidad/DisponibilidadPage'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import './App.css'
 
 type Session = { status: 'checking' | 'anonymous' | 'offline' | 'ready'; username: string }
-type Page = 'carteles' | 'catalogos' | 'clientes' | 'marcas' | 'campanias'
+type Page = 'carteles' | 'catalogos' | 'clientes' | 'marcas' | 'campanias' | 'disponibilidad'
 
 const pages: { id: Page; label: string; render: () => ReactNode }[] = [
   { id: 'carteles', label: 'Carteles', render: () => <CartelesPage /> },
@@ -18,6 +19,7 @@ const pages: { id: Page; label: string; render: () => ReactNode }[] = [
   { id: 'clientes', label: 'Clientes', render: () => <ClientesPage /> },
   { id: 'marcas', label: 'Marcas', render: () => <MarcasPage /> },
   { id: 'campanias', label: 'Campañas', render: () => <CampaniasPage /> },
+  { id: 'disponibilidad', label: 'Disponibilidad', render: () => <DisponibilidadPage /> },
 ]
 
 function App() {
