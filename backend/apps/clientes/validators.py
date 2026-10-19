@@ -4,7 +4,7 @@ import re
 
 from django.core.exceptions import ValidationError
 
-_FORMATO_CUIT = re.compile(r"\d{11}|\d{2}-\d{8}-\d")
+_FORMATO_CUIT = re.compile(r"[0-9]{11}|[0-9]{2}-[0-9]{8}-[0-9]")
 _PESOS_CUIT = (5, 4, 3, 2, 7, 6, 5, 4, 3, 2)
 
 
@@ -19,9 +19,13 @@ def normalizar_cuit(valor: str) -> str:
     return texto.replace("-", "")
 
 
+def _son_once_digitos_ascii(valor: str) -> bool:
+    return len(valor) == 11 and valor.isascii() and valor.isdigit()
+
+
 def cuit_es_valido(digitos: str) -> bool:
     """Comprueba el dígito verificador con el algoritmo módulo 11 de AFIP."""
-    if len(digitos) != 11 or not digitos.isdigit():
+    if not _son_once_digitos_ascii(digitos):
         return False
     suma = sum(int(digito) * peso for digito, peso in zip(digitos[:10], _PESOS_CUIT, strict=True))
     verificador = 11 - suma % 11

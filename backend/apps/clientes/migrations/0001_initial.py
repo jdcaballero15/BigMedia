@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'ordering': ['nombre', 'id'],
-                'constraints': [models.UniqueConstraint(condition=models.Q(('cuit', ''), _negated=True), fields=('cuit',), name='cliente_cuit_unico')],
+                'constraints': [models.UniqueConstraint(condition=models.Q(('cuit', ''), _negated=True), fields=('cuit',), name='cliente_cuit_unico', violation_error_message='Ya existe un cliente con ese CUIT.')],
             },
         ),
         migrations.CreateModel(
@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'ordering': ['nombre'],
-                'constraints': [models.UniqueConstraint(django.db.models.functions.text.Lower('nombre'), name='rubro_nombre_ci')],
+                'constraints': [models.UniqueConstraint(django.db.models.functions.text.Lower('nombre'), name='rubro_nombre_ci', violation_error_message='Ya existe un rubro con ese nombre.')],
             },
         ),
         migrations.CreateModel(

@@ -17,7 +17,7 @@ def _id_positivo(valor: str, campo: str) -> int:
     return int(valor)
 
 
-class ClientesViewSet(viewsets.ModelViewSet[Any]):
+class ClientesBaseViewSet(viewsets.ModelViewSet[Any]):
     """Lee cualquiera con sesión, edita Operativo; sin DELETE (baja lógica con `activo`)."""
 
     permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
@@ -38,12 +38,12 @@ class ClientesViewSet(viewsets.ModelViewSet[Any]):
         return normalizar_busqueda(self.request.query_params.get("q", "").strip())
 
 
-class RubroViewSet(ClientesViewSet):
+class RubroViewSet(ClientesBaseViewSet):
     queryset = Rubro.objects.all()
     serializer_class = RubroSerializer
 
 
-class ClienteViewSet(ClientesViewSet):
+class ClienteViewSet(ClientesBaseViewSet):
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
 
@@ -61,7 +61,7 @@ class ClienteViewSet(ClientesViewSet):
         return queryset
 
 
-class MarcaViewSet(ClientesViewSet):
+class MarcaViewSet(ClientesBaseViewSet):
     queryset = Marca.objects.select_related("cliente", "rubro")
     serializer_class = MarcaSerializer
 

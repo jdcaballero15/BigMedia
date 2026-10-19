@@ -23,7 +23,13 @@ class Rubro(models.Model):
 
     class Meta:
         ordering = ["nombre"]
-        constraints = [models.UniqueConstraint(Lower("nombre"), name="rubro_nombre_ci")]
+        constraints = [
+            models.UniqueConstraint(
+                Lower("nombre"),
+                name="rubro_nombre_ci",
+                violation_error_message="Ya existe un rubro con ese nombre.",
+            )
+        ]
 
     def __str__(self) -> str:
         return self.nombre
@@ -51,7 +57,10 @@ class Cliente(models.Model):
         ordering = ["nombre", "id"]
         constraints = [
             models.UniqueConstraint(
-                fields=["cuit"], condition=~models.Q(cuit=""), name="cliente_cuit_unico"
+                fields=["cuit"],
+                condition=~models.Q(cuit=""),
+                name="cliente_cuit_unico",
+                violation_error_message="Ya existe un cliente con ese CUIT.",
             ),
         ]
 

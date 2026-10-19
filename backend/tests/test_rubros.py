@@ -2,6 +2,7 @@ import json
 from typing import Any
 
 import pytest
+from django.core.exceptions import ValidationError
 
 from apps.clientes.models import Rubro
 
@@ -50,3 +51,13 @@ def test_rubro_se_renombra_e_inactiva_sin_borrarse(operativo_client):
     assert operativo_client.delete(url).status_code == 405
     assert operativo_client.get(URL).json() == []
     assert len(operativo_client.get(URL, {"incluir_inactivos": "1"}).json()) == 1
+
+
+@pytest.mark.django_db
+def test_validar_restricciones_con_rubro_repetido_da_mensaje_en_castellano():
+    Rubro.objects.create(nombre="Bebidas")
+
+    with pytest.raises(ValidationError) as error:
+        Rubro(nombre="BEBIDAS").validate_constraints()
+
+    assert error.value.messages == ["Ya existe un rubro con ese nombre."]

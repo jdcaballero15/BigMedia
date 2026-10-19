@@ -2,6 +2,7 @@ import json
 from typing import Any
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.test import Client
 
 from apps.clientes.models import Cliente
@@ -251,3 +252,44 @@ def test_usuario_sin_grupo_operativo_lee_y_no_edita(lector_client, url, datos):
     assert lector_client.get(url).status_code == 200
     response = lector_client.post(url, data=json.dumps(datos), content_type="application/json")
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_alta_cliente_con_cuit_en_digitos_no_ascii_se_rechaza(operativo_client):
+    response = _post(
+        operativo_client,
+        {"nombre": "Ar", "razon_social": "Ar SA", "tipo": "directo", "cuit": "٢٠١٢٣٤٥٦٧٨٦"},
+    )
+
+    assert response.status_code == 400
+    assert "cuit" in response.json()
+    assert Cliente.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_validar_restricciones_con_cuit_repetido_da_mensaje_en_castellano():
+    _cliente(cuit="20123456786")
+    repetido = Cliente(nombre="Otra", razon_social="Otra SA", tipo="directo", cuit="20123456786")
+
+    with pytest.raises(ValidationError) as error:
+        repetido.validate_constraints()
+
+    assert error.value.messages == ["Ya existe un cliente con ese CUIT."]
+
+
+@pytest.mark.django_db
+def test_patch_de_tipo_no_crea_ni_borra_la_marca_homonima(operativo_client):
+    agencia = _cliente(nombre="Agencia", tipo="intermediario")
+    directo_id = _post(
+        operativo_client, {"nombre": "Bodega", "razon_social": "Bodega SA", "tipo": "directo"}
+    ).json()["id"]
+
+    a_directo = _patch(operativo_client, agencia.pk, {"tipo": "directo"})
+    desde_directo = _patch(operativo_client, directo_id, {"tipo": "intermediario"})
+
+    assert a_directo.status_code == 200
+    assert desde_directo.status_code == 200
+    assert not agencia.marcas.exists()
+    assert list(Cliente.objects.get(pk=directo_id).marcas.values_list("nombre", "activo")) == [
+        ("Bodega", True)
+    ]

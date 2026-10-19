@@ -3,6 +3,9 @@ from django.core.exceptions import ValidationError
 
 from apps.clientes.validators import cuit_es_valido, normalizar_cuit, validar_cuit
 
+# Dígitos de ancho completo (U+FF10…U+FF19): no son ASCII y deben rechazarse.
+CUIT_ANCHO_COMPLETO = "20123456786".translate({ord(d): ord(d) + 0xFEE0 for d in "0123456789"})
+
 
 @pytest.mark.parametrize(
     ("valor", "esperado"),
@@ -45,3 +48,20 @@ def test_validar_cuit_con_digito_incorrecto_lanza_error_en_castellano():
 def test_validar_cuit_valido_o_vacio_no_lanza_error():
     validar_cuit("20123456786")
     validar_cuit("")
+
+
+@pytest.mark.parametrize("valor", ["٢٠١٢٣٤٥٦٧٨٦", "20-١٢٣٤٥٦٧٨-6", CUIT_ANCHO_COMPLETO])
+def test_normalizar_cuit_con_digitos_no_ascii_lanza_error(valor):
+    with pytest.raises(ValidationError):
+        normalizar_cuit(valor)
+
+
+@pytest.mark.parametrize("valor", ["2012345678²", "٢٠١٢٣٤٥٦٧٨٦", "20-12345678-6", "abc"])
+def test_validar_cuit_con_valor_no_ascii_o_mal_formado_lanza_validation_error(valor):
+    with pytest.raises(ValidationError):
+        validar_cuit(valor)
+
+
+def test_cuit_es_valido_con_digitos_no_ascii_devuelve_falso():
+    assert cuit_es_valido("٢٠١٢٣٤٥٦٧٨٦") is False
+    assert cuit_es_valido("2012345678²") is False
