@@ -5,6 +5,7 @@ import ReservaForm from './ReservaForm'
 import type { ReservaInput } from './ReservaForm'
 import type { Reserva } from './types'
 import { etiquetaEstadoReserva } from './types'
+import CostosReserva from '../costos/CostosReserva'
 
 export default function ReservasCampania({ campaniaId }: { campaniaId: number }) {
   const [reservas, setReservas] = useState<Reserva[]>([])
@@ -12,6 +13,7 @@ export default function ReservasCampania({ campaniaId }: { campaniaId: number })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [editing, setEditing] = useState<Reserva | 'new' | null>(null)
+  const [costosDe, setCostosDe] = useState<number | null>(null)
   const [revision, setRevision] = useState(0)
 
   useEffect(() => {
@@ -110,12 +112,19 @@ export default function ReservasCampania({ campaniaId }: { campaniaId: number })
                   <button className="button-ghost" onClick={() => setEditing(item)}>
                     Editar
                   </button>
+                  <button
+                    className="button-ghost"
+                    onClick={() => setCostosDe(costosDe === item.id ? null : item.id)}
+                  >
+                    Costos
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+      {costosDe !== null && <CostosReserva reservaId={costosDe} />}
     </div>
   )
 }
