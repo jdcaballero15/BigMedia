@@ -1,6 +1,6 @@
 # Unidad: Reservas base
 
-- **Estado:** en curso · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** `reservas`
+- **Estado:** mergeada · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** `reservas`
 - **Origen:** HU-028, HU-029, HU-030, HU-035, HU-037, HU-040 · **Rama:** `feature/reservas-base`
 
 ## Objetivo
@@ -110,4 +110,4 @@ otorga `view/add/change` de `Reserva` al grupo `Operativo` (patrón de las apps 
   91.8 % (app `reservas` 97.7 %); frontend `format:check`/`lint`/`typecheck` OK, `test:coverage` 62
   pasan (líneas 89.5 %, sentencias 87.7 %), `build` OK; `pre-commit run --all-files` todo en verde
   (gitleaks sin hallazgos). Aprobado por Juan Diego.
-- Gate 3 (PR): —
+- Gate 3 (PR): #16 (mergeado a develop el 2026-10-19).
