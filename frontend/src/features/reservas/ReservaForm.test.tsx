@@ -49,6 +49,15 @@ test('envía la reserva con la campaña fija y los datos cargados', async () => 
   )
 })
 
+test('muestra el mensaje de conflicto de cupo del servidor', async () => {
+  const conflicto =
+    'Av. San Martín 1234 · 6x3: sin cupo libre (1 de 1) entre 2026-08-01 y 2026-08-31.'
+  const onSave = vi.fn().mockRejectedValue(new ApiError(400, { disponibilidad: [conflicto] }))
+  render(<ReservaForm campaniaId={5} carteles={carteles} onSave={onSave} onCancel={vi.fn()} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar reserva' }))
+  await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('sin cupo libre'))
+})
+
 test('muestra el error de campo de la API', async () => {
   const onSave = vi
     .fn()
