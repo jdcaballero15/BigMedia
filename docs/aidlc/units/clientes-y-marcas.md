@@ -1,6 +1,6 @@
 # Unidad: Clientes y marcas
 
-- **Estado:** en revisión · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** clientes
+- **Estado:** mergeada · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** clientes
 - **Origen:** HU-016, HU-017, HU-018 (roadmap: E3 es la próxima épica) · **Rama:** `feature/clientes-clientes-y-marcas`
 
 ## Objetivo
@@ -87,4 +87,4 @@ implementan: la marca homónima se crea una sola vez y después no se sincroniza
 
 - Gate 1 (plan): 2026-10-18 — aprobado por Juan Diego
 - Gate 2 (verificación): 2026-10-19 — aprobado por Juan Diego tras probarlo en local. ruff y mypy sin observaciones (50 archivos); sin migraciones pendientes; pytest 144 tests contra PostgreSQL, cobertura 92,12 %; frontend format, lint, typecheck y build OK, 47 tests, cobertura 88,74 % sentencias / 90,49 % líneas.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #12
