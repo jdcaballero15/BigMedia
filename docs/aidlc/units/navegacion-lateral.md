@@ -1,6 +1,6 @@
 # Unidad: Navegación lateral
 
-- **Estado:** en revisión · **Épica:** — (unidad técnica de interfaz) · **App dueña:** frontend (y `costos` para la lista)
+- **Estado:** mergeada · **Épica:** — (unidad técnica de interfaz) · **App dueña:** frontend (y `costos` para la lista)
 - **Origen:** pedido de Juan Diego del 19/10/2026 · **Rama:** `feature/frontend-navegacion-lateral`
 
 ## Objetivo
@@ -61,4 +61,4 @@ Ninguna.
 
 - Gate 1 (plan): 2026-10-19 — aprobado por Juan Diego
 - Gate 2 (verificación): 2026-10-19 — aprobado por Juan Diego tras probarlo en local. ruff y mypy sin observaciones (77 archivos); sin migraciones pendientes; pytest 223 tests contra PostgreSQL, cobertura 94,42 %; frontend format, lint, typecheck y build OK, 79 tests, cobertura 85,78 % sentencias / 88,77 % líneas.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #22
