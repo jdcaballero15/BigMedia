@@ -30,7 +30,7 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | --- | --- | --- | --- | --- | --- | --- |
 | RN-001 | Día límite entre reservas | `provisoria` | Inclusivo: el día compartido se pisa | Documento de historias (decisión D-01 del 15/10/2026) | HU-001, HU-031, HU-033, HU-040, HU-042, HU-051 | Sin implementar |
 | RN-002 | ¿Una reserva Pendiente bloquea a otras? | `provisoria` | Ocupa cupo solo visualmente; bloqueo duro al confirmar | Documento de historias (decisión D-02 del 15/10/2026) | HU-001, HU-031, HU-033, HU-041, HU-042, HU-056, HU-059 | Sin implementar |
-| RN-003 | Cómo se cuentan los cupos dentro de un rango | `provisoria` | Se cuentan todas las reservas que tocan el rango | Documento de historias (decisión D-03 del 15/10/2026) | HU-031, HU-032, HU-034, HU-040, HU-042, HU-056 | Sin implementar |
+| RN-003 | Cómo se cuentan los cupos dentro de un rango | `provisoria` | Pico diario: ocupación máxima por tramo del rango | Juan Diego (2026-10-19), sobre la decisión D-03 del 15/10/2026 | HU-031, HU-032, HU-034, HU-040, HU-042, HU-056 | Servicio `apps/reservas/services.py::validar_disponibilidad` (pico diario), `backend/tests/test_disponibilidad.py` |
 | RN-004 | Cupos de los LED | `provisoria` | Capacidad editable por cartel; una reserva = un cupo | Documento de historias (decisión D-04 del 15/10/2026) | HU-011, HU-028, HU-031, HU-034, HU-040, HU-048, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
 | RN-005 | Slots de los séxtuples | `provisoria` | Capacidad = slots relevados; una reserva = un slot genérico | Documento de historias (decisión D-05 del 15/10/2026) | HU-010, HU-011, HU-015, HU-030, HU-031, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
 | RN-006 | Reglas de cancelación | `provisoria` | Cancelar siempre se permite y libera el cupo | Documento de historias (decisión D-06 del 15/10/2026) | HU-024, HU-035, HU-037, HU-045, HU-051, HU-058, HU-060 | Sin implementar |
@@ -132,7 +132,9 @@ Esta pregunta surge de leer HU-031 y no figura como pendiente en las historias. 
 
 Con capacidad 1 las dos opciones dan el mismo resultado, así que no afecta a los carteles exclusivos.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** pico diario (ocupación máxima por tramo): es exacto y no rechaza reservas que en
+realidad entran; coincide con el diseño de `units/base-del-repositorio.md`. · **Fecha:** 2026-10-19 ·
+**Quién respondió:** Juan Diego
 
 ### RN-004 Cupos de los LED (D-04)
 
