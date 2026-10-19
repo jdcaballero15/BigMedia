@@ -33,3 +33,11 @@ def operativo_client(db):
     client = Client()
     client.force_login(user)
     return client
+
+
+@pytest.fixture
+def lector_client(db):
+    user = get_user_model().objects.create_user(username="lector", password="clave-segura-123")
+    client = Client()
+    client.force_login(user)
+    return client

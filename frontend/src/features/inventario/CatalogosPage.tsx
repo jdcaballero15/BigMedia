@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError, apiGet, apiWrite } from '../../shared/api'
+import { FieldErrors } from '../../shared/FieldErrors'
 
 type Categoria = 'zonas' | 'proveedores' | 'formatos' | 'estados'
 type Registro = {
@@ -121,13 +122,6 @@ export default function CatalogosPage() {
     }
   }
 
-  const fieldError = (name: string) =>
-    errors[name]?.map((message) => (
-      <small className="error" key={message}>
-        {message}
-      </small>
-    ))
-
   return (
     <section>
       <div className="section-heading">
@@ -175,13 +169,13 @@ export default function CatalogosPage() {
             <label>
               Nombre
               <input value={nombre} onChange={(event) => setNombre(event.target.value)} required />
-              {fieldError('nombre')}
+              <FieldErrors messages={errors.nombre} />
             </label>
             {categoria === 'proveedores' && (
               <label>
                 Servicio
                 <input value={servicio} onChange={(event) => setServicio(event.target.value)} />
-                {fieldError('servicio')}
+                <FieldErrors messages={errors.servicio} />
               </label>
             )}
             {categoria === 'formatos' && (
@@ -205,7 +199,7 @@ export default function CatalogosPage() {
                     onChange={(event) => setCapacidad(event.target.value)}
                     required
                   />
-                  {fieldError('capacidad_predeterminada')}
+                  <FieldErrors messages={errors.capacidad_predeterminada} />
                 </label>
                 <label>
                   Ancho

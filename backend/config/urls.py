@@ -14,5 +14,6 @@ urlpatterns = [
     path("api/auth/login/", login_view, name="login"),
     path("api/auth/logout/", logout_view, name="logout"),
     path("api/inventario/", include("apps.inventario.urls")),
+    path("api/clientes/", include("apps.clientes.urls")),
     path("", TemplateView.as_view(template_name="index.html"), name="spa"),
 ]
