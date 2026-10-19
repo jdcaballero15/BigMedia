@@ -1,6 +1,6 @@
 # Unidad: Disponibilidad — calendario a futuro
 
-- **Estado:** en curso · **Épica:** E6 Vista de disponibilidad · **App dueña:** `reservas`
+- **Estado:** mergeada · **Épica:** E6 Vista de disponibilidad · **App dueña:** `reservas`
 - **Origen:** HU-042 (usa RN-001, RN-003, RN-013) · **Rama:** `feature/reservas-calendario-disponibilidad`
 
 ## Objetivo
@@ -63,4 +63,4 @@ Ninguna.
   sin problemas (69 archivos); `makemigrations --check` sin cambios; `pytest --cov` 209 pasan, total
   94.3 %; frontend `format:check`/`lint`/`typecheck` OK, `test:coverage` 70 pasan (líneas 88.7 %),
   `build` OK; `pre-commit run --all-files` todo en verde. Aprobado por Juan Diego.
-- Gate 3 (PR): —
+- Gate 3 (PR): #20 (mergeado a develop el 2026-10-19).

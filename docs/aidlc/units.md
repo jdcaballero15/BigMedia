@@ -16,7 +16,8 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E5 Reservas y motor de disponibilidad | [reservas-base](units/reservas-base.md) | reservas | HU-028, HU-029, HU-030, HU-035, HU-037, HU-040 (RN-004, RN-005, RN-006) | campanias | Juan Diego | feature/reservas-base | mergeada |
 | E5 Reservas y motor de disponibilidad | [reservas-motor-disponibilidad](units/reservas-motor-disponibilidad.md) | reservas | HU-031, HU-032, HU-033, HU-034 (RN-001, RN-002, RN-003) | reservas-base | Juan Diego | feature/reservas-motor-disponibilidad | mergeada |
 | E6 Vista de disponibilidad | [disponibilidad-hoy](units/disponibilidad-hoy.md) | reservas | HU-041 (RN-004, RN-005) | reservas-motor-disponibilidad | Juan Diego | feature/reservas-disponibilidad-hoy | mergeada |
-| E6 Vista de disponibilidad | [calendario-disponibilidad](units/calendario-disponibilidad.md) | reservas | HU-042 (RN-001, RN-003, RN-013) | disponibilidad-hoy | Juan Diego | feature/reservas-calendario-disponibilidad | en curso |
+| E6 Vista de disponibilidad | [calendario-disponibilidad](units/calendario-disponibilidad.md) | reservas | HU-042 (RN-001, RN-003, RN-013) | disponibilidad-hoy | Juan Diego | feature/reservas-calendario-disponibilidad | mergeada |
+| E7 Costos y rentabilidad | [costos-y-margen](units/costos-y-margen.md) | costos | HU-043, HU-044 (RN-007) | reservas-base | Juan Diego | feature/costos-costos-y-margen | en curso |
 
 ## Notas
 

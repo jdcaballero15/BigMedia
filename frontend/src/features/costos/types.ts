@@ -1,0 +1,28 @@
+export type TipoCosto = 'alquiler' | 'impresion' | 'fijacion' | 'otro'
+
+export const TIPOS_COSTO: { value: TipoCosto; label: string }[] = [
+  { value: 'impresion', label: 'Impresión' },
+  { value: 'fijacion', label: 'Fijación' },
+  { value: 'alquiler', label: 'Alquiler' },
+  { value: 'otro', label: 'Otro' },
+]
+
+export type Costo = {
+  id: number
+  reserva: number
+  tipo: TipoCosto
+  tipo_nombre: string
+  proveedor: number | null
+  proveedor_nombre: string | null
+  monto: string
+  fecha: string
+  anulado: boolean
+  motivo_anulacion: string
+}
+
+export type Margen = {
+  ingreso: string
+  costo: string
+  margen: string
+  porcentaje: number | null
+}
