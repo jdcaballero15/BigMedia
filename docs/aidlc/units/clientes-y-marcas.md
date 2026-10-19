@@ -18,16 +18,29 @@ homónima. Es la base que necesitan las campañas (E4) y las reservas (E5).
   verificador, y no puede repetirse entre clientes. Se guarda sin guiones.
 - **Rubro:** catálogo editable (como formatos o departamentos), sin valores iniciales.
 
+## Decisiones tomadas con Juan Diego (19/10/2026)
+
+- **Cliente sin campos obligatorios:** nombre, razón social, CUIT, tipo, teléfono y correo son
+  opcionales (el tipo puede quedar vacío, "sin tipo"). El CUIT, si se carga, se sigue validando y no
+  puede repetirse.
+- **"Nombre" en lugar de "nombre de fantasía":** el campo se llama solo Nombre. Un cliente sin nombre
+  se muestra como "Cliente sin nombre #<id>".
+- **Directo sin nombre no crea marca:** la marca homónima (HU-018) se crea solo si el cliente directo
+  tiene nombre.
+
 ## Cambios
 
 - **`clientes` (app nueva):**
   - `Rubro`: catálogo con `nombre` (único sin distinguir mayúsculas) y `activo`.
-  - `Cliente`: `nombre` (de fantasía, el que se muestra), `razon_social`, `cuit` (opcional, único si
-    existe), `tipo` (`directo`, `intermediario`, `intermediario_formal`), `telefono`, `correo`, `activo`,
-    fechas de alta y modificación. Búsqueda por nombre o razón social sin distinguir mayúsculas ni tildes.
+  - `Cliente`: `nombre`, `razon_social`, `cuit` (único si existe), `tipo` (`directo`,
+    `intermediario`, `intermediario_formal` o vacío), `telefono`, `correo`, todos opcionales; `activo`
+    y fechas de alta y modificación. Se muestra por `nombre_visible`: el nombre o "Cliente sin nombre
+    #<id>". La lista ordena por nombre y deja al final los sin nombre, por id. Búsqueda por nombre o
+    razón social sin distinguir mayúsculas ni tildes.
   - `Marca`: `nombre`, `cliente` (obligatorio, `PROTECT`), `rubro` (opcional), `activo`, fechas.
   - Servicio `crear_cliente`: crea el cliente y, si es directo, su marca homónima en la misma
-    transacción (HU-018). Editar un cliente directo no duplica la marca.
+    transacción (HU-018); un directo sin nombre no crea marca. Editar un cliente directo no duplica
+    la marca.
     Cambiar el `tipo` después del alta no crea ni borra marcas: pasar a directo no crea la
     homónima y dejar de ser directo conserva la que ya tenía.
   - API en `/api/clientes/` (`clientes`, `marcas`, `rubros`) con los mismos permisos que el inventario:
@@ -56,11 +69,13 @@ implementan: la marca homónima se crea una sola vez y después no se sincroniza
 ## Cómo se prueba
 
 - Backend (pytest contra PostgreSQL, nombres `test_<qué>_<condición>_<resultado>`):
-  - Cliente: alta con nombre, razón social y tipo; CUIT inválido rechazado; CUIT repetido rechazado;
-    CUIT con guiones se normaliza; búsqueda por parte del nombre o la razón social, con y sin tildes.
+  - Cliente: alta con nombre, razón social y tipo, y alta sin ningún dato ("Cliente sin nombre #<id>");
+    CUIT inválido rechazado; CUIT repetido rechazado; CUIT con guiones se normaliza; búsqueda por parte
+    del nombre o la razón social, con y sin tildes; los sin nombre van al final de la lista.
   - Marca: sin cliente se rechaza por la API; un cliente inactivo no se acepta para una marca nueva;
     la lista de marcas de un cliente intermediario muestra todas las suyas.
-  - HU-018: cliente directo crea su marca; intermediario e intermediario formal no; editar no duplica;
+  - HU-018: cliente directo con nombre crea su marca; directo sin nombre, intermediario e
+    intermediario formal no; editar no duplica;
     si falla la creación de la marca, el cliente tampoco se crea.
   - Permisos: sin sesión 403; usuario sin grupo Operativo puede leer y no editar; no hay `DELETE`.
   - El inventario sigue pasando sus tests con el permiso movido.
