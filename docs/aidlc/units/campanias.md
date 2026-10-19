@@ -1,6 +1,6 @@
 # Unidad: Campañas
 
-- **Estado:** en curso · **Épica:** E4 Campañas · **App dueña:** `campanias`
+- **Estado:** mergeada · **Épica:** E4 Campañas · **App dueña:** `campanias`
 - **Origen:** HU-023, HU-024 (usa RN-011 y RN-014) · **Rama:** `feature/campanias-crear-y-estados`
 
 ## Objetivo
@@ -101,4 +101,4 @@ Una migración inicial: tabla `campania` con sus FKs a `clientes`, y una migraci
   pasan, coverage total 91.7 % (app `campanias` 96.7 %); frontend `format:check`/`lint`/`typecheck`
   OK, `test:coverage` 56 pasan (líneas 89.3 %, sentencias 87.3 %), `build` OK; `pre-commit
   run --all-files` todo en verde (gitleaks sin hallazgos). Esperando a Juan Diego.
-- Gate 3 (PR): —
+- Gate 3 (PR): #15 (mergeado a develop el 2026-10-19).

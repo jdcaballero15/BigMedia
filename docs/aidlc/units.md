@@ -12,7 +12,8 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E0 Plataforma base | [despliegue-render](units/despliegue-render.md) | infra | HU-002 | base-del-repositorio | Juan Diego | chore/render-deploy | mergeada |
 | — (unidad técnica) | [reestructura-del-repositorio](units/reestructura-del-repositorio.md) | docs, infra | — | despliegue-render | Juan Diego | docs/reestructura-gobernanza, chore/gates-de-calidad | en curso |
 | E3 Clientes, marcas y CRM | [clientes-y-marcas](units/clientes-y-marcas.md) | clientes | HU-016, HU-017, HU-018 | base-del-repositorio | Juan Diego | feature/clientes-clientes-y-marcas | mergeada |
-| E4 Campañas | [campanias](units/campanias.md) | campanias | HU-023, HU-024 (RN-011, RN-014) | clientes-y-marcas | Juan Diego | feature/campanias-crear-y-estados | en revisión |
+| E4 Campañas | [campanias](units/campanias.md) | campanias | HU-023, HU-024 (RN-011, RN-014) | clientes-y-marcas | Juan Diego | feature/campanias-crear-y-estados | mergeada |
+| E5 Reservas y motor de disponibilidad | [reservas-base](units/reservas-base.md) | reservas | HU-028, HU-029, HU-030, HU-035, HU-037, HU-040 (RN-004, RN-005, RN-006) | campanias | Juan Diego | feature/reservas-base | en curso |
 
 ## Notas
 
