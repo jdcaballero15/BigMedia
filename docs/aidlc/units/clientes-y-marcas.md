@@ -28,6 +28,8 @@ homónima. Es la base que necesitan las campañas (E4) y las reservas (E5).
   - `Marca`: `nombre`, `cliente` (obligatorio, `PROTECT`), `rubro` (opcional), `activo`, fechas.
   - Servicio `crear_cliente`: crea el cliente y, si es directo, su marca homónima en la misma
     transacción (HU-018). Editar un cliente directo no duplica la marca.
+    Cambiar el `tipo` después del alta no crea ni borra marcas: pasar a directo no crea la
+    homónima y dejar de ser directo conserva la que ya tenía.
   - API en `/api/clientes/` (`clientes`, `marcas`, `rubros`) con los mismos permisos que el inventario:
     cualquier usuario con sesión lee y el grupo Operativo (o un superusuario) edita. Sin `DELETE`: se
     inactiva (baja lógica). Las listas ocultan los inactivos salvo que se pidan. Al crear o editar una
