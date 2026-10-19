@@ -90,3 +90,28 @@ class OcupacionView(APIView):
         if cartel is None:
             raise ValidationError({"cartel": "No existe el cartel."})
         return Response(services.ocupacion_del_cartel(cartel))
+
+
+class DisponibilidadView(APIView):
+    """Ocupación actual de los carteles, con accesos rápidos y filtros de inventario (HU-041)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, request: Request) -> Response:
+        queryset = services.carteles_con_ocupacion_hoy()
+        params = request.query_params
+        for campo in ("zona", "formato"):
+            if params.get(campo):
+                queryset = queryset.filter(**{f"{campo}_id": _id_positivo(params[campo], campo)})
+        if params.get("modalidad"):
+            queryset = queryset.filter(formato__modalidad=params["modalidad"])
+        # `cupos_libres` es una anotación; se filtra con kwargs dinámicos.
+        if params.get("ocupacion") == "libres":
+            queryset = queryset.filter(**{"cupos_libres__gt": 0})
+        elif params.get("ocupacion") == "ocupados":
+            queryset = queryset.filter(**{"cupos_libres__lte": 0})
+        filas = [
+            services.fila_disponibilidad(fila)
+            for fila in queryset.values(*services.CAMPOS_DISPONIBILIDAD)
+        ]
+        return Response(filas)
