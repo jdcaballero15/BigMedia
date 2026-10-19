@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from apps.inventario.models import Cartel
 
-from .models import Reserva
+from .models import MESES_ABREV, Reserva
 
 # Transiciones de estado válidas del ciclo de vida de la reserva (HU-035).
 # La revalidación de cupo al confirmar/reactivar es de la unidad del motor (HU-031).
@@ -96,6 +96,98 @@ CAMPOS_DISPONIBILIDAD = (
     "formato__modalidad",
     "zona__nombre",
 )
+
+MESES_CALENDARIO_MAX = 12
+
+
+def sumar_meses(fecha: date, meses: int) -> date:
+    """Suma `meses` a una fecha, ajustando el día al último del mes si hace falta."""
+    total = fecha.month - 1 + meses
+    anio = fecha.year + total // 12
+    mes = total % 12 + 1
+    ultimo_dia = (date(anio + 1, 1, 1) if mes == 12 else date(anio, mes + 1, 1)).toordinal() - 1
+    return date.fromordinal(min(date(anio, mes, 1).toordinal() + fecha.day - 1, ultimo_dia))
+
+
+def _meses_del_rango(desde: date, hasta: date) -> list[dict[str, Any]]:
+    """Lista de meses [{clave: 'YYYY-MM', etiqueta: 'Oct 2026', inicio, fin}] que toca el rango."""
+    meses: list[dict[str, Any]] = []
+    anio, mes = desde.year, desde.month
+    while (anio, mes) <= (hasta.year, hasta.month):
+        primero = date(anio, mes, 1)
+        ultimo = date(anio + 1, 1, 1) if mes == 12 else date(anio, mes + 1, 1)
+        ultimo = date.fromordinal(ultimo.toordinal() - 1)
+        meses.append(
+            {
+                "clave": f"{anio:04d}-{mes:02d}",
+                "etiqueta": f"{MESES_ABREV[mes - 1]} {anio}",
+                "inicio": max(primero, desde),
+                "fin": min(ultimo, hasta),
+            }
+        )
+        anio, mes = (anio + 1, 1) if mes == 12 else (anio, mes + 1)
+    return meses
+
+
+def _pico_en_rango(reservas: list[Reserva], desde: date, hasta: date) -> int:
+    """Ocupación máxima (pico diario, RN-003) de un conjunto de reservas dentro de [desde, hasta]."""
+    candidatos = {desde} | {r.fecha_inicio for r in reservas if desde <= r.fecha_inicio <= hasta}
+    pico = 0
+    for dia in candidatos:
+        cubren = sum(1 for r in reservas if r.fecha_inicio <= dia <= _fin_efectivo(r.fecha_fin))
+        pico = max(pico, cubren)
+    return pico
+
+
+def calendario_disponibilidad(
+    desde: date,
+    hasta: date,
+    zona: int | None = None,
+    formato: int | None = None,
+    modalidad: str | None = None,
+) -> dict[str, Any]:
+    """Grilla de carteles por mes con la ocupación pico de cada mes (HU-042)."""
+    meses = _meses_del_rango(desde, hasta)
+    carteles = Cartel.objects.filter(estado__es_baja=False).select_related("formato", "zona")
+    if zona is not None:
+        carteles = carteles.filter(zona_id=zona)
+    if formato is not None:
+        carteles = carteles.filter(formato_id=formato)
+    if modalidad:
+        carteles = carteles.filter(formato__modalidad=modalidad)
+    carteles = carteles.order_by("direccion", "id")
+
+    reservas = Reserva.objects.filter(
+        cartel__in=carteles,
+        estado__in=Reserva.ESTADOS_QUE_OCUPAN,
+        fecha_inicio__lte=hasta,
+        fecha_fin__gte=desde,
+    )
+    por_cartel: dict[int, list[Reserva]] = {}
+    for reserva in reservas:
+        por_cartel.setdefault(reserva.cartel_id, []).append(reserva)
+
+    filas = [
+        {
+            "id": cartel.pk,
+            "nombre_visible": cartel.nombre_visible,
+            "formato_nombre": cartel.formato.nombre,
+            "zona_nombre": cartel.zona.nombre,
+            "capacidad": cartel.capacidad,
+            "celdas": [
+                {
+                    "periodo": mes["clave"],
+                    "ocupados": _pico_en_rango(
+                        por_cartel.get(cartel.pk, []), mes["inicio"], mes["fin"]
+                    ),
+                }
+                for mes in meses
+            ],
+        }
+        for cartel in carteles
+    ]
+    periodos = [{"clave": m["clave"], "etiqueta": m["etiqueta"]} for m in meses]
+    return {"periodos": periodos, "carteles": filas}
 
 
 def _estados_que_bloquean() -> set[str]:
