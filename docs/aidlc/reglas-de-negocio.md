@@ -41,7 +41,7 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | RN-011 | ¿Se puede confirmar una campaña incompleta? | `provisoria` | Se exigen cliente, marca y fechas | Documento de historias (decisión D-11 del 15/10/2026) | HU-024, HU-030, HU-049, HU-059 | Sin implementar |
 | RN-012 | Reservas con fechas pasadas | `provisoria` | No se permite a mano; histórico solo por importación | Documento de historias (decisión D-12 del 15/10/2026) | HU-038, HU-048, HU-049 | Sin implementar |
 | RN-013 | Vista de disponibilidad a futuro | `provisoria` | Se construye como Should | Documento de historias (decisión D-13 del 15/10/2026) | HU-041, HU-042 | Sin implementar |
-| RN-014 | Cambio de pagador de una marca | `provisoria` | Se deduce siempre de la marca | Documento de historias (decisión D-14 del 15/10/2026) | HU-027 | Sin implementar |
+| RN-014 | Cambio de pagador de una marca | `provisoria` | La campaña puede llevar un cliente que factura propio que reemplaza la deducción desde la marca; HU-027 sigue viva | Seba (2026-10-19), sobre la decisión D-14 del 15/10/2026 | HU-027 | Modelo `Campania.cliente_facturacion` y propiedad `cliente_factura` (unidad campanias) |
 | RN-015 | Intermediario formal y sus contactos | `provisoria` | Tipo aparte con contactos múltiples | Documento de historias (decisión D-15 del 15/10/2026) | HU-016, HU-068 | Sin implementar |
 | RN-016 | Grupo económico | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-017, HU-022, HU-050 | Sin implementar |
 | RN-017 | Cambio de razón social de un cliente directo | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-018 | Sin implementar |
@@ -312,7 +312,7 @@ Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pue
 
 ¿Una marca cambia de agencia? ¿La misma marca se compra a veces por dos clientes distintos? Si ambas respuestas son "nunca", se descarta HU-027.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** sí puede pasar: una marca cambia de agencia o la compran dos clientes distintos. Por eso la campaña lleva un `cliente_facturacion` propio y opcional que, cuando se carga, reemplaza la deducción desde la marca; vacío, se deduce de la marca. HU-027 sigue viva. · **Fecha:** 2026-10-19 · **Quién respondió:** Seba (relevado por el equipo)
 
 
 ### RN-015 Intermediario formal y sus contactos (D-15)
