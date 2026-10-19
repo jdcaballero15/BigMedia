@@ -1,7 +1,12 @@
-import { afterEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import CampaniaDetalle from './CampaniaDetalle'
 import type { Campania } from './types'
+
+// El hub monta ReservasCampania, que pide carteles y reservas: devolvemos listas vacías.
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => [] }))
+})
 
 const campania: Campania = {
   id: 5,
@@ -16,7 +21,10 @@ const campania: Campania = {
   estado: 'confirmada',
 }
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 test('muestra el cliente que factura, el estado y las secciones próximas', () => {
   render(<CampaniaDetalle campania={campania} onEditar={vi.fn()} onVolver={vi.fn()} />)

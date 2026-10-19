@@ -1,0 +1,72 @@
+from decimal import Decimal
+from typing import Any
+
+from django.core.exceptions import ValidationError as DjangoValidationError
+from rest_framework import serializers
+
+from . import services
+from .models import Reserva
+
+
+class ReservaSerializer(serializers.ModelSerializer[Reserva]):
+    nombre = serializers.CharField(read_only=True)
+    total = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    cartel_nombre = serializers.CharField(source="cartel.nombre_visible", read_only=True)
+    campania_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Reserva
+        fields = [
+            "id",
+            "campania",
+            "campania_nombre",
+            "cartel",
+            "cartel_nombre",
+            "fecha_inicio",
+            "fecha_fin",
+            "estado",
+            "precio_alquiler",
+            "precio_impresion",
+            "precio_fijacion",
+            "total",
+            "nombre",
+            "creado_en",
+            "actualizado_en",
+        ]
+        read_only_fields = ["creado_en", "actualizado_en"]
+        extra_kwargs = {
+            "precio_alquiler": {"required": False, "min_value": Decimal("0")},
+            "precio_impresion": {"required": False, "min_value": Decimal("0")},
+            "precio_fijacion": {"required": False, "min_value": Decimal("0")},
+        }
+
+    def get_campania_nombre(self, reserva: Reserva) -> str:
+        return str(reserva.campania)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        inicio = attrs.get("fecha_inicio") or getattr(self.instance, "fecha_inicio", None)
+        fin = attrs.get("fecha_fin") or getattr(self.instance, "fecha_fin", None)
+        if inicio and fin and fin < inicio:
+            raise serializers.ValidationError(
+                {"fecha_fin": "La fecha de fin no puede ser anterior a la de inicio."}
+            )
+
+        cartel = attrs.get("cartel")
+        if cartel is not None and cartel.estado.es_baja:
+            raise serializers.ValidationError(
+                {"cartel": "El cartel está de baja: no se puede reservar."}
+            )
+
+        nuevo_estado = attrs.get("estado")
+        if self.instance is not None and nuevo_estado is not None:
+            try:
+                services.validar_transicion(self.instance.estado, nuevo_estado)
+            except DjangoValidationError as error:
+                raise serializers.ValidationError(error.message_dict) from error
+        return attrs
+
+    def create(self, validated_data: dict[str, Any]) -> Reserva:
+        if "precio_alquiler" not in validated_data:
+            tarifa = validated_data["cartel"].tarifa_lista
+            validated_data["precio_alquiler"] = tarifa if tarifa is not None else Decimal("0.00")
+        return super().create(validated_data)
