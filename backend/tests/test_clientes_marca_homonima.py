@@ -75,3 +75,20 @@ def test_crear_cliente_directo_si_la_base_rechaza_la_marca_no_crea_el_cliente():
         services.crear_cliente(nombre="Bodega", razon_social="Bodega SA", tipo="directo")
 
     assert Cliente.objects.count() == 0
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("nombre", ["", "   "])
+def test_alta_cliente_directo_sin_nombre_no_crea_marca(operativo_client, nombre):
+    response = _post(operativo_client, {"nombre": nombre, "tipo": "directo"})
+
+    assert response.status_code == 201
+    assert Marca.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_alta_cliente_directo_solo_con_nombre_crea_su_marca(operativo_client):
+    response = _post(operativo_client, {"nombre": "Bodega", "tipo": "directo"})
+
+    assert response.status_code == 201
+    assert list(Marca.objects.values_list("nombre", flat=True)) == ["Bodega"]

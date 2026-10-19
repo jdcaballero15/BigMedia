@@ -41,10 +41,10 @@ class Cliente(models.Model):
         INTERMEDIARIO = "intermediario", "Intermediario"
         INTERMEDIARIO_FORMAL = "intermediario_formal", "Intermediario formal"
 
-    nombre = models.CharField("nombre de fantasía", max_length=160)
-    razon_social = models.CharField("razón social", max_length=200)
+    nombre = models.CharField(max_length=160, blank=True)
+    razon_social = models.CharField("razón social", max_length=200, blank=True)
     cuit = models.CharField("CUIT", max_length=11, blank=True, validators=[validar_cuit])
-    tipo = models.CharField(max_length=24, choices=Tipo.choices)
+    tipo = models.CharField(max_length=24, choices=Tipo.choices, blank=True)
     telefono = models.CharField("teléfono", max_length=60, blank=True)
     correo = models.EmailField(blank=True)
     activo = models.BooleanField(default=True)
@@ -54,7 +54,12 @@ class Cliente(models.Model):
     actualizado_en = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["nombre", "id"]
+        # Primero los que tienen nombre (alfabético) y al final los sin nombre, por id.
+        ordering = [
+            models.Case(models.When(nombre="", then=models.Value(1)), default=models.Value(0)),
+            "nombre",
+            "id",
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["cuit"],
@@ -65,13 +70,18 @@ class Cliente(models.Model):
         ]
 
     def __str__(self) -> str:
-        return self.nombre
+        return self.nombre_visible
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.nombre_busqueda = normalizar_busqueda(self.nombre)
         self.razon_social_busqueda = normalizar_busqueda(self.razon_social)
         campos = ("nombre_busqueda", "razon_social_busqueda")
         super().save(*args, **_con_campos_de_busqueda(kwargs, campos))
+
+    @property
+    def nombre_visible(self) -> str:
+        """El nombre, o "Cliente sin nombre #<id>" si no se cargó."""
+        return self.nombre or f"Cliente sin nombre #{self.pk}"
 
 
 class Marca(models.Model):

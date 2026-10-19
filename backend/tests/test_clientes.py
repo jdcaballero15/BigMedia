@@ -51,6 +51,7 @@ def test_alta_cliente_con_nombre_razon_social_y_tipo_queda_disponible(operativo_
         "cuit",
         "tipo",
         "tipo_nombre",
+        "nombre_visible",
         "telefono",
         "correo",
         "activo",
@@ -64,8 +65,6 @@ def test_alta_cliente_con_nombre_razon_social_y_tipo_queda_disponible(operativo_
 @pytest.mark.parametrize(
     ("datos", "campo"),
     [
-        ({"nombre": "  "}, "nombre"),
-        ({"razon_social": ""}, "razon_social"),
         ({"tipo": "otro"}, "tipo"),
         ({"correo": "no-es-correo"}, "correo"),
     ],
@@ -81,14 +80,61 @@ def test_alta_cliente_con_dato_invalido_devuelve_error_del_campo(operativo_clien
 
 
 @pytest.mark.django_db
-def test_alta_cliente_sin_campos_obligatorios_pide_datos_en_castellano(operativo_client):
+def test_alta_cliente_sin_ningun_dato_se_acepta_y_se_muestra_sin_nombre(operativo_client):
     response = _post(operativo_client, {})
 
-    assert response.status_code == 400
+    assert response.status_code == 201
     body = response.json()
-    assert body["nombre"] == ["Ingresá un nombre."]
-    assert body["razon_social"] == ["Ingresá la razón social."]
-    assert body["tipo"] == ["Elegí un tipo de cliente."]
+    assert body["nombre"] == ""
+    assert body["razon_social"] == ""
+    assert body["cuit"] == ""
+    assert body["tipo"] == ""
+    assert body["tipo_nombre"] == ""
+    assert body["telefono"] == ""
+    assert body["correo"] == ""
+    assert body["nombre_visible"] == f"Cliente sin nombre #{body['id']}"
+
+
+@pytest.mark.django_db
+def test_alta_cliente_con_campos_en_blanco_se_acepta(operativo_client):
+    response = _post(
+        operativo_client,
+        {
+            "nombre": "  ",
+            "razon_social": "",
+            "cuit": "",
+            "tipo": "",
+            "telefono": "",
+            "correo": "",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["nombre"] == ""
+    assert response.json()["tipo"] == ""
+
+
+@pytest.mark.django_db
+def test_cliente_con_nombre_se_muestra_por_su_nombre():
+    cliente = _cliente(nombre="Agencia Sur")
+    sin_nombre = _cliente(nombre="")
+
+    assert cliente.nombre_visible == "Agencia Sur"
+    assert str(cliente) == "Agencia Sur"
+    assert str(sin_nombre) == f"Cliente sin nombre #{sin_nombre.pk}"
+
+
+@pytest.mark.django_db
+def test_lista_clientes_ordena_por_nombre_y_deja_los_sin_nombre_al_final_por_id(lector_client):
+    segundo_sin_nombre = _cliente(nombre="")
+    zeta = _cliente(nombre="Zeta")
+    primero_sin_nombre = _cliente(nombre="")
+    alfa = _cliente(nombre="Alfa")
+    ids_sin_nombre = sorted([segundo_sin_nombre.pk, primero_sin_nombre.pk])
+
+    ids = [c["id"] for c in lector_client.get(URL).json()]
+
+    assert ids == [alfa.pk, zeta.pk, *ids_sin_nombre]
 
 
 @pytest.mark.django_db

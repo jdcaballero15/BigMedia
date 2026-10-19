@@ -32,9 +32,13 @@ class RubroAdmin(SinBorrarAdmin):
 
 @admin.register(Cliente)
 class ClienteAdmin(SinBorrarAdmin):
-    list_display = ["nombre", "razon_social", "cuit", "tipo", "activo"]
+    list_display = ["nombre_visible", "razon_social", "cuit", "tipo", "activo"]
     list_filter = ["tipo", "activo"]
     search_fields = ["nombre", "razon_social", "cuit"]
+
+    @admin.display(description="Nombre", ordering="nombre")
+    def nombre_visible(self, obj: Cliente) -> str:
+        return obj.nombre_visible
 
     def save_model(
         self, request: HttpRequest, obj: Cliente, form: ModelForm[Cliente], change: bool

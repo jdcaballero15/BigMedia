@@ -18,10 +18,10 @@ class Migration(migrations.Migration):
             name='Cliente',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nombre', models.CharField(max_length=160, verbose_name='nombre de fantasía')),
-                ('razon_social', models.CharField(max_length=200, verbose_name='razón social')),
+                ('nombre', models.CharField(blank=True, max_length=160)),
+                ('razon_social', models.CharField(blank=True, max_length=200, verbose_name='razón social')),
                 ('cuit', models.CharField(blank=True, max_length=11, validators=[apps.clientes.validators.validar_cuit], verbose_name='CUIT')),
-                ('tipo', models.CharField(choices=[('directo', 'Directo'), ('intermediario', 'Intermediario'), ('intermediario_formal', 'Intermediario formal')], max_length=24)),
+                ('tipo', models.CharField(blank=True, choices=[('directo', 'Directo'), ('intermediario', 'Intermediario'), ('intermediario_formal', 'Intermediario formal')], max_length=24)),
                 ('telefono', models.CharField(blank=True, max_length=60, verbose_name='teléfono')),
                 ('correo', models.EmailField(blank=True, max_length=254)),
                 ('activo', models.BooleanField(default=True)),
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 ('actualizado_en', models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['nombre', 'id'],
+                'ordering': [models.Case(models.When(nombre='', then=models.Value(1)), default=models.Value(0)), 'nombre', 'id'],
                 'constraints': [models.UniqueConstraint(condition=models.Q(('cuit', ''), _negated=True), fields=('cuit',), name='cliente_cuit_unico', violation_error_message='Ya existe un cliente con ese CUIT.')],
             },
         ),

@@ -183,3 +183,13 @@ def test_marca_se_inactiva_y_nunca_se_borra(operativo_client):
     assert operativo_client.get(URL).json() == []
     assert len(operativo_client.get(URL, {"incluir_inactivos": "1"}).json()) == 1
     assert Marca.objects.filter(pk=marca.pk, activo=False).exists()
+
+
+@pytest.mark.django_db
+def test_marca_de_cliente_sin_nombre_muestra_el_nombre_visible_del_cliente(lector_client):
+    cliente = Cliente.objects.create(nombre="")
+    Marca.objects.create(nombre="M", cliente=cliente)
+
+    (marca,) = lector_client.get(URL).json()
+
+    assert marca["cliente_nombre"] == f"Cliente sin nombre #{cliente.pk}"

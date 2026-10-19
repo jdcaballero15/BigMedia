@@ -37,6 +37,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
         help_text="11 dígitos, con o sin guiones. Se devuelve sin guiones.",
     )
     tipo_nombre = serializers.CharField(source="get_tipo_display", read_only=True)
+    nombre_visible = serializers.CharField(read_only=True)
 
     class Meta:
         model = Cliente
@@ -47,6 +48,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
             "cuit",
             "tipo",
             "tipo_nombre",
+            "nombre_visible",
             "telefono",
             "correo",
             "activo",
@@ -55,19 +57,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
         ]
         read_only_fields = ["creado_en", "actualizado_en"]
         extra_kwargs = {
-            "nombre": {"error_messages": _errores_de_nombre()},
-            "razon_social": {
-                "error_messages": {
-                    "required": "Ingresá la razón social.",
-                    "blank": "Ingresá la razón social.",
-                }
-            },
-            "tipo": {
-                "error_messages": {
-                    "required": "Elegí un tipo de cliente.",
-                    "invalid_choice": "Elegí un tipo de cliente válido.",
-                }
-            },
+            "tipo": {"error_messages": {"invalid_choice": "Elegí un tipo de cliente válido."}},
             "correo": {"error_messages": {"invalid": "Ingresá un correo válido."}},
         }
 
@@ -91,7 +81,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
 
 
 class MarcaSerializer(serializers.ModelSerializer[Marca]):
-    cliente_nombre = serializers.CharField(source="cliente.nombre", read_only=True)
+    cliente_nombre = serializers.CharField(source="cliente.nombre_visible", read_only=True)
     rubro_nombre = serializers.CharField(source="rubro.nombre", read_only=True, default=None)
 
     class Meta:
