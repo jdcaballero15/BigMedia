@@ -247,3 +247,26 @@ test('da de baja un cartel y permite consultar las bajas', async () => {
     ).toBe(true),
   )
 })
+
+test('navega a las pantallas de clientes y marcas', async () => {
+  const fetchMock = vi.fn(async (input: string) => {
+    if (input === '/api/auth/me/') return ok({ username: 'ale' })
+    if (input.startsWith('/api/inventario/')) return ok([])
+    if (input.startsWith('/api/clientes/')) return ok([])
+    throw new Error(`URL inesperada: ${input}`)
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  render(<App />)
+
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  fireEvent.click(within(nav).getByRole('button', { name: 'Clientes' }))
+  expect(await screen.findByRole('heading', { name: 'Clientes' })).toBeDefined()
+  expect(within(nav).getByRole('button', { name: 'Clientes' }).className).toBe('active')
+  fireEvent.click(within(nav).getByRole('button', { name: 'Marcas' }))
+  expect(await screen.findByRole('heading', { name: 'Marcas' })).toBeDefined()
+  await waitFor(() =>
+    expect(fetchMock.mock.calls.some(([url]) => String(url) === '/api/clientes/marcas/')).toBe(
+      true,
+    ),
+  )
+})

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError } from '../../shared/api'
+import { FieldErrors } from '../../shared/FieldErrors'
+import { vigentes } from '../../shared/opciones'
 import type { Cartel, Catalogo, Estado, Formato, Proveedor } from './types'
 
 export type CartelInput = {
@@ -86,15 +88,6 @@ export default function CartelForm({
     }
   }
 
-  const fieldError = (name: string) =>
-    errors[name]?.map((message) => (
-      <small className="error" key={message}>
-        {message}
-      </small>
-    ))
-  const available = <T extends Catalogo>(rows: T[], selected: number | undefined) =>
-    rows.filter((item) => item.activo !== false || item.id === selected)
-
   return (
     <form
       className="card edit-form"
@@ -112,27 +105,27 @@ export default function CartelForm({
           Formato
           <select value={formato} onChange={(event) => changeFormato(event.target.value)} required>
             <option value="">Seleccionar</option>
-            {available(formatos, cartel?.formato).map((item) => (
+            {vigentes(formatos, cartel?.formato).map((item) => (
               <option key={item.id} value={item.id}>
                 {item.nombre}
                 {item.activo === false ? ' (inactivo)' : ''}
               </option>
             ))}
           </select>
-          {fieldError('formato')}
+          <FieldErrors messages={errors.formato} />
         </label>
         <label>
           Zona
           <select value={zona} onChange={(event) => setZona(event.target.value)} required>
             <option value="">Seleccionar</option>
-            {available(zonas, cartel?.zona).map((item) => (
+            {vigentes(zonas, cartel?.zona).map((item) => (
               <option key={item.id} value={item.id}>
                 {item.nombre}
                 {item.activo === false ? ' (inactivo)' : ''}
               </option>
             ))}
           </select>
-          {fieldError('zona')}
+          <FieldErrors messages={errors.zona} />
         </label>
         <label>
           Dirección
@@ -141,7 +134,7 @@ export default function CartelForm({
             onChange={(event) => setDireccion(event.target.value)}
             required
           />
-          {fieldError('direccion')}
+          <FieldErrors messages={errors.direccion} />
         </label>
         <label>
           Tamaño
@@ -150,7 +143,7 @@ export default function CartelForm({
             onChange={(event) => setTamano(event.target.value)}
             placeholder="Ej. 6 x 3 m"
           />
-          {fieldError('tamano')}
+          <FieldErrors messages={errors.tamano} />
         </label>
         <label>
           Capacidad
@@ -161,7 +154,7 @@ export default function CartelForm({
             onChange={(event) => setCapacidad(event.target.value)}
             required
           />
-          {fieldError('capacidad')}
+          <FieldErrors messages={errors.capacidad} />
         </label>
         <label>
           Tarifa de lista
@@ -173,33 +166,33 @@ export default function CartelForm({
             onChange={(event) => setTarifa(event.target.value)}
             placeholder="Sin definir"
           />
-          {fieldError('tarifa_lista')}
+          <FieldErrors messages={errors.tarifa_lista} />
         </label>
         <label>
           Proveedor
           <select value={proveedor} onChange={(event) => setProveedor(event.target.value)}>
             <option value="">Sin proveedor</option>
-            {available(proveedores, cartel?.proveedor ?? undefined).map((item) => (
+            {vigentes(proveedores, cartel?.proveedor).map((item) => (
               <option key={item.id} value={item.id}>
                 {item.nombre}
                 {item.activo === false ? ' (inactivo)' : ''}
               </option>
             ))}
           </select>
-          {fieldError('proveedor')}
+          <FieldErrors messages={errors.proveedor} />
         </label>
         <label>
           Estado
           <select value={estado} onChange={(event) => setEstado(event.target.value)} required>
             <option value="">Seleccionar</option>
-            {available(estados, cartel?.estado).map((item) => (
+            {vigentes(estados, cartel?.estado).map((item) => (
               <option key={item.id} value={item.id}>
                 {item.nombre}
                 {item.activo === false ? ' (inactivo)' : ''}
               </option>
             ))}
           </select>
-          {fieldError('estado')}
+          <FieldErrors messages={errors.estado} />
         </label>
         <label className="wide">
           Enlace de foto
@@ -209,7 +202,7 @@ export default function CartelForm({
             onChange={(event) => setFotoUrl(event.target.value)}
             placeholder="https://…"
           />
-          {fieldError('foto_url')}
+          <FieldErrors messages={errors.foto_url} />
         </label>
       </div>
       {generalError && (

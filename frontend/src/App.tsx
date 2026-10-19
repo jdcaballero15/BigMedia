@@ -1,15 +1,26 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import Login from './app/Login'
 import CartelesPage from './features/inventario/CartelesPage'
 import CatalogosPage from './features/inventario/CatalogosPage'
+import ClientesPage from './features/clientes/ClientesPage'
+import MarcasPage from './features/clientes/MarcasPage'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import './App.css'
 
 type Session = { status: 'checking' | 'anonymous' | 'offline' | 'ready'; username: string }
+type Page = 'carteles' | 'catalogos' | 'clientes' | 'marcas'
+
+const pages: { id: Page; label: string; render: () => ReactNode }[] = [
+  { id: 'carteles', label: 'Carteles', render: () => <CartelesPage /> },
+  { id: 'catalogos', label: 'Catálogos', render: () => <CatalogosPage /> },
+  { id: 'clientes', label: 'Clientes', render: () => <ClientesPage /> },
+  { id: 'marcas', label: 'Marcas', render: () => <MarcasPage /> },
+]
 
 function App() {
   const [session, setSession] = useState<Session>({ status: 'checking', username: '' })
-  const [page, setPage] = useState<'carteles' | 'catalogos'>('carteles')
+  const [page, setPage] = useState<Page>('carteles')
 
   useEffect(() => {
     let active = true
@@ -61,18 +72,15 @@ function App() {
           <small>Sistema de carteles</small>
         </div>
         <nav className="topnav" aria-label="Navegación">
-          <button
-            className={page === 'carteles' ? 'active' : ''}
-            onClick={() => setPage('carteles')}
-          >
-            Carteles
-          </button>
-          <button
-            className={page === 'catalogos' ? 'active' : ''}
-            onClick={() => setPage('catalogos')}
-          >
-            Catálogos
-          </button>
+          {pages.map((item) => (
+            <button
+              key={item.id}
+              className={page === item.id ? 'active' : ''}
+              onClick={() => setPage(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
         </nav>
         <div className="topbar-user">
           <span>{session.username}</span>
@@ -81,7 +89,7 @@ function App() {
           </button>
         </div>
       </header>
-      <main className="app-main">{page === 'carteles' ? <CartelesPage /> : <CatalogosPage />}</main>
+      <main className="app-main">{pages.find((item) => item.id === page)?.render()}</main>
     </div>
   )
 }

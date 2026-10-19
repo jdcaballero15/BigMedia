@@ -396,3 +396,17 @@ tr:last-child td {
     flex-wrap: wrap;
   }
 }
+.cell-detail {
+  display: block;
+  margin-top: 0.2rem;
+  color: #a3aab4;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.notice {
+  color: #ffba2a;
+  font-weight: 600;
+}
+.section-gap {
+  margin-bottom: 2.4rem;
+}
