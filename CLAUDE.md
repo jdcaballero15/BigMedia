@@ -14,7 +14,7 @@ Pasos y plantillas en [`.claude/aidlc/workflow.md`](.claude/aidlc/workflow.md). 
 
 ## 1. Qué es el sistema
 
-Big Media es el sistema de inventario, campañas y reservas de publicidad de vía pública de Big Media Argentina. Stack: Django 5.2 + DRF, PostgreSQL 17, React 19 + Vite + TypeScript, desplegado en Render. Hoy está implementado el inventario; las reservas no.
+Big Media es el sistema de inventario, campañas y reservas de publicidad de vía pública de Big Media Argentina. Stack: Django 5.2 + DRF, PostgreSQL 17, React 19 + Vite + TypeScript, desplegado en Render. Hoy están implementados el inventario y clientes, marcas y rubros; las reservas no.
 
 Riesgo dominante de las apps que más importan:
 
