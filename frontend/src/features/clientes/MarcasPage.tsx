@@ -5,6 +5,8 @@ import type { MarcaInput } from './MarcaForm'
 import RubrosAdmin from './RubrosAdmin'
 import type { Cliente, Marca, Rubro } from './types'
 
+const ERROR_RUBROS = 'No se pudieron cargar los rubros.'
+
 export default function MarcasPage() {
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [rubros, setRubros] = useState<Rubro[]>([])
@@ -15,6 +17,7 @@ export default function MarcasPage() {
   const [incluirInactivas, setIncluirInactivas] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [errorCatalogos, setErrorCatalogos] = useState('')
   const [editing, setEditing] = useState<Marca | 'new' | null>(null)
   const [revision, setRevision] = useState(0)
   const [revisionRubros, setRevisionRubros] = useState(0)
@@ -27,7 +30,7 @@ export default function MarcasPage() {
         if (active) setClientes(rows)
       })
       .catch(() => {
-        if (active) setError('No se pudieron cargar los clientes.')
+        if (active) setErrorCatalogos('No se pudieron cargar los clientes.')
       })
     return () => {
       active = false
@@ -38,10 +41,13 @@ export default function MarcasPage() {
     let active = true
     void apiGet<Rubro[]>('/api/clientes/rubros/?incluir_inactivos=1')
       .then((rows) => {
-        if (active) setRubros(rows)
+        if (!active) return
+        setRubros(rows)
+        // Solo limpia su propio error: el de clientes se conserva.
+        setErrorCatalogos((actual) => (actual === ERROR_RUBROS ? '' : actual))
       })
       .catch(() => {
-        if (active) setError('No se pudieron cargar los rubros.')
+        if (active) setErrorCatalogos(ERROR_RUBROS)
       })
     return () => {
       active = false
@@ -167,6 +173,11 @@ export default function MarcasPage() {
           Incluir inactivas
         </label>
       </div>
+      {errorCatalogos && (
+        <p className="error" role="alert">
+          {errorCatalogos}
+        </p>
+      )}
       {error && (
         <p className="error" role="alert">
           {error}

@@ -83,6 +83,17 @@ test('muestra junto al campo los errores de validación de la API', async () => 
   expect(screen.getByRole('alert').textContent).toBe('No se pudo completar la operación.')
 })
 
+test('sin tipo elegido no lo envía, para que la API pida elegirlo', async () => {
+  const onSave = vi
+    .fn()
+    .mockRejectedValue(new ApiError(400, { tipo: ['Elegí un tipo de cliente.'] }))
+  render(<ClienteForm onSave={onSave} onCancel={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText('Nombre de fantasía'), { target: { value: 'Sin tipo' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar cliente' }))
+  expect(await screen.findByText('Elegí un tipo de cliente.')).toBeDefined()
+  expect(onSave.mock.calls[0][0]).not.toHaveProperty('tipo')
+})
+
 test('cancelar avisa al contenedor', () => {
   const onCancel = vi.fn()
   render(<ClienteForm onSave={vi.fn()} onCancel={onCancel} />)

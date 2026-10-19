@@ -51,7 +51,9 @@ function MarcasDelCliente({
       {carga.estado === 'cargando' ? (
         <p className="empty">Cargando marcas…</p>
       ) : carga.estado === 'error' ? (
-        <p className="error">No se pudieron cargar las marcas.</p>
+        <p className="error" role="alert">
+          No se pudieron cargar las marcas.
+        </p>
       ) : carga.marcas.length === 0 ? (
         <p className="empty">Este cliente todavía no tiene marcas.</p>
       ) : (

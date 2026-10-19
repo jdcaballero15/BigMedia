@@ -176,6 +176,18 @@ test.each([
   expect(await screen.findByText(mensaje)).toBeDefined()
 })
 
+test('el error al cargar las marcas de la ficha se anuncia como alerta', async () => {
+  mockFetch((url) => {
+    if (url === '/api/clientes/clientes/') return ok([agencia])
+    if (url.startsWith('/api/clientes/marcas/')) return fail(500, {})
+    return undefined
+  })
+  render(<ClientesPage />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver marcas' }))
+  expect((await screen.findByRole('alert')).textContent).toBe('No se pudieron cargar las marcas.')
+})
+
 test('edita un cliente con PATCH y muestra su ficha mientras se edita', async () => {
   const fetchMock = mockFetch((url, options) => {
     if (url === '/api/clientes/clientes/1/' && options?.method === 'PATCH')

@@ -87,6 +87,41 @@ test('avisa cuando no hay marcas y cuando falla la carga', async () => {
   expect(await screen.findByText('No se pudieron cargar las marcas.')).toBeDefined()
 })
 
+test('una carga correcta de marcas no borra el error de clientes o rubros', async () => {
+  mockFetch((url) =>
+    url === '/api/clientes/clientes/?incluir_inactivos=1' ? fail(500, {}) : undefined,
+  )
+  render(<MarcasPage />)
+
+  expect(await screen.findByText('Agua Cumbre')).toBeDefined()
+  fireEvent.click(screen.getByLabelText('Incluir inactivas'))
+  await waitFor(() => expect(screen.getAllByText('Agua Cumbre')).toHaveLength(1))
+  expect(screen.getByText('No se pudieron cargar los clientes.')).toBeDefined()
+})
+
+test('al recargar los rubros con éxito se limpia solo el error de rubros', async () => {
+  let rubrosFallan = true
+  mockFetch((url, options) => {
+    if (url === '/api/clientes/rubros/' && options?.method === 'POST') {
+      rubrosFallan = false
+      return ok({ id: 5 })
+    }
+    if (url === '/api/clientes/rubros/?incluir_inactivos=1' && rubrosFallan) return fail(500, {})
+    return undefined
+  })
+  render(<MarcasPage />)
+
+  expect(await screen.findByText('No se pudieron cargar los rubros.')).toBeDefined()
+  const seccion = screen.getByRole('region', { name: 'Rubros' })
+  fireEvent.click(within(seccion).getByRole('button', { name: 'Nuevo rubro' }))
+  fireEvent.change(within(seccion).getByLabelText('Nombre del rubro'), {
+    target: { value: 'Turismo' },
+  })
+  fireEvent.click(within(seccion).getByRole('button', { name: 'Guardar rubro' }))
+  expect(await within(seccion).findByText('Bebidas')).toBeDefined()
+  expect(screen.queryByText('No se pudieron cargar los rubros.')).toBeNull()
+})
+
 test('crea una marca ofreciendo solo clientes activos', async () => {
   const fetchMock = mockFetch((url, options) =>
     url === '/api/clientes/marcas/' && options?.method === 'POST' ? ok({ id: 9 }) : undefined,

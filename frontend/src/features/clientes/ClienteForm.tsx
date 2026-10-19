@@ -9,7 +9,7 @@ export type ClienteInput = {
   nombre: string
   razon_social: string
   cuit: string
-  tipo: TipoCliente | ''
+  tipo?: TipoCliente
   telefono: string
   correo: string
   activo: boolean
@@ -43,7 +43,8 @@ export default function ClienteForm({ cliente, onSave, onCancel }: Props) {
         nombre: nombre.trim(),
         razon_social: razonSocial.trim(),
         cuit: cuit.trim(),
-        tipo,
+        // Sin tipo elegido no se envía: la API responde con su mensaje de obligatorio.
+        ...(tipo ? { tipo } : {}),
         telefono: telefono.trim(),
         correo: correo.trim(),
         activo,
