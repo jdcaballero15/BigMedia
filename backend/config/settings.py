@@ -105,3 +105,12 @@ if PRODUCTION:
         "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
     }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Motor de disponibilidad (HU-033). Día de borde (RN-001) y si la tentativa bloquea (RN-002).
+# Provisorios y configurables por entorno hasta que exista la configuración por pantalla (HU-001).
+DISPONIBILIDAD_BORDE_INCLUSIVO = (
+    os.environ.get("DISPONIBILIDAD_BORDE_INCLUSIVO", "true").lower() == "true"
+)
+DISPONIBILIDAD_TENTATIVA_BLOQUEA = (
+    os.environ.get("DISPONIBILIDAD_TENTATIVA_BLOQUEA", "false").lower() == "true"
+)
