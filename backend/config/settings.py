@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "apps.inventario",
     "apps.clientes",
+    "apps.campanias",
     "apps.usuarios",
 ]
 

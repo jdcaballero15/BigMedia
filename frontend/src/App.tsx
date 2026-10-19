@@ -5,17 +5,19 @@ import CartelesPage from './features/inventario/CartelesPage'
 import CatalogosPage from './features/inventario/CatalogosPage'
 import ClientesPage from './features/clientes/ClientesPage'
 import MarcasPage from './features/clientes/MarcasPage'
+import CampaniasPage from './features/campanias/CampaniasPage'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import './App.css'
 
 type Session = { status: 'checking' | 'anonymous' | 'offline' | 'ready'; username: string }
-type Page = 'carteles' | 'catalogos' | 'clientes' | 'marcas'
+type Page = 'carteles' | 'catalogos' | 'clientes' | 'marcas' | 'campanias'
 
 const pages: { id: Page; label: string; render: () => ReactNode }[] = [
   { id: 'carteles', label: 'Carteles', render: () => <CartelesPage /> },
   { id: 'catalogos', label: 'Catálogos', render: () => <CatalogosPage /> },
   { id: 'clientes', label: 'Clientes', render: () => <ClientesPage /> },
   { id: 'marcas', label: 'Marcas', render: () => <MarcasPage /> },
+  { id: 'campanias', label: 'Campañas', render: () => <CampaniasPage /> },
 ]
 
 function App() {
