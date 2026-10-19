@@ -1,6 +1,6 @@
 # Unidad: Reservas — motor de disponibilidad
 
-- **Estado:** en curso · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** `reservas`
+- **Estado:** mergeada · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** `reservas`
 - **Origen:** HU-031, HU-032, HU-033, HU-034 · **Rama:** `feature/reservas-motor-disponibilidad`
 
 ## Objetivo
@@ -77,5 +77,5 @@ habría una migración; el plan usa `settings`, así que no hay migración.
   94.3 %, incluida la matriz de 16 casos de HU-031 y la concurrencia de HU-034 (capacidad 1: una pasa
   y una falla; 50 confirmaciones simultáneas en capacidad 20 → exactamente 20); frontend
   `format:check`/`lint`/`typecheck` OK, `test:coverage` 63 pasan (líneas 89.4 %), `build` OK;
-  `pre-commit run --all-files` todo en verde. Esperando a Juan Diego.
-- Gate 3 (PR): —
+  `pre-commit run --all-files` todo en verde. Aprobado por Juan Diego.
+- Gate 3 (PR): #17 (mergeado a develop el 2026-10-19).
