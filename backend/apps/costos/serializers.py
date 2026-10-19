@@ -12,6 +12,9 @@ class CostoSerializer(serializers.ModelSerializer[Costo]):
     proveedor_nombre = serializers.CharField(
         source="proveedor.nombre", read_only=True, default=None
     )
+    cartel_nombre = serializers.CharField(source="reserva.cartel.nombre_visible", read_only=True)
+    campania = serializers.IntegerField(source="reserva.campania_id", read_only=True)
+    campania_nombre = serializers.CharField(source="reserva.campania", read_only=True)
 
     class Meta:
         model = Costo
@@ -22,6 +25,9 @@ class CostoSerializer(serializers.ModelSerializer[Costo]):
             "tipo_nombre",
             "proveedor",
             "proveedor_nombre",
+            "cartel_nombre",
+            "campania",
+            "campania_nombre",
             "monto",
             "fecha",
             "anulado",
