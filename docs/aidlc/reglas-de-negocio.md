@@ -172,6 +172,8 @@ Con capacidad 1 las dos opciones dan el mismo resultado, así que no afecta a lo
 
 **Default.** La capacidad es igual a los slots relevados (HU-015) y cada reserva ocupa un slot genérico, sin posición.
 
+**Input de Seba (2026-10-19).** Confirma el default y lo amplía más allá de los séxtuples: en los circuitos grandes (séxtuples, séptuples, PPL, banderolas, carteleras) **no** quiere que el sistema lo obligue a cargar la posición exacta de cada cartel; esa gestión la sigue haciendo aparte. Para esos casos quiere algo simple: **cantidad + tipo de cartel + importes**. Queda por confirmar con Juan Diego si esto cierra RN-005 como `confirmada` para E5 y si "séptuples" es un formato nuevo a sumar al inventario (hoy no está en los siete formatos).
+
 **Bloquea.**
 
 - Clave para detectar duplicados en la importación de los 226 séxtuples (HU-015, ver [importación](inputs/importacion/README.md)).
@@ -179,7 +181,7 @@ Con capacidad 1 las dos opciones dan el mismo resultado, así que no afecta a lo
 - Reducción de capacidad con reservas a futuro (HU-011).
 - Validación (HU-031) y creación en bloque (HU-057).
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** slot genérico, sin posición exacta, para todos los circuitos grandes (input de Seba; ver arriba). · **Fecha:** 2026-10-19 · **Quién respondió:** Seba (relevado por el equipo)
 
 ### RN-006 Reglas de cancelación (D-06)
 
