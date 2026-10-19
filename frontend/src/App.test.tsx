@@ -4,6 +4,11 @@ import App from './App'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 
+async function irA(nombre: string) {
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  fireEvent.click(within(nav).getByRole('button', { name: nombre }))
+}
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
@@ -30,6 +35,7 @@ test('muestra carteles después de reconocer la sesión', async () => {
     'fetch',
     vi.fn(async (input: string) => {
       if (input === '/api/auth/me/') return ok({ username: 'seba' })
+      if (input.startsWith('/api/clientes/')) return ok([])
       if (input.includes('/carteles/'))
         return ok([
           {
@@ -52,6 +58,7 @@ test('muestra carteles después de reconocer la sesión', async () => {
   )
 
   render(<App />)
+  await irA('Carteles')
 
   expect(await screen.findByRole('heading', { name: 'Carteles' })).toBeDefined()
   expect(await screen.findByText('Av. San Martín 1234 · 6 slots')).toBeDefined()
@@ -62,6 +69,7 @@ test('muestra carteles después de reconocer la sesión', async () => {
 test('combina filtros de zona, formato y modalidad en la consulta', async () => {
   const fetchMock = vi.fn(async (input: string) => {
     if (input === '/api/auth/me/') return ok({ username: 'ale' })
+    if (input.startsWith('/api/clientes/')) return ok([])
     if (input.includes('/carteles/')) return ok([])
     if (input.includes('/formatos/')) return ok([{ id: 2, nombre: 'LED' }])
     if (input.includes('/zonas/')) return ok([{ id: 1, nombre: 'Ciudad' }])
@@ -72,6 +80,7 @@ test('combina filtros de zona, formato y modalidad en la consulta', async () => 
   vi.stubGlobal('fetch', fetchMock)
 
   render(<App />)
+  await irA('Carteles')
   await screen.findByRole('heading', { name: 'Carteles' })
   await screen.findByRole('option', { name: 'Ciudad' })
   fireEvent.change(screen.getByLabelText('Zona'), { target: { value: '1' } })
@@ -93,6 +102,7 @@ test('combina filtros de zona, formato y modalidad en la consulta', async () => 
 test('crea un cartel desde la pantalla y envía la capacidad del formato', async () => {
   const fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
     if (input === '/api/auth/me/') return ok({ username: 'seba' })
+    if (input.startsWith('/api/clientes/')) return ok([])
     if (input.includes('/formatos/'))
       return ok([{ id: 1, nombre: 'Séxtuples', capacidad_predeterminada: 6 }])
     if (input.includes('/zonas/')) return ok([{ id: 1, nombre: 'Ciudad' }])
@@ -104,6 +114,7 @@ test('crea un cartel desde la pantalla y envía la capacidad del formato', async
   })
   vi.stubGlobal('fetch', fetchMock)
   render(<App />)
+  await irA('Carteles')
 
   await screen.findByRole('button', { name: 'Nuevo cartel' })
   fireEvent.click(screen.getByRole('button', { name: 'Nuevo cartel' }))
@@ -128,9 +139,10 @@ test('crea un cartel desde la pantalla y envía la capacidad del formato', async
   )
 })
 
-test('crea un proveedor desde catálogos sin borrar el histórico', async () => {
+test('crea un proveedor desde su pantalla sin borrar el histórico', async () => {
   const fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
     if (input === '/api/auth/me/') return ok({ username: 'ale' })
+    if (input.startsWith('/api/clientes/')) return ok([])
     if (input.includes('/carteles/')) return ok([])
     if (input.includes('/formatos/')) return ok([])
     if (input.includes('/zonas/')) return ok([])
@@ -142,8 +154,7 @@ test('crea un proveedor desde catálogos sin borrar el histórico', async () => 
   vi.stubGlobal('fetch', fetchMock)
   render(<App />)
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Catálogos' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Proveedores' }))
+  await irA('Proveedores')
   fireEvent.click(screen.getByRole('button', { name: 'Nuevo proveedor' }))
   const form = screen.getByRole('form', { name: 'Formulario de catálogo' })
   fireEvent.change(within(form).getByLabelText('Nombre'), { target: { value: 'Proveedor Norte' } })
@@ -164,6 +175,7 @@ test('crea un proveedor desde catálogos sin borrar el histórico', async () => 
 test('inactiva un proveedor conservando su registro', async () => {
   const fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
     if (input === '/api/auth/me/') return ok({ username: 'ale' })
+    if (input.startsWith('/api/clientes/')) return ok([])
     if (input.includes('/carteles/')) return ok([])
     if (input.includes('/formatos/')) return ok([])
     if (input.includes('/zonas/')) return ok([])
@@ -177,8 +189,7 @@ test('inactiva un proveedor conservando su registro', async () => {
   vi.stubGlobal('confirm', () => true)
   render(<App />)
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Catálogos' }))
-  fireEvent.click(screen.getByRole('button', { name: 'Proveedores' }))
+  await irA('Proveedores')
   await screen.findByText('Norte')
   fireEvent.click(screen.getByRole('button', { name: 'Inactivar' }))
 
@@ -197,6 +208,7 @@ test('inactiva un proveedor conservando su registro', async () => {
 test('da de baja un cartel y permite consultar las bajas', async () => {
   const fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
     if (input === '/api/auth/me/') return ok({ username: 'seba' })
+    if (input.startsWith('/api/clientes/')) return ok([])
     if (input.includes('/formatos/')) return ok([])
     if (input.includes('/zonas/')) return ok([])
     if (input.includes('/proveedores/')) return ok([])
@@ -226,6 +238,7 @@ test('da de baja un cartel y permite consultar las bajas', async () => {
   vi.stubGlobal('fetch', fetchMock)
   vi.stubGlobal('confirm', () => true)
   render(<App />)
+  await irA('Carteles')
 
   await screen.findByText('San Martín 1234')
   await screen.findByRole('option', { name: 'De baja' })
@@ -268,5 +281,72 @@ test('navega a las pantallas de clientes y marcas', async () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url) === '/api/clientes/marcas/')).toBe(
       true,
     ),
+  )
+})
+
+test('agrupa el menú lateral en secciones y abre en clientes', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'ale' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  for (const titulo of ['Comercial', 'Inventario', 'Operación', 'Configuración'])
+    expect(within(nav).getByText(titulo)).toBeDefined()
+  expect(within(nav).getByRole('button', { name: 'Clientes' }).getAttribute('aria-current')).toBe(
+    'page',
+  )
+  expect(await screen.findByRole('heading', { name: 'Clientes' })).toBeDefined()
+})
+
+test('catálogos ya no ofrece proveedores ni formatos, que tienen su pantalla', async () => {
+  const fetchMock = vi.fn(async (input: string) => {
+    if (input === '/api/auth/me/') return ok({ username: 'ale' })
+    if (input.startsWith('/api/clientes/')) return ok([])
+    if (input.startsWith('/api/inventario/formatos/'))
+      return ok([{ id: 2, nombre: 'LED', activo: true }])
+    if (input.startsWith('/api/inventario/')) return ok([])
+    throw new Error(`URL inesperada: ${input}`)
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  render(<App />)
+
+  await irA('Catálogos')
+  expect(await screen.findByRole('heading', { name: 'Catálogos' })).toBeDefined()
+  const main = screen.getByRole('main')
+  expect(within(main).getByRole('button', { name: 'Departamentos' })).toBeDefined()
+  expect(within(main).getByRole('button', { name: 'Estados físicos' })).toBeDefined()
+  expect(within(main).queryByRole('button', { name: 'Proveedores' })).toBeNull()
+  expect(within(main).queryByRole('button', { name: 'Formatos' })).toBeNull()
+
+  await irA('Formatos')
+  expect(await screen.findByRole('heading', { name: 'Formatos' })).toBeDefined()
+  expect(await screen.findByText('LED')).toBeDefined()
+  expect(screen.getByRole('button', { name: 'Nuevo formato' })).toBeDefined()
+})
+
+test('abre y cierra el menú en pantallas chicas', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'ale' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      if (input.startsWith('/api/inventario/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  const { container } = render(<App />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Abrir menú' }))
+  expect(container.querySelector('.app-shell')?.classList.contains('menu-open')).toBe(true)
+  await irA('Carteles')
+  expect(container.querySelector('.app-shell')?.classList.contains('menu-open')).toBe(false)
+  expect(screen.getByRole('button', { name: 'Abrir menú' }).getAttribute('aria-expanded')).toBe(
+    'false',
   )
 })
