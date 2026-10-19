@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "apps.clientes",
     "apps.campanias",
     "apps.reservas",
+    "apps.costos",
     "apps.usuarios",
 ]
 
