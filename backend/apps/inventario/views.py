@@ -3,10 +3,11 @@ from typing import Any
 from django.db.models import QuerySet
 from rest_framework import permissions, viewsets
 from rest_framework.exceptions import ValidationError
-from rest_framework.request import Request
-from rest_framework.views import APIView
 
-from .models import Cartel, EstadoCartel, Formato, Proveedor, Zona, normalizar_busqueda
+from config.permisos import LecturaConSesionEdicionOperativo
+from config.texto import normalizar_busqueda
+
+from .models import Cartel, EstadoCartel, Formato, Proveedor, Zona
 from .serializers import (
     CartelSerializer,
     EstadoCartelSerializer,
@@ -16,17 +17,8 @@ from .serializers import (
 )
 
 
-class PuedeOperarInventario(permissions.BasePermission):
-    def has_permission(self, request: Request, _view: APIView) -> bool:
-        if not request.user or not request.user.is_authenticated:
-            return False
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return request.user.is_superuser or request.user.groups.filter(name="Operativo").exists()
-
-
 class InventarioViewSet(viewsets.ModelViewSet[Any]):
-    permission_classes = [permissions.IsAuthenticated, PuedeOperarInventario]
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
     http_method_names = ["get", "post", "patch", "head", "options"]
 
 

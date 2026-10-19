@@ -1,10 +1,11 @@
-import unicodedata
 from typing import Any
 
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models.functions import Lower
 from django.utils.text import slugify
+
+from config.texto import normalizar_busqueda
 
 
 class Catalogo(models.Model):
@@ -68,14 +69,6 @@ class EstadoCartel(Catalogo):
         if not self.codigo:
             self.codigo = slugify(self.nombre).replace("-", "_")
         super().save(*args, **kwargs)
-
-
-def normalizar_busqueda(value: str) -> str:
-    return "".join(
-        character
-        for character in unicodedata.normalize("NFKD", value.casefold())
-        if not unicodedata.combining(character)
-    )
 
 
 class Cartel(models.Model):
