@@ -1,6 +1,6 @@
 # Unidad: Disponibilidad — ocupación de hoy
 
-- **Estado:** en curso · **Épica:** E6 Vista de disponibilidad · **App dueña:** `reservas`
+- **Estado:** mergeada · **Épica:** E6 Vista de disponibilidad · **App dueña:** `reservas`
 - **Origen:** HU-041 · **Rama:** `feature/reservas-disponibilidad-hoy`
 
 ## Objetivo
@@ -61,4 +61,4 @@ Ninguna.
   sin problemas (68 archivos); `makemigrations --check` sin cambios; `pytest --cov` 202 pasan, total
   94 %; frontend `format:check`/`lint`/`typecheck` OK, `test:coverage` 66 pasan (líneas 89.1 %),
   `build` OK; `pre-commit run --all-files` todo en verde. Aprobado por Juan Diego.
-- Gate 3 (PR): —
+- Gate 3 (PR): #19 (mergeado a develop el 2026-10-19).
