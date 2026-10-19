@@ -64,8 +64,14 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
         precio_fijacion: fijacion || '0',
       })
     } catch (cause) {
-      if (cause instanceof ApiError) setErrors(cause.fields)
-      setGeneralError(cause instanceof Error ? cause.message : 'No se pudo guardar la reserva.')
+      if (cause instanceof ApiError) {
+        setErrors(cause.fields)
+        // El conflicto de cupo (HU-032) viene como campo `disponibilidad`: se muestra tal cual.
+        const conflicto = cause.fields.disponibilidad?.join(' ')
+        setGeneralError(conflicto ?? cause.message)
+      } else {
+        setGeneralError(cause instanceof Error ? cause.message : 'No se pudo guardar la reserva.')
+      }
     } finally {
       setSaving(false)
     }

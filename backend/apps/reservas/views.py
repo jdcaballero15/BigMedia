@@ -1,8 +1,13 @@
+from typing import cast
+
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.db.models import QuerySet
 from rest_framework import permissions, viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
 from apps.inventario.models import Cartel
@@ -24,6 +29,41 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
     http_method_names = ["get", "post", "patch", "head", "options"]
     queryset = Reserva.objects.select_related("campania__marca", "cartel")
     serializer_class = ReservaSerializer
+
+    def perform_create(self, serializer: BaseSerializer[Reserva]) -> None:
+        necesita = serializer.validated_data.get("estado") == Reserva.Estado.CONFIRMADA
+        self._guardar_con_disponibilidad(serializer, necesita)
+
+    def perform_update(self, serializer: BaseSerializer[Reserva]) -> None:
+        datos = serializer.validated_data
+        instancia = cast(Reserva, serializer.instance)
+        nuevo_estado = datos.get("estado", instancia.estado)
+        va_a_confirmada = datos.get("estado") == Reserva.Estado.CONFIRMADA
+        sigue_confirmada = (
+            instancia.estado == Reserva.Estado.CONFIRMADA
+            and nuevo_estado == Reserva.Estado.CONFIRMADA
+        )
+        cambia_ocupacion = any(c in datos for c in ("fecha_inicio", "fecha_fin", "cartel"))
+        # No se revalida si solo cambia un precio de una confirmada (matriz caso 13).
+        necesita = va_a_confirmada or (sigue_confirmada and cambia_ocupacion)
+        self._guardar_con_disponibilidad(serializer, necesita)
+
+    def _guardar_con_disponibilidad(
+        self, serializer: BaseSerializer[Reserva], necesita: bool
+    ) -> None:
+        with transaction.atomic():
+            if "cartel" in serializer.validated_data:
+                cartel = serializer.validated_data["cartel"]
+            else:
+                cartel = cast(Reserva, serializer.instance).cartel
+            # Bloquea el cartel: serializa confirmaciones del mismo cartel (HU-034).
+            Cartel.objects.select_for_update().get(pk=cartel.pk)
+            reserva = serializer.save()
+            if necesita:
+                try:
+                    services.validar_disponibilidad(reserva)
+                except DjangoValidationError as error:
+                    raise ValidationError(error.message_dict) from error
 
     def get_queryset(self) -> QuerySet[Reserva]:
         queryset = super().get_queryset()
