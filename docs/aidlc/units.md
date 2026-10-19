@@ -11,6 +11,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E2 Inventario de soportes | [inventario](units/inventario.md) | inventario | HU-008…HU-014, RN-004, RN-005, RN-008, RN-010 | base-del-repositorio | Juan Diego | feat/inventario | mergeada |
 | E0 Plataforma base | [despliegue-render](units/despliegue-render.md) | infra | HU-002 | base-del-repositorio | Juan Diego | chore/render-deploy | mergeada |
 | — (unidad técnica) | [reestructura-del-repositorio](units/reestructura-del-repositorio.md) | docs, infra | — | despliegue-render | Juan Diego | docs/reestructura-gobernanza, chore/gates-de-calidad | en curso |
+| E3 Clientes, marcas y CRM | [clientes-y-marcas](units/clientes-y-marcas.md) | clientes | HU-016, HU-017, HU-018 | base-del-repositorio | Juan Diego | feature/clientes-clientes-y-marcas | en curso |
 
 ## Notas
 
