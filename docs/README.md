@@ -6,6 +6,7 @@ Punto de entrada a `docs/`. Las reglas absolutas del repositorio están en [`CLA
 
 | Documento | Para qué sirve |
 | --- | --- |
+| [`guia-para-socios.md`](guia-para-socios.md) | Explicación no técnica del estado del sistema, los pedidos, las historias, los PRs, la CI y la publicación. |
 | [`arquitectura.md`](arquitectura.md) | Estilo (monolito modular), árbol del repositorio, apps con su responsabilidad y riesgo, dependencias permitidas, regla crítica de disponibilidad y frontend. |
 | [`estandares-de-codigo.md`](estandares-de-codigo.md) | Reglas de Python, Django, TypeScript y tests, con ejemplos correctos e incorrectos y cómo se verifica cada una. |
 | [`gestion-de-configuracion.md`](gestion-de-configuracion.md) | Ramas, commits, entornos, credenciales, jobs de CI y configuración manual en GitHub. |
