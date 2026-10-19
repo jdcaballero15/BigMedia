@@ -1,3 +1,4 @@
+import ReservasCampania from '../reservas/ReservasCampania'
 import type { Campania } from './types'
 import { etiquetaEstado } from './types'
 
@@ -50,10 +51,7 @@ export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props)
           </div>
         </dl>
       </div>
-      <div className="card section-gap">
-        <h3>Reservas</h3>
-        <p className="empty">Próximamente: vas a poder agregar las reservas de esta campaña.</p>
-      </div>
+      <ReservasCampania campaniaId={campania.id} />
       <div className="card section-gap">
         <h3>Costos y rentabilidad</h3>
         <p className="empty">Próximamente: costos e importes para la facturación.</p>
