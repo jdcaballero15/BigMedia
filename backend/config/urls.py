@@ -18,5 +18,6 @@ urlpatterns = [
     path("api/campanias/", include("apps.campanias.urls")),
     path("api/reservas/", include("apps.reservas.urls")),
     path("api/costos/", include("apps.costos.urls")),
+    path("api/facturacion/", include("apps.facturacion.urls")),
     path("", TemplateView.as_view(template_name="index.html"), name="spa"),
 ]
