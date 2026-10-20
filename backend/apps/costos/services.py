@@ -23,3 +23,23 @@ def margen_de_reserva(reserva: Reserva) -> dict[str, object]:
         "margen": f"{margen:.2f}",
         "porcentaje": porcentaje,
     }
+
+
+def margen_de_campania(campania_id: int) -> dict[str, object]:
+    """Totales y margen de una campaña desde sus reservas no canceladas (HU-025, HU-045)."""
+    reservas = Reserva.objects.filter(campania_id=campania_id).exclude(
+        estado=Reserva.Estado.CANCELADA
+    )
+    ingreso = reservas.aggregate(total=Sum("total"))["total"] or Decimal("0.00")
+    costo = Costo.objects.filter(reserva__in=reservas, anulado=False).aggregate(total=Sum("monto"))[
+        "total"
+    ] or Decimal("0.00")
+    margen = ingreso - costo
+    porcentaje = round(float(margen / ingreso * 100), 2) if ingreso else None
+    return {
+        "cantidad_reservas": reservas.count(),
+        "ingreso": f"{ingreso:.2f}",
+        "costo": f"{costo:.2f}",
+        "margen": f"{margen:.2f}",
+        "porcentaje": porcentaje,
+    }
