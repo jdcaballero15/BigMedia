@@ -6,6 +6,7 @@ from .views import (
     DisponibilidadView,
     OcupacionView,
     PanelView,
+    RepartoView,
     ReservaViewSet,
 )
 
@@ -17,5 +18,6 @@ urlpatterns = [
     path("disponibilidad/", DisponibilidadView.as_view(), name="disponibilidad"),
     path("calendario/", CalendarioView.as_view(), name="calendario"),
     path("panel/", PanelView.as_view(), name="panel"),
+    path("reparto/", RepartoView.as_view(), name="reparto"),
     path("", include(router.urls)),
 ]

@@ -163,3 +163,16 @@ class PanelView(APIView):
 
     def get(self, _request: Request) -> Response:
         return Response(services.panel_principal())
+
+
+class RepartoView(APIView):
+    """Reparto del ingreso de una reserva por mes (HU-051)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, request: Request) -> Response:
+        valor = request.query_params.get("reserva", "")
+        reserva = Reserva.objects.filter(pk=_id_positivo(valor, "reserva")).first()
+        if reserva is None:
+            raise ValidationError({"reserva": "No existe la reserva."})
+        return Response(services.reparto_por_mes(reserva))
