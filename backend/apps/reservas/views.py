@@ -154,3 +154,12 @@ class CalendarioView(APIView):
             return date.fromisoformat(valor)
         except ValueError as error:
             raise ValidationError({"fecha": "Formato de fecha inválido (AAAA-MM-DD)."}) from error
+
+
+class PanelView(APIView):
+    """Resumen del panel de inicio (HU-047)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, _request: Request) -> Response:
+        return Response(services.panel_principal())

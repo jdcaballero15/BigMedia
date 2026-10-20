@@ -1,6 +1,6 @@
 # Unidad: Margen de campaña
 
-- **Estado:** en curso · **Épica:** E7 Costos y rentabilidad · **App dueña:** `costos`
+- **Estado:** mergeada · **Épica:** E7 Costos y rentabilidad · **App dueña:** `costos`
 - **Origen:** HU-025, HU-045 · **Rama:** `feature/costos-margen-campania`
 
 ## Objetivo
@@ -45,4 +45,4 @@ Ninguna.
 
 - Gate 1 (plan): 2026-10-20 — aprobado por Juan Diego.
 - Gate 2 (verificación): 2026-10-20 — ruff y mypy (78 archivos) OK, makemigrations --check sin cambios, pytest --cov 229 pasan (total 94.5%); frontend format/lint/typecheck OK, test:coverage 80 pasan, build OK; pre-commit en verde. Aprobado por Juan Diego.
-- Gate 3 (PR): —
+- Gate 3 (PR): #23 (mergeado a develop el 2026-10-20).

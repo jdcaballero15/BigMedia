@@ -115,3 +115,6 @@ DISPONIBILIDAD_BORDE_INCLUSIVO = (
 DISPONIBILIDAD_TENTATIVA_BLOQUEA = (
     os.environ.get("DISPONIBILIDAD_TENTATIVA_BLOQUEA", "false").lower() == "true"
 )
+
+# Panel principal (HU-047): ventana de "reservas por vencer" en días.
+PANEL_DIAS_POR_VENCER = int(os.environ.get("PANEL_DIAS_POR_VENCER", "30"))
