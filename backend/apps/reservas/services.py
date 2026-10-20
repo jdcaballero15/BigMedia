@@ -254,3 +254,35 @@ def validar_disponibilidad(reserva: Reserva) -> None:
                 )
             }
         )
+
+
+def panel_principal() -> dict[str, object]:
+    """Resumen del panel de inicio (HU-047): ocupación de hoy, campañas activas y por vencer."""
+    from apps.campanias.models import Campania
+
+    carteles = carteles_con_ocupacion_hoy()
+    # `cupos_libres` es una anotación; se filtra con kwargs dinámicos.
+    libres = carteles.filter(**{"cupos_libres__gt": 0}).count()
+    ocupados = carteles.filter(**{"cupos_libres__lte": 0}).count()
+    activas = Campania.objects.filter(estado=Campania.Estado.CONFIRMADA).count()
+    hoy = timezone.localdate()
+    limite = hoy + timedelta(days=settings.PANEL_DIAS_POR_VENCER)
+    por_vencer = Reserva.objects.filter(
+        estado=Reserva.Estado.CONFIRMADA, fecha_fin__gte=hoy, fecha_fin__lte=limite
+    ).select_related("cartel", "campania")
+    return {
+        "carteles_libres": libres,
+        "carteles_ocupados": ocupados,
+        "campanias_activas": activas,
+        "por_vencer": [
+            {
+                "id": r.pk,
+                "nombre": r.nombre,
+                "cartel_nombre": r.cartel.nombre_visible,
+                "campania": r.campania_id,
+                "fecha_inicio": r.fecha_inicio.isoformat(),
+                "fecha_fin": r.fecha_fin.isoformat(),
+            }
+            for r in por_vencer.order_by("fecha_fin", "id")
+        ],
+    }
