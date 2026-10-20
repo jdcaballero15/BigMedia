@@ -52,3 +52,17 @@ class MargenView(APIView):
         if reserva is None:
             raise ValidationError({"reserva": "No existe la reserva."})
         return Response(services.margen_de_reserva(reserva))
+
+
+class CampaniaMargenView(APIView):
+    """Totales y margen de una campaña, desde sus reservas (HU-025, HU-045).
+
+    No importa `campanias` (fuera de la tabla de dependencias de `costos`): recibe el id y agrega
+    las reservas por `campania_id`; una campaña sin reservas devuelve ceros.
+    """
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, request: Request) -> Response:
+        campania_id = _id_positivo(request.query_params.get("campania", ""), "campania")
+        return Response(services.margen_de_campania(campania_id))
