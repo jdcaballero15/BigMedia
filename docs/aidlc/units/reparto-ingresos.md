@@ -1,6 +1,6 @@
 # Unidad: Reparto de ingresos por día
 
-- **Estado:** en curso · **Épica:** E8 Reportes y paneles · **App dueña:** `reservas`
+- **Estado:** en revisión · **Épica:** E8 Reportes y paneles · **App dueña:** `reservas`
 - **Origen:** HU-051 · **Rama:** `feature/reservas-reparto-ingresos`
 
 ## Objetivo
@@ -47,4 +47,4 @@ Ninguna del catálogo RN-xxx; implementa directamente HU-051.
 - Gate 2 (verificación): 2026-10-20 — `ruff format --check`, `ruff check`, `mypy backend`,
   `makemigrations --check` y gitleaks en verde; `pytest --cov` 239 pasan, cobertura total 94.64 %
   (umbral 80 %). Frontend no aplica (unidad sin frontend). Pendiente de Juan Diego.
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-20 — PR #25 a `develop` (rama `feature/reservas-reparto-ingresos`).

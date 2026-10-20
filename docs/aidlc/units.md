@@ -21,7 +21,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | — (unidad técnica) | [navegacion-lateral](units/navegacion-lateral.md) | frontend, costos | pedido 19/10/2026 | costos-y-margen | Juan Diego | feature/frontend-navegacion-lateral | mergeada |
 | E7 Costos y rentabilidad | [margen-campania](units/margen-campania.md) | costos | HU-025, HU-045 (RN-006) | costos-y-margen | Juan Diego | feature/costos-margen-campania | mergeada |
 | E8 Reportes y paneles | [panel-principal](units/panel-principal.md) | reservas | HU-047 | costos-y-margen | Juan Diego | feature/reservas-panel-principal | mergeada |
-| E8 Reportes y paneles | [reparto-ingresos](units/reparto-ingresos.md) | reservas | HU-051 | panel-principal | Juan Diego | feature/reservas-reparto-ingresos | en curso |
+| E8 Reportes y paneles | [reparto-ingresos](units/reparto-ingresos.md) | reservas | HU-051 | panel-principal | Juan Diego | feature/reservas-reparto-ingresos | en revisión |
 
 ## Notas
 
