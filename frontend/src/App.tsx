@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import {
   CalendarDays,
   CircleDollarSign,
+  LayoutDashboard,
   Layers,
   LogOut,
   Megaphone,
@@ -23,11 +24,13 @@ import MarcasPage from './features/clientes/MarcasPage'
 import CampaniasPage from './features/campanias/CampaniasPage'
 import CostosPage from './features/costos/CostosPage'
 import DisponibilidadPage from './features/disponibilidad/DisponibilidadPage'
+import PanelPrincipal from './features/panel/PanelPrincipal'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import './App.css'
 
 type Session = { status: 'checking' | 'anonymous' | 'offline' | 'ready'; username: string }
 type Page =
+  | 'panel'
   | 'clientes'
   | 'marcas'
   | 'campanias'
@@ -41,6 +44,12 @@ type Page =
 type Item = { id: Page; label: string; icon: LucideIcon; render: () => ReactNode }
 
 const sections: { title: string; items: Item[] }[] = [
+  {
+    title: 'Inicio',
+    items: [
+      { id: 'panel', label: 'Panel', icon: LayoutDashboard, render: () => <PanelPrincipal /> },
+    ],
+  },
   {
     title: 'Comercial',
     items: [
