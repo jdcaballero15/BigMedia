@@ -1,6 +1,6 @@
 # Unidad: Reporte de ingresos por cliente y marca
 
-- **Estado:** en curso · **Épica:** E8 Reportes y paneles · **App dueña:** `facturacion` (nueva)
+- **Estado:** mergeada · **Épica:** E8 Reportes y paneles · **App dueña:** `facturacion` (nueva)
 - **Origen:** HU-049 · **Rama:** `feature/facturacion-reporte-ingresos`
 
 ## Objetivo
@@ -84,4 +84,4 @@ Ninguna (la app no tiene modelos).
 - Gate 2 (verificación): 2026-10-20 — `ruff format --check`, `ruff check`, `mypy backend` (86
   archivos), `makemigrations --check` y gitleaks en verde; `pytest --cov` 247 pasan, cobertura total
   94.63 % (umbral 80 %). Frontend no aplica (unidad sin frontend).
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-20 — PR #27 mergeado a `develop` (rama `feature/facturacion-reporte-ingresos`).
