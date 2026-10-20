@@ -1,6 +1,7 @@
 """Reglas de negocio de reservas."""
 
 from datetime import date, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from django.conf import settings
@@ -254,6 +255,32 @@ def validar_disponibilidad(reserva: Reserva) -> None:
                 )
             }
         )
+
+
+def reparto_por_mes(reserva: Reserva) -> list[dict[str, Any]]:
+    """Reparte `reserva.total` entre los meses del rango, proporcional a los días (HU-051).
+
+    Días por mes = días de `[fecha_inicio, fecha_fin]` que caen en ese mes (inclusive ambos
+    extremos). El último mes absorbe el redondeo, para que la suma coincida con el total al
+    centavo. Sirve igual para alquileres mensuales y de 15 días. Devuelve
+    `[{mes, etiqueta, monto}]` ordenado por mes.
+    """
+    meses = _meses_del_rango(reserva.fecha_inicio, reserva.fecha_fin)
+    dias_totales = (reserva.fecha_fin - reserva.fecha_inicio).days + 1
+    total = reserva.total
+    acumulado = Decimal("0.00")
+    reparto: list[dict[str, Any]] = []
+    for indice, mes in enumerate(meses):
+        if indice == len(meses) - 1:
+            monto = total - acumulado
+        else:
+            dias_mes = (mes["fin"] - mes["inicio"]).days + 1
+            monto = (total * dias_mes / dias_totales).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
+            acumulado += monto
+        reparto.append({"mes": mes["clave"], "etiqueta": mes["etiqueta"], "monto": monto})
+    return reparto
 
 
 def panel_principal() -> dict[str, object]:
