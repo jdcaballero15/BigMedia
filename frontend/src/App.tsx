@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
+  BarChart3,
   CalendarDays,
   CircleDollarSign,
   LayoutDashboard,
@@ -27,6 +28,7 @@ import CostosPage from './features/costos/CostosPage'
 import DisponibilidadPage from './features/disponibilidad/DisponibilidadPage'
 import ReporteIngresosPage from './features/facturacion/ReporteIngresos'
 import PanelPrincipal from './features/panel/PanelPrincipal'
+import ReporteOcupacionPage from './features/reservas/ReporteOcupacion'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import './App.css'
 
@@ -41,6 +43,7 @@ type Page =
   | 'proveedores'
   | 'costos'
   | 'ingresos'
+  | 'ocupacion'
   | 'formatos'
   | 'catalogos'
 
@@ -61,6 +64,12 @@ const sections: { title: string; items: Item[] }[] = [
         label: 'Ingresos',
         icon: TrendingUp,
         render: () => <ReporteIngresosPage />,
+      },
+      {
+        id: 'ocupacion',
+        label: 'Ocupación',
+        icon: BarChart3,
+        render: () => <ReporteOcupacionPage />,
       },
     ],
   },
