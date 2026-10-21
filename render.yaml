@@ -1,8 +1,16 @@
-# Recursos de producción en el plan gratis de Render, mientras se valida el sistema.
-# Límites: la web se duerme tras 15 minutos sin tráfico y la base gratis vence a los 30 días.
-# Ver docs/operacion/despliegue-render.md antes de conectarlo y para pasar al plan pago.
+# Dos entornos:
+#   - producción: rama `main`. Hoy en plan gratis; el paso a plan pago con copias de seguridad lo hace
+#     Juan a mano en el dashboard de Render (subir el `plan` de `bigmedia-db` y `bigmedia-web`), para
+#     no disparar gasto al sincronizar el Blueprint. Ver docs/operacion/despliegue-render.md.
+#   - staging: rama `develop`, plan gratis, con datos de ejemplo (nunca datos reales).
+# Límites del plan gratis: la web se duerme tras 15 minutos sin tráfico y la base vence a los 30 días.
 databases:
   - name: bigmedia-db
+    plan: free
+    region: virginia
+    postgresMajorVersion: '17'
+    ipAllowList: []
+  - name: bigmedia-db-staging
     plan: free
     region: virginia
     postgresMajorVersion: '17'
@@ -30,6 +38,31 @@ services:
       - key: DJANGO_DEBUG
         value: 'false'
       # Render los pide al crear el Blueprint; nunca se guardan en Git.
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+
+  - type: web
+    name: bigmedia-web-staging
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: develop
+    autoDeployTrigger: checksPass
+    healthCheckPath: /api/health/
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bigmedia-db-staging
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      # `staging` endurece la seguridad como producción y carga datos de ejemplo al arrancar.
+      - key: DJANGO_ENV
+        value: staging
+      - key: DJANGO_DEBUG
+        value: 'false'
       - key: DJANGO_SUPERUSER_USERNAME
         sync: false
       - key: DJANGO_SUPERUSER_PASSWORD

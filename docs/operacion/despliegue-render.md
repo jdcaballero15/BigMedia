@@ -4,6 +4,21 @@ Hoy `render.yaml` usa el **plan gratis** de Render (servicio web y PostgreSQL), 
 Seba puedan ver el sistema funcionando mientras se valida. La presencia del archivo en Git no crea
 recursos por sí sola: se crean al aplicar el Blueprint desde el panel de Render.
 
+## Entornos
+
+`render.yaml` define dos entornos:
+
+- **Producción** (`bigmedia-web` + `bigmedia-db`, rama `main`, `DJANGO_ENV=production`): los datos
+  reales. Se pasa a **plan pago con copias de seguridad** (ver "Pasar al plan pago"). El `render.yaml`
+  deja el `plan` en `free`: el upgrade lo hace Juan a mano en el dashboard para no disparar gasto al
+  sincronizar el Blueprint.
+- **Staging** (`bigmedia-web-staging` + `bigmedia-db-staging`, rama `develop`, `DJANGO_ENV=staging`):
+  gratis, para que Seba y Ale prueben lo nuevo antes de producción y para demos. Se endurece la
+  seguridad igual que producción (HTTPS, `DEBUG` off) y **arranca con datos de ejemplo** que crea
+  `python manage.py cargar_datos_ejemplo` (idempotente; nunca datos reales; se niega a correr en
+  producción). Como la base gratis vence a los 30 días, al recrearla el arranque vuelve a cargar los
+  datos de ejemplo.
+
 ## Límites del plan gratis
 
 - **La web se duerme** después de 15 minutos sin tráfico. La primera visita después tarda cerca de un
@@ -26,7 +41,10 @@ recursos por sí sola: se crean al aplicar el Blueprint desde el panel de Render
    - `DJANGO_SUPERUSER_USERNAME`: el usuario del primer administrador.
    - `DJANGO_SUPERUSER_PASSWORD`: una contraseña larga y única. No la guardes en el repositorio ni la
      mandes por chat.
-4. Revisar que los dos recursos (`bigmedia-web` y `bigmedia-db`) digan **Free** y aplicar el Blueprint.
+4. Revisar que los cuatro recursos (`bigmedia-web`, `bigmedia-db`, `bigmedia-web-staging` y
+   `bigmedia-db-staging`) digan **Free** y aplicar el Blueprint. Render pide los
+   `DJANGO_SUPERUSER_*` también para el servicio de staging (pueden ser distintos a los de
+   producción). El staging despliega la rama `develop` y, al arrancar, carga los datos de ejemplo.
 5. Esperar el build. En **Logs** tienen que aparecer las migraciones, `Administrador <usuario> creado.`
    y `Listening at`. El chequeo `/api/health/` debe dar `{"status":"ok"}`.
 6. Anotar la URL que asigna Render (por ejemplo `https://bigmedia-web.onrender.com`).

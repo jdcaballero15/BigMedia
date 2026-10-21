@@ -14,9 +14,12 @@ load_dotenv(ENV_FILE)
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 PRODUCTION = os.environ.get("DJANGO_ENV") == "production"
-DEBUG = not PRODUCTION and os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
+STAGING = os.environ.get("DJANGO_ENV") == "staging"
+# Entorno desplegado en Render (producción o staging): mismo endurecimiento de seguridad.
+DESPLEGADO = PRODUCTION or STAGING
+DEBUG = not DESPLEGADO and os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
 ALLOWED_HOSTS = (
-    [os.environ["RENDER_EXTERNAL_HOSTNAME"]] if PRODUCTION else ["127.0.0.1", "localhost"]
+    [os.environ["RENDER_EXTERNAL_HOSTNAME"]] if DESPLEGADO else ["127.0.0.1", "localhost"]
 )
 
 INSTALLED_APPS = [
@@ -45,7 +48,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-if PRODUCTION:
+if DESPLEGADO:
     MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 ROOT_URLCONF = "config.urls"
@@ -75,7 +78,7 @@ DATABASES: dict[str, Any] = {
         "PORT": os.environ.get("DB_PORT", "5433"),
     }
 }
-if PRODUCTION:
+if DESPLEGADO:
     DATABASES = {"default": dj_database_url.parse(os.environ["DATABASE_URL"])}
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
@@ -101,7 +104,7 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [FRONTEND_DIST] if FRONTEND_DIST.exists() else []
-if PRODUCTION:
+if DESPLEGADO:
     STORAGES = {
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
         "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
