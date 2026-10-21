@@ -1,6 +1,6 @@
 # Unidad: Pantalla del reporte de ingresos
 
-- **Estado:** en curso · **Épica:** E8 Reportes y paneles · **App dueña:** `frontend` (+ `facturacion`)
+- **Estado:** mergeada · **Épica:** E8 Reportes y paneles · **App dueña:** `frontend` (+ `facturacion`)
 - **Origen:** HU-049 (pantalla) · **Rama:** `feature/frontend-reporte-ingresos`
 
 ## Objetivo
@@ -74,4 +74,4 @@ Ninguna del catálogo se reubica; la pantalla solo muestra lo que el backend ya 
   `test:coverage` 85 pasan (cobertura líneas 89 %, sentencias 86 %, umbral 80 %); `build` ok.
   Backend: `ruff format --check`, `ruff check`, `makemigrations --check` y gitleaks en verde;
   `pytest --cov` 247 pasan, cobertura total 94.64 %.
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-21 — PR #29 mergeado a `develop` (rama `feature/frontend-reporte-ingresos`).
