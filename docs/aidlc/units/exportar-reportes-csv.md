@@ -1,6 +1,6 @@
 # Unidad: Exportar reportes a CSV
 
-- **Estado:** en curso · **Épica:** E8 Reportes y paneles · **App dueña:** `frontend`
+- **Estado:** mergeada · **Épica:** E8 Reportes y paneles · **App dueña:** `frontend`
 - **Origen:** HU-052 (parcial: CSV) · **Rama:** `feature/frontend-exportar-reportes`
 
 ## Objetivo
@@ -75,4 +75,4 @@ Ninguna.
 - Gate 2 (verificación): 2026-10-21 — Frontend: `format:check`, `lint`, `typecheck` en verde;
   `test:coverage` 94 pasan (cobertura líneas 89 %, sentencias 86 %, umbral 80 %); `build` ok.
   Backend sin cambios: `ruff`, `makemigrations --check`, `pytest` (257 pasan) y gitleaks en verde.
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-21 — PR #35 mergeado a `develop` (rama `feature/frontend-exportar-reportes`).
