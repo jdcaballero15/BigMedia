@@ -1,6 +1,6 @@
 # Unidad: Entornos — producción paga y staging gratis
 
-- **Estado:** en curso · **Épica:** — (unidad técnica) · **App dueña:** `infra`
+- **Estado:** mergeada · **Épica:** — (unidad técnica) · **App dueña:** `infra`
 - **Origen:** roadmap (decisión de Juan Diego, antes del 17/11/2026) · **Rama:** `feature/infra-entornos`
 
 ## Objetivo
@@ -87,4 +87,5 @@ Ninguna.
   archivos), `makemigrations --check` y gitleaks en verde; `pytest --cov` 261 pasan (7 nuevos),
   cobertura total 95 % (umbral 80 %). `render.yaml` válido (dos entornos). Frontend no aplica (sin
   cambios de frontend).
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-21 — PR #38 mergeado a `develop` (rama `feature/infra-entornos`). Los pasos de
+  infra de Render quedan para Juan.
