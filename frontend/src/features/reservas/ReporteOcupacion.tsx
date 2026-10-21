@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
+import { descargarCsv } from '../../shared/csv'
 import type { Catalogo } from '../inventario/types'
 import {
   colorOcupacion,
@@ -75,6 +76,24 @@ export default function ReporteOcupacionPage() {
     apply()
   }
 
+  function exportar() {
+    const columnas = [
+      'Cartel',
+      'Modalidad',
+      'Departamento',
+      ...datos.periodos.map((p) => p.etiqueta),
+      'Total',
+    ]
+    const filas = datos.carteles.map((cartel) => [
+      cartel.nombre_visible,
+      cartel.modalidad,
+      cartel.zona_nombre,
+      ...datos.periodos.map((p) => valorCartel(cartel, p.clave) ?? 0),
+      cartel.ocupacion,
+    ])
+    descargarCsv(`ocupacion-${desde}-${hasta}.csv`, columnas, filas)
+  }
+
   return (
     <>
       <div className="section-heading">
@@ -85,6 +104,13 @@ export default function ReporteOcupacionPage() {
             Ocupación en días-cupo por cartel y mes. El orden es el ranking de rendimiento.
           </p>
         </div>
+        <button
+          className="button-primary"
+          onClick={exportar}
+          disabled={datos.carteles.length === 0}
+        >
+          Exportar CSV
+        </button>
       </div>
       <div className="filters card">
         <label>

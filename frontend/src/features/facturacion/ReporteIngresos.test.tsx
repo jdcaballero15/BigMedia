@@ -91,3 +91,14 @@ test('sin ingresos muestra el estado vacío', async () => {
   render(<ReporteIngresosPage />)
   expect(await screen.findByText('Sin ingresos en el período.')).toBeDefined()
 })
+
+test('exporta el reporte a CSV', async () => {
+  const crearUrl = vi.fn(() => 'blob:test')
+  URL.createObjectURL = crearUrl
+  URL.revokeObjectURL = vi.fn()
+  stubFetch()
+  render(<ReporteIngresosPage />)
+  await screen.findByText('Agencia Centro')
+  fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }))
+  expect(crearUrl).toHaveBeenCalled()
+})

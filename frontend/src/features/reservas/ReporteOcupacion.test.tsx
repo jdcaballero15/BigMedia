@@ -108,3 +108,14 @@ test('sin carteles muestra el estado vacío', async () => {
   render(<ReporteOcupacionPage />)
   expect(await screen.findByText('No hay carteles para estos filtros.')).toBeDefined()
 })
+
+test('exporta el reporte a CSV', async () => {
+  const crearUrl = vi.fn(() => 'blob:test')
+  URL.createObjectURL = crearUrl
+  URL.revokeObjectURL = vi.fn()
+  stubFetch()
+  render(<ReporteOcupacionPage />)
+  await screen.findByText('Av. San Martín 1234')
+  fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }))
+  expect(crearUrl).toHaveBeenCalled()
+})

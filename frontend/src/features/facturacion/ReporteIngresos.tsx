@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
+import { descargarCsv } from '../../shared/csv'
 import { formatearMonto, sumarMontos } from './montos'
 import type { ClienteFila, Periodo, ReporteIngresos } from './types'
 
@@ -56,6 +57,19 @@ export default function ReporteIngresosPage() {
     return sumarMontos(datos.clientes.map((cliente) => cliente.por_mes[periodo.mes] ?? '0.00'))
   }
 
+  function exportar() {
+    const columnas = ['Cliente', 'Marca', ...datos.periodos.map((p) => p.etiqueta), 'Total']
+    const filas = datos.clientes.flatMap((cliente) =>
+      cliente.marcas.map((marca) => [
+        cliente.nombre,
+        marca.nombre,
+        ...datos.periodos.map((p) => Number(marca.por_mes[p.mes] ?? '0.00')),
+        Number(marca.total),
+      ]),
+    )
+    descargarCsv(`ingresos-${desde}-${hasta}.csv`, columnas, filas)
+  }
+
   return (
     <>
       <div className="section-heading">
@@ -66,6 +80,13 @@ export default function ReporteIngresosPage() {
             Facturación por período, con el desglose de cada agencia a sus marcas.
           </p>
         </div>
+        <button
+          className="button-primary"
+          onClick={exportar}
+          disabled={datos.clientes.length === 0}
+        >
+          Exportar CSV
+        </button>
       </div>
       <div className="filters card">
         <label>
