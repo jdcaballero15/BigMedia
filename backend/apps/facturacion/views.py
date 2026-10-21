@@ -7,7 +7,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from config.permisos import LecturaConSesionEdicionOperativo
+from config.permisos import LecturaSoloGerencia
 
 from . import services
 
@@ -32,7 +32,7 @@ def _ultimo_dia(primero: date) -> date:
 class IngresosView(APIView):
     """Reporte de ingresos por cliente y marca, repartidos por mes (HU-049)."""
 
-    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+    permission_classes = [permissions.IsAuthenticated, LecturaSoloGerencia]
 
     def get(self, request: Request) -> Response:
         hoy = timezone.localdate()

@@ -62,8 +62,14 @@ def test_login_me_and_logout_revoke_session():
         HTTP_X_CSRFTOKEN=token,
     )
     assert login_response.status_code == 200
-    assert client.get("/api/auth/me/").json() == {"username": "seba"}
+    assert login_response.json() == {"username": "seba", "es_gerencia": False}
+    assert client.get("/api/auth/me/").json() == {"username": "seba", "es_gerencia": False}
 
     new_token = login_response.cookies["csrftoken"].value
     assert client.post("/api/auth/logout/", HTTP_X_CSRFTOKEN=new_token).status_code == 200
     assert client.get("/api/auth/me/").status_code == 401
+
+
+@pytest.mark.django_db
+def test_me_marca_es_gerencia_para_el_grupo_gerencia(gerencia_client):
+    assert gerencia_client.get("/api/auth/me/").json()["es_gerencia"] is True

@@ -32,7 +32,11 @@ import ReporteOcupacionPage from './features/reservas/ReporteOcupacion'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import './App.css'
 
-type Session = { status: 'checking' | 'anonymous' | 'offline' | 'ready'; username: string }
+type Session = {
+  status: 'checking' | 'anonymous' | 'offline' | 'ready'
+  username: string
+  esGerencia: boolean
+}
 type Page =
   | 'panel'
   | 'clientes'
@@ -47,7 +51,13 @@ type Page =
   | 'formatos'
   | 'catalogos'
 
-type Item = { id: Page; label: string; icon: LucideIcon; render: () => ReactNode }
+type Item = {
+  id: Page
+  label: string
+  icon: LucideIcon
+  render: () => ReactNode
+  soloGerencia?: boolean
+}
 
 const sections: { title: string; items: Item[] }[] = [
   {
@@ -64,6 +74,7 @@ const sections: { title: string; items: Item[] }[] = [
         label: 'Ingresos',
         icon: TrendingUp,
         render: () => <ReporteIngresosPage />,
+        soloGerencia: true,
       },
       {
         id: 'ocupacion',
@@ -136,21 +147,27 @@ const sections: { title: string; items: Item[] }[] = [
 const pages = sections.flatMap((section) => section.items)
 
 function App() {
-  const [session, setSession] = useState<Session>({ status: 'checking', username: '' })
+  const [session, setSession] = useState<Session>({
+    status: 'checking',
+    username: '',
+    esGerencia: false,
+  })
   const [page, setPage] = useState<Page>('clientes')
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     let active = true
-    void apiGet<{ username: string }>('/api/auth/me/')
+    void apiGet<{ username: string; es_gerencia: boolean }>('/api/auth/me/')
       .then((user) => {
-        if (active) setSession({ status: 'ready', username: user.username })
+        if (active)
+          setSession({ status: 'ready', username: user.username, esGerencia: user.es_gerencia })
       })
       .catch((error: unknown) => {
         if (active)
           setSession({
             status: error instanceof ApiError && error.status === 401 ? 'anonymous' : 'offline',
             username: '',
+            esGerencia: false,
           })
       })
     return () => {
@@ -160,7 +177,7 @@ function App() {
 
   async function signOut() {
     await apiWrite('/api/auth/logout/', 'POST')
-    setSession({ status: 'anonymous', username: '' })
+    setSession({ status: 'anonymous', username: '', esGerencia: false })
   }
 
   if (session.status === 'checking')
@@ -177,7 +194,18 @@ function App() {
       </main>
     )
   if (session.status === 'anonymous')
-    return <Login onLogin={(username) => setSession({ status: 'ready', username })} />
+    return (
+      <Login
+        onLogin={(username, esGerencia) => setSession({ status: 'ready', username, esGerencia })}
+      />
+    )
+
+  const visibles = sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.soloGerencia || session.esGerencia),
+    }))
+    .filter((section) => section.items.length > 0)
 
   return (
     <div className={menuOpen ? 'app-shell menu-open' : 'app-shell'}>
@@ -205,7 +233,7 @@ function App() {
           </div>
         </div>
         <nav className="sidenav" aria-label="Navegación">
-          {sections.map((section) => (
+          {visibles.map((section) => (
             <div key={section.title} className="nav-section">
               <p className="nav-section-title">{section.title}</p>
               {section.items.map((item) => {

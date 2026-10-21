@@ -28,6 +28,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E8 Reportes y paneles | [reporte-ocupacion](units/reporte-ocupacion.md) | reservas | HU-048 (RN-004) | reservas-base | Juan Diego | feature/reservas-reporte-ocupacion | mergeada |
 | E8 Reportes y paneles | [reporte-ocupacion-frontend](units/reporte-ocupacion-frontend.md) | frontend | HU-048 (pantalla) | reporte-ocupacion | Juan Diego | feature/frontend-reporte-ocupacion | mergeada |
 | E8 Reportes y paneles | [exportar-reportes-csv](units/exportar-reportes-csv.md) | frontend | HU-052 (CSV) | reporte-ingresos-frontend, reporte-ocupacion-frontend | Juan Diego | feature/frontend-exportar-reportes | mergeada |
+| E1 Seguridad y acceso | [permiso-ingresos](units/permiso-ingresos.md) | usuarios | HU-052 (criterio 2) | reporte-ingresos | Juan Diego | feature/usuarios-permiso-ingresos | en curso |
 
 ## Notas
 

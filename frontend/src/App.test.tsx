@@ -330,6 +330,35 @@ test('catálogos ya no ofrece proveedores ni formatos, que tienen su pantalla', 
   expect(screen.getByRole('button', { name: 'Nuevo formato' })).toBeDefined()
 })
 
+test('oculta Ingresos a quien no es gerencia', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'trabajador', es_gerencia: false })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  expect(within(nav).getByRole('button', { name: 'Ocupación' })).toBeDefined()
+  expect(within(nav).queryByRole('button', { name: 'Ingresos' })).toBeNull()
+})
+
+test('muestra Ingresos a gerencia', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'seba', es_gerencia: true })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  expect(within(nav).getByRole('button', { name: 'Ingresos' })).toBeDefined()
+})
+
 test('abre y cierra el menú en pantallas chicas', async () => {
   vi.stubGlobal(
     'fetch',
