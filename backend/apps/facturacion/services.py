@@ -48,11 +48,6 @@ def _acumular_reserva(
         ma["por_mes"][mes] = ma["por_mes"].get(mes, CERO) + monto
 
 
-def _completar(por_mes: dict[str, Decimal], claves: set[str]) -> dict[str, Decimal]:
-    """Rellena con 0.00 los meses sin monto, en orden cronológico."""
-    return {mes: por_mes.get(mes, CERO) for mes in sorted(claves)}
-
-
 def _total(por_mes: dict[str, Decimal]) -> Decimal:
     acumulado = CERO
     for monto in por_mes.values():
@@ -60,28 +55,41 @@ def _total(por_mes: dict[str, Decimal]) -> Decimal:
     return acumulado
 
 
+def _fmt(valor: Decimal) -> str:
+    """Importe como string de 2 decimales (contrato de dinero, como el reporte de costos)."""
+    return f"{valor:.2f}"
+
+
+def _por_mes_str(por_mes: dict[str, Decimal], claves: set[str]) -> dict[str, str]:
+    """Meses del período en orden, con 0.00 donde no hubo monto, como string."""
+    return {mes: _fmt(por_mes.get(mes, CERO)) for mes in sorted(claves)}
+
+
 def _ordenar(
-    acumulador: dict[int | None, dict[str, Any]], claves: set[str]
+    acumulador: dict[int | None, dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Arma clientes y marcas con total y ranking (orden por total descendente)."""
+    """Arma clientes y marcas con total `Decimal` y ranking (orden por total descendente)."""
     clientes: list[dict[str, Any]] = []
     for cl in acumulador.values():
-        marcas = [
-            {
-                "marca": ma["marca"],
-                "nombre": ma["nombre"],
-                "total": _total(ma["por_mes"]),
-                "por_mes": _completar(ma["por_mes"], claves),
-            }
-            for ma in cl["marcas"].values()
-        ]
-        marcas.sort(key=lambda m: m["total"], reverse=True)
+        marcas = sorted(
+            (
+                {
+                    "marca": ma["marca"],
+                    "nombre": ma["nombre"],
+                    "total": _total(ma["por_mes"]),
+                    "por_mes": ma["por_mes"],
+                }
+                for ma in cl["marcas"].values()
+            ),
+            key=lambda m: m["total"],
+            reverse=True,
+        )
         clientes.append(
             {
                 "cliente": cl["cliente"],
                 "nombre": cl["nombre"],
                 "total": _total(cl["por_mes"]),
-                "por_mes": _completar(cl["por_mes"], claves),
+                "por_mes": cl["por_mes"],
                 "marcas": marcas,
             }
         )
@@ -89,12 +97,32 @@ def _ordenar(
     return clientes
 
 
+def _formatear_cliente(cl: dict[str, Any], claves: set[str]) -> dict[str, Any]:
+    """Pasa un cliente ya ordenado a la salida con importes como string."""
+    return {
+        "cliente": cl["cliente"],
+        "nombre": cl["nombre"],
+        "total": _fmt(cl["total"]),
+        "por_mes": _por_mes_str(cl["por_mes"], claves),
+        "marcas": [
+            {
+                "marca": ma["marca"],
+                "nombre": ma["nombre"],
+                "total": _fmt(ma["total"]),
+                "por_mes": _por_mes_str(ma["por_mes"], claves),
+            }
+            for ma in cl["marcas"]
+        ],
+    }
+
+
 def reporte_ingresos(desde: date, hasta: date) -> dict[str, Any]:
     """Facturación del período con desglose cliente → marca, repartida por mes (HU-049).
 
     Toma las reservas que ocupan cupo (no canceladas) y se solapan con `[desde, hasta]`, reparte el
     ingreso de cada una por mes (HU-051) y acumula por cliente que factura (RN-014) y por marca. Los
-    totales cuadran: cliente = suma de marcas = suma de meses; global = suma de clientes.
+    totales cuadran: cliente = suma de marcas = suma de meses; global = suma de clientes. Los importes
+    salen como string de 2 decimales.
     """
     periodos = _meses_periodo(desde, hasta)
     claves = {p["mes"] for p in periodos}
@@ -104,8 +132,9 @@ def reporte_ingresos(desde: date, hasta: date) -> dict[str, Any]:
     acumulador: dict[int | None, dict[str, Any]] = {}
     for reserva in reservas:
         _acumular_reserva(acumulador, reserva, claves)
-    clientes = _ordenar(acumulador, claves)
+    ordenados = _ordenar(acumulador)
     total = CERO
-    for cl in clientes:
+    for cl in ordenados:
         total += cl["total"]
-    return {"periodos": periodos, "clientes": clientes, "total": total}
+    clientes = [_formatear_cliente(cl, claves) for cl in ordenados]
+    return {"periodos": periodos, "clientes": clientes, "total": _fmt(total)}
