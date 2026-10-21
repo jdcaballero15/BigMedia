@@ -1,6 +1,6 @@
 # Unidad: Permiso de ingresos (grupo Gerencia)
 
-- **Estado:** en curso · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `facturacion`, `frontend`)
+- **Estado:** mergeada · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `facturacion`, `frontend`)
 - **Origen:** HU-052 criterio 2 (destraba el gate de facturación) · **Rama:** `feature/usuarios-permiso-ingresos`
 
 ## Objetivo
@@ -65,4 +65,5 @@ Ninguna del catálogo RN. Es seguridad de acceso (E1) que satisface el criterio 
 - Gate 2 (verificación): 2026-10-21 — Backend: `ruff`, `mypy` (89 archivos), `makemigrations --check`,
   gitleaks y `pytest --cov` 263 pasan (cobertura 94.58 %). Frontend: `format:check`, `lint`,
   `typecheck`, `test:coverage` 96 pasan (líneas 89 %, sentencias 86 %) y `build` en verde.
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-21 — PR #40 mergeado a `develop` (rama `feature/usuarios-permiso-ingresos`).
+  Juan asigna a Seba y Ale al grupo Gerencia desde el admin.
