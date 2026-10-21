@@ -41,3 +41,12 @@ def lector_client(db):
     client = Client()
     client.force_login(user)
     return client
+
+
+@pytest.fixture
+def gerencia_client(db):
+    user = get_user_model().objects.create_user(username="gerente", password="clave-segura-123")
+    user.groups.add(Group.objects.get(name="Gerencia"))
+    client = Client()
+    client.force_login(user)
+    return client

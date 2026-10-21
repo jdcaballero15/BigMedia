@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { apiWrite } from '../shared/api'
 
-type LoginProps = { onLogin: (username: string) => void }
+type LoginProps = { onLogin: (username: string, esGerencia: boolean) => void }
 
 export default function Login({ onLogin }: LoginProps) {
   const [username, setUsername] = useState('')
@@ -15,11 +15,12 @@ export default function Login({ onLogin }: LoginProps) {
     setBusy(true)
     setError('')
     try {
-      const user = await apiWrite<{ username: string }>('/api/auth/login/', 'POST', {
-        username,
-        password,
-      })
-      onLogin(user.username)
+      const user = await apiWrite<{ username: string; es_gerencia: boolean }>(
+        '/api/auth/login/',
+        'POST',
+        { username, password },
+      )
+      onLogin(user.username, user.es_gerencia)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudo iniciar sesión.')
     } finally {
