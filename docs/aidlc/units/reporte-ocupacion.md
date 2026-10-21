@@ -1,6 +1,6 @@
 # Unidad: Reporte de ocupación (backend)
 
-- **Estado:** en curso · **Épica:** E8 Reportes y paneles · **App dueña:** `reservas`
+- **Estado:** mergeada · **Épica:** E8 Reportes y paneles · **App dueña:** `reservas`
 - **Origen:** HU-048 · **Rama:** `feature/reservas-reporte-ocupacion`
 
 ## Objetivo
@@ -78,4 +78,4 @@ Ninguna.
 - Gate 2 (verificación): 2026-10-21 — `ruff format --check`, `ruff check`, `mypy backend` (87
   archivos), `makemigrations --check` y gitleaks en verde; `pytest --cov` 256 pasan (10 nuevos),
   cobertura total 94 % (umbral 80 %). Frontend no aplica (unidad backend).
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-21 — PR #31 mergeado a `develop` (rama `feature/reservas-reporte-ocupacion`).
