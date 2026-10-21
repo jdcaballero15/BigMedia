@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from typing import cast
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -163,6 +163,47 @@ class PanelView(APIView):
 
     def get(self, _request: Request) -> Response:
         return Response(services.panel_principal())
+
+
+class ReporteOcupacionView(APIView):
+    """Ocupación en días-cupo por cartel y mes: mapa de calor, ranking y evolución (HU-048)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, request: Request) -> Response:
+        params = request.query_params
+        hoy = timezone.localdate()
+        desde = self._mes(params.get("desde"), date(hoy.year, 1, 1))
+        hasta = self._fin_de_mes(self._mes(params.get("hasta"), date(hoy.year, 12, 1)))
+        if hasta < desde:
+            raise ValidationError(
+                {"hasta": "El período de fin no puede ser anterior al de inicio."}
+            )
+        if services.sumar_meses(desde, services.MESES_CALENDARIO_MAX) < hasta:
+            raise ValidationError(
+                {"hasta": f"El rango no puede superar los {services.MESES_CALENDARIO_MAX} meses."}
+            )
+        zona = _id_positivo(params["zona"], "zona") if params.get("zona") else None
+        return Response(
+            services.reporte_ocupacion(
+                desde, hasta, zona=zona, modalidad=params.get("modalidad") or None
+            )
+        )
+
+    @staticmethod
+    def _mes(valor: str | None, por_defecto: date) -> date:
+        if not valor:
+            return por_defecto
+        try:
+            return date.fromisoformat(f"{valor}-01")
+        except ValueError as error:
+            raise ValidationError({"periodo": "Formato de período inválido (AAAA-MM)."}) from error
+
+    @staticmethod
+    def _fin_de_mes(primero: date) -> date:
+        if primero.month == 12:
+            return date(primero.year, 12, 31)
+        return date(primero.year, primero.month + 1, 1) - timedelta(days=1)
 
 
 class RepartoView(APIView):

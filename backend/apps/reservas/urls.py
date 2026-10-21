@@ -7,6 +7,7 @@ from .views import (
     OcupacionView,
     PanelView,
     RepartoView,
+    ReporteOcupacionView,
     ReservaViewSet,
 )
 
@@ -19,5 +20,6 @@ urlpatterns = [
     path("calendario/", CalendarioView.as_view(), name="calendario"),
     path("panel/", PanelView.as_view(), name="panel"),
     path("reparto/", RepartoView.as_view(), name="reparto"),
+    path("reporte-ocupacion/", ReporteOcupacionView.as_view(), name="reporte-ocupacion"),
     path("", include(router.urls)),
 ]

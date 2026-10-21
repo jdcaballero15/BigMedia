@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count, F, Q, QuerySet
 from django.utils import timezone
 
-from apps.inventario.models import Cartel
+from apps.inventario.models import Cartel, Formato
 
 from .models import MESES_ABREV, Reserva
 
@@ -189,6 +189,130 @@ def calendario_disponibilidad(
     ]
     periodos = [{"clave": m["clave"], "etiqueta": m["etiqueta"]} for m in meses]
     return {"periodos": periodos, "carteles": filas}
+
+
+def _dias_solape(inicio: date, fin: date, desde: date, hasta: date) -> int:
+    """Cantidad de días de `[inicio, fin]` que caen en `[desde, hasta]` (inclusive ambos)."""
+    lo, hi = max(inicio, desde), min(fin, hasta)
+    return (hi - lo).days + 1 if hi >= lo else 0
+
+
+def _porcentaje(ocupados: int, disponibles: int) -> float:
+    """Ocupación en días-cupo como porcentaje de 1 decimal (HU-048)."""
+    return round(ocupados / disponibles * 100, 1) if disponibles else 0.0
+
+
+def _ocupacion_celda(
+    reservas: list[Reserva], capacidad: int, mes: dict[str, Any]
+) -> tuple[int, int]:
+    """Días-cupo (ocupados, disponibles) de un cartel en un mes del período (HU-048, RN-004)."""
+    dias_mes = (mes["fin"] - mes["inicio"]).days + 1
+    disponibles = capacidad * dias_mes
+    ocupados = sum(
+        _dias_solape(r.fecha_inicio, r.fecha_fin, mes["inicio"], mes["fin"]) for r in reservas
+    )
+    return min(ocupados, disponibles), disponibles
+
+
+def _totales_por_modalidad(
+    acumulado: dict[str, dict[str, list[int]]], meses: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Evolución y total por modalidad, sin mezclar fijos con LED (HU-048)."""
+    etiquetas = dict(Formato.Modalidad.choices)
+    salida: list[dict[str, Any]] = []
+    for modalidad, por_mes in acumulado.items():
+        total_ocupados = total_disponibles = 0
+        evolucion: list[dict[str, Any]] = []
+        for mes in meses:
+            ocupados, disponibles = por_mes.get(mes["clave"], [0, 0])
+            evolucion.append(
+                {"periodo": mes["clave"], "porcentaje": _porcentaje(ocupados, disponibles)}
+            )
+            total_ocupados += ocupados
+            total_disponibles += disponibles
+        salida.append(
+            {
+                "modalidad": modalidad,
+                "etiqueta": etiquetas.get(modalidad, modalidad),
+                "ocupacion": _porcentaje(total_ocupados, total_disponibles),
+                "por_mes": evolucion,
+            }
+        )
+    salida.sort(key=lambda m: m["modalidad"])
+    return salida
+
+
+def reporte_ocupacion(
+    desde: date,
+    hasta: date,
+    zona: int | None = None,
+    modalidad: str | None = None,
+) -> dict[str, Any]:
+    """Ocupación en días-cupo por cartel y mes: mapa de calor, ranking y evolución (HU-048).
+
+    Para cada cartel no dado de baja y cada mes del período calcula los días-cupo ocupados sobre los
+    disponibles (`capacidad x días`). Las filas se ordenan por ocupación del período (ranking) y los
+    totales por modalidad no mezclan fijos con digitales.
+    """
+    meses = _meses_del_rango(desde, hasta)
+    carteles = Cartel.objects.filter(estado__es_baja=False).select_related("formato", "zona")
+    if zona is not None:
+        carteles = carteles.filter(zona_id=zona)
+    if modalidad:
+        carteles = carteles.filter(formato__modalidad=modalidad)
+    carteles = carteles.order_by("direccion", "id")
+
+    reservas = Reserva.objects.filter(
+        cartel__in=carteles,
+        estado__in=Reserva.ESTADOS_QUE_OCUPAN,
+        fecha_inicio__lte=hasta,
+        fecha_fin__gte=desde,
+    )
+    por_cartel: dict[int, list[Reserva]] = {}
+    for reserva in reservas:
+        por_cartel.setdefault(reserva.cartel_id, []).append(reserva)
+
+    filas: list[dict[str, Any]] = []
+    acumulado: dict[str, dict[str, list[int]]] = {}
+    for cartel in carteles:
+        propias = por_cartel.get(cartel.pk, [])
+        celdas: list[dict[str, Any]] = []
+        total_ocupados = total_disponibles = 0
+        for mes in meses:
+            ocupados, disponibles = _ocupacion_celda(propias, cartel.capacidad, mes)
+            celdas.append(
+                {
+                    "periodo": mes["clave"],
+                    "porcentaje": _porcentaje(ocupados, disponibles),
+                    "dias_ocupados": ocupados,
+                    "dias_disponibles": disponibles,
+                }
+            )
+            total_ocupados += ocupados
+            total_disponibles += disponibles
+            slot = acumulado.setdefault(cartel.formato.modalidad, {}).setdefault(
+                mes["clave"], [0, 0]
+            )
+            slot[0] += ocupados
+            slot[1] += disponibles
+        filas.append(
+            {
+                "id": cartel.pk,
+                "nombre_visible": cartel.nombre_visible,
+                "modalidad": cartel.formato.modalidad,
+                "zona_nombre": cartel.zona.nombre,
+                "formato_nombre": cartel.formato.nombre,
+                "ocupacion": _porcentaje(total_ocupados, total_disponibles),
+                "celdas": celdas,
+            }
+        )
+    filas.sort(key=lambda f: f["ocupacion"], reverse=True)
+    periodos = [{"clave": m["clave"], "etiqueta": m["etiqueta"]} for m in meses]
+    return {
+        "periodos": periodos,
+        "carteles": filas,
+        "modalidades": _totales_por_modalidad(acumulado, meses),
+    }
 
 
 def _estados_que_bloquean() -> set[str]:
