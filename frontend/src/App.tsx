@@ -11,6 +11,7 @@ import {
   Settings,
   Signpost,
   Tags,
+  TrendingUp,
   Truck,
   Users,
   X,
@@ -24,6 +25,7 @@ import MarcasPage from './features/clientes/MarcasPage'
 import CampaniasPage from './features/campanias/CampaniasPage'
 import CostosPage from './features/costos/CostosPage'
 import DisponibilidadPage from './features/disponibilidad/DisponibilidadPage'
+import ReporteIngresosPage from './features/facturacion/ReporteIngresos'
 import PanelPrincipal from './features/panel/PanelPrincipal'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import './App.css'
@@ -38,6 +40,7 @@ type Page =
   | 'disponibilidad'
   | 'proveedores'
   | 'costos'
+  | 'ingresos'
   | 'formatos'
   | 'catalogos'
 
@@ -48,6 +51,17 @@ const sections: { title: string; items: Item[] }[] = [
     title: 'Inicio',
     items: [
       { id: 'panel', label: 'Panel', icon: LayoutDashboard, render: () => <PanelPrincipal /> },
+    ],
+  },
+  {
+    title: 'Reportes',
+    items: [
+      {
+        id: 'ingresos',
+        label: 'Ingresos',
+        icon: TrendingUp,
+        render: () => <ReporteIngresosPage />,
+      },
     ],
   },
   {
