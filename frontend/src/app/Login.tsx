@@ -2,9 +2,12 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { apiWrite } from '../shared/api'
 
-type LoginProps = { onLogin: (username: string, esGerencia: boolean) => void }
+type LoginProps = {
+  onLogin: (username: string, esGerencia: boolean) => void
+  mensaje?: string
+}
 
-export default function Login({ onLogin }: LoginProps) {
+export default function Login({ onLogin, mensaje }: LoginProps) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -36,6 +39,7 @@ export default function Login({ onLogin }: LoginProps) {
       <p className="eyebrow">Big Media Argentina</p>
       <h1>Inventario de carteles</h1>
       <p className="muted">Ingresá con tu usuario para administrar los espacios publicitarios.</p>
+      {mensaje && <p className="muted">{mensaje}</p>}
       <form className="card auth-form" onSubmit={(event) => void submit(event)}>
         <h2>Ingresar</h2>
         <label>

@@ -436,3 +436,46 @@ test('abre y cierra el menú en pantallas chicas', async () => {
     'false',
   )
 })
+
+test('un 401 en endpoint no-auth despacha sesion-expirada y muestra el mensaje en login', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'seba' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+
+  render(<App />)
+  // Esperar a que la sesión quede ready
+  await screen.findByRole('navigation', { name: 'Navegación' })
+
+  // Disparar el evento como si un fetch a un endpoint no-auth devolviera 401
+  window.dispatchEvent(new Event('sesion-expirada'))
+
+  expect(await screen.findByRole('heading', { name: 'Ingresar' })).toBeDefined()
+  expect(
+    await screen.findByText('Tu sesión expiró por inactividad. Ingresá de nuevo.'),
+  ).toBeDefined()
+})
+
+test('un 401 en /api/auth/me/ NO despacha sesion-expirada', async () => {
+  const listener = vi.fn()
+  window.addEventListener('sesion-expirada', listener)
+
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ detail: 'Iniciá sesión.' }),
+    }),
+  )
+
+  render(<App />)
+  await screen.findByRole('heading', { name: 'Ingresar' })
+
+  expect(listener).not.toHaveBeenCalled()
+  window.removeEventListener('sesion-expirada', listener)
+})

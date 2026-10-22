@@ -28,8 +28,20 @@ function csrfToken(): string {
   return part ? decodeURIComponent(part.slice('csrftoken='.length)) : ''
 }
 
+function esEndpointDeAuth(path: string): boolean {
+  return path.startsWith('/api/auth/')
+}
+
+function notificarSesionExpirada(path: string, status: number): void {
+  if (status === 401 && !esEndpointDeAuth(path)) {
+    window.dispatchEvent(new Event('sesion-expirada'))
+  }
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
-  return parseResponse<T>(await fetch(path, { credentials: 'same-origin' }))
+  const response = await fetch(path, { credentials: 'same-origin' })
+  notificarSesionExpirada(path, response.status)
+  return parseResponse<T>(response)
 }
 
 export async function apiWrite<T>(
@@ -37,12 +49,12 @@ export async function apiWrite<T>(
   method: 'POST' | 'PATCH',
   body?: unknown,
 ): Promise<T> {
-  return parseResponse<T>(
-    await fetch(path, {
-      method,
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
-      body: JSON.stringify(body ?? {}),
-    }),
-  )
+  const response = await fetch(path, {
+    method,
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+    body: JSON.stringify(body ?? {}),
+  })
+  notificarSesionExpirada(path, response.status)
+  return parseResponse<T>(response)
 }

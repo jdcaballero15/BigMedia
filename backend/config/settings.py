@@ -123,3 +123,8 @@ DISPONIBILIDAD_TENTATIVA_BLOQUEA = (
 
 # Panel principal (HU-047): ventana de "reservas por vencer" en días.
 PANEL_DIAS_POR_VENCER = int(os.environ.get("PANEL_DIAS_POR_VENCER", "30"))
+
+# Sesión por inactividad (HU-003 criterio 4): timeout deslizante configurable.
+# SESSION_SAVE_EVERY_REQUEST renueva el vencimiento en cada request (sliding window).
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_AGE = int(os.environ.get("DJANGO_SESSION_IDLE_MINUTES", "30")) * 60

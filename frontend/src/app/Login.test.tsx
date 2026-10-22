@@ -53,6 +53,18 @@ test('muestra el error de la API cuando las credenciales son incorrectas', async
   expect(screen.getByRole('button', { name: 'Ingresar' })).toHaveProperty('disabled', false)
 })
 
+test('muestra el mensaje de sesión expirada cuando se le pasa la prop', () => {
+  render(<Login onLogin={vi.fn()} mensaje="Tu sesión expiró por inactividad. Ingresá de nuevo." />)
+
+  expect(screen.getByText('Tu sesión expiró por inactividad. Ingresá de nuevo.')).toBeDefined()
+})
+
+test('no muestra mensaje de expiración cuando no se pasa la prop', () => {
+  render(<Login onLogin={vi.fn()} />)
+
+  expect(screen.queryByText('Tu sesión expiró por inactividad. Ingresá de nuevo.')).toBeNull()
+})
+
 test('deshabilita el botón mientras espera la respuesta', async () => {
   let responder: (value: unknown) => void = () => {}
   vi.stubGlobal(
