@@ -1,6 +1,6 @@
 # Unidad: Auditoría — estado de campaña y tarifa de cartel
 
-- **Estado:** en curso · **Épica:** E1 Seguridad y acceso · **App dueña:** `campanias`, `inventario` (+ `frontend`)
+- **Estado:** mergeada · **Épica:** E1 Seguridad y acceso · **App dueña:** `campanias`, `inventario` (+ `frontend`)
 - **Origen:** HU-007 (extender captura) · **Rama:** `feature/auditoria-campania-cartel`
 
 ## Objetivo
@@ -66,4 +66,5 @@ Ninguna.
   y `pytest --cov` 303 pasan (94.89 %). Frontend: `format:check`, `lint`, `typecheck`, `test:coverage`
   115 pasan y `build` OK. Revisión: ambos `perform_update` capturan el valor anterior antes de
   `save()` y auditan en la misma `transaction.atomic()`, sin pisar la validación existente; sin ajustes.
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-22 — PR #53 mergeado a `develop` (rama `feature/auditoria-campania-cartel`).
+  Con esto HU-007 queda completa salvo configuración (depende de HU-001).
