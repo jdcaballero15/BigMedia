@@ -73,4 +73,4 @@ de Render.
   Primera corrida: 1 falla en `test_render_blueprint.py` (exigía plan gratis), corregido con
   aprobación. Frontend: `format:check`, `lint`, `typecheck`, `build` OK; `test:coverage` 96 tests,
   líneas 89,34 %, sentencias 86,13 %. `pre-commit run --all-files` (incluye gitleaks) en verde.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): 2026-10-21 — PR #42 abierto a `develop` (rama `chore/infra-entornos-neon`).
