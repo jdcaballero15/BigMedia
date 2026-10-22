@@ -1,6 +1,6 @@
 # Unidad: Exportar reportes a PDF
 
-- **Estado:** en curso · **Épica:** E8 Reportes y paneles · **App dueña:** `frontend`
+- **Estado:** mergeada · **Épica:** E8 Reportes y paneles · **App dueña:** `frontend`
 - **Origen:** HU-052 criterio 3 (PDF) · **Rama:** `feature/frontend-exportar-pdf`
 
 ## Objetivo
@@ -62,4 +62,5 @@ Ninguna.
   `test:coverage` 100 pasan (líneas 89.65 %, sentencias 86.37 %, umbral 80 %); `build` ok (advertencia
   de tamaño de chunk por jsPDF, no error). Backend sin cambios: `ruff`, `mypy` (89), `makemigrations
   --check`, `pytest` (264) y gitleaks en verde.
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-22 — PR #45 mergeado a `develop` (rama `feature/frontend-exportar-pdf`).
+  Con esta unidad HU-052 queda completa.
