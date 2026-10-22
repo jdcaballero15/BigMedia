@@ -33,7 +33,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E8 Reportes y paneles | [exportar-reportes-pdf](units/exportar-reportes-pdf.md) | frontend | HU-052 (PDF) | exportar-reportes-csv | Juan Diego | feature/frontend-exportar-pdf | mergeada |
 | E8 Reportes y paneles | [reporte-por-rubro](units/reporte-por-rubro.md) | facturacion | HU-050 (rubro, RN-004) | reporte-ingresos, reporte-ocupacion | Juan Diego | feature/facturacion-reporte-por-rubro | mergeada |
 | E1 Seguridad y acceso | [auditoria-base](units/auditoria-base.md) | auditoria | HU-007 (base + reservas) | permiso-ingresos | Juan Diego | feature/auditoria-base | mergeada |
-| E1 Seguridad y acceso | [auditoria-pantalla](units/auditoria-pantalla.md) | frontend | HU-007 (pantalla) | auditoria-base | Juan Diego | feature/frontend-auditoria | en curso |
+| E1 Seguridad y acceso | [auditoria-pantalla](units/auditoria-pantalla.md) | frontend | HU-007 (pantalla) | auditoria-base | Juan Diego | feature/frontend-auditoria | mergeada |
 
 ## Notas
 
