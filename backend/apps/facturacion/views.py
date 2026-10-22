@@ -29,6 +29,23 @@ def _ultimo_dia(primero: date) -> date:
     return date(primero.year, primero.month + 1, 1) - timedelta(days=1)
 
 
+class PorRubroView(APIView):
+    """Reporte de ingresos y días-cupo por rubro de la marca (HU-050, criterio 1)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaSoloGerencia]
+
+    def get(self, request: Request) -> Response:
+        hoy = timezone.localdate()
+        params = request.query_params
+        desde = _primer_dia(params.get("desde"), date(hoy.year, 1, 1))
+        hasta = _ultimo_dia(_primer_dia(params.get("hasta"), date(hoy.year, 12, 1)))
+        if hasta < desde:
+            raise ValidationError(
+                {"hasta": "El período de fin no puede ser anterior al de inicio."}
+            )
+        return Response(services.reporte_por_rubro(desde, hasta))
+
+
 class IngresosView(APIView):
     """Reporte de ingresos por cliente y marca, repartidos por mes (HU-049)."""
 
