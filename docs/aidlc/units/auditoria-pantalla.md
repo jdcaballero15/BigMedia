@@ -1,6 +1,6 @@
 # Unidad: Pantalla de auditoría
 
-- **Estado:** en curso · **Épica:** E1 Seguridad y acceso · **App dueña:** `frontend` (+ `auditoria`)
+- **Estado:** mergeada · **Épica:** E1 Seguridad y acceso · **App dueña:** `frontend` (+ `auditoria`)
 - **Origen:** HU-007 (pantalla) · **Rama:** `feature/frontend-auditoria`
 
 ## Objetivo
@@ -68,4 +68,4 @@ Ninguna.
   y `pytest --cov` 299 pasan. Frontend: `format:check`, `lint`, `typecheck`, `test:coverage` 113 pasan
   (líneas 89.47 %) y `build` OK. En revisión se corrigió el default de fechas para usar hora local
   (es-AR, UTC-3) en vez de UTC.
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-22 — PR #51 mergeado a `develop` (rama `feature/frontend-auditoria`).
