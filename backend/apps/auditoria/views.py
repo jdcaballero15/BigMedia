@@ -5,6 +5,9 @@ from datetime import date
 from django.db.models import QuerySet
 from rest_framework import permissions, viewsets
 from rest_framework.exceptions import ValidationError
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from config.permisos import LecturaSoloGerencia
 
@@ -50,3 +53,19 @@ class RegistroAuditoriaViewSet(viewsets.ReadOnlyModelViewSet[RegistroAuditoria])
             hasta = _parsear_fecha(params["hasta"], "hasta")
             queryset = queryset.filter(momento__date__lte=hasta)
         return queryset
+
+
+class UsuariosView(APIView):
+    """Devuelve los usuarios distintos que aparecen en RegistroAuditoria (solo Gerencia)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaSoloGerencia]
+
+    def get(self, _request: Request) -> Response:
+        filas = (
+            RegistroAuditoria.objects.filter(usuario__isnull=False)
+            .values("usuario_id", "usuario__username")
+            .distinct()
+            .order_by("usuario__username")
+        )
+        datos = [{"id": fila["usuario_id"], "nombre": fila["usuario__username"]} for fila in filas]
+        return Response(datos)

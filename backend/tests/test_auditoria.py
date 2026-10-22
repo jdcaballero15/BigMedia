@@ -422,3 +422,84 @@ def test_anonimo_no_puede_leer(client):
     """Un usuario anónimo no puede leer el endpoint de auditoría (401 o 403)."""
     resp = listar_auditoria(client)
     assert resp.status_code in (401, 403)
+
+
+# ---------------------------------------------------------------------------
+# Endpoint GET /api/auditoria/usuarios/
+# ---------------------------------------------------------------------------
+
+
+def listar_usuarios_auditoria(client: Client):
+    return client.get("/api/auditoria/usuarios/")
+
+
+@pytest.mark.django_db
+def test_usuarios_devuelve_usuarios_con_cambios(gerencia_client, operativo_client):
+    """GET /api/auditoria/usuarios/ devuelve los usuarios que hicieron cambios."""
+    cartel = crear_cartel()
+    campania = crear_campania()
+    creada = crear(
+        operativo_client,
+        campania=campania.pk,
+        cartel=cartel.pk,
+        fecha_inicio="2026-08-01",
+        fecha_fin="2026-08-31",
+    )
+    assert creada.status_code == 201
+    reserva_id = creada.json()["id"]
+    resp_edit = editar(operativo_client, reserva_id, fecha_fin="2026-09-30")
+    assert resp_edit.status_code == 200
+
+    resp = listar_usuarios_auditoria(gerencia_client)
+    assert resp.status_code == 200
+    datos = resp.json()
+    assert isinstance(datos, list)
+    assert len(datos) >= 1
+    nombres = [u["nombre"] for u in datos]
+    assert "operativo" in nombres
+
+
+@pytest.mark.django_db
+def test_usuarios_sin_duplicados(gerencia_client, operativo_client):
+    """GET /api/auditoria/usuarios/ no devuelve el mismo usuario dos veces."""
+    cartel = crear_cartel()
+    campania = crear_campania()
+    creada = crear(
+        operativo_client,
+        campania=campania.pk,
+        cartel=cartel.pk,
+        fecha_inicio="2026-08-01",
+        fecha_fin="2026-08-31",
+    )
+    assert creada.status_code == 201
+    reserva_id = creada.json()["id"]
+    # Dos ediciones del mismo usuario generan dos registros de auditoría
+    editar(operativo_client, reserva_id, fecha_fin="2026-09-30")
+    editar(operativo_client, reserva_id, fecha_fin="2026-10-31")
+
+    resp = listar_usuarios_auditoria(gerencia_client)
+    assert resp.status_code == 200
+    datos = resp.json()
+    ids = [u["id"] for u in datos]
+    assert len(ids) == len(set(ids))
+
+
+@pytest.mark.django_db
+def test_usuarios_gerencia_200(gerencia_client):
+    """GET /api/auditoria/usuarios/ con Gerencia devuelve 200."""
+    resp = listar_usuarios_auditoria(gerencia_client)
+    assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+def test_usuarios_operativo_403(operativo_client):
+    """GET /api/auditoria/usuarios/ con Operativo devuelve 403."""
+    resp = listar_usuarios_auditoria(operativo_client)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_usuarios_anonimo_401_o_403(client):
+    """GET /api/auditoria/usuarios/ anónimo devuelve 401 o 403."""
+    resp = listar_usuarios_auditoria(client)
+    assert resp.status_code in (401, 403)
