@@ -1,6 +1,6 @@
 # Unidad: Expiración de sesión por inactividad
 
-- **Estado:** en curso · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios`/`config` (+ `frontend`)
+- **Estado:** mergeada · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios`/`config` (+ `frontend`)
 - **Origen:** HU-003 criterio 4 · **Rama:** `feature/usuarios-sesion-inactividad`
 
 ## Objetivo
@@ -63,4 +63,4 @@ Ninguna.
   y `pytest --cov` 305 pasan (94.90 %). Frontend: `format:check`, `lint`, `typecheck`, `test:coverage`
   119 pasan y `build` OK. Revisión: el 401 se excluye para `/api/auth/*`, así que un login con
   contraseña incorrecta no dispara el mensaje de sesión expirada; sin ajustes.
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-22 — PR #55 mergeado a `develop` (rama `feature/usuarios-sesion-inactividad`).
