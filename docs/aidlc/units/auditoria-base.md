@@ -1,6 +1,6 @@
 # Unidad: Auditoría de cambios — base y captura de reservas
 
-- **Estado:** en curso · **Épica:** E1 Seguridad y acceso · **App dueña:** `auditoria` (+ `reservas`)
+- **Estado:** mergeada · **Épica:** E1 Seguridad y acceso · **App dueña:** `auditoria` (+ `reservas`)
 - **Origen:** HU-007 · **Rama:** `feature/auditoria-base`
 
 ## Objetivo
@@ -85,4 +85,4 @@ usuario, origen="usuario") -> None`: crea un `RegistroAuditoria` por cada campo 
   gitleaks y `pytest --cov` 294 pasan, cobertura 94.80 %. Sin cambios de frontend. En revisión se
   envolvió el cambio de la reserva y su auditoría en una sola `transaction.atomic()` (atomicidad:
   nunca un cambio sin su registro), ya que `ATOMIC_REQUESTS` no está activado.
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-22 — PR #49 mergeado a `develop` (rama `feature/auditoria-base`).
