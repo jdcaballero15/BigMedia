@@ -2,6 +2,9 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import ReporteOcupacionPage from './ReporteOcupacion'
 import { formatearPorcentaje } from './ocupacion'
+import { descargarPdf } from '../../shared/pdf'
+
+vi.mock('../../shared/pdf', () => ({ descargarPdf: vi.fn() }))
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 
@@ -101,6 +104,14 @@ test('cambiar el período vuelve a pedir el reporte', async () => {
   await waitFor(() =>
     expect(fetchMock.mock.calls.some(([u]) => String(u).includes('desde=2026-06'))).toBe(true),
   )
+})
+
+test('exporta el reporte a PDF', async () => {
+  stubFetch()
+  render(<ReporteOcupacionPage />)
+  await screen.findByText('Av. San Martín 1234')
+  fireEvent.click(screen.getByRole('button', { name: 'Exportar PDF' }))
+  expect(descargarPdf).toHaveBeenCalled()
 })
 
 test('sin carteles muestra el estado vacío', async () => {

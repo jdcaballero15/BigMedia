@@ -2,6 +2,9 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import ReporteIngresosPage from './ReporteIngresos'
 import { formatearMonto } from './montos'
+import { descargarPdf } from '../../shared/pdf'
+
+vi.mock('../../shared/pdf', () => ({ descargarPdf: vi.fn() }))
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 
@@ -90,6 +93,14 @@ test('sin ingresos muestra el estado vacío', async () => {
   stubFetch({ periodos: [], clientes: [], total: '0.00' })
   render(<ReporteIngresosPage />)
   expect(await screen.findByText('Sin ingresos en el período.')).toBeDefined()
+})
+
+test('exporta el reporte a PDF', async () => {
+  stubFetch()
+  render(<ReporteIngresosPage />)
+  await screen.findByText('Agencia Centro')
+  fireEvent.click(screen.getByRole('button', { name: 'Exportar PDF' }))
+  expect(descargarPdf).toHaveBeenCalled()
 })
 
 test('exporta el reporte a CSV', async () => {

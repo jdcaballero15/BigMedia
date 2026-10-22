@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
 import { descargarCsv } from '../../shared/csv'
+import { descargarPdf } from '../../shared/pdf'
 import type { Catalogo } from '../inventario/types'
 import {
   colorOcupacion,
@@ -94,6 +95,38 @@ export default function ReporteOcupacionPage() {
     descargarCsv(`ocupacion-${desde}-${hasta}.csv`, columnas, filas)
   }
 
+  function filtrosTexto(): string {
+    const partes = [`Período: ${desde} a ${hasta}`]
+    const depto = zonas.find((z) => String(z.id) === zona)
+    if (depto) partes.push(`Departamento: ${depto.nombre}`)
+    if (modalidad) partes.push(`Modalidad: ${modalidad === 'fija' ? 'Fija' : 'Digital'}`)
+    return partes.join(' · ')
+  }
+
+  function exportarPdf() {
+    const columnas = [
+      'Cartel',
+      'Modalidad',
+      'Departamento',
+      ...datos.periodos.map((p) => p.etiqueta),
+      'Total',
+    ]
+    const filas = datos.carteles.map((cartel) => {
+      const valor = (periodo: string) => {
+        const celda = valorCartel(cartel, periodo)
+        return celda === null ? '—' : formatearPorcentaje(celda)
+      }
+      return [
+        cartel.nombre_visible,
+        cartel.modalidad === 'fija' ? 'Fija' : 'Digital',
+        cartel.zona_nombre,
+        ...datos.periodos.map((p) => valor(p.clave)),
+        formatearPorcentaje(cartel.ocupacion),
+      ]
+    })
+    descargarPdf(`ocupacion-${desde}-${hasta}.pdf`, 'Ocupación', filtrosTexto(), columnas, filas)
+  }
+
   return (
     <>
       <div className="section-heading">
@@ -104,13 +137,22 @@ export default function ReporteOcupacionPage() {
             Ocupación en días-cupo por cartel y mes. El orden es el ranking de rendimiento.
           </p>
         </div>
-        <button
-          className="button-primary"
-          onClick={exportar}
-          disabled={datos.carteles.length === 0}
-        >
-          Exportar CSV
-        </button>
+        <div className="section-actions">
+          <button
+            className="button-ghost"
+            onClick={exportarPdf}
+            disabled={datos.carteles.length === 0}
+          >
+            Exportar PDF
+          </button>
+          <button
+            className="button-primary"
+            onClick={exportar}
+            disabled={datos.carteles.length === 0}
+          >
+            Exportar CSV
+          </button>
+        </div>
       </div>
       <div className="filters card">
         <label>
