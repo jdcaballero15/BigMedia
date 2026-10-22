@@ -1,6 +1,6 @@
 # Unidad: Ajuste de entornos — producción paga en Render y base de staging en Neon
 
-- **Estado:** en curso · **Épica:** — (unidad técnica) · **App dueña:** `infra`
+- **Estado:** en revisión · **Épica:** — (unidad técnica) · **App dueña:** `infra`
 - **Origen:** decisión de Juan Diego del 21/10/2026 ([ADR-0005](../../adr/0005-base-de-staging-en-neon.md)),
   ajusta la unidad [entornos](entornos.md) ya mergeada · **Rama:** `chore/infra-entornos-neon`
 
@@ -44,7 +44,8 @@ de Render.
 ## Pasos de Juan (fuera del repo, en orden)
 
 1. **Render, producción:** pasar `bigmedia-db` a Basic-256mb y `bigmedia-web` a Starter (antes del
-   17/11/2026). Confirmar precio en el panel.
+   17/11/2026). Confirmar precio en el panel. **Hecho el 21/10/2026**: la web volvió a andar al
+   reiniciarla, una vez que la base quedó disponible tras el cambio de plan.
 2. **Neon:** crear cuenta y proyecto `bigmedia-staging` (Postgres 17, AWS us-east-1); copiar la
    connection string directa.
 3. Mergear este PR y el release `develop` → `main`.
