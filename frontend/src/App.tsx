@@ -27,6 +27,7 @@ import CampaniasPage from './features/campanias/CampaniasPage'
 import CostosPage from './features/costos/CostosPage'
 import DisponibilidadPage from './features/disponibilidad/DisponibilidadPage'
 import ReporteIngresosPage from './features/facturacion/ReporteIngresos'
+import PorRubroPage from './features/facturacion/PorRubro'
 import PanelPrincipal from './features/panel/PanelPrincipal'
 import ReporteOcupacionPage from './features/reservas/ReporteOcupacion'
 import { ApiError, apiGet, apiWrite } from './shared/api'
@@ -47,6 +48,7 @@ type Page =
   | 'proveedores'
   | 'costos'
   | 'ingresos'
+  | 'rubro'
   | 'ocupacion'
   | 'formatos'
   | 'catalogos'
@@ -74,6 +76,13 @@ const sections: { title: string; items: Item[] }[] = [
         label: 'Ingresos',
         icon: TrendingUp,
         render: () => <ReporteIngresosPage />,
+        soloGerencia: true,
+      },
+      {
+        id: 'rubro',
+        label: 'Por rubro',
+        icon: Tags,
+        render: () => <PorRubroPage />,
         soloGerencia: true,
       },
       {

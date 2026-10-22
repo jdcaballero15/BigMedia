@@ -10,6 +10,12 @@ from apps.reservas.services import reparto_por_mes
 CERO = Decimal("0.00")
 
 
+def _dias_solape(inicio: date, fin: date, desde: date, hasta: date) -> int:
+    """Días de `[inicio, fin]` que caen en `[desde, hasta]` (inclusive ambos)."""
+    lo, hi = max(inicio, desde), min(fin, hasta)
+    return (hi - lo).days + 1 if hi >= lo else 0
+
+
 def _meses_periodo(desde: date, hasta: date) -> list[dict[str, str]]:
     """Columnas del reporte: cada mes entre `desde` y `hasta` como {mes, etiqueta}."""
     meses: list[dict[str, str]] = []
@@ -113,6 +119,61 @@ def _formatear_cliente(cl: dict[str, Any], claves: set[str]) -> dict[str, Any]:
             }
             for ma in cl["marcas"]
         ],
+    }
+
+
+def reporte_por_rubro(desde: date, hasta: date) -> dict[str, Any]:
+    """Ingresos y días-cupo por rubro de la marca, para el período dado (HU-050, criterio 1).
+
+    Para cada reserva que ocupa cupo y se solapa con `[desde, hasta]`, acumula:
+    - ingresos: suma del reparto por mes (HU-051) dentro del período.
+    - días-cupo: días de solape de la reserva con el período (una reserva = un cupo, RN-004).
+    Agrupa por rubro de la marca de la campaña. Marca sin rubro → "Sin rubro". Ordena por
+    ingresos descendente. Los importes salen como string de 2 decimales.
+    """
+    claves = {p["mes"] for p in _meses_periodo(desde, hasta)}
+    reservas = Reserva.objects.filter(
+        estado__in=Reserva.ESTADOS_QUE_OCUPAN, fecha_inicio__lte=hasta, fecha_fin__gte=desde
+    ).select_related("campania__marca__rubro")
+
+    acumulador: dict[int | None, dict[str, Any]] = {}
+    for reserva in reservas:
+        marca = reserva.campania.marca
+        rubro = marca.rubro if marca is not None else None
+        clave_rubro = rubro.pk if rubro is not None else None
+        nombre_rubro = rubro.nombre if rubro is not None else "Sin rubro"
+
+        montos = {i["mes"]: i["monto"] for i in reparto_por_mes(reserva) if i["mes"] in claves}
+        ingresos_reserva = sum(montos.values(), CERO)
+        dias = _dias_solape(reserva.fecha_inicio, reserva.fecha_fin, desde, hasta)
+
+        bucket = acumulador.setdefault(
+            clave_rubro,
+            {"rubro": clave_rubro, "nombre": nombre_rubro, "ingresos": CERO, "dias_cupo": 0},
+        )
+        bucket["ingresos"] = bucket["ingresos"] + ingresos_reserva
+        bucket["dias_cupo"] = bucket["dias_cupo"] + dias
+
+    total_ingresos = sum((b["ingresos"] for b in acumulador.values()), CERO)
+    total_dias_cupo = sum(b["dias_cupo"] for b in acumulador.values())
+
+    rubros = sorted(acumulador.values(), key=lambda b: b["ingresos"], reverse=True)
+    rubros_out = [
+        {
+            "rubro": b["rubro"],
+            "nombre": b["nombre"],
+            "ingresos": _fmt(b["ingresos"]),
+            "dias_cupo": b["dias_cupo"],
+            "porcentaje_ocupacion": (
+                round(b["dias_cupo"] / total_dias_cupo * 100, 1) if total_dias_cupo else 0.0
+            ),
+        }
+        for b in rubros
+    ]
+    return {
+        "rubros": rubros_out,
+        "total_ingresos": _fmt(total_ingresos),
+        "total_dias_cupo": total_dias_cupo,
     }
 
 
