@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
+from apps.auditoria import services as auditoria_services
 from apps.inventario.models import Cartel
 from config.permisos import LecturaConSesionEdicionOperativo
 
@@ -24,6 +25,19 @@ def _id_positivo(valor: str, campo: str) -> int:
     if not valor.isdecimal() or int(valor) < 1:
         raise ValidationError({campo: "Debe ser un ID numérico positivo."})
     return int(valor)
+
+
+def _campos_auditados(reserva: Reserva) -> dict[str, str]:
+    """Devuelve los campos auditables de una reserva como texto, para comparar cambios."""
+    return {
+        "fecha_inicio": reserva.fecha_inicio.isoformat(),
+        "fecha_fin": reserva.fecha_fin.isoformat(),
+        "estado": reserva.estado,
+        "cartel": str(reserva.cartel_id),
+        "precio_alquiler": str(reserva.precio_alquiler),
+        "precio_impresion": str(reserva.precio_impresion),
+        "precio_fijacion": str(reserva.precio_fijacion),
+    }
 
 
 class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
@@ -48,7 +62,14 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
         cambia_ocupacion = any(c in datos for c in ("fecha_inicio", "fecha_fin", "cartel"))
         # No se revalida si solo cambia un precio de una confirmada (matriz caso 13).
         necesita = va_a_confirmada or (sigue_confirmada and cambia_ocupacion)
-        self._guardar_con_disponibilidad(serializer, necesita)
+        # El cambio y su auditoría en la misma transacción: nunca un cambio sin su registro.
+        anteriores = _campos_auditados(instancia)
+        with transaction.atomic():
+            self._guardar_con_disponibilidad(serializer, necesita)
+            nuevos = _campos_auditados(cast(Reserva, serializer.instance))
+            auditoria_services.registrar_cambios(
+                "reserva", instancia.pk, anteriores, nuevos, self.request.user
+            )
 
     def _guardar_con_disponibilidad(
         self, serializer: BaseSerializer[Reserva], necesita: bool
