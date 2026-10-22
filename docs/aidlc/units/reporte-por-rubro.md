@@ -1,6 +1,6 @@
 # Unidad: Reporte por rubro (ingresos y ocupación)
 
-- **Estado:** en curso · **Épica:** E8 Reportes y paneles · **App dueña:** `facturacion` (+ `frontend`)
+- **Estado:** mergeada · **Épica:** E8 Reportes y paneles · **App dueña:** `facturacion` (+ `frontend`)
 - **Origen:** HU-050 (solo la parte de rubro; grupo económico queda fuera) · **Rama:** `feature/facturacion-reporte-por-rubro`
 
 ## Objetivo
@@ -76,4 +76,4 @@ Ninguna.
   gitleaks y `pytest --cov` 275 pasan (11 nuevos), cobertura 94.69 %. Frontend: `format:check`, `lint`,
   `typecheck`, `test:coverage` 106 pasan (líneas 89.37 %) y `build` OK. En revisión se reemplazó el
   import de la función privada `_dias_solape` por una copia local en `facturacion`.
-- Gate 3 (PR): —
+- Gate 3 (PR): 2026-10-22 — PR #47 mergeado a `develop` (rama `feature/facturacion-reporte-por-rubro`).
