@@ -178,6 +178,7 @@ function App() {
   })
   const [page, setPage] = useState<Page>('clientes')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [expirada, setExpirada] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -196,6 +197,17 @@ function App() {
       })
     return () => {
       active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    function onSesionExpirada() {
+      setSession({ status: 'anonymous', username: '', esGerencia: false })
+      setExpirada(true)
+    }
+    window.addEventListener('sesion-expirada', onSesionExpirada)
+    return () => {
+      window.removeEventListener('sesion-expirada', onSesionExpirada)
     }
   }, [])
 
@@ -220,7 +232,11 @@ function App() {
   if (session.status === 'anonymous')
     return (
       <Login
-        onLogin={(username, esGerencia) => setSession({ status: 'ready', username, esGerencia })}
+        onLogin={(username, esGerencia) => {
+          setExpirada(false)
+          setSession({ status: 'ready', username, esGerencia })
+        }}
+        mensaje={expirada ? 'Tu sesión expiró por inactividad. Ingresá de nuevo.' : undefined}
       />
     )
 
