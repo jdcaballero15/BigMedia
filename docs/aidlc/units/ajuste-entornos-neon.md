@@ -1,6 +1,6 @@
 # Unidad: Ajuste de entornos — producción paga en Render y base de staging en Neon
 
-- **Estado:** en revisión · **Épica:** — (unidad técnica) · **App dueña:** `infra`
+- **Estado:** mergeada · **Épica:** — (unidad técnica) · **App dueña:** `infra`
 - **Origen:** decisión de Juan Diego del 21/10/2026 ([ADR-0005](../../adr/0005-base-de-staging-en-neon.md)),
   ajusta la unidad [entornos](entornos.md) ya mergeada · **Rama:** `chore/infra-entornos-neon`
 
@@ -73,4 +73,5 @@ de Render.
   Primera corrida: 1 falla en `test_render_blueprint.py` (exigía plan gratis), corregido con
   aprobación. Frontend: `format:check`, `lint`, `typecheck`, `build` OK; `test:coverage` 96 tests,
   líneas 89,34 %, sentencias 86,13 %. `pre-commit run --all-files` (incluye gitleaks) en verde.
-- Gate 3 (PR): 2026-10-21 — PR #42 abierto a `develop` (rama `chore/infra-entornos-neon`).
+- Gate 3 (PR): 2026-10-21 — PR #42 mergeado a `develop` (rama `chore/infra-entornos-neon`); publicado
+  a `main` en el release PR #43.
