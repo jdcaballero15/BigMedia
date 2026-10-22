@@ -22,16 +22,17 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 
 ## En curso
 
-- Sin unidad en curso.
+- [ajuste-entornos-neon](units/ajuste-entornos-neon.md): producción paga en Render y base de staging en
+  Neon.
 
 ## Próximas
 
 1. **Entornos: producción paga y staging gratis** (unidad técnica, **antes del 17/11/2026**, cuando
    vence la base gratis actual). Producción (`main`) pasa a web y PostgreSQL pagos, con copias de
-   seguridad. Se agrega staging conectado a `develop` con web y PostgreSQL del plan gratis, y un
-   comando que carga datos de ejemplo (nunca datos reales). Límite a tener en cuenta: la base gratis de
-   staging vence cada 30 días y hay que recrearla y volver a cargarle los datos de ejemplo. Detalle en
-   el [ADR-0002](../adr/0002-gitflow-con-develop.md).
+   seguridad. Se agrega staging conectado a `develop`, con la web gratis en Render y la base gratis en
+   Neon (no vence), y un comando que carga datos de ejemplo (nunca datos reales). En curso:
+   [ajuste-entornos-neon](units/ajuste-entornos-neon.md). Detalle en el
+   [ADR-0002](../adr/0002-gitflow-con-develop.md) y el [ADR-0005](../adr/0005-base-de-staging-en-neon.md).
 2. **Cerrar E8** — HU-050 (análisis por rubro y grupo económico, bloqueada por la pregunta 16) y lo que
    falta de HU-052 (PDF y el permiso de ingresos).
 3. **E1 Seguridad y acceso** — cuentas, sesión y permisos finos (incluye el grupo "Gerencia" para ver
