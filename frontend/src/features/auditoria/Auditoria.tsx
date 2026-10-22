@@ -14,8 +14,14 @@ _hace30.setDate(_hace30.getDate() - 30)
 const FECHA_DESDE_DEFAULT = toIsoDate(_hace30)
 const FECHA_HASTA_DEFAULT = toIsoDate(_ahora)
 
-function capitalizarEntidad(entidad: string): string {
-  return entidad.charAt(0).toUpperCase() + entidad.slice(1)
+const ETIQUETAS_ENTIDAD: Record<string, string> = {
+  reserva: 'Reserva',
+  campania: 'Campaña',
+  cartel: 'Cartel',
+}
+
+function etiquetaEntidad(entidad: string): string {
+  return ETIQUETAS_ENTIDAD[entidad] ?? entidad.charAt(0).toUpperCase() + entidad.slice(1)
 }
 
 export default function AuditoriaPage() {
@@ -120,6 +126,8 @@ export default function AuditoriaPage() {
           >
             <option value="">Todas</option>
             <option value="reserva">Reserva</option>
+            <option value="campania">Campaña</option>
+            <option value="cartel">Cartel</option>
           </select>
         </label>
       </div>
@@ -151,7 +159,7 @@ export default function AuditoriaPage() {
                   <td>{new Date(reg.momento).toLocaleString('es-AR')}</td>
                   <td>{reg.usuario_nombre}</td>
                   <td>
-                    {capitalizarEntidad(reg.entidad)} #{reg.entidad_id}
+                    {etiquetaEntidad(reg.entidad)} #{reg.entidad_id}
                   </td>
                   <td>{reg.campo}</td>
                   <td>{reg.valor_anterior ?? '—'}</td>
