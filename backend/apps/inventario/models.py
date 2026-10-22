@@ -1,9 +1,11 @@
-import unicodedata
+from typing import Any
 
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models.functions import Lower
 from django.utils.text import slugify
+
+from config.texto import normalizar_busqueda
 
 
 class Catalogo(models.Model):
@@ -13,7 +15,7 @@ class Catalogo(models.Model):
     class Meta:
         abstract = True
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.nombre
 
 
@@ -63,18 +65,10 @@ class EstadoCartel(Catalogo):
         ordering = ["nombre"]
         constraints = [models.UniqueConstraint(Lower("nombre"), name="estado_nombre_ci")]
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         if not self.codigo:
             self.codigo = slugify(self.nombre).replace("-", "_")
         super().save(*args, **kwargs)
-
-
-def normalizar_busqueda(value: str) -> str:
-    return "".join(
-        character
-        for character in unicodedata.normalize("NFKD", value.casefold())
-        if not unicodedata.combining(character)
-    )
 
 
 class Cartel(models.Model):
@@ -88,9 +82,7 @@ class Cartel(models.Model):
     direccion_busqueda = models.CharField(max_length=250, editable=False, db_index=True)
     tamano = models.CharField(max_length=80, blank=True)
     capacidad = models.PositiveIntegerField(validators=[MinValueValidator(1)])
-    tarifa_lista = models.DecimalField(
-        max_digits=14, decimal_places=2, null=True, blank=True
-    )
+    tarifa_lista = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     foto_url = models.URLField(blank=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
@@ -107,20 +99,20 @@ class Cartel(models.Model):
             ),
         ]
 
-    @property
-    def nombre_visible(self):
-        if self.formato.nombre == "Séxtuples":
-            return f"{self.direccion} · {self.capacidad} slots"
-        if self.tamano:
-            return f"{self.direccion} · {self.tamano}"
-        return self.direccion
+    def __str__(self) -> str:
+        return self.nombre_visible
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         self.direccion_busqueda = normalizar_busqueda(self.direccion)
         update_fields = kwargs.get("update_fields")
         if update_fields is not None:
             kwargs["update_fields"] = set(update_fields) | {"direccion_busqueda"}
         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return self.nombre_visible
+    @property
+    def nombre_visible(self) -> str:
+        if self.formato.nombre == "Séxtuples":
+            return f"{self.direccion} · {self.capacidad} slots"
+        if self.tamano:
+            return f"{self.direccion} · {self.tamano}"
+        return self.direccion

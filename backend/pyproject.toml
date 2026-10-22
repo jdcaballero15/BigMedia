@@ -17,17 +17,6 @@ dependencies = [
     "whitenoise>=6,<8",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "PyYAML>=6,<7",
-    "pytest>=8,<10",
-    "pytest-django>=4.10,<5",
-]
-
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["config*", "apps*"]
-
-[tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings"
-python_files = ["test_*.py"]

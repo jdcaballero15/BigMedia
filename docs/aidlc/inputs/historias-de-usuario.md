@@ -250,13 +250,13 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 ### HU-016 Gestionar clientes
 
 - **Actor:** Operativo
-- **Descripción:** Como operativo, quiero administrar clientes con nombre, razón social, CUIT, teléfono, correo y tipo (directo, intermediario o intermediario formal), para saber a quién se factura.
+- **Descripción:** Como operativo, quiero administrar clientes con nombre, razón social, CUIT, teléfono, correo y tipo (directo, intermediario o intermediario formal), para saber a quién se factura. Ningún dato es obligatorio para guardar un cliente: se completan a medida que se conocen.
 - **Prioridad:** Must
 - **Complejidad:** S
 - **Precondición:** Sesión iniciada con rol Operativo o superior.
-- **Regla de negocio:** El cliente es quien paga y lleva los datos de facturación. Su CUIT se precarga en los ítems a facturar (HU-060), donde puede cambiarse por ítem. Solo el cliente de tipo intermediario formal puede tener varios contactos (HU-068); los demás tipos usan los datos de contacto del propio cliente. En la interfaz se muestra por su nombre de fantasía, no solo por la razón social. Un cliente con marcas no se puede eliminar; se inactiva.
+- **Regla de negocio:** El cliente es quien paga y lleva los datos de facturación. Su CUIT se precarga en los ítems a facturar (HU-060), donde puede cambiarse por ítem. Solo el cliente de tipo intermediario formal puede tener varios contactos (HU-068); los demás tipos usan los datos de contacto del propio cliente. En la interfaz se muestra por su nombre; si no tiene, como «Cliente sin nombre #id». Un cliente con marcas no se puede eliminar; se inactiva.
 - **Criterios de aceptación:**
-  1. Dado un cliente nuevo con nombre, razón social y tipo, cuando se guarda, entonces queda disponible para asociarle marcas.
+  1. Dado un cliente nuevo, con o sin datos cargados, cuando se guarda, entonces queda disponible para asociarle marcas.
   2. Dado un cliente inactivo, cuando se crea una marca nueva, entonces no aparece como opción.
   3. Dada una búsqueda por nombre o razón social, cuando se escribe parte del texto, entonces encuentra al cliente.
 
@@ -280,12 +280,13 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** HU-016 y HU-017 completas.
-- **Regla de negocio:** Un cliente directo existe dos veces: como entidad legal a la que se factura y como marca impresa en el cartel, con la marca apuntando al mismo cliente. Si el cliente cambia de razón social después, la marca no se actualiza sola hasta que Seba responda la pregunta 19.
+- **Regla de negocio:** Un cliente directo existe dos veces: como entidad legal a la que se factura y como marca impresa en el cartel, con la marca apuntando al mismo cliente. Si el cliente cambia de razón social después, la marca no se actualiza sola hasta que Seba responda la pregunta 19. Un cliente directo sin nombre no genera marca, porque no hay con qué nombrarla.
 - **Criterios de aceptación:**
   1. Dado un cliente directo nuevo, cuando se guarda, entonces se crea en la misma operación una marca con su nombre asociada a él.
   2. Dado un cliente intermediario o intermediario formal, cuando se guarda, entonces no se crea ninguna marca.
   3. Dado un cliente directo ya existente, cuando se edita, entonces no se duplica la marca.
   4. Dado un fallo al crear la marca, cuando ocurre, entonces el cliente tampoco se crea, para no dejar datos a medias.
+  5. Dado un cliente directo nuevo sin nombre, cuando se guarda, entonces no se crea ninguna marca.
 
 ### HU-019 Detectar marcas duplicadas
 

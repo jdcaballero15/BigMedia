@@ -2,22 +2,24 @@
 
 import os
 from pathlib import Path
+from typing import Any
 
 import dj_database_url
 from dotenv import load_dotenv
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIST = BASE_DIR / "frontend_dist"
-load_dotenv(BASE_DIR.parent / ".env")
+ENV_FILE = BASE_DIR / ".env"
+load_dotenv(ENV_FILE)
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 PRODUCTION = os.environ.get("DJANGO_ENV") == "production"
-DEBUG = not PRODUCTION and os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
+STAGING = os.environ.get("DJANGO_ENV") == "staging"
+# Entorno desplegado en Render (producción o staging): mismo endurecimiento de seguridad.
+DESPLEGADO = PRODUCTION or STAGING
+DEBUG = not DESPLEGADO and os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
 ALLOWED_HOSTS = (
-    [os.environ["RENDER_EXTERNAL_HOSTNAME"]]
-    if PRODUCTION
-    else ["127.0.0.1", "localhost"]
+    [os.environ["RENDER_EXTERNAL_HOSTNAME"]] if DESPLEGADO else ["127.0.0.1", "localhost"]
 )
 
 INSTALLED_APPS = [
@@ -29,6 +31,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "apps.inventario",
+    "apps.clientes",
+    "apps.campanias",
+    "apps.reservas",
+    "apps.costos",
+    "apps.facturacion",
     "apps.usuarios",
 ]
 
@@ -41,7 +48,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-if PRODUCTION:
+if DESPLEGADO:
     MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 ROOT_URLCONF = "config.urls"
@@ -61,7 +68,7 @@ TEMPLATES = [
 ]
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
+DATABASES: dict[str, Any] = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("POSTGRES_DB", "bigmedia"),
@@ -71,13 +78,16 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT", "5433"),
     }
 }
-if PRODUCTION:
+if DESPLEGADO:
     DATABASES = {"default": dj_database_url.parse(os.environ["DATABASE_URL"])}
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 3600
+    # El dominio es un subdominio de onrender.com que no controlamos y el preload de HSTS es
+    # difícil de revertir. Revisar si se usa un dominio propio (ADR-0004).
+    SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -94,11 +104,21 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [FRONTEND_DIST] if FRONTEND_DIST.exists() else []
-if PRODUCTION:
+if DESPLEGADO:
     STORAGES = {
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
-        },
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
     }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Motor de disponibilidad (HU-033). Día de borde (RN-001) y si la tentativa bloquea (RN-002).
+# Provisorios y configurables por entorno hasta que exista la configuración por pantalla (HU-001).
+DISPONIBILIDAD_BORDE_INCLUSIVO = (
+    os.environ.get("DISPONIBILIDAD_BORDE_INCLUSIVO", "true").lower() == "true"
+)
+DISPONIBILIDAD_TENTATIVA_BLOQUEA = (
+    os.environ.get("DISPONIBILIDAD_TENTATIVA_BLOQUEA", "false").lower() == "true"
+)
+
+# Panel principal (HU-047): ventana de "reservas por vencer" en días.
+PANEL_DIAS_POR_VENCER = int(os.environ.get("PANEL_DIAS_POR_VENCER", "30"))

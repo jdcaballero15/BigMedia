@@ -1,41 +1,86 @@
 # Despliegue de Big Media en Render
 
-Hoy `render.yaml` usa el **plan gratis** de Render (servicio web y PostgreSQL), para que el equipo y
-Seba puedan ver el sistema funcionando mientras se valida. La presencia del archivo en Git no crea
-recursos por sí sola: se crean al aplicar el Blueprint desde el panel de Render.
+Big Media corre en dos entornos ([ADR-0005](../adr/0005-base-de-staging-en-neon.md)). `render.yaml`
+los describe, pero su presencia en Git no crea recursos: se crean al aplicar el Blueprint desde el
+panel de Render.
 
-## Límites del plan gratis
+## Entornos
 
-- **La web se duerme** después de 15 minutos sin tráfico. La primera visita después tarda cerca de un
-  minuto en responder.
-- **La base gratis vence a los 30 días** de creada. Hay 14 días de gracia para pasarla a un plan pago;
-  después Render la borra con todos sus datos. Solo se permite una base gratis por workspace.
-- La base gratis tiene 1 GB fijo y **no tiene copias de seguridad**.
-- No hay consola (Shell) ni comando previo al deploy. Por eso la imagen migra la base y crea el
-  primer administrador en cada arranque (`backend/arrancar.sh`).
-- **No cargar el inventario real** en el plan gratis. Usarlo para mostrar y probar; pasar al plan pago
-  antes de que Seba cargue datos que no se pueden perder.
+| Entorno | Rama | Web | Base | Para qué |
+| --- | --- | --- | --- | --- |
+| **Producción** | `main` | `bigmedia-web`, Render Starter (pago) | `bigmedia-db`, Render Basic-256mb (pago) | Datos reales, con copias de seguridad |
+| **Staging** | `develop` | `bigmedia-web-staging`, Render gratis | Proyecto `bigmedia-staging` en **Neon** gratis | Probar lo nuevo antes de producción y hacer demos |
 
-## Crear los servicios
+- **Producción** (`DJANGO_ENV=production`): la web se conecta a la base por la red interna de Render.
+  Costo aproximado: ~USD 7/mes la web y ~USD 6/mes la base más disco (confirmar en el panel).
+- **Staging** (`DJANGO_ENV=staging`): seguridad igual que producción (HTTPS, `DEBUG` off) y **arranca
+  con datos de ejemplo** que crea `python manage.py cargar_datos_ejemplo` (idempotente; nunca datos
+  reales; se niega a correr en producción). La base de Neon gratis no vence; si se recrea, el arranque
+  vuelve a migrar y cargar los datos de ejemplo.
 
-1. La rama `main` tiene que tener el CI en verde: Render solo despliega commits de `main` cuyos checks
-   pasaron (`autoDeployTrigger: checksPass`).
-2. En Render, abrir **Blueprints → New Blueprint Instance**, conectar GitHub y elegir
-   `jdcaballero15/BigMedia`, rama `main`.
-3. Render pide dos valores que no están en Git:
-   - `DJANGO_SUPERUSER_USERNAME`: el usuario del primer administrador.
-   - `DJANGO_SUPERUSER_PASSWORD`: una contraseña larga y única. No la guardes en el repositorio ni la
-     mandes por chat.
-4. Revisar que los dos recursos (`bigmedia-web` y `bigmedia-db`) digan **Free** y aplicar el Blueprint.
+Flujo: un cambio entra a `develop` → Render actualiza staging → se prueba → release a `main` →
+Render actualiza producción.
+
+## Límites del plan gratis (staging)
+
+- **La web se duerme** después de 15 minutos sin tráfico. La primera visita tarda cerca de un minuto.
+- **La base de Neon se suspende** tras unos minutos sin consultas; la primera consulta después tarda
+  algo más.
+- Neon gratis tiene espacio y horas de cómputo limitados por mes (alcanza para staging). Ver
+  [neon.com/pricing](https://neon.com/pricing).
+- No hay Shell en la web gratis: la imagen migra la base y crea el primer administrador en cada
+  arranque (`backend/arrancar.sh`).
+
+## Crear la base de staging en Neon
+
+1. Crear una cuenta en [neon.com](https://neon.com) y un proyecto `bigmedia-staging`, con
+   **Postgres 17** y región **AWS us-east-1 (N. Virginia)**, la misma que Render.
+2. En **Connect**, desactivar **Connection pooling** y copiar la connection string **directa** (el
+   host no dice `-pooler`). Debe terminar con `?sslmode=require`.
+3. Esa URL tiene la contraseña: se pega solo en el panel de Render (paso 4 de la sección siguiente).
+   No va a Git, ni a chats, ni a documentos.
+
+## Crear o actualizar los servicios
+
+Orden recomendado:
+
+1. **Producción a pago.** En el panel de Render, cambiar `bigmedia-db` a **Basic-256mb** y
+   `bigmedia-web` a **Starter**, y revisar el precio antes de confirmar. Hacerlo antes de que venza la
+   base gratis (17/11/2026). `render.yaml` ya declara esos planes, así que una sincronización del
+   Blueprint no los vuelve a gratis.
+2. **Release.** `main` tiene que tener el CI en verde: Render solo despliega commits de `main` cuyos
+   checks pasaron (`autoDeployTrigger: checksPass`).
+3. **Blueprint.** En Render, **Blueprints** → el Blueprint de `jdcaballero15/BigMedia` → **Sync** (o
+   **New Blueprint Instance** si todavía no existe, rama `main`).
+4. Render pide los valores que no están en Git:
+   - `DATABASE_URL` de `bigmedia-web-staging`: la URL directa de Neon.
+   - `DJANGO_SUPERUSER_USERNAME` y `DJANGO_SUPERUSER_PASSWORD`, para cada entorno (pueden ser
+     distintos). Contraseñas largas y únicas; no las guardes en el repositorio ni las mandes por chat.
 5. Esperar el build. En **Logs** tienen que aparecer las migraciones, `Administrador <usuario> creado.`
-   y `Listening at`. El chequeo `/api/health/` debe dar `{"status":"ok"}`.
-6. Anotar la URL que asigna Render (por ejemplo `https://bigmedia-web.onrender.com`).
+   y `Listening at`. El chequeo `/api/health/` debe dar `{"status":"ok"}`. En staging, además, la carga
+   de datos de ejemplo.
+6. Anotar las URLs que asigna Render (por ejemplo `https://bigmedia-web.onrender.com`).
 
-`DATABASE_URL` viene de la URL interna de `bigmedia-db` y `DJANGO_SECRET_KEY` la genera Render.
-Nunca copiar esos valores a Git ni a mensajes.
+La `DATABASE_URL` de producción viene de la URL interna de `bigmedia-db` y `DJANGO_SECRET_KEY` la
+genera Render. Nunca copiar esos valores a Git ni a mensajes. Si se rota la contraseña en Neon, hay
+que actualizar la `DATABASE_URL` de staging en el panel de Render.
 
 El comando `asegurar_admin` no hace nada si el usuario ya existe, así que cambiar la contraseña desde
 `/admin/` es seguro: un nuevo deploy no la pisa.
+
+## Ver tablas y esquema
+
+El esquema lo definen los modelos de Django y lo crean las migraciones. **Nunca se cambia a mano** en
+ninguna base: todo cambio va por una migración en un PR.
+
+- **Local:** la forma más segura de explorar el esquema (es idéntico al de los entornos). Conectar un
+  cliente SQL (por ejemplo DBeaver) a la base de Docker Compose con los datos de `backend/.env`.
+- **Staging (Neon):** el panel de Neon tiene **Tables** (visor de tablas) y **SQL Editor**.
+- **Producción (Render):** Render no tiene visor de tablas.
+  - Para ver o editar registros: el admin de Django (`/admin/`).
+  - Para consultas SQL puntuales: agregar la IP propia en **bigmedia-db → Access Control** (hoy
+    `ipAllowList: []` no deja entrar desde afuera), conectar un cliente SQL con la **External Database
+    URL**, usar un usuario de solo lectura y sacar la IP al terminar.
 
 ## Primeros pasos en producción
 
@@ -47,14 +92,14 @@ El comando `asegurar_admin` no hace nada si el usuario ya existe, así que cambi
 
 ## Pasar al plan pago
 
-Hacerlo antes de los 30 días si se van a conservar los datos, y siempre antes de cargar el
+Solo producción. Hacerlo antes de que venza la base gratis (17/11/2026) y siempre antes de cargar el
 inventario real.
 
-1. En el panel de Render, cambiar `bigmedia-db` a un plan pago (por ejemplo `basic-256mb`) y
-   `bigmedia-web` a `starter`. Revisar el precio en el panel antes de confirmar.
-2. En el mismo PR que actualiza `render.yaml` con esos planes, se puede volver a usar
-   `preDeployCommand: python manage.py migrate --noinput`. El arranque de la imagen sigue migrando y no
-   molesta: si no hay migraciones pendientes, no hace nada.
+1. En el panel de Render, cambiar `bigmedia-db` a `basic-256mb` y `bigmedia-web` a `starter`, los
+   planes que declara `render.yaml`. Revisar el precio en el panel antes de confirmar.
+2. Con la web paga se puede agregar `preDeployCommand: python manage.py migrate --noinput` en un PR
+   aparte. El arranque de la imagen sigue migrando y no molesta: si no hay migraciones pendientes, no
+   hace nada.
 3. Activar y verificar las copias de seguridad según la sección siguiente.
 
 ## Verificar antes de ingresar datos reales (plan pago)
@@ -79,4 +124,4 @@ inventario real.
 - Revisar **Deploys** y **Logs** cuando falle un build, migración o chequeo de salud.
 - Vigilar uso de disco, factura y disponibilidad de recuperación en el panel.
 - Integrar cambios solo por PR según GitFlow ([gestión de configuración](../gestion-de-configuracion.md)): rama de trabajo → PR a `develop`; `main` solo recibe releases desde `develop` y hotfixes; CI prueba backend, frontend y construcción de la imagen antes del despliegue automático.
-- Mantener datos reales fuera de bases de desarrollo y pruebas locales. El entorno local usa `.env` y Docker Compose según [desarrollo local](desarrollo-local.md).
+- Mantener datos reales fuera de bases de desarrollo y pruebas locales. El entorno local usa `backend/.env` y Docker Compose según [desarrollo local](desarrollo-local.md).

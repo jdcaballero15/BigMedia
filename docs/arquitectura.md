@@ -63,7 +63,7 @@ Qué va dónde:
 | Ubicación | Qué contiene |
 | --- | --- |
 | Raíz | Lo que gobierna ambos lados: `pyproject.toml` (ruff, mypy, pytest, coverage), `requirements-dev.txt`, `.pre-commit-config.yaml`, `.gitleaks.toml`, `compose.yaml`, `Dockerfile`, `render.yaml`, `CLAUDE.md`, `README.md`, `docs/`, `.claude/`, `.github/`. |
-| `backend/` | API Django: `config/` (settings, URLs), `apps/<app>/`, `tests/`, `manage.py`, `pyproject.toml` (empaquetado) y `.env.example`. |
+| `backend/` | API Django: `config/` (settings, URLs y lo compartido entre apps: `permisos.py` con el permiso "lee cualquiera con sesión, edita Operativo" y `texto.py` con la normalización para buscar sin tildes), `apps/<app>/`, `tests/`, `manage.py`, `pyproject.toml` (empaquetado) y `.env.example`. |
 | `frontend/` | Web React: `package.json`, configuración de Prettier, oxlint, TypeScript y Vite, y `src/`. |
 | `docs/` | Documentación. Los insumos y el plan de trabajo viven en `docs/aidlc/`. |
 
@@ -75,7 +75,7 @@ Los límites vienen de la unidad [`base-del-repositorio`](aidlc/units/base-del-r
 | --- | --- | --- | --- |
 | `usuarios` | Cuentas, sesión y permisos. | Acceso no autorizado a datos o acciones. | iniciada (solo el comando `asegurar_admin`) |
 | `inventario` | Formatos, proveedores, zonas, carteles, estados físicos y capacidad. | Capacidad mal cargada, que luego rompe la disponibilidad. | implementada |
-| `clientes` | Clientes pagadores, marcas, contactos e interacciones. | Datos personales mal tratados. | planificada |
+| `clientes` | Clientes pagadores, marcas, contactos e interacciones. | Datos personales mal tratados. | implementada parcial (clientes, marcas y rubros) |
 | `campanias` | Campañas y posiciones solicitadas por formato. | Posiciones inconsistentes con lo vendido. | planificada |
 | `reservas` | Reservas, disponibilidad, confirmación, cancelación y carga masiva. Toda vía de entrada usa el mismo servicio de confirmación. | Sobreventa de un cartel. | planificada |
 | `costos` | Costos asociados a reservas e ítems de facturación, evitando contabilizarlos dos veces. | Contabilizar un costo dos veces. | planificada |
@@ -84,7 +84,7 @@ Los límites vienen de la unidad [`base-del-repositorio`](aidlc/units/base-del-r
 
 ## 4. Dependencias permitidas entre apps
 
-Una app no importa modelos de otra fuera de esta tabla. Cualquier app puede importar de `django.contrib.auth`.
+Una app no importa modelos de otra fuera de esta tabla. Cualquier app puede importar de `django.contrib.auth` y de `config` (nivel de proyecto).
 
 | App | Puede importar de |
 | --- | --- |

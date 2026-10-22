@@ -12,5 +12,14 @@ export default defineConfig(({ command }) => ({
   },
   test: {
     environment: 'jsdom',
+    setupFiles: ['./src/test-setup.ts'],
+    coverage: {
+      provider: 'v8',
+      // Mide todo src, aunque un archivo no tenga test: lo no probado cuenta contra el mínimo.
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/test-setup.ts', 'src/main.tsx'],
+      // Líneas y sentencias son obligatorias; funciones y ramas se informan (ADR-0004).
+      thresholds: { lines: 80, statements: 80 },
+    },
   },
 }))

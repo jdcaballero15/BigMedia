@@ -6,7 +6,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 
@@ -20,6 +19,10 @@ def production_environment():
         "RENDER_EXTERNAL_HOSTNAME": "bigmedia.onrender.com",
         "DATABASE_URL": "postgresql://u:p@db.internal:5432/bigmedia",
     }
+
+
+def staging_environment():
+    return {**production_environment(), "DJANGO_ENV": "staging"}
 
 
 def run_django(script, env=None):
@@ -56,6 +59,30 @@ print(json.dumps({
         "ssl_redirect": True,
         "proxy_header": ["HTTP_X_FORWARDED_PROTO", "https"],
         "hsts": 3600,
+    }
+
+
+def test_staging_is_hardened_like_production():
+    script = """
+import json
+from django.conf import settings
+print(json.dumps({
+    'db_host': settings.DATABASES['default']['HOST'],
+    'allowed_hosts': settings.ALLOWED_HOSTS,
+    'secure_cookies': settings.SESSION_COOKIE_SECURE and settings.CSRF_COOKIE_SECURE,
+    'ssl_redirect': settings.SECURE_SSL_REDIRECT,
+    'debug': settings.DEBUG,
+}))
+"""
+    result = run_django(script, staging_environment())
+    assert result.returncode == 0, result.stderr
+    config = json.loads(result.stdout)
+    assert config == {
+        "db_host": "db.internal",
+        "allowed_hosts": ["bigmedia.onrender.com"],
+        "secure_cookies": True,
+        "ssl_redirect": True,
+        "debug": False,
     }
 
 

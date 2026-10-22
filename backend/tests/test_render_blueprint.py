@@ -4,7 +4,6 @@ from pathlib import Path
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -12,15 +11,15 @@ def blueprint():
     return yaml.safe_load((ROOT / "render.yaml").read_text(encoding="utf-8"))
 
 
-def test_blueprint_uses_free_plan_with_private_connection():
+def test_blueprint_uses_paid_plan_with_private_connection():
     manifest = blueprint()
     web = manifest["services"][0]
     database = manifest["databases"][0]
     env = {item["key"]: item for item in web["envVars"]}
 
-    # Plan gratis mientras se valida el sistema; ver docs/operacion/despliegue-render.md.
-    assert web["plan"] == "free"
-    assert database["plan"] == "free"
+    # Producción en planes pagos de Render (ADR-0005).
+    assert web["plan"] == "starter"
+    assert database["plan"] == "basic-256mb"
     assert database["ipAllowList"] == []
     assert web["region"] == database["region"]
     assert env["DATABASE_URL"]["fromDatabase"] == {
@@ -29,6 +28,20 @@ def test_blueprint_uses_free_plan_with_private_connection():
     }
     assert env["DJANGO_SECRET_KEY"]["generateValue"] is True
     assert env["DJANGO_ENV"]["value"] == "production"
+
+
+def test_blueprint_staging_reads_neon_url_from_secret():
+    manifest = blueprint()
+    staging = manifest["services"][1]
+    env = {item["key"]: item for item in staging["envVars"]}
+
+    # La base de staging vive en Neon (ADR-0005): su URL se carga en el panel, nunca en Git.
+    assert staging["name"] == "bigmedia-web-staging"
+    assert staging["plan"] == "free"
+    assert staging["branch"] == "develop"
+    assert env["DJANGO_ENV"]["value"] == "staging"
+    assert env["DATABASE_URL"] == {"key": "DATABASE_URL", "sync": False}
+    assert [db["name"] for db in manifest["databases"]] == ["bigmedia-db"]
 
 
 def test_blueprint_asks_admin_credentials_without_storing_them():
@@ -46,7 +59,7 @@ def test_blueprint_only_deploys_checked_main_commits():
     assert web["branch"] == "main"
     assert web["autoDeployTrigger"] == "checksPass"
     assert web["healthCheckPath"] == "/api/health/"
-    # El plan gratis no tiene comando previo al deploy: el arranque lo define la imagen.
+    # Sin comando previo al deploy: el arranque lo define la imagen (backend/arrancar.sh).
     assert "preDeployCommand" not in web
     assert "dockerCommand" not in web
 

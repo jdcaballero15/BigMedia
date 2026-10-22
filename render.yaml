@@ -1,9 +1,12 @@
-# Recursos de producción en el plan gratis de Render, mientras se valida el sistema.
-# Límites: la web se duerme tras 15 minutos sin tráfico y la base gratis vence a los 30 días.
-# Ver docs/operacion/despliegue-render.md antes de conectarlo y para pasar al plan pago.
+# Dos entornos (ADR-0005):
+#   - producción: rama `main`, web y PostgreSQL pagos en Render, con copias de seguridad.
+#   - staging: rama `develop`, web gratis en Render y base en Neon gratis (no vence a los 30 días).
+#     La URL de Neon se carga a mano en el panel de Render (`DATABASE_URL`); nunca va a Git.
+#     Staging arranca con datos de ejemplo (nunca datos reales).
+# Límite del plan gratis de la web: se duerme tras 15 minutos sin tráfico.
 databases:
   - name: bigmedia-db
-    plan: free
+    plan: basic-256mb
     region: virginia
     postgresMajorVersion: '17'
     ipAllowList: []
@@ -12,12 +15,12 @@ services:
   - type: web
     name: bigmedia-web
     runtime: docker
-    plan: free
+    plan: starter
     region: virginia
     branch: main
     autoDeployTrigger: checksPass
     healthCheckPath: /api/health/
-    # El plan gratis no admite preDeployCommand: la imagen migra al arrancar (backend/arrancar.sh).
+    # La imagen migra al arrancar (backend/arrancar.sh).
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -30,6 +33,30 @@ services:
       - key: DJANGO_DEBUG
         value: 'false'
       # Render los pide al crear el Blueprint; nunca se guardan en Git.
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+
+  - type: web
+    name: bigmedia-web-staging
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: develop
+    autoDeployTrigger: checksPass
+    healthCheckPath: /api/health/
+    envVars:
+      # Connection string directa de Neon (sin `-pooler`, con `sslmode=require`).
+      - key: DATABASE_URL
+        sync: false
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      # `staging` endurece la seguridad como producción y carga datos de ejemplo al arrancar.
+      - key: DJANGO_ENV
+        value: staging
+      - key: DJANGO_DEBUG
+        value: 'false'
       - key: DJANGO_SUPERUSER_USERNAME
         sync: false
       - key: DJANGO_SUPERUSER_PASSWORD

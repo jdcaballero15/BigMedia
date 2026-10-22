@@ -14,7 +14,7 @@ Pasos y plantillas en [`.claude/aidlc/workflow.md`](.claude/aidlc/workflow.md). 
 
 ## 1. Qué es el sistema
 
-Big Media es el sistema de inventario, campañas y reservas de publicidad de vía pública de Big Media Argentina. Stack: Django 5.2 + DRF, PostgreSQL 17, React 19 + Vite + TypeScript, desplegado en Render. Hoy está implementado el inventario; las reservas no.
+Big Media es el sistema de inventario, campañas y reservas de publicidad de vía pública de Big Media Argentina. Stack: Django 5.2 + DRF, PostgreSQL 17, React 19 + Vite + TypeScript, desplegado en Render. Hoy están implementados el inventario y clientes, marcas y rubros; las reservas no.
 
 Riesgo dominante de las apps que más importan:
 
@@ -56,8 +56,6 @@ En la raíz va lo que gobierna ambos lados (`pyproject.toml`, `requirements-dev.
 | 7 | La confirmación de reservas ocurre solo en el servidor, dentro de una transacción de PostgreSQL. | revisión del PR y tests de concurrencia cuando exista `reservas` |
 | 8 | No se crean carpetas nuevas en la raíz sin un ADR aprobado. | revisión del PR y [ADR](docs/adr/README.md) |
 
-Las herramientas que hacen cumplir estas reglas y las de §5 y §7 (pre-commit, gitleaks, ruff, mypy y coverage) se activan con el PR `chore/gates-de-calidad`; hasta entonces se verifican a mano y en la revisión del PR.
-
 ## 4. Workflow de ramas
 
 GitFlow: todo cambio entra por Pull Request.
@@ -79,7 +77,7 @@ Hotfix: `hotfix/<descripcion>` desde `main`, PR a `main`; después `chore/infra-
 git switch develop && git pull
 git switch -c feature/inventario-capacidad-por-cartel
 # trabajo...
-ruff format . && ruff check . && mypy backend && pytest --cov
+.venv/Scripts/ruff.exe format . && .venv/Scripts/ruff.exe check . && .venv/Scripts/mypy.exe backend && .venv/Scripts/python.exe -m pytest --cov
 cd frontend && npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build
 git commit -m "feat(inventario): allow capacity override per poster"
 # PR a develop con la plantilla completa
@@ -137,19 +135,19 @@ Instalación (una vez, en Windows; no hace falta activar el entorno):
 py -3.12 -m venv .venv
 .venv/Scripts/python.exe -m pip install -r requirements-dev.txt
 .venv/Scripts/python.exe -m pip install -e backend/
-.venv/Scripts/pre-commit install
+.venv/Scripts/pre-commit.exe install
 npm ci --prefix frontend
 docker compose up -d --wait db
 ```
 
-Verificación (desde la raíz; `requirements-dev.txt`, pre-commit y los scripts de frontend `format:check`, `typecheck` y `test:coverage` llegan con el PR `chore/gates-de-calidad`; hasta entonces tampoco funcionan las líneas de `requirements-dev.txt` y pre-commit del bloque de instalación):
+Verificación (desde la raíz, sin activar el entorno virtual; desde una rama de trabajo, porque `no-commit-to-branch` falla en `main` y `develop`):
 
 ```bash
-ruff format --check . && ruff check .
-mypy backend
-python backend/manage.py makemigrations --check --dry-run
-pytest --cov
-pre-commit run --all-files
+.venv/Scripts/ruff.exe format --check . && .venv/Scripts/ruff.exe check .
+.venv/Scripts/mypy.exe backend
+.venv/Scripts/python.exe backend/manage.py makemigrations --check --dry-run
+.venv/Scripts/python.exe -m pytest --cov
+.venv/Scripts/pre-commit.exe run --all-files
 cd frontend && npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build
 ```
 

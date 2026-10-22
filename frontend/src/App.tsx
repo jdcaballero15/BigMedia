@@ -1,39 +1,272 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
+import {
+  BarChart3,
+  CalendarDays,
+  CircleDollarSign,
+  LayoutDashboard,
+  Layers,
+  LogOut,
+  Megaphone,
+  Menu,
+  Settings,
+  Signpost,
+  Tags,
+  TrendingUp,
+  Truck,
+  Users,
+  X,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import Login from './app/Login'
 import CartelesPage from './features/inventario/CartelesPage'
 import CatalogosPage from './features/inventario/CatalogosPage'
+import ClientesPage from './features/clientes/ClientesPage'
+import MarcasPage from './features/clientes/MarcasPage'
+import CampaniasPage from './features/campanias/CampaniasPage'
+import CostosPage from './features/costos/CostosPage'
+import DisponibilidadPage from './features/disponibilidad/DisponibilidadPage'
+import ReporteIngresosPage from './features/facturacion/ReporteIngresos'
+import PanelPrincipal from './features/panel/PanelPrincipal'
+import ReporteOcupacionPage from './features/reservas/ReporteOcupacion'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import './App.css'
 
-type Session = { status: 'checking' | 'anonymous' | 'offline' | 'ready'; username: string }
+type Session = {
+  status: 'checking' | 'anonymous' | 'offline' | 'ready'
+  username: string
+  esGerencia: boolean
+}
+type Page =
+  | 'panel'
+  | 'clientes'
+  | 'marcas'
+  | 'campanias'
+  | 'carteles'
+  | 'disponibilidad'
+  | 'proveedores'
+  | 'costos'
+  | 'ingresos'
+  | 'ocupacion'
+  | 'formatos'
+  | 'catalogos'
+
+type Item = {
+  id: Page
+  label: string
+  icon: LucideIcon
+  render: () => ReactNode
+  soloGerencia?: boolean
+}
+
+const sections: { title: string; items: Item[] }[] = [
+  {
+    title: 'Inicio',
+    items: [
+      { id: 'panel', label: 'Panel', icon: LayoutDashboard, render: () => <PanelPrincipal /> },
+    ],
+  },
+  {
+    title: 'Reportes',
+    items: [
+      {
+        id: 'ingresos',
+        label: 'Ingresos',
+        icon: TrendingUp,
+        render: () => <ReporteIngresosPage />,
+        soloGerencia: true,
+      },
+      {
+        id: 'ocupacion',
+        label: 'Ocupación',
+        icon: BarChart3,
+        render: () => <ReporteOcupacionPage />,
+      },
+    ],
+  },
+  {
+    title: 'Comercial',
+    items: [
+      { id: 'clientes', label: 'Clientes', icon: Users, render: () => <ClientesPage /> },
+      { id: 'marcas', label: 'Marcas', icon: Tags, render: () => <MarcasPage /> },
+      { id: 'campanias', label: 'Campañas', icon: Megaphone, render: () => <CampaniasPage /> },
+    ],
+  },
+  {
+    title: 'Inventario',
+    items: [
+      { id: 'carteles', label: 'Carteles', icon: Signpost, render: () => <CartelesPage /> },
+      {
+        id: 'disponibilidad',
+        label: 'Disponibilidad',
+        icon: CalendarDays,
+        render: () => <DisponibilidadPage />,
+      },
+    ],
+  },
+  {
+    title: 'Operación',
+    items: [
+      {
+        id: 'proveedores',
+        label: 'Proveedores',
+        icon: Truck,
+        render: () => (
+          <CatalogosPage
+            categorias={['proveedores']}
+            seccion="Operación"
+            titulo="Proveedores"
+            descripcion="Quienes prestan servicios de alquiler, impresión o fijación."
+          />
+        ),
+      },
+      { id: 'costos', label: 'Costos', icon: CircleDollarSign, render: () => <CostosPage /> },
+      {
+        id: 'formatos',
+        label: 'Formatos',
+        icon: Layers,
+        render: () => (
+          <CatalogosPage
+            categorias={['formatos']}
+            seccion="Operación"
+            titulo="Formatos"
+            descripcion="Tipos de soporte, con su modalidad, capacidad y medidas."
+          />
+        ),
+      },
+    ],
+  },
+  {
+    title: 'Configuración',
+    items: [
+      { id: 'catalogos', label: 'Catálogos', icon: Settings, render: () => <CatalogosPage /> },
+    ],
+  },
+]
+
+const pages = sections.flatMap((section) => section.items)
 
 function App() {
-  const [session, setSession] = useState<Session>({ status: 'checking', username: '' })
-  const [page, setPage] = useState<'carteles' | 'catalogos'>('carteles')
+  const [session, setSession] = useState<Session>({
+    status: 'checking',
+    username: '',
+    esGerencia: false,
+  })
+  const [page, setPage] = useState<Page>('clientes')
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     let active = true
-    void apiGet<{ username: string }>('/api/auth/me/')
-      .then((user) => { if (active) setSession({ status: 'ready', username: user.username }) })
-      .catch((error: unknown) => {
-        if (active) setSession({ status: error instanceof ApiError && error.status === 401 ? 'anonymous' : 'offline', username: '' })
+    void apiGet<{ username: string; es_gerencia: boolean }>('/api/auth/me/')
+      .then((user) => {
+        if (active)
+          setSession({ status: 'ready', username: user.username, esGerencia: user.es_gerencia })
       })
-    return () => { active = false }
+      .catch((error: unknown) => {
+        if (active)
+          setSession({
+            status: error instanceof ApiError && error.status === 401 ? 'anonymous' : 'offline',
+            username: '',
+            esGerencia: false,
+          })
+      })
+    return () => {
+      active = false
+    }
   }, [])
 
   async function signOut() {
     await apiWrite('/api/auth/logout/', 'POST')
-    setSession({ status: 'anonymous', username: '' })
+    setSession({ status: 'anonymous', username: '', esGerencia: false })
   }
 
-  if (session.status === 'checking') return <main className="auth-shell"><p>Comprobando sesión…</p></main>
-  if (session.status === 'offline') return <main className="auth-shell"><h1>Big Media</h1><p role="alert">No se pudo conectar con la API.</p></main>
-  if (session.status === 'anonymous') return <Login onLogin={(username) => setSession({ status: 'ready', username })} />
+  if (session.status === 'checking')
+    return (
+      <main className="auth-shell">
+        <p>Comprobando sesión…</p>
+      </main>
+    )
+  if (session.status === 'offline')
+    return (
+      <main className="auth-shell">
+        <h1>Big Media</h1>
+        <p role="alert">No se pudo conectar con la API.</p>
+      </main>
+    )
+  if (session.status === 'anonymous')
+    return (
+      <Login
+        onLogin={(username, esGerencia) => setSession({ status: 'ready', username, esGerencia })}
+      />
+    )
+
+  const visibles = sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.soloGerencia || session.esGerencia),
+    }))
+    .filter((section) => section.items.length > 0)
 
   return (
-    <div className="app-shell">
-      <header className="topbar"><div className="brand-mark">BM<span>.</span></div><div className="topbar-title"><strong>Big Media</strong><small>Sistema de carteles</small></div><nav className="topnav" aria-label="Navegación"><button className={page === 'carteles' ? 'active' : ''} onClick={() => setPage('carteles')}>Carteles</button><button className={page === 'catalogos' ? 'active' : ''} onClick={() => setPage('catalogos')}>Catálogos</button></nav><div className="topbar-user"><span>{session.username}</span><button className="button-ghost" onClick={() => void signOut()}>Salir</button></div></header>
-      <main className="app-main">{page === 'carteles' ? <CartelesPage /> : <CatalogosPage />}</main>
+    <div className={menuOpen ? 'app-shell menu-open' : 'app-shell'}>
+      <header className="mobile-bar">
+        <button
+          className="icon-button"
+          aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+        </button>
+        <div className="brand-mark">
+          BM<span>.</span>
+        </div>
+      </header>
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <div className="brand-mark">
+            BM<span>.</span>
+          </div>
+          <div className="topbar-title">
+            <strong>Big Media</strong>
+            <small>Sistema de carteles</small>
+          </div>
+        </div>
+        <nav className="sidenav" aria-label="Navegación">
+          {visibles.map((section) => (
+            <div key={section.title} className="nav-section">
+              <p className="nav-section-title">{section.title}</p>
+              {section.items.map((item) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.id}
+                    className={page === item.id ? 'active' : ''}
+                    aria-current={page === item.id ? 'page' : undefined}
+                    onClick={() => {
+                      setPage(item.id)
+                      setMenuOpen(false)
+                    }}
+                  >
+                    <Icon aria-hidden="true" size={18} />
+                    {item.label}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+        </nav>
+        <div className="sidebar-user">
+          <span>{session.username}</span>
+          <button className="button-ghost" onClick={() => void signOut()}>
+            <LogOut aria-hidden="true" size={16} />
+            Salir
+          </button>
+        </div>
+      </aside>
+      <main className="app-main" key={page}>
+        {pages.find((item) => item.id === page)?.render()}
+      </main>
     </div>
   )
 }

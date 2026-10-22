@@ -28,20 +28,20 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 
 | ID | Regla | Estado | Valor actual | Origen | HUs | Dónde vive |
 | --- | --- | --- | --- | --- | --- | --- |
-| RN-001 | Día límite entre reservas | `provisoria` | Inclusivo: el día compartido se pisa | Documento de historias (decisión D-01 del 15/10/2026) | HU-001, HU-031, HU-033, HU-040, HU-042, HU-051 | Sin implementar |
-| RN-002 | ¿Una reserva Pendiente bloquea a otras? | `provisoria` | Ocupa cupo solo visualmente; bloqueo duro al confirmar | Documento de historias (decisión D-02 del 15/10/2026) | HU-001, HU-031, HU-033, HU-041, HU-042, HU-056, HU-059 | Sin implementar |
-| RN-003 | Cómo se cuentan los cupos dentro de un rango | `provisoria` | Se cuentan todas las reservas que tocan el rango | Documento de historias (decisión D-03 del 15/10/2026) | HU-031, HU-032, HU-034, HU-040, HU-042, HU-056 | Sin implementar |
+| RN-001 | Día límite entre reservas | `provisoria` | Inclusivo: el día compartido se pisa | Documento de historias (decisión D-01 del 15/10/2026) | HU-001, HU-031, HU-033, HU-040, HU-042, HU-051 | Servicio `apps/reservas/services.py` (fin efectivo), parámetro `DISPONIBILIDAD_BORDE_INCLUSIVO`, `backend/tests/test_disponibilidad.py` |
+| RN-002 | ¿Una reserva Pendiente bloquea a otras? | `provisoria` | Ocupa cupo solo visualmente; bloqueo duro al confirmar | Documento de historias (decisión D-02 del 15/10/2026) | HU-001, HU-031, HU-033, HU-041, HU-042, HU-056, HU-059 | Servicio `apps/reservas/services.py` (estados que bloquean), parámetro `DISPONIBILIDAD_TENTATIVA_BLOQUEA`, `backend/tests/test_disponibilidad.py` |
+| RN-003 | Cómo se cuentan los cupos dentro de un rango | `provisoria` | Pico diario: ocupación máxima por tramo del rango | Juan Diego (2026-10-19), sobre la decisión D-03 del 15/10/2026 | HU-031, HU-032, HU-034, HU-040, HU-042, HU-056 | Servicio `apps/reservas/services.py::validar_disponibilidad` (pico diario), `backend/tests/test_disponibilidad.py` |
 | RN-004 | Cupos de los LED | `provisoria` | Capacidad editable por cartel; una reserva = un cupo | Documento de historias (decisión D-04 del 15/10/2026) | HU-011, HU-028, HU-031, HU-034, HU-040, HU-048, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
 | RN-005 | Slots de los séxtuples | `provisoria` | Capacidad = slots relevados; una reserva = un slot genérico | Documento de historias (decisión D-05 del 15/10/2026) | HU-010, HU-011, HU-015, HU-030, HU-031, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
 | RN-006 | Reglas de cancelación | `provisoria` | Cancelar siempre se permite y libera el cupo | Documento de historias (decisión D-06 del 15/10/2026) | HU-024, HU-035, HU-037, HU-045, HU-051, HU-058, HU-060 | Sin implementar |
-| RN-007 | Propiedad de los carteles | `provisoria` | Costos solo de impresión y fijación | Documento de historias (decisión D-07 del 15/10/2026) | HU-010, HU-015, HU-043, HU-044, HU-046 | Sin implementar |
+| RN-007 | Propiedad de los carteles | `provisoria` | Costos solo de impresión y fijación | Documento de historias (decisión D-07 del 15/10/2026) | HU-010, HU-015, HU-043, HU-044, HU-046 | Modelo `Costo` y margen en `apps/costos/` (default informativo; HU-046 terceros pendiente) |
 | RN-008 | Lista de zonas (departamentos) | `confirmada` | Los nueve departamentos (Ciudad, Godoy Cruz, Maipú, Luján de Cuyo, Guaymallén, Las Heras, San Martín, Rivadavia, San Carlos) | Juan Diego, 15/10/2026, diseño de inventario | HU-010, HU-013, HU-014, HU-015, HU-048 | Migración `inventario/0002_catalogos_iniciales`, catálogo editable |
 | RN-009 | Contenido real de los relevamientos | `pendiente` | Sin carga hasta tener los archivos | Documento de historias (decisión D-09 del 15/10/2026) | HU-015 | Sin implementar |
 | RN-010 | Estados físicos y carteles fuera de servicio | `provisoria` | Alertar y bloquear reservas nuevas | Documento de historias (decisión D-10 del 15/10/2026) | HU-012, HU-039 | Modelo `EstadoCartel`, migración `0002_catalogos_iniciales` (los cinco estados) |
-| RN-011 | ¿Se puede confirmar una campaña incompleta? | `provisoria` | Se exigen cliente, marca y fechas | Documento de historias (decisión D-11 del 15/10/2026) | HU-024, HU-030, HU-049, HU-059 | Sin implementar |
+| RN-011 | ¿Se puede confirmar una campaña incompleta? | `provisoria` | Se exigen cliente, marca y fechas | Documento de historias (decisión D-11 del 15/10/2026) | HU-024, HU-030, HU-049, HU-059 | Parcial: `apps/campanias/services.py::validar_confirmacion` y su test `test_confirmar_exige_marca_cliente_y_fechas`; la confirmación en bloque de reservas (HU-059) queda para E5 |
 | RN-012 | Reservas con fechas pasadas | `provisoria` | No se permite a mano; histórico solo por importación | Documento de historias (decisión D-12 del 15/10/2026) | HU-038, HU-048, HU-049 | Sin implementar |
 | RN-013 | Vista de disponibilidad a futuro | `provisoria` | Se construye como Should | Documento de historias (decisión D-13 del 15/10/2026) | HU-041, HU-042 | Sin implementar |
-| RN-014 | Cambio de pagador de una marca | `provisoria` | Se deduce siempre de la marca | Documento de historias (decisión D-14 del 15/10/2026) | HU-027 | Sin implementar |
+| RN-014 | Cambio de pagador de una marca | `provisoria` | La campaña puede llevar un cliente que factura propio que reemplaza la deducción desde la marca; HU-027 sigue viva | Seba (2026-10-19), sobre la decisión D-14 del 15/10/2026 | HU-027 | Modelo `Campania.cliente_facturacion` y propiedad `cliente_factura` (unidad campanias) |
 | RN-015 | Intermediario formal y sus contactos | `provisoria` | Tipo aparte con contactos múltiples | Documento de historias (decisión D-15 del 15/10/2026) | HU-016, HU-068 | Sin implementar |
 | RN-016 | Grupo económico | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-017, HU-022, HU-050 | Sin implementar |
 | RN-017 | Cambio de razón social de un cliente directo | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-018 | Sin implementar |
@@ -132,7 +132,9 @@ Esta pregunta surge de leer HU-031 y no figura como pendiente en las historias. 
 
 Con capacidad 1 las dos opciones dan el mismo resultado, así que no afecta a los carteles exclusivos.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** pico diario (ocupación máxima por tramo): es exacto y no rechaza reservas que en
+realidad entran; coincide con el diseño de `units/base-del-repositorio.md`. · **Fecha:** 2026-10-19 ·
+**Quién respondió:** Juan Diego
 
 ### RN-004 Cupos de los LED (D-04)
 
@@ -172,6 +174,8 @@ Con capacidad 1 las dos opciones dan el mismo resultado, así que no afecta a lo
 
 **Default.** La capacidad es igual a los slots relevados (HU-015) y cada reserva ocupa un slot genérico, sin posición.
 
+**Input de Seba (2026-10-19).** Confirma el default y lo amplía más allá de los séxtuples: en los circuitos grandes (séxtuples, séptuples, PPL, banderolas, carteleras) **no** quiere que el sistema lo obligue a cargar la posición exacta de cada cartel; esa gestión la sigue haciendo aparte. Para esos casos quiere algo simple: **cantidad + tipo de cartel + importes**. Queda por confirmar con Juan Diego si esto cierra RN-005 como `confirmada` para E5 y si "séptuples" es un formato nuevo a sumar al inventario (hoy no está en los siete formatos).
+
 **Bloquea.**
 
 - Clave para detectar duplicados en la importación de los 226 séxtuples (HU-015, ver [importación](inputs/importacion/README.md)).
@@ -179,7 +183,7 @@ Con capacidad 1 las dos opciones dan el mismo resultado, así que no afecta a lo
 - Reducción de capacidad con reservas a futuro (HU-011).
 - Validación (HU-031) y creación en bloque (HU-057).
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** slot genérico, sin posición exacta, para todos los circuitos grandes (input de Seba; ver arriba). · **Fecha:** 2026-10-19 · **Quién respondió:** Seba (relevado por el equipo)
 
 ### RN-006 Reglas de cancelación (D-06)
 
@@ -310,7 +314,7 @@ Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pue
 
 ¿Una marca cambia de agencia? ¿La misma marca se compra a veces por dos clientes distintos? Si ambas respuestas son "nunca", se descarta HU-027.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** sí puede pasar: una marca cambia de agencia o la compran dos clientes distintos. Por eso la campaña lleva un `cliente_facturacion` propio y opcional que, cuando se carga, reemplaza la deducción desde la marca; vacío, se deduce de la marca. HU-027 sigue viva. · **Fecha:** 2026-10-19 · **Quién respondió:** Seba (relevado por el equipo)
 
 
 ### RN-015 Intermediario formal y sus contactos (D-15)
