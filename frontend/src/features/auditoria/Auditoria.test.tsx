@@ -109,3 +109,33 @@ test('cambiar fecha Hasta re-pide con hasta=<valor>', async () => {
     ),
   )
 })
+
+test('el filtro Entidad incluye las opciones Campaña y Cartel', async () => {
+  stubFetch()
+  render(<AuditoriaPage />)
+
+  await screen.findAllByText('operativo')
+  expect(screen.getByRole('option', { name: 'Campaña' })).toBeDefined()
+  expect(screen.getByRole('option', { name: 'Cartel' })).toBeDefined()
+})
+
+test('la columna Entidad muestra etiqueta correcta para campania', async () => {
+  const registroCampania = [
+    {
+      id: 10,
+      entidad: 'campania',
+      entidad_id: 3,
+      campo: 'estado',
+      valor_anterior: 'cotizada',
+      valor_nuevo: 'confirmada',
+      usuario: 3,
+      usuario_nombre: 'operativo',
+      origen: 'usuario',
+      momento: '2026-10-10T10:00:00Z',
+    },
+  ]
+  stubFetch(registroCampania)
+  render(<AuditoriaPage />)
+
+  expect(await screen.findByText('Campaña #3')).toBeDefined()
+})

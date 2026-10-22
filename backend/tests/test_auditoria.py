@@ -503,3 +503,87 @@ def test_usuarios_anonimo_401_o_403(client):
     """GET /api/auditoria/usuarios/ anónimo devuelve 401 o 403."""
     resp = listar_usuarios_auditoria(client)
     assert resp.status_code in (401, 403)
+
+
+# ---------------------------------------------------------------------------
+# Auditoría de campaña: cambio de estado
+# ---------------------------------------------------------------------------
+
+
+def editar_campania(client: Client, campania_id: int, **campos: object):
+    return client.patch(
+        f"/api/campanias/campanias/{campania_id}/",
+        data=json.dumps(campos),
+        content_type="application/json",
+    )
+
+
+def editar_cartel(client: Client, cartel_id: int, **campos: object):
+    return client.patch(
+        f"/api/inventario/carteles/{cartel_id}/",
+        data=json.dumps(campos),
+        content_type="application/json",
+    )
+
+
+@pytest.mark.django_db
+def test_cambiar_estado_campania_genera_registro_auditoria(operativo_client):
+    """Al cambiar el estado de una campaña por PATCH, queda un RegistroAuditoria."""
+    campania = crear_campania()
+    assert campania.estado == "cotizada"
+
+    # Se usa "cancelada" (no requiere marca ni fechas, a diferencia de "confirmada").
+    resp = editar_campania(operativo_client, campania.pk, estado="cancelada")
+    assert resp.status_code == 200
+
+    registros = RegistroAuditoria.objects.filter(entidad="campania", entidad_id=campania.pk)
+    assert registros.count() == 1
+    reg = registros.get()
+    assert reg.campo == "estado"
+    assert reg.valor_anterior == "cotizada"
+    assert reg.valor_nuevo == "cancelada"
+    assert reg.usuario is not None
+
+
+@pytest.mark.django_db
+def test_patch_campania_sin_cambiar_estado_no_genera_registro(operativo_client):
+    """Editar otro campo de campaña sin cambiar estado no genera registros de auditoría."""
+    campania = crear_campania()
+
+    resp = editar_campania(operativo_client, campania.pk, nombre="Nuevo Nombre")
+    assert resp.status_code == 200
+
+    assert not RegistroAuditoria.objects.filter(entidad="campania", entidad_id=campania.pk).exists()
+
+
+# ---------------------------------------------------------------------------
+# Auditoría de cartel: cambio de tarifa_lista
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_cambiar_tarifa_cartel_genera_registro_auditoria(operativo_client):
+    """Al cambiar tarifa_lista de un cartel por PATCH, queda un RegistroAuditoria."""
+    cartel = crear_cartel()  # tarifa_lista="100000.00"
+
+    resp = editar_cartel(operativo_client, cartel.pk, tarifa_lista="200000.00")
+    assert resp.status_code == 200
+
+    registros = RegistroAuditoria.objects.filter(entidad="cartel", entidad_id=cartel.pk)
+    assert registros.count() == 1
+    reg = registros.get()
+    assert reg.campo == "tarifa_lista"
+    assert reg.valor_anterior == "100000.00"
+    assert reg.valor_nuevo == "200000.00"
+    assert reg.usuario is not None
+
+
+@pytest.mark.django_db
+def test_patch_cartel_sin_cambiar_tarifa_no_genera_registro(operativo_client):
+    """Editar otro campo de cartel sin cambiar tarifa_lista no genera registros de auditoría."""
+    cartel = crear_cartel()
+
+    resp = editar_cartel(operativo_client, cartel.pk, tamano="8x4")
+    assert resp.status_code == 200
+
+    assert not RegistroAuditoria.objects.filter(entidad="cartel", entidad_id=cartel.pk).exists()
