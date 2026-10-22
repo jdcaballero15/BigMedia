@@ -270,6 +270,10 @@ button {
   justify-content: space-between;
   margin-bottom: 1.6rem;
 }
+.section-actions {
+  display: flex;
+  gap: 0.6rem;
+}
 .section-heading h2 {
   margin: 0.2rem 0 0.4rem;
   font-size: clamp(2rem, 4vw, 3rem);

@@ -30,6 +30,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E8 Reportes y paneles | [exportar-reportes-csv](units/exportar-reportes-csv.md) | frontend | HU-052 (CSV) | reporte-ingresos-frontend, reporte-ocupacion-frontend | Juan Diego | feature/frontend-exportar-reportes | mergeada |
 | E1 Seguridad y acceso | [permiso-ingresos](units/permiso-ingresos.md) | usuarios | HU-052 (criterio 2) | reporte-ingresos | Juan Diego | feature/usuarios-permiso-ingresos | mergeada |
 | — (unidad técnica) | [ajuste-entornos-neon](units/ajuste-entornos-neon.md) | infra | decisión 21/10/2026 (ADR-0005) | entornos | Juan Diego | chore/infra-entornos-neon | mergeada |
+| E8 Reportes y paneles | [exportar-reportes-pdf](units/exportar-reportes-pdf.md) | frontend | HU-052 (PDF) | exportar-reportes-csv | Juan Diego | feature/frontend-exportar-pdf | en curso |
 
 ## Notas
 
