@@ -388,6 +388,34 @@ test('muestra Por rubro a gerencia', async () => {
   expect(within(nav).getByRole('button', { name: 'Por rubro' })).toBeDefined()
 })
 
+test('oculta Auditoría a quien no es gerencia', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'trabajador', es_gerencia: false })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  expect(within(nav).queryByRole('button', { name: 'Auditoría' })).toBeNull()
+})
+
+test('muestra Auditoría a gerencia', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'seba', es_gerencia: true })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  expect(within(nav).getByRole('button', { name: 'Auditoría' })).toBeDefined()
+})
+
 test('abre y cierra el menú en pantallas chicas', async () => {
   vi.stubGlobal(
     'fetch',

@@ -9,6 +9,7 @@ import {
   LogOut,
   Megaphone,
   Menu,
+  ScrollText,
   Settings,
   Signpost,
   Tags,
@@ -29,6 +30,7 @@ import DisponibilidadPage from './features/disponibilidad/DisponibilidadPage'
 import ReporteIngresosPage from './features/facturacion/ReporteIngresos'
 import PorRubroPage from './features/facturacion/PorRubro'
 import PanelPrincipal from './features/panel/PanelPrincipal'
+import AuditoriaPage from './features/auditoria/Auditoria'
 import ReporteOcupacionPage from './features/reservas/ReporteOcupacion'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import './App.css'
@@ -52,6 +54,7 @@ type Page =
   | 'ocupacion'
   | 'formatos'
   | 'catalogos'
+  | 'auditoria'
 
 type Item = {
   id: Page
@@ -149,6 +152,18 @@ const sections: { title: string; items: Item[] }[] = [
     title: 'Configuración',
     items: [
       { id: 'catalogos', label: 'Catálogos', icon: Settings, render: () => <CatalogosPage /> },
+    ],
+  },
+  {
+    title: 'Administración',
+    items: [
+      {
+        id: 'auditoria',
+        label: 'Auditoría',
+        icon: ScrollText,
+        render: () => <AuditoriaPage />,
+        soloGerencia: true,
+      },
     ],
   },
 ]
