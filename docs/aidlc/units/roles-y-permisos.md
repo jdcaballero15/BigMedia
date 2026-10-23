@@ -1,6 +1,6 @@
 # Unidad: Roles y permisos
 
-- **Estado:** en curso · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `config`, `frontend`)
+- **Estado:** en revisión · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `config`, `frontend`)
 - **Origen:** HU-004 · **Rama:** `feature/usuarios-roles-y-permisos`
 
 ## Objetivo
@@ -94,6 +94,6 @@ Verificación completa de backend y frontend (Definition of Done).
 - Gate 2 (verificación): 2026-10-23 — Backend: `ruff format --check` (103 archivos), `ruff check`,
   `mypy` (103, sin errores), `makemigrations --check` sin cambios y `pytest --cov` 354 pasan
   (94.84 %). Frontend: `format:check`, `lint`, `typecheck`, `test:coverage` 141 pasan (líneas 89.55 %,
-  sentencias 86.2 %) y `build` OK. `pre-commit run --all-files` con gitleaks pasa. _Esperando
-  aprobación._
+  sentencias 86.2 %) y `build` OK. `pre-commit run --all-files` con gitleaks pasa. Aprobado por
+  Gonza el mismo día.
 - Gate 3 (PR): _pendiente_
