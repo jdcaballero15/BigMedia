@@ -7,8 +7,10 @@ import type { CampaniaInput } from './CampaniaForm'
 import CampaniaDetalle from './CampaniaDetalle'
 import type { Campania } from './types'
 import { ESTADOS_CAMPANIA, etiquetaEstado } from './types'
+import { usePuedeEditar } from '../../shared/sesion'
 
 export default function CampaniasPage() {
+  const puedeEditar = usePuedeEditar()
   const [campanias, setCampanias] = useState<Campania[]>([])
   const [marcas, setMarcas] = useState<Marca[]>([])
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -108,9 +110,11 @@ export default function CampaniasPage() {
           <h2>Campañas</h2>
           <p className="muted">Agrupá las ventas de un cliente y marca; cargá reservas después.</p>
         </div>
-        <button className="button-primary" onClick={() => setEditing('new')}>
-          Nueva campaña
-        </button>
+        {puedeEditar && (
+          <button className="button-primary" onClick={() => setEditing('new')}>
+            Nueva campaña
+          </button>
+        )}
       </div>
       {editing !== null && (
         <CampaniaForm
@@ -185,9 +189,11 @@ export default function CampaniasPage() {
                     <button className="button-ghost" onClick={() => setViendo(item)}>
                       Ver
                     </button>
-                    <button className="button-ghost" onClick={() => setEditing(item)}>
-                      Editar
-                    </button>
+                    {puedeEditar && (
+                      <button className="button-ghost" onClick={() => setEditing(item)}>
+                        Editar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

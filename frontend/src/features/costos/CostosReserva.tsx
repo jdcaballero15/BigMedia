@@ -4,8 +4,10 @@ import { ApiError, apiGet, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import type { Costo, Margen, TipoCosto } from './types'
 import { TIPOS_COSTO } from './types'
+import { usePuedeEditar } from '../../shared/sesion'
 
 export default function CostosReserva({ reservaId }: { reservaId: number }) {
+  const puedeEditar = usePuedeEditar()
   const [costos, setCostos] = useState<Costo[]>([])
   const [margen, setMargen] = useState<Margen | null>(null)
   const [tipo, setTipo] = useState<TipoCosto>('impresion')
@@ -74,32 +76,34 @@ export default function CostosReserva({ reservaId }: { reservaId: number }) {
           ))}
         </ul>
       )}
-      <form aria-label="Agregar costo" onSubmit={(event) => void agregar(event)}>
-        <label>
-          Tipo
-          <select value={tipo} onChange={(event) => setTipo(event.target.value as TipoCosto)}>
-            {TIPOS_COSTO.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Monto
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={monto}
-            onChange={(event) => setMonto(event.target.value)}
-          />
-          <FieldErrors messages={errors.monto} />
-        </label>
-        <button type="submit" className="button-primary">
-          Agregar costo
-        </button>
-      </form>
+      {puedeEditar && (
+        <form aria-label="Agregar costo" onSubmit={(event) => void agregar(event)}>
+          <label>
+            Tipo
+            <select value={tipo} onChange={(event) => setTipo(event.target.value as TipoCosto)}>
+              {TIPOS_COSTO.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Monto
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={monto}
+              onChange={(event) => setMonto(event.target.value)}
+            />
+            <FieldErrors messages={errors.monto} />
+          </label>
+          <button type="submit" className="button-primary">
+            Agregar costo
+          </button>
+        </form>
+      )}
     </div>
   )
 }

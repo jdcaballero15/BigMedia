@@ -6,8 +6,10 @@ import type { ReservaInput } from './ReservaForm'
 import type { Reserva } from './types'
 import { etiquetaEstadoReserva } from './types'
 import CostosReserva from '../costos/CostosReserva'
+import { usePuedeEditar } from '../../shared/sesion'
 
 export default function ReservasCampania({ campaniaId }: { campaniaId: number }) {
+  const puedeEditar = usePuedeEditar()
   const [reservas, setReservas] = useState<Reserva[]>([])
   const [carteles, setCarteles] = useState<Cartel[]>([])
   const [loading, setLoading] = useState(true)
@@ -63,9 +65,11 @@ export default function ReservasCampania({ campaniaId }: { campaniaId: number })
     <div className="card section-gap">
       <div className="section-heading">
         <h3>Reservas</h3>
-        <button className="button-primary" onClick={() => setEditing('new')}>
-          Nueva reserva
-        </button>
+        {puedeEditar && (
+          <button className="button-primary" onClick={() => setEditing('new')}>
+            Nueva reserva
+          </button>
+        )}
       </div>
       {editing !== null && (
         <ReservaForm
@@ -109,9 +113,11 @@ export default function ReservasCampania({ campaniaId }: { campaniaId: number })
                 <td>{etiquetaEstadoReserva(item.estado)}</td>
                 <td>{item.total}</td>
                 <td className="row-actions">
-                  <button className="button-ghost" onClick={() => setEditing(item)}>
-                    Editar
-                  </button>
+                  {puedeEditar && (
+                    <button className="button-ghost" onClick={() => setEditing(item)}>
+                      Editar
+                    </button>
+                  )}
                   <button
                     className="button-ghost"
                     onClick={() => setCostosDe(costosDe === item.id ? null : item.id)}

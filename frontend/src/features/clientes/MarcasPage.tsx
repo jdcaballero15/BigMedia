@@ -4,10 +4,12 @@ import MarcaForm from './MarcaForm'
 import type { MarcaInput } from './MarcaForm'
 import RubrosAdmin from './RubrosAdmin'
 import type { Cliente, Marca, Rubro } from './types'
+import { usePuedeEditar } from '../../shared/sesion'
 
 const ERROR_RUBROS = 'No se pudieron cargar los rubros.'
 
 export default function MarcasPage() {
+  const puedeEditar = usePuedeEditar()
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [rubros, setRubros] = useState<Rubro[]>([])
   const [marcas, setMarcas] = useState<Marca[]>([])
@@ -111,9 +113,11 @@ export default function MarcasPage() {
           <h2>Marcas</h2>
           <p className="muted">Administrá quién se anuncia y qué cliente le factura.</p>
         </div>
-        <button className="button-primary" onClick={() => setEditing('new')}>
-          Nueva marca
-        </button>
+        {puedeEditar && (
+          <button className="button-primary" onClick={() => setEditing('new')}>
+            Nueva marca
+          </button>
+        )}
       </div>
       {editing !== null && (
         <MarcaForm
@@ -207,10 +211,12 @@ export default function MarcasPage() {
                   <td>{item.rubro_nombre ?? 'Sin rubro'}</td>
                   <td>{item.activo ? 'Activa' : 'Inactiva'}</td>
                   <td className="row-actions">
-                    <button className="button-ghost" onClick={() => setEditing(item)}>
-                      Editar
-                    </button>
-                    {item.activo && (
+                    {puedeEditar && (
+                      <button className="button-ghost" onClick={() => setEditing(item)}>
+                        Editar
+                      </button>
+                    )}
+                    {puedeEditar && item.activo && (
                       <button className="button-ghost" onClick={() => void inactivar(item)}>
                         Inactivar
                       </button>

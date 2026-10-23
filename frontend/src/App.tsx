@@ -33,12 +33,15 @@ import PanelPrincipal from './features/panel/PanelPrincipal'
 import AuditoriaPage from './features/auditoria/Auditoria'
 import ReporteOcupacionPage from './features/reservas/ReporteOcupacion'
 import { ApiError, apiGet, apiWrite } from './shared/api'
+import { PuedeEditarContext } from './shared/sesion'
+import type { Rol } from './shared/sesion'
 import './App.css'
 
 type Session = {
   status: 'checking' | 'anonymous' | 'offline' | 'ready'
   username: string
   esGerencia: boolean
+  rol: Rol
 }
 type Page =
   | 'panel'
@@ -175,6 +178,7 @@ function App() {
     status: 'checking',
     username: '',
     esGerencia: false,
+    rol: 'lectura',
   })
   const [page, setPage] = useState<Page>('clientes')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -182,10 +186,15 @@ function App() {
 
   useEffect(() => {
     let active = true
-    void apiGet<{ username: string; es_gerencia: boolean }>('/api/auth/me/')
+    void apiGet<{ username: string; es_gerencia: boolean; rol: Rol }>('/api/auth/me/')
       .then((user) => {
         if (active)
-          setSession({ status: 'ready', username: user.username, esGerencia: user.es_gerencia })
+          setSession({
+            status: 'ready',
+            username: user.username,
+            esGerencia: user.es_gerencia,
+            rol: user.rol,
+          })
       })
       .catch((error: unknown) => {
         if (active)
@@ -193,6 +202,7 @@ function App() {
             status: error instanceof ApiError && error.status === 401 ? 'anonymous' : 'offline',
             username: '',
             esGerencia: false,
+            rol: 'lectura',
           })
       })
     return () => {
@@ -202,7 +212,7 @@ function App() {
 
   useEffect(() => {
     function onSesionExpirada() {
-      setSession({ status: 'anonymous', username: '', esGerencia: false })
+      setSession({ status: 'anonymous', username: '', esGerencia: false, rol: 'lectura' })
       setExpirada(true)
     }
     window.addEventListener('sesion-expirada', onSesionExpirada)
@@ -213,7 +223,7 @@ function App() {
 
   async function signOut() {
     await apiWrite('/api/auth/logout/', 'POST')
-    setSession({ status: 'anonymous', username: '', esGerencia: false })
+    setSession({ status: 'anonymous', username: '', esGerencia: false, rol: 'lectura' })
   }
 
   if (session.status === 'checking')
@@ -232,9 +242,9 @@ function App() {
   if (session.status === 'anonymous')
     return (
       <Login
-        onLogin={(username, esGerencia) => {
+        onLogin={(username, esGerencia, rol) => {
           setExpirada(false)
-          setSession({ status: 'ready', username, esGerencia })
+          setSession({ status: 'ready', username, esGerencia, rol })
         }}
         mensaje={expirada ? 'Tu sesión expiró por inactividad. Ingresá de nuevo.' : undefined}
       />
@@ -305,7 +315,9 @@ function App() {
         </div>
       </aside>
       <main className="app-main" key={page}>
-        {pages.find((item) => item.id === page)?.render()}
+        <PuedeEditarContext value={session.rol !== 'lectura'}>
+          {pages.find((item) => item.id === page)?.render()}
+        </PuedeEditarContext>
       </main>
     </div>
   )

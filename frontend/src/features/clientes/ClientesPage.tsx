@@ -4,6 +4,7 @@ import ClienteForm from './ClienteForm'
 import type { ClienteInput } from './ClienteForm'
 import { TIPOS_CLIENTE } from './types'
 import type { Cliente, Marca } from './types'
+import { usePuedeEditar } from '../../shared/sesion'
 
 type Ficha = { cliente: Cliente; recienCreado: boolean }
 type MarcasCargadas = { estado: 'cargando' | 'error' | 'listo'; marcas: Marca[] }
@@ -82,6 +83,7 @@ function MarcasDelCliente({
 }
 
 export default function ClientesPage() {
+  const puedeEditar = usePuedeEditar()
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [q, setQ] = useState('')
   const [tipo, setTipo] = useState('')
@@ -156,9 +158,11 @@ export default function ClientesPage() {
           <h2>Clientes</h2>
           <p className="muted">Cargá y buscá a quienes les facturás, y consultá sus marcas.</p>
         </div>
-        <button className="button-primary" onClick={() => setEditing('new')}>
-          Nuevo cliente
-        </button>
+        {puedeEditar && (
+          <button className="button-primary" onClick={() => setEditing('new')}>
+            Nuevo cliente
+          </button>
+        )}
       </div>
       {editing !== null && (
         <ClienteForm
@@ -252,10 +256,12 @@ export default function ClientesPage() {
                     >
                       Ver marcas
                     </button>
-                    <button className="button-ghost" onClick={() => abrirEdicion(item)}>
-                      Editar
-                    </button>
-                    {item.activo && (
+                    {puedeEditar && (
+                      <button className="button-ghost" onClick={() => abrirEdicion(item)}>
+                        Editar
+                      </button>
+                    )}
+                    {puedeEditar && item.activo && (
                       <button className="button-ghost" onClick={() => void inactivar(item)}>
                         Inactivar
                       </button>

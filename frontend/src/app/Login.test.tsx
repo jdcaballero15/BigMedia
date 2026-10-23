@@ -17,7 +17,7 @@ test('envía las credenciales y avisa el usuario que ingresó', async () => {
   const fetchMock = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
-    json: async () => ({ username: 'seba', es_gerencia: true }),
+    json: async () => ({ username: 'seba', es_gerencia: true, rol: 'operativo' }),
   })
   vi.stubGlobal('fetch', fetchMock)
   const onLogin = vi.fn()
@@ -25,7 +25,7 @@ test('envía las credenciales y avisa el usuario que ingresó', async () => {
   render(<Login onLogin={onLogin} />)
   completarYEnviar('seba', 'clave-de-prueba')
 
-  await waitFor(() => expect(onLogin).toHaveBeenCalledWith('seba', true))
+  await waitFor(() => expect(onLogin).toHaveBeenCalledWith('seba', true, 'operativo'))
   const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
   expect(url).toBe('/api/auth/login/')
   expect(JSON.parse(init.body as string)).toEqual({ username: 'seba', password: 'clave-de-prueba' })

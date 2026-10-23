@@ -66,8 +66,12 @@ def test_login_me_and_logout_revoke_session():
         HTTP_X_CSRFTOKEN=token,
     )
     assert login_response.status_code == 200
-    assert login_response.json() == {"username": "seba", "es_gerencia": False}
-    assert client.get("/api/auth/me/").json() == {"username": "seba", "es_gerencia": False}
+    assert login_response.json() == {"username": "seba", "es_gerencia": False, "rol": "lectura"}
+    assert client.get("/api/auth/me/").json() == {
+        "username": "seba",
+        "es_gerencia": False,
+        "rol": "lectura",
+    }
 
     new_token = login_response.cookies["csrftoken"].value
     assert client.post("/api/auth/logout/", HTTP_X_CSRFTOKEN=new_token).status_code == 200
