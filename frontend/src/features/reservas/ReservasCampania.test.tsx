@@ -86,3 +86,13 @@ test('crea una reserva desde la campaña', async () => {
     ).toBe(true),
   )
 })
+
+test('pide también los carteles de baja para mostrar el ya asignado', async () => {
+  const fetchMock = stubFetch()
+  render(<ReservasCampania campaniaId={5} />)
+  await screen.findByText(reserva.nombre)
+  expect(fetchMock).toHaveBeenCalledWith(
+    '/api/inventario/carteles/?incluir_bajas=1',
+    expect.anything(),
+  )
+})

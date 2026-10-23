@@ -6,6 +6,7 @@ import type { Catalogo } from '../inventario/types'
 import {
   colorOcupacion,
   formatearPorcentaje,
+  nombreCartel,
   type CartelOcupacion,
   type ModalidadOcupacion,
   type PeriodoOcupacion,
@@ -86,7 +87,7 @@ export default function ReporteOcupacionPage() {
       'Total',
     ]
     const filas = datos.carteles.map((cartel) => [
-      cartel.nombre_visible,
+      nombreCartel(cartel),
       cartel.modalidad,
       cartel.zona_nombre,
       ...datos.periodos.map((p) => valorCartel(cartel, p.clave) ?? 0),
@@ -117,7 +118,7 @@ export default function ReporteOcupacionPage() {
         return celda === null ? '—' : formatearPorcentaje(celda)
       }
       return [
-        cartel.nombre_visible,
+        nombreCartel(cartel),
         cartel.modalidad === 'fija' ? 'Fija' : 'Digital',
         cartel.zona_nombre,
         ...datos.periodos.map((p) => valor(p.clave)),
@@ -277,7 +278,7 @@ function FilaCartel({
 }) {
   return (
     <tr>
-      <td className="primary-cell">{cartel.nombre_visible}</td>
+      <td className="primary-cell">{nombreCartel(cartel)}</td>
       {periodos.map((periodo) => {
         const valor = valorCartel(cartel, periodo.clave)
         return (

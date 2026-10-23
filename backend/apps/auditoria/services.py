@@ -3,6 +3,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AnonymousUser
+from django.db import models
 
 from .models import RegistroAuditoria
 
@@ -38,3 +39,24 @@ def registrar_cambios(
         if usuario_autenticado is not None:
             kwargs["usuario"] = usuario_autenticado
         RegistroAuditoria(**kwargs).save()
+
+
+def registrar_borrado(
+    entidad: str,
+    instancia: models.Model,
+    usuario: AbstractBaseUser | AnonymousUser | None,
+) -> None:
+    """Audita el borrado de una carga errónea (HU-006, criterio 4).
+
+    Registra cada campo editable con su valor anterior y el nuevo vacío, y una fila `eliminado`
+    de "" a "si" para encontrar los borrados sin recorrer todos los campos.
+    """
+    anteriores: dict[str, str] = {}
+    for campo in instancia._meta.concrete_fields:
+        if campo.primary_key or not campo.editable:
+            continue
+        valor = getattr(instancia, campo.attname)
+        anteriores[campo.name] = "" if valor is None else str(valor)
+    nuevos = dict.fromkeys(anteriores, "")
+    anteriores["eliminado"], nuevos["eliminado"] = "", "si"
+    registrar_cambios(entidad, int(instancia.pk), anteriores, nuevos, usuario)
