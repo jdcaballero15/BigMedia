@@ -1,6 +1,6 @@
 # Unidad: Bloqueo temporal por intentos fallidos
 
-- **Estado:** en curso · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `config`, `frontend`)
+- **Estado:** en revisión · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `config`, `frontend`)
 - **Origen:** HU-003 criterio 3 · **Rama:** `feature/usuarios-bloqueo-intentos-fallidos`
 
 ## Objetivo
@@ -34,7 +34,7 @@ cuenta queda **bloqueada un rato** y ni siquiera la contraseña correcta entra h
    frontend ya muestra el `detail` que manda el servidor; solo se verifica con un test.
 7. **Sin auditoría del bloqueo en esta unidad:** `auditoria` registra cambios de campos de entidades
    de negocio, y un intento de ingreso no lo es. Se registra con `logging` (nivel `WARNING`, solo el
-   nombre de usuario) para poder diagnosticar.
+   id de `IntentoIngreso`, no el nombre de usuario, por la regla 6) para poder diagnosticar.
 8. **Sin desbloqueo manual desde una pantalla:** el administrador puede borrar o editar la fila desde
    el admin de Django (se registra `IntentoIngreso` en el admin, solo para eso).
 

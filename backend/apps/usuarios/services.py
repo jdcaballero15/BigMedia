@@ -37,7 +37,10 @@ def registrar_fallo(username: str) -> None:
         intento.fallidos_seguidos += 1
         if intento.fallidos_seguidos >= settings.LOGIN_MAX_INTENTOS:
             intento.bloqueado_hasta = ahora + timedelta(minutes=settings.LOGIN_BLOQUEO_MINUTOS)
-            logger.warning("Ingreso bloqueado por intentos fallidos: %s", clave)
+            # Solo el id: el nombre de usuario puede ser un dato personal (regla 6).
+            logger.warning(
+                "Ingreso bloqueado por intentos fallidos (IntentoIngreso %s)", intento.pk
+            )
         intento.save()
 
 
