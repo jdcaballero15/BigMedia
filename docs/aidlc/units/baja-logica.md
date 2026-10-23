@@ -164,4 +164,4 @@ Ninguna. HU-006 no tiene una RN asociada.
     `test:coverage` 164 passed en 28 archivos (líneas 90.4 %, sentencias 87.25 %), `build` ok
     (solo el aviso de tamaño de chunk que ya existía)
   - `pre-commit run --all-files`: todos Passed, incluido gitleaks (Detect hardcoded secrets)
-- Gate 3 (PR): —
+- Gate 3 (PR): #66
