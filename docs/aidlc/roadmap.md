@@ -16,27 +16,27 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
   (HU-028 a HU-040).
 - **E6 Vista de disponibilidad** — disponibilidad de hoy y calendario a futuro (HU-041, HU-042).
 - **E7 Costos y rentabilidad** — costos y márgenes de reserva y de campaña (HU-043, HU-044, HU-025, HU-045).
-- **E8 Reportes y paneles** — panel, reparto de ingresos, ingresos por cliente/marca, ocupación y
-  exportación a CSV (HU-047, HU-051, HU-049, HU-048, HU-052 parte CSV). Quedan HU-050 (grupo económico,
-  pregunta 16) y HU-052 (PDF y rechazo por permiso de facturación).
+- **E8 Reportes y paneles** — panel, reparto de ingresos, ingresos por cliente/marca, ocupación,
+  análisis por rubro y exportación a CSV y PDF (HU-047, HU-051, HU-049, HU-048, HU-050 parte rubro,
+  HU-052). Queda el grupo económico de HU-050 (pregunta 16, RN-016).
+- **Entornos: producción paga y staging gratis** (unidad técnica) — producción paga en Render y staging
+  con base en Neon ([ADR-0002](../adr/0002-gitflow-con-develop.md),
+  [ADR-0005](../adr/0005-base-de-staging-en-neon.md)).
+- **E1 Seguridad y acceso (parcial)** — grupo Gerencia para ver ingresos (HU-052 criterio 2), auditoría
+  de reservas, campañas y tarifas con su pantalla (HU-007) y expiración de sesión por inactividad
+  (HU-003 criterio 4).
 
 ## En curso
 
-- [ajuste-entornos-neon](units/ajuste-entornos-neon.md): producción paga en Render y base de staging en
-  Neon.
+- Ninguna.
 
 ## Próximas
 
-1. **Entornos: producción paga y staging gratis** (unidad técnica, **antes del 17/11/2026**, cuando
-   vence la base gratis actual). Producción (`main`) pasa a web y PostgreSQL pagos, con copias de
-   seguridad. Se agrega staging conectado a `develop`, con la web gratis en Render y la base gratis en
-   Neon (no vence), y un comando que carga datos de ejemplo (nunca datos reales). En curso:
-   [ajuste-entornos-neon](units/ajuste-entornos-neon.md). Detalle en el
-   [ADR-0002](../adr/0002-gitflow-con-develop.md) y el [ADR-0005](../adr/0005-base-de-staging-en-neon.md).
-2. **Cerrar E8** — HU-050 (análisis por rubro y grupo económico, bloqueada por la pregunta 16) y lo que
-   falta de HU-052 (PDF y el permiso de ingresos).
-3. **E1 Seguridad y acceso** — cuentas, sesión y permisos finos (incluye el grupo "Gerencia" para ver
-   ingresos, que destraba el gate de HU-052).
+1. **E1 Seguridad y acceso** — lo que falta: bloqueo temporal por intentos fallidos (HU-003 criterio
+   3), roles con el rol Lectura (HU-004), gestión de usuarios (HU-005, RN-021) y baja lógica en todo el
+   sistema (HU-006).
+2. **HU-001 Parámetros configurables** (E0) — la esperan HU-033 y la auditoría de configuración.
+3. **Resto de E3** — avisos de duplicados (HU-019), contactos (HU-068) e interacciones (HU-020).
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
@@ -52,3 +52,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | --- | --- | --- |
 | 2026-10-18 | Se agrega la unidad técnica de entornos como próxima prioridad | La base gratis de producción vence el 17/11/2026; Juan Diego decidió producción paga y staging gratis |
 | 2026-10-21 | Roadmap puesto al día: E2 a E8 pasan a Hecho y la unidad de entornos queda como próxima | El roadmap había quedado atrás respecto del trabajo ya mergeado (E3 a E8) |
+| 2026-10-23 | Entornos, el cierre de E8 (salvo grupo económico) y parte de E1 pasan a Hecho; E1 queda primera | El roadmap había quedado atrás respecto de las unidades ya mergeadas |
