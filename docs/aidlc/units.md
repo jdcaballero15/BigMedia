@@ -37,7 +37,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E1 Seguridad y acceso | [auditoria-campania-cartel](units/auditoria-campania-cartel.md) | campanias, inventario | HU-007 (campaña y tarifa) | auditoria-base | Juan Diego | feature/auditoria-campania-cartel | mergeada |
 | E1 Seguridad y acceso | [sesion-inactividad](units/sesion-inactividad.md) | usuarios, frontend | HU-003 (criterio 4) | — | Juan Diego | feature/usuarios-sesion-inactividad | mergeada |
 | E1 Seguridad y acceso | [bloqueo-intentos-fallidos](units/bloqueo-intentos-fallidos.md) | usuarios | HU-003 (criterio 3) | sesion-inactividad | Gonza | feature/usuarios-bloqueo-intentos-fallidos | mergeada |
-| E1 Seguridad y acceso | [roles-y-permisos](units/roles-y-permisos.md) | usuarios | HU-004 | bloqueo-intentos-fallidos | Gonza | feature/usuarios-roles-y-permisos | en revisión |
+| E1 Seguridad y acceso | [roles-y-permisos](units/roles-y-permisos.md) | usuarios | HU-004 | bloqueo-intentos-fallidos | Gonza | feature/usuarios-roles-y-permisos | mergeada |
 
 ## Notas
 

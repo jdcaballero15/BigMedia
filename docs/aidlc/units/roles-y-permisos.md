@@ -1,6 +1,6 @@
 # Unidad: Roles y permisos
 
-- **Estado:** en revisión · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `config`, `frontend`)
+- **Estado:** mergeada · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `config`, `frontend`)
 - **Origen:** HU-004 · **Rama:** `feature/usuarios-roles-y-permisos`
 
 ## Objetivo
@@ -96,4 +96,4 @@ Verificación completa de backend y frontend (Definition of Done).
   (94.84 %). Frontend: `format:check`, `lint`, `typecheck`, `test:coverage` 141 pasan (líneas 89.55 %,
   sentencias 86.2 %) y `build` OK. `pre-commit run --all-files` con gitleaks pasa. Aprobado por
   Gonza el mismo día.
-- Gate 3 (PR): _pendiente_
+- Gate 3 (PR): 2026-10-23 — PR #61 a `develop` (rama `feature/usuarios-roles-y-permisos`).
