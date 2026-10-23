@@ -3,6 +3,7 @@ import { apiGet, apiWrite } from '../../shared/api'
 import type { Cartel, Catalogo, Estado, Formato, Proveedor } from './types'
 import CartelForm from './CartelForm'
 import type { CartelInput } from './CartelForm'
+import { usePuedeEditar } from '../../shared/sesion'
 
 type Catalogos = {
   formatos: Formato[]
@@ -12,6 +13,7 @@ type Catalogos = {
 }
 
 export default function CartelesPage() {
+  const puedeEditar = usePuedeEditar()
   const [catalogos, setCatalogos] = useState<Catalogos>({
     formatos: [],
     zonas: [],
@@ -112,9 +114,11 @@ export default function CartelesPage() {
           <h2>Carteles</h2>
           <p className="muted">Consultá y filtrá los espacios disponibles para vender.</p>
         </div>
-        <button className="button-primary" onClick={() => setEditing('new')}>
-          Nuevo cartel
-        </button>
+        {puedeEditar && (
+          <button className="button-primary" onClick={() => setEditing('new')}>
+            Nuevo cartel
+          </button>
+        )}
       </div>
       {editing !== null && (
         <CartelForm
@@ -253,14 +257,17 @@ export default function CartelesPage() {
                   <td>{item.capacidad}</td>
                   <td>{item.tarifa_lista ?? 'Sin tarifa'}</td>
                   <td className="row-actions">
-                    <button className="button-ghost" onClick={() => setEditing(item)}>
-                      Editar
-                    </button>
-                    {!catalogos.estados.find((state) => state.id === item.estado)?.es_baja && (
-                      <button className="button-ghost" onClick={() => void darDeBaja(item)}>
-                        Dar de baja
+                    {puedeEditar && (
+                      <button className="button-ghost" onClick={() => setEditing(item)}>
+                        Editar
                       </button>
                     )}
+                    {puedeEditar &&
+                      !catalogos.estados.find((state) => state.id === item.estado)?.es_baja && (
+                        <button className="button-ghost" onClick={() => void darDeBaja(item)}>
+                          Dar de baja
+                        </button>
+                      )}
                   </td>
                 </tr>
               ))}

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { ApiError, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import type { Rubro } from './types'
+import { usePuedeEditar } from '../../shared/sesion'
 
 type Props = {
   rubros: Rubro[]
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export default function RubrosAdmin({ rubros, onChanged }: Props) {
+  const puedeEditar = usePuedeEditar()
   const [editing, setEditing] = useState<Rubro | 'new' | null>(null)
   const [nombre, setNombre] = useState('')
   const [errors, setErrors] = useState<Record<string, string[]>>({})
@@ -63,9 +65,11 @@ export default function RubrosAdmin({ rubros, onChanged }: Props) {
           <h3>Rubros</h3>
           <p className="muted">Catálogo para clasificar las marcas.</p>
         </div>
-        <button className="button-primary" onClick={() => openForm('new')}>
-          Nuevo rubro
-        </button>
+        {puedeEditar && (
+          <button className="button-primary" onClick={() => openForm('new')}>
+            Nuevo rubro
+          </button>
+        )}
       </div>
       {editing !== null && (
         <form
@@ -115,10 +119,12 @@ export default function RubrosAdmin({ rubros, onChanged }: Props) {
                   <td className="primary-cell">{rubro.nombre}</td>
                   <td>{rubro.activo ? 'Activo' : 'Inactivo'}</td>
                   <td className="row-actions">
-                    <button className="button-ghost" onClick={() => openForm(rubro)}>
-                      Renombrar
-                    </button>
-                    {rubro.activo && (
+                    {puedeEditar && (
+                      <button className="button-ghost" onClick={() => openForm(rubro)}>
+                        Renombrar
+                      </button>
+                    )}
+                    {puedeEditar && rubro.activo && (
                       <button className="button-ghost" onClick={() => void inactivate(rubro)}>
                         Inactivar
                       </button>

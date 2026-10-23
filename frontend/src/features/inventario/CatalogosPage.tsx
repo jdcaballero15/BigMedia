@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError, apiGet, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
+import { usePuedeEditar } from '../../shared/sesion'
 
 export type Categoria = 'zonas' | 'proveedores' | 'formatos' | 'estados'
 type Registro = {
@@ -43,6 +44,7 @@ export default function CatalogosPage({
   titulo = 'Catálogos',
   descripcion = 'Administrá departamentos y estados físicos.',
 }: Props) {
+  const puedeEditar = usePuedeEditar()
   const [categoria, setCategoria] = useState<Categoria>(categorias[0])
   const [rows, setRows] = useState<Registro[]>([])
   const [editing, setEditing] = useState<Registro | 'new' | null>(null)
@@ -161,9 +163,11 @@ export default function CatalogosPage({
       )}
       <div className="section-heading">
         <h3>{categorias.length > 1 ? categoryLabels[categoria] : ''}</h3>
-        <button className="button-primary" onClick={() => openForm('new')}>
-          Nuevo {singularLabels[categoria]}
-        </button>
+        {puedeEditar && (
+          <button className="button-primary" onClick={() => openForm('new')}>
+            Nuevo {singularLabels[categoria]}
+          </button>
+        )}
       </div>
       {editing !== null && (
         <form
@@ -288,10 +292,12 @@ export default function CatalogosPage({
                 <td className="primary-cell">{row.nombre}</td>
                 <td>{row.activo ? 'Activo' : 'Inactivo'}</td>
                 <td className="row-actions">
-                  <button className="button-ghost" onClick={() => openForm(row)}>
-                    Editar
-                  </button>
-                  {row.activo && (
+                  {puedeEditar && (
+                    <button className="button-ghost" onClick={() => openForm(row)}>
+                      Editar
+                    </button>
+                  )}
+                  {puedeEditar && row.activo && (
                     <button className="button-ghost" onClick={() => void inactivate(row)}>
                       Inactivar
                     </button>

@@ -2,6 +2,7 @@ import ReservasCampania from '../reservas/ReservasCampania'
 import RentabilidadCampania from '../costos/RentabilidadCampania'
 import type { Campania } from './types'
 import { etiquetaEstado } from './types'
+import { usePuedeEditar } from '../../shared/sesion'
 
 type Props = {
   campania: Campania
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props) {
+  const puedeEditar = usePuedeEditar()
   const periodo =
     campania.fecha_inicio && campania.fecha_fin
       ? `${campania.fecha_inicio} → ${campania.fecha_fin}`
@@ -27,9 +29,11 @@ export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props)
           <button className="button-ghost" onClick={onVolver}>
             Volver
           </button>
-          <button className="button-primary" onClick={onEditar}>
-            Editar
-          </button>
+          {puedeEditar && (
+            <button className="button-primary" onClick={onEditar}>
+              Editar
+            </button>
+          )}
         </div>
       </div>
       <div className="card">

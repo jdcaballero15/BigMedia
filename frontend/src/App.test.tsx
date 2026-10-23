@@ -479,3 +479,30 @@ test('un 401 en /api/auth/me/ NO despacha sesion-expirada', async () => {
   expect(listener).not.toHaveBeenCalled()
   window.removeEventListener('sesion-expirada', listener)
 })
+
+test('el rol Lectura no ve acciones de edición', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'consulta', rol: 'lectura' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  expect(await screen.findByRole('heading', { name: 'Clientes' })).toBeDefined()
+  expect(screen.queryByRole('button', { name: 'Nuevo cliente' })).toBeNull()
+})
+
+test('el rol Operativo ve acciones de edición', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'trabajador', rol: 'operativo' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  expect(await screen.findByRole('button', { name: 'Nuevo cliente' })).toBeDefined()
+})
