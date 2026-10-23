@@ -39,6 +39,19 @@ class CampaniaSerializer(serializers.ModelSerializer[Campania]):
         return cliente.nombre_visible if cliente is not None else ""
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        mensajes = {
+            "marca": "Seleccioná una marca activa.",
+            "cliente_facturacion": "Seleccioná un cliente activo.",
+        }
+        for campo, mensaje in mensajes.items():
+            valor = attrs.get(campo)
+            sin_cambios = (
+                self.instance is not None
+                and valor is not None
+                and getattr(self.instance, f"{campo}_id") == valor.pk
+            )
+            if valor is not None and not valor.activo and not sin_cambios:
+                raise serializers.ValidationError({campo: mensaje})
         if attrs.get("estado") == Campania.Estado.CONFIRMADA:
             futura = Campania(**{**self._estado_actual(), **attrs})
             try:

@@ -28,12 +28,13 @@ def test_admin_de_clientes_lista_y_busca_cada_modelo_responde_200(superusuario_c
 
 
 @pytest.mark.django_db
-def test_admin_de_clientes_borrar_cliente_esta_prohibido(superusuario_client):
+def test_admin_de_clientes_borrar_cliente_con_marca_esta_protegido(superusuario_client):
+    # HU-006 criterio 4: el superusuario borra solo una carga sin actividad (ver test_borrado_admin).
     cliente = Cliente.objects.create(nombre="Agencia", razon_social="Agencia SA", tipo="directo")
+    Marca.objects.create(nombre="Agencia", cliente=cliente)
 
-    response = superusuario_client.get(f"/admin/clientes/cliente/{cliente.pk}/delete/")
+    superusuario_client.post(f"/admin/clientes/cliente/{cliente.pk}/delete/", {"post": "yes"})
 
-    assert response.status_code == 403
     assert Cliente.objects.filter(pk=cliente.pk).exists()
 
 

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
-import { vigentes } from '../../shared/opciones'
 import type { Cartel } from '../inventario/types'
 import type { EstadoReserva, Reserva } from './types'
 import { ESTADOS_RESERVA } from './types'
@@ -95,11 +94,14 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
           Cartel
           <select value={cartel} onChange={(event) => elegirCartel(event.target.value)}>
             <option value="">Seleccionar</option>
-            {vigentes(carteles, reserva?.cartel).map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.nombre_visible}
-              </option>
-            ))}
+            {carteles
+              .filter((item) => !item.es_baja || item.id === reserva?.cartel)
+              .map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.nombre_visible}
+                  {item.es_baja ? ' (de baja)' : ''}
+                </option>
+              ))}
           </select>
           <FieldErrors messages={errors.cartel} />
         </label>

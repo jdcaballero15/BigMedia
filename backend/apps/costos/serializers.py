@@ -41,6 +41,17 @@ class CostoSerializer(serializers.ModelSerializer[Costo]):
             "monto": {"min_value": Decimal("0.01")},
         }
 
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        proveedor = attrs.get("proveedor")
+        sin_cambios = (
+            self.instance is not None
+            and proveedor is not None
+            and self.instance.proveedor_id == proveedor.pk
+        )
+        if proveedor is not None and not proveedor.activo and not sin_cambios:
+            raise serializers.ValidationError({"proveedor": "Seleccioná un proveedor activo."})
+        return attrs
+
     def create(self, validated_data: dict[str, Any]) -> Costo:
         validated_data.setdefault("fecha", timezone.localdate())
         return super().create(validated_data)

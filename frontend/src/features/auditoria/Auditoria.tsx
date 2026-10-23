@@ -19,6 +19,13 @@ const ETIQUETAS_ENTIDAD: Record<string, string> = {
   campania: 'Campaña',
   cartel: 'Cartel',
   usuario: 'Usuario',
+  proveedor: 'Proveedor',
+  formato: 'Formato',
+  zona: 'Departamento',
+  estado_cartel: 'Estado de cartel',
+  rubro: 'Rubro',
+  cliente: 'Cliente',
+  marca: 'Marca',
 }
 
 function etiquetaEntidad(entidad: string): string {
@@ -126,10 +133,11 @@ export default function AuditoriaPage() {
             onChange={(event) => cambiar(() => setEntidad(event.target.value))}
           >
             <option value="">Todas</option>
-            <option value="reserva">Reserva</option>
-            <option value="campania">Campaña</option>
-            <option value="cartel">Cartel</option>
-            <option value="usuario">Usuario</option>
+            {Object.entries(ETIQUETAS_ENTIDAD).map(([valor, etiqueta]) => (
+              <option key={valor} value={valor}>
+                {etiqueta}
+              </option>
+            ))}
           </select>
         </label>
       </div>

@@ -139,3 +139,19 @@ test('la columna Entidad muestra etiqueta correcta para campania', async () => {
 
   expect(await screen.findByText('Campaña #3')).toBeDefined()
 })
+
+test('muestra el borrado de una carga errónea con su entidad', async () => {
+  stubFetch([
+    {
+      ...registros[0],
+      entidad: 'proveedor',
+      entidad_id: 4,
+      campo: 'eliminado',
+      valor_anterior: '',
+      valor_nuevo: 'si',
+    },
+  ])
+  render(<AuditoriaPage />)
+  expect(await screen.findByText('Proveedor #4')).toBeDefined()
+  expect(screen.getByRole('option', { name: 'Proveedor' })).toBeDefined()
+})
