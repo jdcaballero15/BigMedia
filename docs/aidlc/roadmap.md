@@ -22,14 +22,14 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 - **Entornos: producción paga y staging gratis** (unidad técnica) — producción paga en Render y staging
   con base en Neon ([ADR-0002](../adr/0002-gitflow-con-develop.md),
   [ADR-0005](../adr/0005-base-de-staging-en-neon.md)).
-- **E1 Seguridad y acceso (parcial)** — grupo Gerencia para ver ingresos (HU-052 criterio 2), auditoría
+- **E1 Seguridad y acceso** — grupo Gerencia para ver ingresos (HU-052 criterio 2), auditoría
   de reservas, campañas y tarifas con su pantalla (HU-007), expiración de sesión por inactividad
   (HU-003 criterio 4), bloqueo temporal por intentos fallidos (HU-003 criterio 3), roles Operativo,
-  Administrador y Lectura (HU-004) y gestión de usuarios (HU-005).
+  Administrador y Lectura (HU-004), gestión de usuarios (HU-005) y baja lógica (HU-006).
 
 ## En curso
 
-- **E1 Seguridad y acceso** — baja lógica en todo el sistema (HU-006), lo último de E1.
+- Ninguna.
 
 ## Próximas
 
