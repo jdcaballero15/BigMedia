@@ -506,3 +506,58 @@ test('el rol Operativo ve acciones de edición', async () => {
   render(<App />)
   expect(await screen.findByRole('button', { name: 'Nuevo cliente' })).toBeDefined()
 })
+
+test('muestra Usuarios solo al administrador', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'seba', rol: 'operativo' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  expect(within(nav).queryByRole('button', { name: 'Usuarios' })).toBeNull()
+  cleanup()
+
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'admin', rol: 'administrador' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      if (input === '/api/usuarios/usuarios/') return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  await irA('Usuarios')
+  expect(await screen.findByRole('heading', { name: 'Usuarios' })).toBeDefined()
+})
+
+test('el link de contraseña muestra el formulario y después el login', async () => {
+  window.history.replaceState(null, '', '/?definir-clave=MQ.abc-123')
+  const fetchMock = vi.fn(async (input: string, _options?: RequestInit) => {
+    if (input === '/api/auth/me/')
+      return { ok: false, status: 401, json: async () => ({ detail: 'Iniciá sesión.' }) }
+    if (input === '/api/usuarios/definir-clave/') return ok({ status: 'ok' })
+    throw new Error(`URL inesperada: ${input}`)
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  render(<App />)
+
+  fireEvent.change(await screen.findByLabelText('Contraseña nueva'), {
+    target: { value: 'una-clave-larga-1' },
+  })
+  fireEvent.change(screen.getByLabelText('Repetila'), { target: { value: 'una-clave-larga-1' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+
+  expect(await screen.findByText(/tu contraseña quedó definida/)).toBeDefined()
+  expect(window.location.search).toBe('')
+  const envio = fetchMock.mock.calls.find(([url]) => url === '/api/usuarios/definir-clave/')
+  expect(JSON.parse(String(envio?.[1]?.body))).toEqual({
+    uid: 'MQ',
+    token: 'abc-123',
+    clave: 'una-clave-larga-1',
+  })
+})

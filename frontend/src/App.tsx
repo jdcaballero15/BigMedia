@@ -15,6 +15,7 @@ import {
   Tags,
   TrendingUp,
   Truck,
+  UserCog,
   Users,
   X,
 } from 'lucide-react'
@@ -32,6 +33,8 @@ import PorRubroPage from './features/facturacion/PorRubro'
 import PanelPrincipal from './features/panel/PanelPrincipal'
 import AuditoriaPage from './features/auditoria/Auditoria'
 import ReporteOcupacionPage from './features/reservas/ReporteOcupacion'
+import DefinirClave from './features/usuarios/DefinirClave'
+import UsuariosPage from './features/usuarios/UsuariosPage'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import { PuedeEditarContext } from './shared/sesion'
 import type { Rol } from './shared/sesion'
@@ -58,6 +61,7 @@ type Page =
   | 'formatos'
   | 'catalogos'
   | 'auditoria'
+  | 'usuarios'
 
 type Item = {
   id: Page
@@ -65,6 +69,7 @@ type Item = {
   icon: LucideIcon
   render: () => ReactNode
   soloGerencia?: boolean
+  soloAdministrador?: boolean
 }
 
 const sections: { title: string; items: Item[] }[] = [
@@ -167,11 +172,23 @@ const sections: { title: string; items: Item[] }[] = [
         render: () => <AuditoriaPage />,
         soloGerencia: true,
       },
+      {
+        id: 'usuarios',
+        label: 'Usuarios',
+        icon: UserCog,
+        render: () => <UsuariosPage />,
+        soloAdministrador: true,
+      },
     ],
   },
 ]
 
 const pages = sections.flatMap((section) => section.items)
+
+/** El link de contraseña llega como `/?definir-clave=<uid>.<token>` (HU-005). */
+function codigoDelLink(): string | null {
+  return new URLSearchParams(window.location.search).get('definir-clave')
+}
 
 function App() {
   const [session, setSession] = useState<Session>({
@@ -183,6 +200,8 @@ function App() {
   const [page, setPage] = useState<Page>('clientes')
   const [menuOpen, setMenuOpen] = useState(false)
   const [expirada, setExpirada] = useState(false)
+  const [codigoClave, setCodigoClave] = useState(codigoDelLink)
+  const [claveDefinida, setClaveDefinida] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -226,6 +245,18 @@ function App() {
     setSession({ status: 'anonymous', username: '', esGerencia: false, rol: 'lectura' })
   }
 
+  if (codigoClave !== null)
+    return (
+      <DefinirClave
+        codigo={codigoClave}
+        onListo={() => {
+          window.history.replaceState(null, '', '/')
+          setCodigoClave(null)
+          setClaveDefinida(true)
+          setSession({ status: 'anonymous', username: '', esGerencia: false, rol: 'lectura' })
+        }}
+      />
+    )
   if (session.status === 'checking')
     return (
       <main className="auth-shell">
@@ -244,16 +275,27 @@ function App() {
       <Login
         onLogin={(username, esGerencia, rol) => {
           setExpirada(false)
+          setClaveDefinida(false)
           setSession({ status: 'ready', username, esGerencia, rol })
         }}
-        mensaje={expirada ? 'Tu sesión expiró por inactividad. Ingresá de nuevo.' : undefined}
+        mensaje={
+          claveDefinida
+            ? 'Listo, tu contraseña quedó definida. Ingresá con tu usuario.'
+            : expirada
+              ? 'Tu sesión expiró por inactividad. Ingresá de nuevo.'
+              : undefined
+        }
       />
     )
 
   const visibles = sections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => !item.soloGerencia || session.esGerencia),
+      items: section.items.filter(
+        (item) =>
+          (!item.soloGerencia || session.esGerencia) &&
+          (!item.soloAdministrador || session.rol === 'administrador'),
+      ),
     }))
     .filter((section) => section.items.length > 0)
 

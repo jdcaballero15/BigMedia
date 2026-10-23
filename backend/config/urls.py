@@ -13,6 +13,7 @@ urlpatterns = [
     path("api/auth/me/", me, name="me"),
     path("api/auth/login/", login_view, name="login"),
     path("api/auth/logout/", logout_view, name="logout"),
+    path("api/usuarios/", include("apps.usuarios.urls")),
     path("api/inventario/", include("apps.inventario.urls")),
     path("api/clientes/", include("apps.clientes.urls")),
     path("api/campanias/", include("apps.campanias.urls")),
