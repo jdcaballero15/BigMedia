@@ -61,3 +61,6 @@ services:
         sync: false
       - key: DJANGO_SUPERUSER_PASSWORD
         sync: false
+      # Contraseña de los usuarios de demo (opcional; sin ella no se crean).
+      - key: DJANGO_DEMO_PASSWORD
+        sync: false

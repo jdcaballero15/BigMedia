@@ -1,4 +1,4 @@
-"""Carga datos de ejemplo para staging.
+"""Carga datos de ejemplo para staging: un primer lote chico y el lote demo (`_datos_demo`).
 
 Nunca corre en producción (guarda explícita) y nunca usa datos reales: todo es inventado. Es
 idempotente, así que puede correr en cada arranque del servicio de staging sin duplicar.
@@ -16,6 +16,8 @@ from apps.clientes.models import Cliente, Marca
 from apps.inventario.models import Cartel, EstadoCartel, Formato, Zona
 from apps.reservas.models import Reserva
 
+from . import _datos_demo
+
 # Cliente que marca que los datos de ejemplo ya se cargaron (idempotencia).
 SENTINELA = "Agencia Norte"
 
@@ -28,9 +30,13 @@ class Command(BaseCommand):
             raise CommandError("No se cargan datos de ejemplo en producción.")
         if Cliente.objects.filter(nombre=SENTINELA).exists():
             self.stdout.write("Los datos de ejemplo ya existen.")
-            return
-        self._crear()
-        self.stdout.write("Datos de ejemplo creados.")
+        else:
+            self._crear()
+            self.stdout.write("Datos de ejemplo creados.")
+        if _datos_demo.cargar():
+            self.stdout.write("Datos de demo creados.")
+        else:
+            self.stdout.write("Los datos de demo ya existen.")
 
     def _crear(self) -> None:
         led = Formato.objects.filter(modalidad="digital").first()
