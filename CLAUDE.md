@@ -152,3 +152,10 @@ cd frontend && npm run format:check && npm run lint && npm run typecheck && npm 
 ```
 
 Pasos de entorno local en [`docs/operacion/desarrollo-local.md`](docs/operacion/desarrollo-local.md).
+
+## 10. Uso eficiente
+
+- Para mergear PRs usá `gh pr merge <n> --auto` (siempre que Juan Diego lo haya indicado, como dice la sección 8). No esperes ni hagas polling de CI.
+- No leas archivos enteros si alcanza con un fragmento; usá grep o rangos de líneas.
+- Truncá outputs largos de tests o logs: mostrá completos los errores, warnings y el resumen final tal cual salen; recortá solo el resto (líneas de éxito, progreso, ruido). Esto no reemplaza la 8.5 ni la Definition of Done: la evidencia que piden se muestra real, sin recortes.
+- Al cerrar una unidad, actualizá `docs/aidlc/units.md` con el estado y el próximo paso.
