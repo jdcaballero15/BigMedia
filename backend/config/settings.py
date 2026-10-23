@@ -128,3 +128,8 @@ PANEL_DIAS_POR_VENCER = int(os.environ.get("PANEL_DIAS_POR_VENCER", "30"))
 # SESSION_SAVE_EVERY_REQUEST renueva el vencimiento en cada request (sliding window).
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_AGE = int(os.environ.get("DJANGO_SESSION_IDLE_MINUTES", "30")) * 60
+
+# Bloqueo por intentos fallidos (HU-003 criterio 3): cubre la API y el admin.
+AUTHENTICATION_BACKENDS = ["apps.usuarios.backends.BackendConBloqueo"]
+LOGIN_MAX_INTENTOS = int(os.environ.get("DJANGO_LOGIN_MAX_INTENTOS", "5"))
+LOGIN_BLOQUEO_MINUTOS = int(os.environ.get("DJANGO_LOGIN_BLOQUEO_MINUTOS", "15"))

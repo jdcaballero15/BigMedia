@@ -53,6 +53,29 @@ test('muestra el error de la API cuando las credenciales son incorrectas', async
   expect(screen.getByRole('button', { name: 'Ingresar' })).toHaveProperty('disabled', false)
 })
 
+test('muestra el aviso del servidor cuando el ingreso está bloqueado', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({
+        detail: 'Demasiados intentos fallidos. Probá de nuevo en unos minutos.',
+      }),
+    }),
+  )
+  const onLogin = vi.fn()
+
+  render(<Login onLogin={onLogin} />)
+  completarYEnviar('seba', 'mala')
+
+  expect(await screen.findByRole('alert')).toHaveProperty(
+    'textContent',
+    'Demasiados intentos fallidos. Probá de nuevo en unos minutos.',
+  )
+  expect(onLogin).not.toHaveBeenCalled()
+})
+
 test('muestra el mensaje de sesión expirada cuando se le pasa la prop', () => {
   render(<Login onLogin={vi.fn()} mensaje="Tu sesión expiró por inactividad. Ingresá de nuevo." />)
 
