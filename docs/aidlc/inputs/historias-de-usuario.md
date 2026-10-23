@@ -91,7 +91,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-003 completa.
-- **Regla de negocio:** Operativo: crea y edita campañas, reservas, clientes, marcas, interacciones y costos, y administra carteles. Administrador: todo, incluida la configuración y la gestión de usuarios. Lectura (Gerencia): solo consulta y reportes. Los permisos se verifican siempre en el servidor, no solo ocultando botones en pantalla.
+- **Regla de negocio:** Operativo: crea y edita campañas, reservas, clientes, marcas, interacciones y costos, y administra carteles. Administrador: todo, incluida la configuración y la gestión de usuarios. Lectura: solo consulta y reportes. Gerencia no es un rol: es un permiso aparte para ver ingresos y auditoría (HU-052, HU-007) que se suma a cualquier rol. Los permisos se verifican siempre en el servidor, no solo ocultando botones en pantalla.
 - **Criterios de aceptación:**
   1. Dado un usuario Operativo, cuando intenta una acción de administración (configuración o usuarios), entonces el servidor la rechaza.
   2. Dado un usuario de Lectura, cuando intenta crear o editar un registro, entonces el servidor lo rechaza aunque envíe la petición por otra vía.
