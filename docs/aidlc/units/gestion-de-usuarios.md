@@ -117,4 +117,4 @@ Frontend, con Vitest:
   archivos (87,23 % de sentencias y 90,38 % de líneas); `build` OK, con el aviso de tamaño de
   chunk que ya existía. `pre-commit run --all-files` en verde, gitleaks incluido. Pendiente de
   revisión por Gonza o Juan Diego.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #65
