@@ -39,7 +39,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E1 Seguridad y acceso | [bloqueo-intentos-fallidos](units/bloqueo-intentos-fallidos.md) | usuarios | HU-003 (criterio 3) | sesion-inactividad | Gonza | feature/usuarios-bloqueo-intentos-fallidos | mergeada |
 | E1 Seguridad y acceso | [roles-y-permisos](units/roles-y-permisos.md) | usuarios | HU-004 | bloqueo-intentos-fallidos | Gonza | feature/usuarios-roles-y-permisos | mergeada |
 | — (unidad técnica) | [ajuste-datos-ejemplo](units/ajuste-datos-ejemplo.md) | usuarios, infra | pedido 23/10/2026 (demo en staging) | entornos | Gonza | chore/infra-datos-ejemplo-demo | mergeada |
-| E1 Seguridad y acceso | [gestion-de-usuarios](units/gestion-de-usuarios.md) | usuarios | HU-005 (RN-021) | roles-y-permisos | Gonza | feature/usuarios-gestion-de-usuarios | en revisión |
+| E1 Seguridad y acceso | [gestion-de-usuarios](units/gestion-de-usuarios.md) | usuarios | HU-005 (RN-021) | roles-y-permisos | Gonza | feature/usuarios-gestion-de-usuarios | mergeada |
 
 ## Notas
 

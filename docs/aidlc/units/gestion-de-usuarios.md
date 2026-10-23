@@ -1,6 +1,6 @@
 # Unidad: Gestión de usuarios
 
-- **Estado:** en revisión · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `config`, `frontend`)
+- **Estado:** mergeada · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `config`, `frontend`)
 - **Origen:** HU-005 (RN-021) · **Rama:** `feature/usuarios-gestion-de-usuarios`
 
 ## Objetivo
