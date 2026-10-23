@@ -1,6 +1,6 @@
 # Unidad: Ajuste de datos de ejemplo para demos
 
-- **Estado:** en revisión · **Épica:** — (unidad técnica) · **App dueña:** `usuarios` (comando) + `infra`
+- **Estado:** mergeada · **Épica:** — (unidad técnica) · **App dueña:** `usuarios` (comando) + `infra`
 - **Origen:** pedido de Gonza del 23/10/2026 (mostrar el sistema en staging) · **Rama:** `chore/infra-datos-ejemplo-demo`
 
 ## Objetivo
@@ -92,4 +92,4 @@ Después del merge a `develop`: antes del deploy hay que cargar `DJANGO_DEMO_PAS
   `mypy` (104, sin errores), `makemigrations --check` sin cambios y `pytest --cov` 361 pasan
   (95.05 %; `_datos_demo.py` 98 %). `pre-commit run --all-files` con gitleaks pasa. Frontend sin
   cambios. Aprobado por Gonza el mismo día.
-- Gate 3 (PR): _pendiente_
+- Gate 3 (PR): 2026-10-23 — PR #64 a `develop` (rama `chore/infra-datos-ejemplo-demo`).
