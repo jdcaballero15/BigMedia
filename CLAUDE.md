@@ -125,7 +125,7 @@ Un cambio está terminado cuando se cumple todo esto, con la salida real de los 
 4. **Leer antes de escribir:** leer el código, las reglas de negocio y el plan de la unidad antes de modificar.
 5. **Informar con honestidad:** reportar la salida real de los comandos, incluidos los fallos; no declarar algo verificado sin haberlo corrido.
 
-Además: `git push`, abrir PRs y mergear solo cuando Juan Diego lo indique en ese momento.
+Además: `git push`, abrir PRs y mergear solo cuando Gonza o Juan Diego (cualquiera de los dos) lo indique en ese momento.
 
 ## 9. Comandos
 
@@ -155,7 +155,7 @@ Pasos de entorno local en [`docs/operacion/desarrollo-local.md`](docs/operacion/
 
 ## 10. Uso eficiente
 
-- Para mergear PRs usá `gh pr merge <n> --auto` (siempre que Juan Diego lo haya indicado, como dice la sección 8). No esperes ni hagas polling de CI.
+- Para mergear PRs usá `gh pr merge <n> --auto` (siempre que Gonza o Juan Diego lo haya indicado, como dice la sección 8). No esperes ni hagas polling de CI.
 - No leas archivos enteros si alcanza con un fragmento; usá grep o rangos de líneas.
 - Truncá outputs largos de tests o logs: mostrá completos los errores, warnings y el resumen final tal cual salen; recortá solo el resto (líneas de éxito, progreso, ruido). Esto no reemplaza la 8.5 ni la Definition of Done: la evidencia que piden se muestra real, sin recortes.
 - Al cerrar una unidad, actualizá `docs/aidlc/units.md` con el estado y el próximo paso.
