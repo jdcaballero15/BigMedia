@@ -1,6 +1,6 @@
 # Unidad: Bloqueo temporal por intentos fallidos
 
-- **Estado:** en revisión · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `config`, `frontend`)
+- **Estado:** mergeada · **Épica:** E1 Seguridad y acceso · **App dueña:** `usuarios` (+ `config`, `frontend`)
 - **Origen:** HU-003 criterio 3 · **Rama:** `feature/usuarios-bloqueo-intentos-fallidos`
 
 ## Objetivo
@@ -91,4 +91,5 @@ PostgreSQL:
   `mypy` (102, sin errores), `makemigrations --check` sin cambios y `pytest --cov` 315 pasan
   (94.87 %). Frontend: `format:check`, `lint`, `typecheck`, `test:coverage` 120 pasan (líneas 89.45 %,
   sentencias 86.08 %) y `build` OK. `pre-commit run --all-files` con gitleaks pasa. Aprobado por Gonza el mismo día.
-- Gate 3 (PR): pendiente.
+- Gate 3 (PR): 2026-10-23 — PR #59 mergeado a `develop` (rama
+  `feature/usuarios-bloqueo-intentos-fallidos`).
