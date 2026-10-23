@@ -18,6 +18,7 @@ const ETIQUETAS_ENTIDAD: Record<string, string> = {
   reserva: 'Reserva',
   campania: 'Campaña',
   cartel: 'Cartel',
+  usuario: 'Usuario',
 }
 
 function etiquetaEntidad(entidad: string): string {
@@ -128,6 +129,7 @@ export default function AuditoriaPage() {
             <option value="reserva">Reserva</option>
             <option value="campania">Campaña</option>
             <option value="cartel">Cartel</option>
+            <option value="usuario">Usuario</option>
           </select>
         </label>
       </div>

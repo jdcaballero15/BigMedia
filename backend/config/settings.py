@@ -133,3 +133,6 @@ SESSION_COOKIE_AGE = int(os.environ.get("DJANGO_SESSION_IDLE_MINUTES", "30")) * 
 AUTHENTICATION_BACKENDS = ["apps.usuarios.backends.BackendConBloqueo"]
 LOGIN_MAX_INTENTOS = int(os.environ.get("DJANGO_LOGIN_MAX_INTENTOS", "5"))
 LOGIN_BLOQUEO_MINUTOS = int(os.environ.get("DJANGO_LOGIN_BLOQUEO_MINUTOS", "15"))
+
+# Link de un solo uso para definir o restablecer la contraseña (HU-005 criterio 1).
+PASSWORD_RESET_TIMEOUT = int(os.environ.get("DJANGO_LINK_CLAVE_HORAS", "72")) * 60 * 60
