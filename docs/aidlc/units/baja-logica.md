@@ -1,6 +1,6 @@
 # Unidad: Baja lógica en todo el sistema
 
-- **Estado:** en curso · **Épica:** E1 Seguridad y acceso · **App dueña:** `reservas`
+- **Estado:** en revisión · **Épica:** E1 Seguridad y acceso · **App dueña:** `reservas`
   (+ `inventario`, `clientes`, `campanias`, `costos`, `auditoria`, `frontend`)
 - **Origen:** HU-006 · **Rama:** `feature/reservas-baja-logica`
 
