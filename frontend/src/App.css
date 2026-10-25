@@ -328,6 +328,62 @@ select:focus {
   border-color: #ffad00;
   box-shadow: 0 0 0 2px #ffad0033;
 }
+.campo-fecha {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.campo-fecha-control {
+  position: relative;
+}
+.campo-fecha-control input {
+  padding-right: 2.6rem;
+}
+.campo-fecha-boton {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  padding: 0.3rem;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #b9c0c9;
+}
+.campo-fecha-boton:hover,
+.campo-fecha-boton[aria-expanded='true'] {
+  color: #ffad00;
+  background: #ffad001a;
+}
+.campo-fecha-calendario {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 20;
+  max-width: calc(100vw - 2rem);
+  padding: 0.6rem;
+  border: 1px solid #50555e;
+  border-radius: 9px;
+  background: #1f2227;
+  box-shadow: 0 12px 30px #0009;
+  --rdp-accent-color: #ffad00;
+  --rdp-accent-background-color: #ffad0026;
+  --rdp-today-color: #ffad00;
+  --rdp-day-height: 2.4rem;
+  --rdp-day-width: 2.4rem;
+  --rdp-day_button-height: 2.2rem;
+  --rdp-day_button-width: 2.2rem;
+  color: #e8ecf2;
+  font-size: 0.85rem;
+}
+.campo-fecha-calendario .rdp-selected .rdp-day_button {
+  background: #ffad00;
+  color: #17191d;
+}
 .checkline {
   flex-direction: row;
   align-items: center;

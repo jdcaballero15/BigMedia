@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
 import { descargarCsv } from '../../shared/csv'
+import { formatearPeriodo } from '../../shared/fechas'
 import { descargarPdf } from '../../shared/pdf'
 import { formatearMonto, sumarMontos } from './montos'
 import type { ClienteFila, Periodo, ReporteIngresos } from './types'
@@ -84,7 +85,7 @@ export default function ReporteIngresosPage() {
     descargarPdf(
       `ingresos-${desde}-${hasta}.pdf`,
       'Ingresos por cliente y marca',
-      `Período: ${desde} a ${hasta}`,
+      `Período: ${formatearPeriodo(desde)} a ${formatearPeriodo(hasta)}`,
       columnas,
       filas,
     )

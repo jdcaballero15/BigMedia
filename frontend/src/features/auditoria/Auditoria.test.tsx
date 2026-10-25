@@ -87,7 +87,7 @@ test('cambiar fecha Desde re-pide con desde=<valor>', async () => {
   render(<AuditoriaPage />)
 
   await screen.findAllByText('operativo')
-  fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-01-01' } })
+  fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '01/01/2026' } })
 
   await waitFor(() =>
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('desde=2026-01-01'))).toBe(
@@ -101,13 +101,24 @@ test('cambiar fecha Hasta re-pide con hasta=<valor>', async () => {
   render(<AuditoriaPage />)
 
   await screen.findAllByText('operativo')
-  fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '2026-12-31' } })
+  fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '31/12/2026' } })
 
   await waitFor(() =>
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('hasta=2026-12-31'))).toBe(
       true,
     ),
   )
+})
+
+test('una fecha Desde inválida no re-pide el registro', async () => {
+  const fetchMock = stubFetch()
+  render(<AuditoriaPage />)
+
+  await screen.findAllByText('operativo')
+  const pedidosAntes = fetchMock.mock.calls.length
+  fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '31/02/2026' } })
+
+  expect(fetchMock.mock.calls.length).toBe(pedidosAntes)
 })
 
 test('el filtro Entidad incluye las opciones Campaña y Cartel', async () => {

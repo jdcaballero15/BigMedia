@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError } from '../../shared/api'
+import CampoFecha from '../../shared/CampoFecha'
+import { erroresDeFechas } from '../../shared/fechas'
 import { FieldErrors } from '../../shared/FieldErrors'
 import { vigentes } from '../../shared/opciones'
 import MarcaForm from '../clientes/MarcaForm'
@@ -65,8 +67,10 @@ export default function CampaniaForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setErrors({})
     setGeneralError('')
+    const fechasInvalidas = erroresDeFechas({ fecha_inicio: fechaInicio, fecha_fin: fechaFin })
+    setErrors(fechasInvalidas)
+    if (Object.keys(fechasInvalidas).length > 0) return
     setSaving(true)
     try {
       await onSave({
@@ -147,24 +151,18 @@ export default function CampaniaForm({
           </select>
           <FieldErrors messages={errors.estado} />
         </label>
-        <label>
-          Fecha de inicio
-          <input
-            type="date"
-            value={fechaInicio}
-            onChange={(event) => setFechaInicio(event.target.value)}
-          />
-          <FieldErrors messages={errors.fecha_inicio} />
-        </label>
-        <label>
-          Fecha de fin
-          <input
-            type="date"
-            value={fechaFin}
-            onChange={(event) => setFechaFin(event.target.value)}
-          />
-          <FieldErrors messages={errors.fecha_fin} />
-        </label>
+        <CampoFecha
+          label="Fecha de inicio"
+          value={fechaInicio}
+          onChange={setFechaInicio}
+          errores={errors.fecha_inicio}
+        />
+        <CampoFecha
+          label="Fecha de fin"
+          value={fechaFin}
+          onChange={setFechaFin}
+          errores={errors.fecha_fin}
+        />
       </div>
       {creandoMarca ? (
         <MarcaForm

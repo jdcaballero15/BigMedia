@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
+import { formatearFecha } from '../../shared/fechas'
 
 type PorVencer = {
   id: number
@@ -80,7 +81,7 @@ export default function PanelPrincipal() {
                     <tr key={reserva.id}>
                       <td className="primary-cell">{reserva.nombre}</td>
                       <td>{reserva.cartel_nombre}</td>
-                      <td>{reserva.fecha_fin}</td>
+                      <td>{formatearFecha(reserva.fecha_fin)}</td>
                     </tr>
                   ))}
                 </tbody>

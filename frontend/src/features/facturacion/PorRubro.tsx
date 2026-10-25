@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
 import { descargarCsv } from '../../shared/csv'
+import { formatearPeriodo } from '../../shared/fechas'
 import { descargarPdf } from '../../shared/pdf'
 import { formatearMonto } from './montos'
 
@@ -76,7 +77,7 @@ export default function PorRubroPage() {
     descargarPdf(
       `por-rubro-${desde}-${hasta}.pdf`,
       'Ingresos por rubro',
-      `Período: ${desde} a ${hasta}`,
+      `Período: ${formatearPeriodo(desde)} a ${formatearPeriodo(hasta)}`,
       columnas,
       filas,
     )

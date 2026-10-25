@@ -48,7 +48,7 @@ test('lista las reservas de la campaña', async () => {
   stubFetch()
   render(<ReservasCampania campaniaId={5} />)
   expect(await screen.findByText(reserva.nombre)).toBeDefined()
-  expect(screen.getByText('2026-08-01 → 2026-08-31')).toBeDefined()
+  expect(screen.getByText('01/08/2026 → 31/08/2026')).toBeDefined()
 })
 
 test('pide las reservas filtrando por campaña', async () => {
@@ -71,9 +71,9 @@ test('crea una reserva desde la campaña', async () => {
   const form = screen.getByRole('form', { name: 'Formulario de reserva' })
   fireEvent.change(within(form).getByLabelText('Cartel'), { target: { value: '7' } })
   fireEvent.change(within(form).getByLabelText('Fecha de inicio'), {
-    target: { value: '2026-08-01' },
+    target: { value: '01/08/2026' },
   })
-  fireEvent.change(within(form).getByLabelText('Fecha de fin'), { target: { value: '2026-08-31' } })
+  fireEvent.change(within(form).getByLabelText('Fecha de fin'), { target: { value: '31/08/2026' } })
   fireEvent.click(within(form).getByRole('button', { name: 'Guardar reserva' }))
   await waitFor(() =>
     expect(

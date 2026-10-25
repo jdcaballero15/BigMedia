@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
 import { descargarCsv } from '../../shared/csv'
+import { formatearPeriodo } from '../../shared/fechas'
 import { descargarPdf } from '../../shared/pdf'
 import type { Catalogo } from '../inventario/types'
 import {
@@ -96,7 +97,7 @@ export default function ReporteOcupacionPage() {
   }
 
   function filtrosTexto(): string {
-    const partes = [`Período: ${desde} a ${hasta}`]
+    const partes = [`Período: ${formatearPeriodo(desde)} a ${formatearPeriodo(hasta)}`]
     const depto = zonas.find((z) => String(z.id) === zona)
     if (depto) partes.push(`Departamento: ${depto.nombre}`)
     if (modalidad) partes.push(`Modalidad: ${modalidad === 'fija' ? 'Fija' : 'Digital'}`)

@@ -35,12 +35,21 @@ test('precarga el precio de alquiler al elegir el cartel', () => {
   expect((screen.getByLabelText('Precio de alquiler') as HTMLInputElement).value).toBe('150000.00')
 })
 
+test('no envía la reserva si una fecha escrita es inválida', () => {
+  const onSave = vi.fn()
+  render(<ReservaForm campaniaId={5} carteles={carteles} onSave={onSave} onCancel={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText('Fecha de inicio'), { target: { value: '31/02/2026' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar reserva' }))
+  expect(onSave).not.toHaveBeenCalled()
+  expect(screen.getByText('Fecha inválida. Usá dd/mm/aaaa.')).toBeDefined()
+})
+
 test('envía la reserva con la campaña fija y los datos cargados', async () => {
   const onSave = vi.fn().mockResolvedValue(undefined)
   render(<ReservaForm campaniaId={5} carteles={carteles} onSave={onSave} onCancel={vi.fn()} />)
   fireEvent.change(screen.getByLabelText('Cartel'), { target: { value: '7' } })
-  fireEvent.change(screen.getByLabelText('Fecha de inicio'), { target: { value: '2026-08-01' } })
-  fireEvent.change(screen.getByLabelText('Fecha de fin'), { target: { value: '2026-08-31' } })
+  fireEvent.change(screen.getByLabelText('Fecha de inicio'), { target: { value: '01/08/2026' } })
+  fireEvent.change(screen.getByLabelText('Fecha de fin'), { target: { value: '31/08/2026' } })
   fireEvent.click(screen.getByRole('button', { name: 'Guardar reserva' }))
   await waitFor(() =>
     expect(onSave).toHaveBeenCalledWith(

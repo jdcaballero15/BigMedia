@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiWrite } from '../../shared/api'
+import { formatearFecha } from '../../shared/fechas'
 import type { Cartel } from '../inventario/types'
 import ReservaForm from './ReservaForm'
 import type { ReservaInput } from './ReservaForm'
@@ -108,7 +109,7 @@ export default function ReservasCampania({ campaniaId }: { campaniaId: number })
                 <td className="primary-cell">{item.nombre}</td>
                 <td>{item.cartel_nombre}</td>
                 <td>
-                  {item.fecha_inicio} → {item.fecha_fin}
+                  {formatearFecha(item.fecha_inicio)} → {formatearFecha(item.fecha_fin)}
                 </td>
                 <td>{etiquetaEstadoReserva(item.estado)}</td>
                 <td>{item.total}</td>
