@@ -43,7 +43,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E1 Seguridad y acceso | [baja-logica](units/baja-logica.md) | reservas | HU-006 | gestion-de-usuarios | Gonza | feature/reservas-baja-logica | mergeada |
 | E0 Plataforma base | [parametros-configurables](units/parametros-configurables.md) | reservas | HU-001 (RN-001, RN-002) | reservas-motor-disponibilidad, gestion-de-usuarios | Gonza | feature/reservas-parametros-configurables | mergeada |
 | E3 Clientes, marcas y CRM | [marcas-duplicadas](units/marcas-duplicadas.md) | clientes | HU-019 | clientes-y-marcas | Gonza | feature/clientes-marcas-duplicadas | mergeada |
-| E3 Clientes, marcas y CRM | [contactos-intermediario](units/contactos-intermediario.md) | clientes | HU-068 (RN-015) | clientes-y-marcas | Gonza | feature/clientes-contactos-intermediario | en revisión |
+| E3 Clientes, marcas y CRM | [contactos-intermediario](units/contactos-intermediario.md) | clientes | HU-068 (RN-015) | clientes-y-marcas | Gonza | feature/clientes-contactos-intermediario | mergeada |
 
 ## Notas
 
