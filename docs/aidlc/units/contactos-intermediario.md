@@ -1,6 +1,6 @@
 # Unidad: Contactos del intermediario formal
 
-- **Estado:** en curso · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** `clientes`
+- **Estado:** en revisión · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** `clientes`
   (+ `frontend`)
 - **Origen:** HU-068 (RN-015) · **Rama:** `feature/clientes-contactos-intermediario`
 
@@ -114,5 +114,5 @@ Una en `clientes`: la tabla `Contacto` con su restricción. No toca datos existe
 ## Registro de gates
 
 - Gate 1 (plan): 26/10/2026 — aprobado por Gonza
-- Gate 2 (verificación): corrida el 26/10/2026 — backend 494 tests, 96,02 %; frontend 180 tests; esperando a Gonza o Juan Diego
+- Gate 2 (verificación): corrida el 26/10/2026 — backend 494 tests, 96,02 %; frontend 180 tests; aprobado por Gonza el 26/10/2026
 - Gate 3 (PR): —
