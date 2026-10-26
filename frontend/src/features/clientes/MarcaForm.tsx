@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { ApiError } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import { vigentes } from '../../shared/opciones'
+import AvisoDuplicados from './AvisoDuplicados'
 import type { Cliente, Marca, Rubro } from './types'
 
 export type MarcaInput = {
@@ -10,6 +11,7 @@ export type MarcaInput = {
   cliente: number | null
   rubro: number | null
   activo: boolean
+  confirmar_distinta?: boolean
 }
 
 type Props = {
@@ -28,10 +30,11 @@ export default function MarcaForm({ marca, clientes, rubros, onSave, onCancel }:
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [duplicados, setDuplicados] = useState<string[]>([])
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function guardar(confirmarDistinta: boolean) {
     setErrors({})
+    setDuplicados([])
     setGeneralError('')
     setSaving(true)
     try {
@@ -40,8 +43,13 @@ export default function MarcaForm({ marca, clientes, rubros, onSave, onCancel }:
         cliente: cliente ? Number(cliente) : null,
         rubro: rubro ? Number(rubro) : null,
         activo,
+        ...(confirmarDistinta && { confirmar_distinta: true }),
       })
     } catch (cause) {
+      if (cause instanceof ApiError && cause.fields.posible_duplicado) {
+        setDuplicados(cause.fields.posible_duplicado)
+        return
+      }
       if (cause instanceof ApiError) setErrors(cause.fields)
       setGeneralError(cause instanceof Error ? cause.message : 'No se pudo guardar la marca.')
     } finally {
@@ -49,13 +57,13 @@ export default function MarcaForm({ marca, clientes, rubros, onSave, onCancel }:
     }
   }
 
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    void guardar(false)
+  }
+
   return (
-    <form
-      className="card edit-form"
-      aria-label="Formulario de marca"
-      noValidate
-      onSubmit={(event) => void submit(event)}
-    >
+    <form className="card edit-form" aria-label="Formulario de marca" noValidate onSubmit={submit}>
       <div className="form-heading">
         <h3>{marca ? 'Editar marca' : 'Nueva marca'}</h3>
         <button type="button" className="button-ghost" onClick={onCancel}>
@@ -65,7 +73,14 @@ export default function MarcaForm({ marca, clientes, rubros, onSave, onCancel }:
       <div className="form-grid">
         <label>
           Nombre
-          <input value={nombre} onChange={(event) => setNombre(event.target.value)} required />
+          <input
+            value={nombre}
+            onChange={(event) => {
+              setNombre(event.target.value)
+              setDuplicados([])
+            }}
+            required
+          />
           <FieldErrors messages={errors.nombre} />
         </label>
         <label>
@@ -103,6 +118,11 @@ export default function MarcaForm({ marca, clientes, rubros, onSave, onCancel }:
           Activa
         </label>
       </div>
+      <AvisoDuplicados
+        coincidentes={duplicados}
+        saving={saving}
+        onConfirmar={() => void guardar(true)}
+      />
       {generalError && (
         <p className="error" role="alert">
           {generalError}

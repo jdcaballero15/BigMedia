@@ -14,6 +14,24 @@ def _errores_de_nombre() -> dict[str, str]:
     return {"required": NOMBRE_OBLIGATORIO, "blank": NOMBRE_OBLIGATORIO}
 
 
+def _campo_confirmar_distinta() -> serializers.BooleanField:
+    return serializers.BooleanField(
+        write_only=True,
+        required=False,
+        default=False,
+        help_text="Confirma que no es la marca del aviso `posible_duplicado` (HU-019).",
+    )
+
+
+def _avisar_duplicados(nombre: str, excluir: int | None = None) -> None:
+    """Rechaza con `posible_duplicado` si hay marcas con un nombre igual o parecido (HU-019)."""
+    coincidentes = services.posibles_duplicados(nombre, excluir)
+    if coincidentes:
+        raise serializers.ValidationError(
+            {"posible_duplicado": [services.describir_duplicado(m) for m in coincidentes]}
+        )
+
+
 class RubroSerializer(serializers.ModelSerializer[Rubro]):
     class Meta:
         model = Rubro
@@ -38,6 +56,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
     )
     tipo_nombre = serializers.CharField(source="get_tipo_display", read_only=True)
     nombre_visible = serializers.CharField(read_only=True)
+    confirmar_distinta = _campo_confirmar_distinta()
 
     class Meta:
         model = Cliente
@@ -54,6 +73,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
             "activo",
             "creado_en",
             "actualizado_en",
+            "confirmar_distinta",
         ]
         read_only_fields = ["creado_en", "actualizado_en"]
         extra_kwargs = {
@@ -76,6 +96,14 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
             raise serializers.ValidationError("Ya existe un cliente con ese CUIT.")
         return cuit
 
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        confirmada = attrs.pop("confirmar_distinta", False)
+        # Solo el alta de un cliente directo crea su marca homónima (HU-018).
+        crea_marca = self.instance is None and attrs.get("tipo") == Cliente.Tipo.DIRECTO
+        if crea_marca and not confirmada:
+            _avisar_duplicados(attrs.get("nombre", ""))
+        return attrs
+
     def create(self, validated_data: dict[str, Any]) -> Cliente:
         return services.crear_cliente(**validated_data)
 
@@ -83,6 +111,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
 class MarcaSerializer(serializers.ModelSerializer[Marca]):
     cliente_nombre = serializers.CharField(source="cliente.nombre_visible", read_only=True)
     rubro_nombre = serializers.CharField(source="rubro.nombre", read_only=True, default=None)
+    confirmar_distinta = _campo_confirmar_distinta()
 
     class Meta:
         model = Marca
@@ -96,6 +125,7 @@ class MarcaSerializer(serializers.ModelSerializer[Marca]):
             "activo",
             "creado_en",
             "actualizado_en",
+            "confirmar_distinta",
         ]
         read_only_fields = ["creado_en", "actualizado_en"]
         extra_kwargs = {
@@ -131,4 +161,13 @@ class MarcaSerializer(serializers.ModelSerializer[Marca]):
             )
             if valor is not None and not valor.activo and not sin_cambios:
                 raise serializers.ValidationError({campo: mensaje})
+        confirmada = attrs.pop("confirmar_distinta", False)
+        nombre = attrs.get("nombre")
+        if nombre is None or confirmada:
+            return attrs
+        # Se avisa en el alta y al cambiar el nombre, sin comparar la marca consigo misma.
+        if self.instance is None:
+            _avisar_duplicados(nombre)
+        elif nombre != self.instance.nombre:
+            _avisar_duplicados(nombre, self.instance.pk)
         return attrs
