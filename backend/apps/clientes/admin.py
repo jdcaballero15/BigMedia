@@ -8,7 +8,7 @@ from django.http import HttpRequest
 from config.admin_borrado import BorradoAuditadoAdmin
 
 from . import services
-from .models import Cliente, Marca, Rubro
+from .models import Cliente, Contacto, Marca, Rubro
 
 if TYPE_CHECKING:
     from django.forms import ModelForm
@@ -50,3 +50,13 @@ class MarcaAdmin(BorradoAuditadoAdmin):
     search_fields = ["nombre", "cliente__nombre"]
     list_select_related = ["cliente", "rubro"]
     autocomplete_fields = ["cliente", "rubro"]
+
+
+@admin.register(Contacto)
+class ContactoAdmin(BorradoAuditadoAdmin):
+    entidad = "contacto"
+    list_display = ["nombre", "cliente", "cargo", "principal", "activo"]
+    list_filter = ["activo", "principal"]
+    search_fields = ["nombre", "cliente__nombre"]
+    list_select_related = ["cliente"]
+    autocomplete_fields = ["cliente"]

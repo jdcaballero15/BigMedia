@@ -2,7 +2,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
 
-from apps.clientes.models import Cliente, Marca, Rubro
+from apps.clientes.models import Cliente, Contacto, Marca, Rubro
 
 
 @pytest.fixture
@@ -14,12 +14,13 @@ def superusuario_client(db):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("modelo", ["rubro", "cliente", "marca"])
+@pytest.mark.parametrize("modelo", ["rubro", "cliente", "marca", "contacto"])
 def test_admin_de_clientes_lista_y_busca_cada_modelo_responde_200(superusuario_client, modelo):
     rubro = Rubro.objects.create(nombre="Bebidas")
     cliente = Cliente.objects.create(nombre="Agencia", razon_social="Agencia SA", tipo="directo")
     marca = Marca.objects.create(nombre="Marca", cliente=cliente, rubro=rubro)
-    objetos = {"rubro": rubro, "cliente": cliente, "marca": marca}
+    contacto = Contacto.objects.create(nombre="Ana", cliente=cliente)
+    objetos = {"rubro": rubro, "cliente": cliente, "marca": marca, "contacto": contacto}
     url = f"/admin/clientes/{modelo}/"
 
     assert superusuario_client.get(url).status_code == 200
@@ -72,3 +73,27 @@ def test_admin_de_clientes_alta_de_cliente_directo_crea_su_marca(superusuario_cl
     assert cliente.nombre == "Bodega Editada"
     assert cliente.cuit == "20123456786"
     assert Marca.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_admin_de_clientes_segundo_contacto_principal_se_rechaza(superusuario_client):
+    # El admin valida la restricción: hay que desmarcar antes al principal (HU-068, criterio 3).
+    cliente = Cliente.objects.create(nombre="Central", tipo="intermediario_formal")
+    anterior = Contacto.objects.create(nombre="Ana", cliente=cliente, principal=True)
+    response = superusuario_client.post(
+        "/admin/clientes/contacto/add/",
+        {
+            "cliente": cliente.pk,
+            "nombre": "Beto",
+            "cargo": "",
+            "correo": "",
+            "telefono": "",
+            "notas": "",
+            "principal": "on",
+            "activo": "on",
+        },
+    )
+    assert response.status_code == 200
+    assert "El cliente ya tiene un contacto principal." in response.content.decode()
+    assert Contacto.objects.get(pk=anterior.pk).principal is True
+    assert not Contacto.objects.filter(nombre="Beto").exists()

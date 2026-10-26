@@ -213,6 +213,8 @@ test('la ficha de un intermediario lista todas sus marcas', async () => {
   expect(within(ficha).getByText('Bebidas')).toBeDefined()
   expect(within(ficha).getByText('Inactiva')).toBeDefined()
   expect(screen.queryByText(/Se creó la marca/)).toBeNull()
+  // Un intermediario común no tiene contactos múltiples (HU-068, criterio 2).
+  expect(screen.queryByRole('region', { name: /Contactos de/ })).toBeNull()
   fireEvent.click(within(ficha).getByRole('button', { name: 'Cerrar' }))
   expect(screen.queryByRole('region', { name: 'Marcas de Agencia Andes' })).toBeNull()
 })
@@ -295,4 +297,31 @@ test('informa el error de la API al inactivar', async () => {
 
   fireEvent.click(await screen.findByRole('button', { name: 'Inactivar' }))
   expect((await screen.findByRole('alert')).textContent).toBe('No tenés permiso.')
+})
+
+test('la ficha de un intermediario formal muestra sus contactos', async () => {
+  const central = { ...agencia, tipo: 'intermediario_formal' as const }
+  mockFetch((url) => {
+    if (url === '/api/clientes/clientes/') return ok([central])
+    if (url === '/api/clientes/marcas/?cliente=1&incluir_inactivos=1') return ok([])
+    if (url === '/api/clientes/contactos/?cliente=1&incluir_inactivos=1')
+      return ok([
+        {
+          id: 5,
+          cliente: 1,
+          nombre: 'Ana',
+          cargo: '',
+          correo: '',
+          telefono: '',
+          notas: '',
+          principal: true,
+          activo: true,
+        },
+      ])
+    return undefined
+  })
+  render(<ClientesPage />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver marcas' }))
+  const contactos = await screen.findByRole('region', { name: 'Contactos de Agencia Andes' })
+  expect(await within(contactos).findByText('Ana')).toBeDefined()
 })
