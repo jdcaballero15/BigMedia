@@ -10,8 +10,9 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
   aplicación (HU-001).
 - **Reestructura del repositorio** (unidad técnica) — gobernanza, CI estricto y protección de ramas.
 - **E2 Inventario de soportes** — HU-008 a HU-014. HU-015 (importación) espera los relevamientos (RN-009).
-- **E3 Clientes, marcas y CRM** — clientes y marcas (HU-016, HU-017, HU-018). Faltan avisos de
-  duplicados (HU-019), contactos (HU-068) e interacciones (HU-020).
+- **E3 Clientes, marcas y CRM** — clientes y marcas (HU-016, HU-017, HU-018) y aviso de marcas
+  duplicadas (HU-019; su criterio 3 espera un importador de marcas). Faltan contactos (HU-068) e
+  interacciones (HU-020).
 - **E4 Campañas** — crear campañas y sus estados (HU-023, HU-024).
 - **E5 Reservas y motor de disponibilidad** — reservas, ciclo de vida y motor de disponibilidad
   (HU-028 a HU-040).
@@ -34,7 +35,7 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 
 ## Próximas
 
-1. **Resto de E3** — avisos de duplicados (HU-019), contactos (HU-068) e interacciones (HU-020).
+1. **Resto de E3** — contactos (HU-068) e interacciones (HU-020).
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
