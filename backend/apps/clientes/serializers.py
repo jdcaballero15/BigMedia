@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from . import services
-from .models import Cliente, Marca, Rubro
+from .models import Cliente, Contacto, Marca, Rubro
 from .validators import normalizar_cuit, validar_cuit
 
 NOMBRE_OBLIGATORIO = "Ingresá un nombre."
@@ -102,7 +102,16 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
         crea_marca = self.instance is None and attrs.get("tipo") == Cliente.Tipo.DIRECTO
         if crea_marca and not confirmada:
             _avisar_duplicados(attrs.get("nombre", ""))
+        self._validar_cambio_de_tipo(attrs.get("tipo"))
         return attrs
+
+    def _validar_cambio_de_tipo(self, tipo: str | None) -> None:
+        """Un intermediario formal con contactos activos no cambia de tipo (HU-068, criterio 6)."""
+        cliente = self.instance
+        if cliente is None or tipo is None or tipo == cliente.tipo:
+            return
+        if services.acepta_contactos(cliente) and services.tiene_contactos_activos(cliente):
+            raise serializers.ValidationError({"tipo": "Inactivá antes sus contactos."})
 
     def create(self, validated_data: dict[str, Any]) -> Cliente:
         return services.crear_cliente(**validated_data)
@@ -171,3 +180,60 @@ class MarcaSerializer(serializers.ModelSerializer[Marca]):
         elif nombre != self.instance.nombre:
             _avisar_duplicados(nombre, self.instance.pk)
         return attrs
+
+
+class ContactoSerializer(serializers.ModelSerializer[Contacto]):
+    class Meta:
+        model = Contacto
+        fields = [
+            "id",
+            "cliente",
+            "nombre",
+            "cargo",
+            "correo",
+            "telefono",
+            "notas",
+            "principal",
+            "activo",
+        ]
+        # Sin el validador de la restricción del principal: `guardar_contacto` desmarca al anterior.
+        validators: list[Any] = []
+        extra_kwargs = {
+            "nombre": {"error_messages": _errores_de_nombre()},
+            "correo": {"error_messages": {"invalid": "Ingresá un correo válido."}},
+            "cliente": {
+                "error_messages": {
+                    "required": "Seleccioná un cliente.",
+                    "null": "Seleccioná un cliente.",
+                    "does_not_exist": "El cliente elegido no existe.",
+                    "incorrect_type": "Seleccioná un cliente.",
+                }
+            },
+        }
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        cliente = attrs.get("cliente")
+        if self.instance is not None:
+            if cliente is not None and cliente.pk != self.instance.cliente_id:
+                raise serializers.ValidationError({"cliente": "Un contacto no cambia de cliente."})
+        elif cliente is not None:
+            if not cliente.activo:
+                raise serializers.ValidationError({"cliente": "Seleccioná un cliente activo."})
+            if not services.acepta_contactos(cliente):
+                raise serializers.ValidationError(
+                    {"cliente": "Solo un cliente intermediario formal puede tener contactos."}
+                )
+        activo = attrs.get("activo", getattr(self.instance, "activo", True))
+        if attrs.get("principal") and not activo:
+            raise serializers.ValidationError(
+                {"principal": "Un contacto inactivo no puede ser el principal."}
+            )
+        return attrs
+
+    def create(self, validated_data: dict[str, Any]) -> Contacto:
+        return services.guardar_contacto(Contacto(**validated_data))
+
+    def update(self, instance: Contacto, validated_data: dict[str, Any]) -> Contacto:
+        for campo, valor in validated_data.items():
+            setattr(instance, campo, valor)
+        return services.guardar_contacto(instance)

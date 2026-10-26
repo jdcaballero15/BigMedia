@@ -55,7 +55,15 @@ borren (HU-068, criterios 1 a 4 y 6).
 
 ## Respuestas
 
-—
+Respondidas por Gonza el 26/10/2026: se aceptan las opciones recomendadas o propuestas.
+
+1. Ruta plana: `/api/clientes/contactos/?cliente=<id>`, sin `DELETE`.
+2. Un solo principal: el servicio desmarca al anterior con el cliente bloqueado, más una
+   restricción única parcial; inactivar saca el principal.
+3. El servidor rechaza contactos en clientes que no son intermediario formal, y el cambio de tipo
+   con contactos activos.
+4. Los criterios 5 y 7 quedan para la unidad de HU-020.
+5. Sin auditoría de cambios; el contacto va al admin con `BorradoAuditadoAdmin`.
 
 ## Cambios (con las opciones recomendadas)
 
@@ -66,7 +74,10 @@ borren (HU-068, criterios 1 a 4 y 6).
   inactivar saca el principal; y el control de tipo del cliente.
 - `backend/apps/clientes/serializers.py`, `views.py` y `urls.py`: `ContactoSerializer` y
   `ContactoViewSet`. `ClienteSerializer.validate` rechaza el cambio de tipo con contactos activos.
-- `backend/apps/clientes/admin.py`: `ContactoAdmin` con `BorradoAuditadoAdmin`.
+- `backend/apps/clientes/admin.py`: `ContactoAdmin` con `BorradoAuditadoAdmin`. El admin valida la
+  restricción del principal y rechaza un segundo principal con su mensaje: hay que desmarcar antes
+  al anterior. No pasa por `guardar_contacto`, porque Django valida las restricciones antes de
+  guardar.
 - `frontend/src/features/clientes/ContactosDelCliente.tsx` (nuevo) y `ContactoForm.tsx` (nuevo):
   la sección de contactos en la ficha, solo para intermediario formal, con alta, edición,
   "Marcar como principal" e "Inactivar".
@@ -94,11 +105,14 @@ Una en `clientes`: la tabla `Contacto` con su restricción. No toca datos existe
 - `test_cliente_cambio_de_tipo_con_contactos_activos_se_rechaza` y
   `test_cliente_cambio_de_tipo_con_contactos_inactivos_se_acepta` (criterio 6, RN-015).
 - `test_contacto_delete_devuelve_405`.
+- Además: cliente inactivo, cambio de cliente, correo inválido, inactivo como principal, orden de la
+  lista, Lectura no edita, restricción en la base y los dos tests del admin
+  (`test_clientes_admin.py`).
 - Frontend: la sección aparece solo para intermediario formal; alta, principal e inactivar; el
   error del cambio de tipo se muestra.
 
 ## Registro de gates
 
-- Gate 1 (plan): —
-- Gate 2 (verificación): —
+- Gate 1 (plan): 26/10/2026 — aprobado por Gonza
+- Gate 2 (verificación): corrida el 26/10/2026 — backend 494 tests, 96,02 %; frontend 180 tests; esperando a Gonza o Juan Diego
 - Gate 3 (PR): —

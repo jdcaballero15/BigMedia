@@ -6,7 +6,7 @@ from django.db import transaction
 
 from config.texto import distancia_edicion, normalizar_comparacion
 
-from .models import Cliente, Marca
+from .models import Cliente, Contacto, Marca
 
 # A partir de este largo se toleran dos errores de tipeo en vez de uno (HU-019).
 LARGO_PARA_DOS_ERRORES = 8
@@ -58,3 +58,30 @@ def describir_duplicado(marca: Marca) -> str:
     """Texto del aviso: nombre, cliente que la factura y estado de la marca coincidente."""
     estado = "activa" if marca.activo else "inactiva"
     return f"{marca.nombre} — {marca.cliente.nombre_visible} ({estado})"
+
+
+def acepta_contactos(cliente: Cliente) -> bool:
+    """Solo el intermediario formal tiene contactos múltiples (RN-015, provisoria)."""
+    return cliente.tipo == Cliente.Tipo.INTERMEDIARIO_FORMAL
+
+
+def tiene_contactos_activos(cliente: Cliente) -> bool:
+    return cliente.contactos.filter(activo=True).exists()
+
+
+@transaction.atomic
+def guardar_contacto(contacto: Contacto) -> Contacto:
+    """Guarda un contacto dejando un solo principal por cliente (HU-068, criterio 3).
+
+    Bloquea el cliente para que dos contactos marcados a la vez no queden ambos como principales.
+    Un contacto inactivo deja de ser el principal.
+    """
+    Cliente.objects.select_for_update().filter(pk=contacto.cliente_id).first()
+    if not contacto.activo:
+        contacto.principal = False
+    if contacto.principal:
+        Contacto.objects.filter(cliente_id=contacto.cliente_id, principal=True).exclude(
+            pk=contacto.pk
+        ).update(principal=False)
+    contacto.save()
+    return contacto
