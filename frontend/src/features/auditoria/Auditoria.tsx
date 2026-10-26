@@ -26,6 +26,7 @@ const ETIQUETAS_ENTIDAD: Record<string, string> = {
   rubro: 'Rubro',
   cliente: 'Cliente',
   marca: 'Marca',
+  parametros: 'Parámetros',
 }
 
 function etiquetaEntidad(entidad: string): string {

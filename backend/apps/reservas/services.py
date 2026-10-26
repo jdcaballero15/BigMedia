@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from apps.inventario.models import Cartel, Formato
 
-from .models import MESES_ABREV, Reserva
+from .models import MESES_ABREV, ParametrosDisponibilidad, Reserva
 
 # Transiciones de estado válidas del ciclo de vida de la reserva (HU-035).
 # La revalidación de cupo al confirmar/reactivar es de la unidad del motor (HU-031).
@@ -130,12 +130,16 @@ def _meses_del_rango(desde: date, hasta: date) -> list[dict[str, Any]]:
     return meses
 
 
-def _pico_en_rango(reservas: list[Reserva], desde: date, hasta: date) -> int:
+def _pico_en_rango(reservas: list[Reserva], desde: date, hasta: date, borde_inclusivo: bool) -> int:
     """Ocupación máxima (pico diario, RN-003) de un conjunto de reservas dentro de [desde, hasta]."""
     candidatos = {desde} | {r.fecha_inicio for r in reservas if desde <= r.fecha_inicio <= hasta}
     pico = 0
     for dia in candidatos:
-        cubren = sum(1 for r in reservas if r.fecha_inicio <= dia <= _fin_efectivo(r.fecha_fin))
+        cubren = sum(
+            1
+            for r in reservas
+            if r.fecha_inicio <= dia <= _fin_efectivo(r.fecha_fin, borde_inclusivo)
+        )
         pico = max(pico, cubren)
     return pico
 
@@ -149,6 +153,7 @@ def calendario_disponibilidad(
 ) -> dict[str, Any]:
     """Grilla de carteles por mes con la ocupación pico de cada mes (HU-042)."""
     meses = _meses_del_rango(desde, hasta)
+    borde_inclusivo = parametros_disponibilidad().borde_inclusivo
     carteles = Cartel.objects.filter(estado__es_baja=False).select_related("formato", "zona")
     if zona is not None:
         carteles = carteles.filter(zona_id=zona)
@@ -179,7 +184,7 @@ def calendario_disponibilidad(
                 {
                     "periodo": mes["clave"],
                     "ocupados": _pico_en_rango(
-                        por_cartel.get(cartel.pk, []), mes["inicio"], mes["fin"]
+                        por_cartel.get(cartel.pk, []), mes["inicio"], mes["fin"], borde_inclusivo
                     ),
                 }
                 for mes in meses
@@ -319,17 +324,26 @@ def reporte_ocupacion(
     }
 
 
-def _estados_que_bloquean() -> set[str]:
+def parametros_disponibilidad() -> ParametrosDisponibilidad:
+    """Parámetros vigentes del motor de disponibilidad (HU-001).
+
+    Se leen de la base en cada uso, sin caché, para que un cambio rija en la validación siguiente.
+    """
+    parametros, _ = ParametrosDisponibilidad.objects.get_or_create(pk=1)
+    return parametros
+
+
+def _estados_que_bloquean(tentativa_bloquea: bool) -> set[str]:
     """Estados que ocupan cupo para el bloqueo duro (RN-002)."""
     estados: set[str] = {Reserva.Estado.CONFIRMADA.value, Reserva.Estado.FINALIZADA.value}
-    if settings.DISPONIBILIDAD_TENTATIVA_BLOQUEA:
+    if tentativa_bloquea:
         estados.add(Reserva.Estado.PENDIENTE.value)
     return estados
 
 
-def _fin_efectivo(fin: date) -> date:
+def _fin_efectivo(fin: date, borde_inclusivo: bool) -> date:
     """Último día que la reserva ocupa el cartel según el día de borde (RN-001)."""
-    return fin if settings.DISPONIBILIDAD_BORDE_INCLUSIVO else fin - timedelta(days=1)
+    return fin if borde_inclusivo else fin - timedelta(days=1)
 
 
 def validar_disponibilidad(reserva: Reserva) -> None:
@@ -338,17 +352,21 @@ def validar_disponibilidad(reserva: Reserva) -> None:
     Usa pico diario (RN-003): la ocupación máxima en cualquier tramo del rango, no el conteo de
     reservas que tocan el rango. Debe correr dentro de una transacción que ya bloqueó el cartel
     (`select_for_update`), para que dos confirmaciones del mismo cartel no se pisen (HU-034).
+    Los parámetros se leen dentro de esa misma transacción (HU-001).
     """
+    parametros = parametros_disponibilidad()
+    borde = parametros.borde_inclusivo
     capacidad = reserva.cartel.capacidad
-    fin_nueva = _fin_efectivo(reserva.fecha_fin)
+    fin_nueva = _fin_efectivo(reserva.fecha_fin, borde)
     otras = Reserva.objects.filter(
-        cartel=reserva.cartel, estado__in=_estados_que_bloquean()
+        cartel=reserva.cartel, estado__in=_estados_que_bloquean(parametros.tentativa_bloquea)
     ).exclude(pk=reserva.pk)
     # Solo las que se solapan con el rango pedido (intervalos inclusivos con fin efectivo).
     conflictivas = [
         otra
         for otra in otras
-        if otra.fecha_inicio <= fin_nueva and reserva.fecha_inicio <= _fin_efectivo(otra.fecha_fin)
+        if otra.fecha_inicio <= fin_nueva
+        and reserva.fecha_inicio <= _fin_efectivo(otra.fecha_fin, borde)
     ]
     if not conflictivas:
         return
@@ -362,7 +380,9 @@ def validar_disponibilidad(reserva: Reserva) -> None:
     pico, dia_pico = 0, reserva.fecha_inicio
     for dia in dias_candidatos:
         cubren = sum(
-            1 for otra in conflictivas if otra.fecha_inicio <= dia <= _fin_efectivo(otra.fecha_fin)
+            1
+            for otra in conflictivas
+            if otra.fecha_inicio <= dia <= _fin_efectivo(otra.fecha_fin, borde)
         )
         if cubren > pico:
             pico, dia_pico = cubren, dia
@@ -372,7 +392,7 @@ def validar_disponibilidad(reserva: Reserva) -> None:
         culpables = [
             otra.nombre
             for otra in conflictivas
-            if otra.fecha_inicio <= dia_pico <= _fin_efectivo(otra.fecha_fin)
+            if otra.fecha_inicio <= dia_pico <= _fin_efectivo(otra.fecha_fin, borde)
         ]
         raise ValidationError(
             {

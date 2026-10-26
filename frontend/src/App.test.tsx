@@ -507,7 +507,7 @@ test('el rol Operativo ve acciones de edición', async () => {
   expect(await screen.findByRole('button', { name: 'Nuevo cliente' })).toBeDefined()
 })
 
-test('muestra Usuarios solo al administrador', async () => {
+test('muestra Usuarios y Parámetros solo al administrador', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string) => {
@@ -519,6 +519,7 @@ test('muestra Usuarios solo al administrador', async () => {
   render(<App />)
   const nav = await screen.findByRole('navigation', { name: 'Navegación' })
   expect(within(nav).queryByRole('button', { name: 'Usuarios' })).toBeNull()
+  expect(within(nav).queryByRole('button', { name: 'Parámetros' })).toBeNull()
   cleanup()
 
   vi.stubGlobal(
@@ -527,12 +528,16 @@ test('muestra Usuarios solo al administrador', async () => {
       if (input === '/api/auth/me/') return ok({ username: 'admin', rol: 'administrador' })
       if (input.startsWith('/api/clientes/')) return ok([])
       if (input === '/api/usuarios/usuarios/') return ok([])
+      if (input === '/api/reservas/parametros/')
+        return ok({ borde_inclusivo: true, tentativa_bloquea: false })
       throw new Error(`URL inesperada: ${input}`)
     }),
   )
   render(<App />)
   await irA('Usuarios')
   expect(await screen.findByRole('heading', { name: 'Usuarios' })).toBeDefined()
+  await irA('Parámetros')
+  expect(await screen.findByRole('heading', { name: 'Parámetros' })).toBeDefined()
 })
 
 test('el link de contraseña muestra el formulario y después el login', async () => {

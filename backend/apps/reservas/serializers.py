@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from . import services
-from .models import Reserva
+from .models import ParametrosDisponibilidad, Reserva
 
 
 class ReservaSerializer(serializers.ModelSerializer[Reserva]):
@@ -75,3 +75,9 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
             tarifa = validated_data["cartel"].tarifa_lista
             validated_data["precio_alquiler"] = tarifa if tarifa is not None else Decimal("0.00")
         return super().create(validated_data)
+
+
+class ParametrosDisponibilidadSerializer(serializers.ModelSerializer[ParametrosDisponibilidad]):
+    class Meta:
+        model = ParametrosDisponibilidad
+        fields = ["borde_inclusivo", "tentativa_bloquea"]

@@ -14,11 +14,11 @@ from rest_framework.views import APIView
 
 from apps.auditoria import services as auditoria_services
 from apps.inventario.models import Cartel
-from config.permisos import LecturaConSesionEdicionOperativo
+from config.permisos import LecturaConSesionEdicionOperativo, SoloAdministrador
 
 from . import services
-from .models import Reserva
-from .serializers import ReservaSerializer
+from .models import ParametrosDisponibilidad, Reserva
+from .serializers import ParametrosDisponibilidadSerializer, ReservaSerializer
 
 
 def _id_positivo(valor: str, campo: str) -> int:
@@ -238,3 +238,42 @@ class RepartoView(APIView):
         if reserva is None:
             raise ValidationError({"reserva": "No existe la reserva."})
         return Response(services.reparto_por_mes(reserva))
+
+
+def _parametros_auditados(parametros: ParametrosDisponibilidad) -> dict[str, str]:
+    return {
+        "borde_inclusivo": str(parametros.borde_inclusivo),
+        "tentativa_bloquea": str(parametros.tentativa_bloquea),
+    }
+
+
+class ParametrosView(APIView):
+    """Parámetros del motor de disponibilidad (HU-001): solo el rol Administrador."""
+
+    permission_classes = [permissions.IsAuthenticated, SoloAdministrador]
+    http_method_names = ["get", "patch", "head", "options"]
+
+    def get(self, _request: Request) -> Response:
+        return Response(
+            ParametrosDisponibilidadSerializer(services.parametros_disponibilidad()).data
+        )
+
+    def patch(self, request: Request) -> Response:
+        # El cambio y su auditoría en la misma transacción, con la fila bloqueada.
+        with transaction.atomic():
+            services.parametros_disponibilidad()
+            parametros = ParametrosDisponibilidad.objects.select_for_update().get(pk=1)
+            anteriores = _parametros_auditados(parametros)
+            serializer = ParametrosDisponibilidadSerializer(
+                parametros, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            auditoria_services.registrar_cambios(
+                "parametros",
+                parametros.pk,
+                anteriores,
+                _parametros_auditados(parametros),
+                request.user,
+            )
+        return Response(serializer.data)
