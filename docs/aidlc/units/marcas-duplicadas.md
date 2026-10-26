@@ -1,6 +1,6 @@
 # Unidad: Marcas duplicadas
 
-- **Estado:** en revisión · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** `clientes`
+- **Estado:** mergeada · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** `clientes`
   (+ `frontend`)
 - **Origen:** HU-019 · **Rama:** `feature/clientes-marcas-duplicadas`
 
@@ -117,4 +117,4 @@ resulta discutible, se puede registrar como regla nueva en un PR `docs/historias
 
 - Gate 1 (plan): 26/10/2026 — aprobado por Gonza
 - Gate 2 (verificación): corrida el 26/10/2026 — backend 470 tests, 95,94 %; frontend 171 tests; aprobado por Gonza el 26/10/2026
-- Gate 3 (PR): —
+- Gate 3 (PR): 26/10/2026 — PR #69 a `develop`, pedido por Gonza
