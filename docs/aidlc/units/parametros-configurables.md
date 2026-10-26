@@ -116,4 +116,4 @@ datos existentes.
 
 - Gate 1 (plan): 23/10/2026 — aprobado por Gonza
 - Gate 2 (verificación): corrida el 26/10/2026 — backend 400 tests, 95,56 %; frontend 163 tests; aprobado por Gonza el 26/10/2026
-- Gate 3 (PR): —
+- Gate 3 (PR): 26/10/2026 — PR #67 a `develop`, pedido por Gonza
