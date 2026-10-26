@@ -1,6 +1,6 @@
 # Unidad: Parámetros configurables
 
-- **Estado:** en revisión · **Épica:** E0 Plataforma base · **App dueña:** `reservas`
+- **Estado:** mergeada · **Épica:** E0 Plataforma base · **App dueña:** `reservas`
   (+ `config`, `auditoria`, `frontend`)
 - **Origen:** HU-001 (RN-001, RN-002) · **Rama:** `feature/reservas-parametros-configurables`
 
