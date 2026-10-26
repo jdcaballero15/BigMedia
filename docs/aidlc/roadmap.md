@@ -22,15 +22,14 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 - **Entornos: producción paga y staging gratis** (unidad técnica) — producción paga en Render y staging
   con base en Neon ([ADR-0002](../adr/0002-gitflow-con-develop.md),
   [ADR-0005](../adr/0005-base-de-staging-en-neon.md)).
-- **E1 Seguridad y acceso (parcial)** — grupo Gerencia para ver ingresos (HU-052 criterio 2), auditoría
+- **E1 Seguridad y acceso** — grupo Gerencia para ver ingresos (HU-052 criterio 2), auditoría
   de reservas, campañas y tarifas con su pantalla (HU-007), expiración de sesión por inactividad
   (HU-003 criterio 4), bloqueo temporal por intentos fallidos (HU-003 criterio 3), roles Operativo,
-  Administrador y Lectura (HU-004) y gestión de usuarios desde la aplicación (HU-005).
+  Administrador y Lectura (HU-004), gestión de usuarios (HU-005) y baja lógica (HU-006).
 
 ## En curso
 
 - **HU-001 Parámetros configurables** (E0) — unidad `parametros-configurables`.
-- **E1 Seguridad y acceso** — baja lógica en todo el sistema (HU-006), unidad `baja-logica` (PR #66).
 
 ## Próximas
 
@@ -51,4 +50,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-10-18 | Se agrega la unidad técnica de entornos como próxima prioridad | La base gratis de producción vence el 17/11/2026; Juan Diego decidió producción paga y staging gratis |
 | 2026-10-21 | Roadmap puesto al día: E2 a E8 pasan a Hecho y la unidad de entornos queda como próxima | El roadmap había quedado atrás respecto del trabajo ya mergeado (E3 a E8) |
 | 2026-10-23 | Entornos, el cierre de E8 (salvo grupo económico) y parte de E1 pasan a Hecho; E1 queda primera | El roadmap había quedado atrás respecto de las unidades ya mergeadas |
-| 2026-10-26 | HU-005 pasa a Hecho; HU-001 y HU-006 pasan a En curso | Gestión de usuarios quedó mergeada (PR #65) y las otras dos unidades están en marcha |
+| 2026-10-26 | HU-005 y HU-006 pasan a Hecho; HU-001 pasa a En curso | Gestión de usuarios y baja lógica quedaron mergeadas (PR #65 y #66) |

@@ -255,24 +255,27 @@ def reporte_ocupacion(
 ) -> dict[str, Any]:
     """Ocupación en días-cupo por cartel y mes: mapa de calor, ranking y evolución (HU-048).
 
-    Para cada cartel no dado de baja y cada mes del período calcula los días-cupo ocupados sobre los
+    Para cada cartel no dado de baja, o de baja con reservas en el período (HU-006), y cada mes
+    del período calcula los días-cupo ocupados sobre los
     disponibles (`capacidad x días`). Las filas se ordenan por ocupación del período (ranking) y los
     totales por modalidad no mezclan fijos con digitales.
     """
     meses = _meses_del_rango(desde, hasta)
-    carteles = Cartel.objects.filter(estado__es_baja=False).select_related("formato", "zona")
+    en_periodo = Reserva.objects.filter(
+        estado__in=Reserva.ESTADOS_QUE_OCUPAN,
+        fecha_inicio__lte=hasta,
+        fecha_fin__gte=desde,
+    )
+    carteles = Cartel.objects.filter(
+        Q(estado__es_baja=False) | Q(pk__in=en_periodo.values("cartel_id"))
+    ).select_related("formato", "zona", "estado")
     if zona is not None:
         carteles = carteles.filter(zona_id=zona)
     if modalidad:
         carteles = carteles.filter(formato__modalidad=modalidad)
     carteles = carteles.order_by("direccion", "id")
 
-    reservas = Reserva.objects.filter(
-        cartel__in=carteles,
-        estado__in=Reserva.ESTADOS_QUE_OCUPAN,
-        fecha_inicio__lte=hasta,
-        fecha_fin__gte=desde,
-    )
+    reservas = en_periodo.filter(cartel__in=carteles)
     por_cartel: dict[int, list[Reserva]] = {}
     for reserva in reservas:
         por_cartel.setdefault(reserva.cartel_id, []).append(reserva)
@@ -307,6 +310,7 @@ def reporte_ocupacion(
                 "modalidad": cartel.formato.modalidad,
                 "zona_nombre": cartel.zona.nombre,
                 "formato_nombre": cartel.formato.nombre,
+                "de_baja": cartel.estado.es_baja,
                 "ocupacion": _porcentaje(total_ocupados, total_disponibles),
                 "celdas": celdas,
             }
