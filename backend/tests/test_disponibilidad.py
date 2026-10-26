@@ -8,11 +8,11 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser, Group
 from django.db import connection
-from django.test import Client, override_settings
+from django.test import Client
 
 from apps.campanias.models import Campania
 from apps.inventario.models import Cartel, EstadoCartel, Formato, Zona
-from apps.reservas.models import Reserva
+from apps.reservas.models import ParametrosDisponibilidad, Reserva
 
 
 def cartel(capacidad: int = 1, baja: bool = False) -> Cartel:
@@ -113,8 +113,8 @@ def test_caso_6_adyacente_inclusivo_bloquea(operativo_client):
 
 @pytest.mark.django_db
 @pytest.mark.regla("RN-001")
-@override_settings(DISPONIBILIDAD_BORDE_INCLUSIVO=False)
 def test_caso_6_adyacente_exclusivo_permite(operativo_client):
+    ParametrosDisponibilidad.objects.update(borde_inclusivo=False)
     car = cartel(capacidad=1)
     reserva(car, "2026-11-01", "2026-11-15")
     assert confirmar(operativo_client, car, "2026-11-15", "2026-11-30").status_code == 200
@@ -144,8 +144,8 @@ def test_caso_9_tentativa_no_bloquea_por_defecto(operativo_client):
 
 @pytest.mark.django_db
 @pytest.mark.regla("RN-002")
-@override_settings(DISPONIBILIDAD_TENTATIVA_BLOQUEA=True)
 def test_caso_9_tentativa_bloquea_con_config(operativo_client):
+    ParametrosDisponibilidad.objects.update(tentativa_bloquea=True)
     car = cartel(capacidad=1)
     reserva(car, "2026-11-01", "2026-11-15", estado="pendiente")
     assert confirmar(operativo_client, car, "2026-11-01", "2026-11-15").status_code == 400

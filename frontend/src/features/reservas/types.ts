@@ -26,3 +26,8 @@ export type Reserva = {
   total: string
   nombre: string
 }
+
+export type ParametrosDisponibilidad = {
+  borde_inclusivo: boolean
+  tentativa_bloquea: boolean
+}

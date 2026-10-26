@@ -19,6 +19,7 @@ const ETIQUETAS_ENTIDAD: Record<string, string> = {
   campania: 'Campaña',
   cartel: 'Cartel',
   usuario: 'Usuario',
+  parametros: 'Parámetros',
 }
 
 function etiquetaEntidad(entidad: string): string {
@@ -130,6 +131,7 @@ export default function AuditoriaPage() {
             <option value="campania">Campaña</option>
             <option value="cartel">Cartel</option>
             <option value="usuario">Usuario</option>
+            <option value="parametros">Parámetros</option>
           </select>
         </label>
       </div>
