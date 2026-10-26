@@ -1,6 +1,6 @@
 # Unidad: Parámetros configurables
 
-- **Estado:** en curso · **Épica:** E0 Plataforma base · **App dueña:** `reservas`
+- **Estado:** en revisión · **Épica:** E0 Plataforma base · **App dueña:** `reservas`
   (+ `config`, `auditoria`, `frontend`)
 - **Origen:** HU-001 (RN-001, RN-002) · **Rama:** `feature/reservas-parametros-configurables`
 
@@ -115,5 +115,5 @@ datos existentes.
 ## Registro de gates
 
 - Gate 1 (plan): 23/10/2026 — aprobado por Gonza
-- Gate 2 (verificación): corrida el 26/10/2026 — backend 400 tests, 95,56 %; frontend 163 tests; esperando a Gonza o Juan Diego
+- Gate 2 (verificación): corrida el 26/10/2026 — backend 400 tests, 95,56 %; frontend 163 tests; aprobado por Gonza el 26/10/2026
 - Gate 3 (PR): —
