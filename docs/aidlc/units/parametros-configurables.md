@@ -115,5 +115,5 @@ datos existentes.
 ## Registro de gates
 
 - Gate 1 (plan): 23/10/2026 — aprobado por Gonza
-- Gate 2 (verificación): —
+- Gate 2 (verificación): corrida el 26/10/2026 — backend 400 tests, 95,56 %; frontend 163 tests; esperando a Gonza o Juan Diego
 - Gate 3 (PR): —
