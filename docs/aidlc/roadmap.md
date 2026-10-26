@@ -22,10 +22,10 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 - **Entornos: producción paga y staging gratis** (unidad técnica) — producción paga en Render y staging
   con base en Neon ([ADR-0002](../adr/0002-gitflow-con-develop.md),
   [ADR-0005](../adr/0005-base-de-staging-en-neon.md)).
-- **E1 Seguridad y acceso (parcial)** — grupo Gerencia para ver ingresos (HU-052 criterio 2), auditoría
+- **E1 Seguridad y acceso** — grupo Gerencia para ver ingresos (HU-052 criterio 2), auditoría
   de reservas, campañas y tarifas con su pantalla (HU-007), expiración de sesión por inactividad
-  (HU-003 criterio 4), bloqueo temporal por intentos fallidos (HU-003 criterio 3) y roles Operativo,
-  Administrador y Lectura (HU-004).
+  (HU-003 criterio 4), bloqueo temporal por intentos fallidos (HU-003 criterio 3), roles Operativo,
+  Administrador y Lectura (HU-004), gestión de usuarios (HU-005) y baja lógica (HU-006).
 
 ## En curso
 
@@ -33,10 +33,8 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 
 ## Próximas
 
-1. **E1 Seguridad y acceso** — lo que falta: gestión de usuarios (HU-005, RN-021) y baja lógica en todo
-   el sistema (HU-006).
-2. **HU-001 Parámetros configurables** (E0) — la esperan HU-033 y la auditoría de configuración.
-3. **Resto de E3** — avisos de duplicados (HU-019), contactos (HU-068) e interacciones (HU-020).
+1. **HU-001 Parámetros configurables** (E0) — la esperan HU-033 y la auditoría de configuración.
+2. **Resto de E3** — avisos de duplicados (HU-019), contactos (HU-068) e interacciones (HU-020).
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 

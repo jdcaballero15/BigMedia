@@ -13,6 +13,7 @@ export type CartelOcupacion = {
   modalidad: string
   zona_nombre: string
   formato_nombre: string
+  de_baja: boolean
   ocupacion: number
   celdas: CeldaOcupacion[]
 }
@@ -36,6 +37,11 @@ const formateador = new Intl.NumberFormat('es-AR', {
 })
 
 // Muestra una ocupación como porcentaje con un decimal.
+/** Un cartel de baja figura solo si tuvo reservas en el período (HU-006); se marca. */
+export function nombreCartel(cartel: CartelOcupacion): string {
+  return cartel.de_baja ? `${cartel.nombre_visible} (de baja)` : cartel.nombre_visible
+}
+
 export function formatearPorcentaje(valor: number): string {
   return `${formateador.format(valor)} %`
 }
