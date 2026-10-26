@@ -109,3 +109,27 @@ test('cancelar avisa al contenedor', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
   expect(onCancel).toHaveBeenCalled()
 })
+
+test('el cliente directo avisa si su marca se parece a otra y permite guardar igual', async () => {
+  const onSave = vi
+    .fn()
+    .mockRejectedValueOnce(
+      new ApiError(400, { posible_duplicado: ['Coca Cola — Agencia Andes (activa)'] }),
+    )
+    .mockResolvedValueOnce(undefined)
+  render(<ClienteForm onSave={onSave} onCancel={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Coca-Cola' } })
+  fireEvent.change(screen.getByLabelText('Tipo'), { target: { value: 'directo' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar cliente' }))
+
+  const aviso = await screen.findByRole('alert', { name: 'Posible marca duplicada' })
+  expect(aviso.textContent).toContain('Coca Cola — Agencia Andes (activa)')
+
+  fireEvent.click(screen.getByRole('button', { name: 'Es otra marca, guardar igual' }))
+  await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2))
+  expect(onSave.mock.lastCall?.[0]).toMatchObject({
+    nombre: 'Coca-Cola',
+    tipo: 'directo',
+    confirmar_distinta: true,
+  })
+})

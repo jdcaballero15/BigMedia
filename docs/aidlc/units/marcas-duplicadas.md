@@ -65,19 +65,28 @@ muestre cuál es la coincidente. El operativo puede confirmar que es otra marca 
 
 ## Respuestas
 
-—
+Respondidas por Gonza el 26/10/2026: se aceptan las opciones recomendadas o propuestas.
+
+1. Igual después de normalizar, o a distancia de edición 1 (2 en nombres de 8 caracteres o más).
+2. La confirmación es en el servidor: 400 `posible_duplicado` y reenvío con `confirmar_distinta`.
+3. Se compara contra todas las marcas, activas e inactivas.
+4. Avisa en el alta y al cambiar el nombre, sin compararse consigo misma.
+5. El alta del cliente directo avisa por su marca homónima.
+6. El criterio 3 (importación) queda fuera; la detección queda en un servicio reusable.
 
 ## Cambios (con las opciones recomendadas)
 
 - `backend/config/texto.py`: `normalizar_comparacion` (normaliza también puntuación y espacios) y
   `distancia_edicion` (Levenshtein con tope, sin dependencias nuevas).
 - `backend/apps/clientes/services.py`: `posibles_duplicados(nombre, excluir=None)`, que devuelve
-  las marcas coincidentes. `registrar_cliente` recibe `confirmar_distinta` para la marca homónima.
+  las marcas coincidentes, y `describir_duplicado(marca)` para el texto del aviso.
+  `registrar_cliente` no cambia: el serializer del cliente avisa antes de llamarlo.
 - `backend/apps/clientes/serializers.py`: el campo de escritura `confirmar_distinta`, y en
   `validate` el error `posible_duplicado` con las coincidentes, tanto en `MarcaSerializer` como en el
   alta de un cliente directo.
-- `frontend/src/features/clientes/MarcaForm.tsx` y `ClienteForm.tsx`: el aviso con las coincidentes
-  y el botón "Es otra marca, guardar igual".
+- `frontend/src/features/clientes/AvisoDuplicados.tsx` (nuevo), usado por `MarcaForm.tsx` y
+  `ClienteForm.tsx`: el aviso con las coincidentes y el botón "Es otra marca, guardar igual".
+  Cambiar el nombre saca el aviso.
 
 ## Migraciones
 
@@ -106,6 +115,6 @@ resulta discutible, se puede registrar como regla nueva en un PR `docs/historias
 
 ## Registro de gates
 
-- Gate 1 (plan): —
-- Gate 2 (verificación): —
+- Gate 1 (plan): 26/10/2026 — aprobado por Gonza
+- Gate 2 (verificación): corrida el 26/10/2026 — backend 470 tests, 95,94 %; frontend 171 tests; esperando a Gonza o Juan Diego
 - Gate 3 (PR): —
