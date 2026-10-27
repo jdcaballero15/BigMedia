@@ -99,4 +99,4 @@ campaña, y verla en la sección, en la ficha del cliente y en la campaña.
   verde (sentencias 88,38 %, líneas 91,39 %), `build` ok. `pre-commit run --all-files` en verde,
   gitleaks incluido. La prueba a mano en `localhost` quedó sin resultado informado: Juan Diego
   pidió el PR directamente.
-- Gate 3 (PR): 2026-10-27 — pedido por Juan Diego; PR a `develop`.
+- Gate 3 (PR): 2026-10-27 — pedido por Juan Diego; [PR #73](https://github.com/jdcaballero15/BigMedia/pull/73) a `develop`.
