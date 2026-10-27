@@ -40,6 +40,12 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E1 Seguridad y acceso | [roles-y-permisos](units/roles-y-permisos.md) | usuarios | HU-004 | bloqueo-intentos-fallidos | Gonza | feature/usuarios-roles-y-permisos | mergeada |
 | — (unidad técnica) | [ajuste-datos-ejemplo](units/ajuste-datos-ejemplo.md) | usuarios, infra | pedido 23/10/2026 (demo en staging) | entornos | Gonza | chore/infra-datos-ejemplo-demo | mergeada |
 | E1 Seguridad y acceso | [gestion-de-usuarios](units/gestion-de-usuarios.md) | usuarios | HU-005 (RN-021) | roles-y-permisos | Gonza | feature/usuarios-gestion-de-usuarios | mergeada |
+| E1 Seguridad y acceso | [baja-logica](units/baja-logica.md) | reservas | HU-006 | gestion-de-usuarios | Gonza | feature/reservas-baja-logica | mergeada |
+| E0 Plataforma base | [parametros-configurables](units/parametros-configurables.md) | reservas | HU-001 (RN-001, RN-002) | reservas-motor-disponibilidad, gestion-de-usuarios | Gonza | feature/reservas-parametros-configurables | mergeada |
+| E3 Clientes, marcas y CRM | [marcas-duplicadas](units/marcas-duplicadas.md) | clientes | HU-019 | clientes-y-marcas | Gonza | feature/clientes-marcas-duplicadas | mergeada |
+| E3 Clientes, marcas y CRM | [contactos-intermediario](units/contactos-intermediario.md) | clientes | HU-068 (RN-015) | clientes-y-marcas | Gonza | feature/clientes-contactos-intermediario | mergeada |
+| E5 Reservas y motor de disponibilidad | [sobreventa-finalizada](units/sobreventa-finalizada.md) | reservas | HU-031, HU-035 (RN-002) | reservas-motor-disponibilidad | Juan Diego | fix/reservas-sobreventa-finalizada | en revisión |
+| E3 Clientes, marcas y CRM | [interacciones](units/interacciones.md) | campanias | HU-020, HU-068 (criterios 5 y 7) | contactos-intermediario, campanias | Juan Diego | feature/campanias-interacciones | en revisión |
 | — (unidad técnica) | [ajuste-selector-de-fechas](units/ajuste-selector-de-fechas.md) | frontend | prueba manual 24/10/2026 | — | Juan Diego | fix/frontend-selector-de-fechas | en revisión |
 
 ## Notas

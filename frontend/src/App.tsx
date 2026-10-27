@@ -8,10 +8,12 @@ import {
   Layers,
   LogOut,
   Megaphone,
+  MessagesSquare,
   Menu,
   ScrollText,
   Settings,
   Signpost,
+  SlidersHorizontal,
   Tags,
   TrendingUp,
   Truck,
@@ -26,12 +28,14 @@ import CatalogosPage from './features/inventario/CatalogosPage'
 import ClientesPage from './features/clientes/ClientesPage'
 import MarcasPage from './features/clientes/MarcasPage'
 import CampaniasPage from './features/campanias/CampaniasPage'
+import InteraccionesPage from './features/campanias/InteraccionesPage'
 import CostosPage from './features/costos/CostosPage'
 import DisponibilidadPage from './features/disponibilidad/DisponibilidadPage'
 import ReporteIngresosPage from './features/facturacion/ReporteIngresos'
 import PorRubroPage from './features/facturacion/PorRubro'
 import PanelPrincipal from './features/panel/PanelPrincipal'
 import AuditoriaPage from './features/auditoria/Auditoria'
+import ParametrosPage from './features/reservas/ParametrosPage'
 import ReporteOcupacionPage from './features/reservas/ReporteOcupacion'
 import DefinirClave from './features/usuarios/DefinirClave'
 import UsuariosPage from './features/usuarios/UsuariosPage'
@@ -51,6 +55,7 @@ type Page =
   | 'clientes'
   | 'marcas'
   | 'campanias'
+  | 'interacciones'
   | 'carteles'
   | 'disponibilidad'
   | 'proveedores'
@@ -60,6 +65,7 @@ type Page =
   | 'ocupacion'
   | 'formatos'
   | 'catalogos'
+  | 'parametros'
   | 'auditoria'
   | 'usuarios'
 
@@ -110,6 +116,12 @@ const sections: { title: string; items: Item[] }[] = [
       { id: 'clientes', label: 'Clientes', icon: Users, render: () => <ClientesPage /> },
       { id: 'marcas', label: 'Marcas', icon: Tags, render: () => <MarcasPage /> },
       { id: 'campanias', label: 'Campañas', icon: Megaphone, render: () => <CampaniasPage /> },
+      {
+        id: 'interacciones',
+        label: 'Interacciones',
+        icon: MessagesSquare,
+        render: () => <InteraccionesPage />,
+      },
     ],
   },
   {
@@ -160,6 +172,13 @@ const sections: { title: string; items: Item[] }[] = [
     title: 'Configuración',
     items: [
       { id: 'catalogos', label: 'Catálogos', icon: Settings, render: () => <CatalogosPage /> },
+      {
+        id: 'parametros',
+        label: 'Parámetros',
+        icon: SlidersHorizontal,
+        render: () => <ParametrosPage />,
+        soloAdministrador: true,
+      },
     ],
   },
   {

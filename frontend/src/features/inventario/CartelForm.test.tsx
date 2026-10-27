@@ -35,6 +35,7 @@ const cartel: Cartel = {
   proveedor_nombre: null,
   estado: 1,
   estado_nombre: 'Activo',
+  es_baja: false,
   direccion: 'Av. San Martín 1234',
   tamano: '',
   capacidad: 8,

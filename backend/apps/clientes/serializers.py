@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from . import services
-from .models import Cliente, Marca, Rubro
+from .models import Cliente, Contacto, Marca, Rubro
 from .validators import normalizar_cuit, validar_cuit
 
 NOMBRE_OBLIGATORIO = "Ingresá un nombre."
@@ -12,6 +12,24 @@ NOMBRE_OBLIGATORIO = "Ingresá un nombre."
 
 def _errores_de_nombre() -> dict[str, str]:
     return {"required": NOMBRE_OBLIGATORIO, "blank": NOMBRE_OBLIGATORIO}
+
+
+def _campo_confirmar_distinta() -> serializers.BooleanField:
+    return serializers.BooleanField(
+        write_only=True,
+        required=False,
+        default=False,
+        help_text="Confirma que no es la marca del aviso `posible_duplicado` (HU-019).",
+    )
+
+
+def _avisar_duplicados(nombre: str, excluir: int | None = None) -> None:
+    """Rechaza con `posible_duplicado` si hay marcas con un nombre igual o parecido (HU-019)."""
+    coincidentes = services.posibles_duplicados(nombre, excluir)
+    if coincidentes:
+        raise serializers.ValidationError(
+            {"posible_duplicado": [services.describir_duplicado(m) for m in coincidentes]}
+        )
 
 
 class RubroSerializer(serializers.ModelSerializer[Rubro]):
@@ -38,6 +56,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
     )
     tipo_nombre = serializers.CharField(source="get_tipo_display", read_only=True)
     nombre_visible = serializers.CharField(read_only=True)
+    confirmar_distinta = _campo_confirmar_distinta()
 
     class Meta:
         model = Cliente
@@ -54,6 +73,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
             "activo",
             "creado_en",
             "actualizado_en",
+            "confirmar_distinta",
         ]
         read_only_fields = ["creado_en", "actualizado_en"]
         extra_kwargs = {
@@ -76,6 +96,23 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
             raise serializers.ValidationError("Ya existe un cliente con ese CUIT.")
         return cuit
 
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        confirmada = attrs.pop("confirmar_distinta", False)
+        # Solo el alta de un cliente directo crea su marca homónima (HU-018).
+        crea_marca = self.instance is None and attrs.get("tipo") == Cliente.Tipo.DIRECTO
+        if crea_marca and not confirmada:
+            _avisar_duplicados(attrs.get("nombre", ""))
+        self._validar_cambio_de_tipo(attrs.get("tipo"))
+        return attrs
+
+    def _validar_cambio_de_tipo(self, tipo: str | None) -> None:
+        """Un intermediario formal con contactos activos no cambia de tipo (HU-068, criterio 6)."""
+        cliente = self.instance
+        if cliente is None or tipo is None or tipo == cliente.tipo:
+            return
+        if services.acepta_contactos(cliente) and services.tiene_contactos_activos(cliente):
+            raise serializers.ValidationError({"tipo": "Inactivá antes sus contactos."})
+
     def create(self, validated_data: dict[str, Any]) -> Cliente:
         return services.crear_cliente(**validated_data)
 
@@ -83,6 +120,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
 class MarcaSerializer(serializers.ModelSerializer[Marca]):
     cliente_nombre = serializers.CharField(source="cliente.nombre_visible", read_only=True)
     rubro_nombre = serializers.CharField(source="rubro.nombre", read_only=True, default=None)
+    confirmar_distinta = _campo_confirmar_distinta()
 
     class Meta:
         model = Marca
@@ -96,6 +134,7 @@ class MarcaSerializer(serializers.ModelSerializer[Marca]):
             "activo",
             "creado_en",
             "actualizado_en",
+            "confirmar_distinta",
         ]
         read_only_fields = ["creado_en", "actualizado_en"]
         extra_kwargs = {
@@ -131,4 +170,70 @@ class MarcaSerializer(serializers.ModelSerializer[Marca]):
             )
             if valor is not None and not valor.activo and not sin_cambios:
                 raise serializers.ValidationError({campo: mensaje})
+        confirmada = attrs.pop("confirmar_distinta", False)
+        nombre = attrs.get("nombre")
+        if nombre is None or confirmada:
+            return attrs
+        # Se avisa en el alta y al cambiar el nombre, sin comparar la marca consigo misma.
+        if self.instance is None:
+            _avisar_duplicados(nombre)
+        elif nombre != self.instance.nombre:
+            _avisar_duplicados(nombre, self.instance.pk)
         return attrs
+
+
+class ContactoSerializer(serializers.ModelSerializer[Contacto]):
+    class Meta:
+        model = Contacto
+        fields = [
+            "id",
+            "cliente",
+            "nombre",
+            "cargo",
+            "correo",
+            "telefono",
+            "notas",
+            "principal",
+            "activo",
+        ]
+        # Sin el validador de la restricción del principal: `guardar_contacto` desmarca al anterior.
+        validators: list[Any] = []
+        extra_kwargs = {
+            "nombre": {"error_messages": _errores_de_nombre()},
+            "correo": {"error_messages": {"invalid": "Ingresá un correo válido."}},
+            "cliente": {
+                "error_messages": {
+                    "required": "Seleccioná un cliente.",
+                    "null": "Seleccioná un cliente.",
+                    "does_not_exist": "El cliente elegido no existe.",
+                    "incorrect_type": "Seleccioná un cliente.",
+                }
+            },
+        }
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        cliente = attrs.get("cliente")
+        if self.instance is not None:
+            if cliente is not None and cliente.pk != self.instance.cliente_id:
+                raise serializers.ValidationError({"cliente": "Un contacto no cambia de cliente."})
+        elif cliente is not None:
+            if not cliente.activo:
+                raise serializers.ValidationError({"cliente": "Seleccioná un cliente activo."})
+            if not services.acepta_contactos(cliente):
+                raise serializers.ValidationError(
+                    {"cliente": "Solo un cliente intermediario formal puede tener contactos."}
+                )
+        activo = attrs.get("activo", getattr(self.instance, "activo", True))
+        if attrs.get("principal") and not activo:
+            raise serializers.ValidationError(
+                {"principal": "Un contacto inactivo no puede ser el principal."}
+            )
+        return attrs
+
+    def create(self, validated_data: dict[str, Any]) -> Contacto:
+        return services.guardar_contacto(Contacto(**validated_data))
+
+    def update(self, instance: Contacto, validated_data: dict[str, Any]) -> Contacto:
+        for campo, valor in validated_data.items():
+            setattr(instance, campo, valor)
+        return services.guardar_contacto(instance)

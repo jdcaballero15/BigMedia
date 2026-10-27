@@ -4,10 +4,9 @@ import { ApiError } from '../../shared/api'
 import CampoFecha from '../../shared/CampoFecha'
 import { erroresDeFechas } from '../../shared/fechas'
 import { FieldErrors } from '../../shared/FieldErrors'
-import { vigentes } from '../../shared/opciones'
 import type { Cartel } from '../inventario/types'
 import type { EstadoReserva, Reserva } from './types'
-import { ESTADOS_RESERVA } from './types'
+import { ESTADOS_INICIALES, ESTADOS_RESERVA } from './types'
 
 export type ReservaInput = {
   campania: number
@@ -39,6 +38,10 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
   const [saving, setSaving] = useState(false)
+  // Una reserva nueva nace Pendiente o Confirmada; al editar, el servidor valida la transición.
+  const estadosOfrecidos = reserva
+    ? ESTADOS_RESERVA
+    : ESTADOS_RESERVA.filter((item) => ESTADOS_INICIALES.includes(item.value))
 
   function elegirCartel(value: string) {
     setCartel(value)
@@ -99,11 +102,14 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
           Cartel
           <select value={cartel} onChange={(event) => elegirCartel(event.target.value)}>
             <option value="">Seleccionar</option>
-            {vigentes(carteles, reserva?.cartel).map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.nombre_visible}
-              </option>
-            ))}
+            {carteles
+              .filter((item) => !item.es_baja || item.id === reserva?.cartel)
+              .map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.nombre_visible}
+                  {item.es_baja ? ' (de baja)' : ''}
+                </option>
+              ))}
           </select>
           <FieldErrors messages={errors.cartel} />
         </label>
@@ -113,7 +119,7 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
             value={estado}
             onChange={(event) => setEstado(event.target.value as EstadoReserva)}
           >
-            {ESTADOS_RESERVA.map((item) => (
+            {estadosOfrecidos.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
               </option>

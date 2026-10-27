@@ -112,3 +112,45 @@ test('al editar conserva el cliente y el rubro inactivos ya asignados', async ()
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
   expect(onCancel).toHaveBeenCalled()
 })
+
+test('avisa la marca parecida y guardar igual reenvía confirmando', async () => {
+  const onSave = vi
+    .fn()
+    .mockRejectedValueOnce(
+      new ApiError(400, { posible_duplicado: ['Coca Cola — Agencia Andes (activa)'] }),
+    )
+    .mockResolvedValueOnce(undefined)
+  render(<MarcaForm clientes={clientes} rubros={rubros} onSave={onSave} onCancel={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Coca Kola' } })
+  fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: '1' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar marca' }))
+
+  const aviso = await screen.findByRole('alert', { name: 'Posible marca duplicada' })
+  expect(aviso.textContent).toContain('Coca Cola — Agencia Andes (activa)')
+  expect(screen.queryByText('No se pudo completar la operación.')).toBeNull()
+
+  fireEvent.click(screen.getByRole('button', { name: 'Es otra marca, guardar igual' }))
+  await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2))
+  expect(onSave).toHaveBeenLastCalledWith({
+    nombre: 'Coca Kola',
+    cliente: 1,
+    rubro: null,
+    activo: true,
+    confirmar_distinta: true,
+  })
+  await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+})
+
+test('cambiar el nombre saca el aviso de marca parecida', async () => {
+  const onSave = vi
+    .fn()
+    .mockRejectedValue(
+      new ApiError(400, { posible_duplicado: ['Coca Cola — Agencia Andes (activa)'] }),
+    )
+  render(<MarcaForm clientes={clientes} rubros={rubros} onSave={onSave} onCancel={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Coca Kola' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar marca' }))
+  await screen.findByRole('alert', { name: 'Posible marca duplicada' })
+  fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Pepsi' } })
+  expect(screen.queryByRole('alert')).toBeNull()
+})

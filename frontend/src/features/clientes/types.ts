@@ -32,3 +32,15 @@ export type Marca = {
   rubro_nombre: string | null
   activo: boolean
 }
+
+export type Contacto = {
+  id: number
+  cliente: number
+  nombre: string
+  cargo: string
+  correo: string
+  telefono: string
+  notas: string
+  principal: boolean
+  activo: boolean
+}

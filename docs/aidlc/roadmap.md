@@ -6,11 +6,13 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 
 ## Hecho
 
-- **E0 Plataforma base** — base del repositorio y despliegue en Render. HU-001 (parámetros) sigue pendiente.
+- **E0 Plataforma base** — base del repositorio y despliegue en Render, y parámetros del motor de disponibilidad configurables desde la
+  aplicación (HU-001).
 - **Reestructura del repositorio** (unidad técnica) — gobernanza, CI estricto y protección de ramas.
 - **E2 Inventario de soportes** — HU-008 a HU-014. HU-015 (importación) espera los relevamientos (RN-009).
-- **E3 Clientes, marcas y CRM** — clientes y marcas (HU-016, HU-017, HU-018). Faltan avisos de
-  duplicados (HU-019), contactos (HU-068) e interacciones (HU-020).
+- **E3 Clientes, marcas y CRM** — clientes y marcas (HU-016, HU-017, HU-018) y aviso de marcas
+  duplicadas (HU-019; su criterio 3 espera un importador de marcas) y contactos del intermediario
+  formal (HU-068; sus criterios 5 y 7 llegan con HU-020). Faltan las interacciones (HU-020).
 - **E4 Campañas** — crear campañas y sus estados (HU-023, HU-024).
 - **E5 Reservas y motor de disponibilidad** — reservas, ciclo de vida y motor de disponibilidad
   (HU-028 a HU-040).
@@ -22,10 +24,10 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 - **Entornos: producción paga y staging gratis** (unidad técnica) — producción paga en Render y staging
   con base en Neon ([ADR-0002](../adr/0002-gitflow-con-develop.md),
   [ADR-0005](../adr/0005-base-de-staging-en-neon.md)).
-- **E1 Seguridad y acceso (parcial)** — grupo Gerencia para ver ingresos (HU-052 criterio 2), auditoría
+- **E1 Seguridad y acceso** — grupo Gerencia para ver ingresos (HU-052 criterio 2), auditoría
   de reservas, campañas y tarifas con su pantalla (HU-007), expiración de sesión por inactividad
-  (HU-003 criterio 4), bloqueo temporal por intentos fallidos (HU-003 criterio 3) y roles Operativo,
-  Administrador y Lectura (HU-004).
+  (HU-003 criterio 4), bloqueo temporal por intentos fallidos (HU-003 criterio 3), roles Operativo,
+  Administrador y Lectura (HU-004), gestión de usuarios (HU-005) y baja lógica (HU-006).
 
 ## En curso
 
@@ -33,10 +35,7 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 
 ## Próximas
 
-1. **E1 Seguridad y acceso** — lo que falta: gestión de usuarios (HU-005, RN-021) y baja lógica en todo
-   el sistema (HU-006).
-2. **HU-001 Parámetros configurables** (E0) — la esperan HU-033 y la auditoría de configuración.
-3. **Resto de E3** — avisos de duplicados (HU-019), contactos (HU-068) e interacciones (HU-020).
+1. **Resto de E3** — interacciones comerciales (HU-020), que completan los criterios 5 y 7 de HU-068.
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
@@ -53,3 +52,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-10-18 | Se agrega la unidad técnica de entornos como próxima prioridad | La base gratis de producción vence el 17/11/2026; Juan Diego decidió producción paga y staging gratis |
 | 2026-10-21 | Roadmap puesto al día: E2 a E8 pasan a Hecho y la unidad de entornos queda como próxima | El roadmap había quedado atrás respecto del trabajo ya mergeado (E3 a E8) |
 | 2026-10-23 | Entornos, el cierre de E8 (salvo grupo económico) y parte de E1 pasan a Hecho; E1 queda primera | El roadmap había quedado atrás respecto de las unidades ya mergeadas |
+| 2026-10-26 | HU-005, HU-006 y HU-001 pasan a Hecho; el resto de E3 queda primero | Gestión de usuarios, baja lógica y parámetros configurables quedaron mergeadas (PR #65, #66 y #67) |

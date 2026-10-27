@@ -18,6 +18,7 @@ export type Cartel = {
   proveedor_nombre: string | null
   estado: number
   estado_nombre: string
+  es_baja: boolean
   direccion: string
   tamano: string
   capacidad: number

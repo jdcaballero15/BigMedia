@@ -63,3 +63,29 @@ class Reserva(models.Model):
         marca = marca_obj.nombre if marca_obj is not None else "Sin marca"
         periodo = f"{MESES_ABREV[self.fecha_inicio.month - 1]} {self.fecha_inicio.year}"
         return f"{marca} - {self.cartel.nombre_visible} - {periodo}"
+
+
+class ParametrosDisponibilidad(models.Model):
+    """Parámetros del motor de disponibilidad que cambia el administrador (HU-001).
+
+    Una sola fila (`pk=1`), creada por migración y que no se borra.
+    """
+
+    # Día de borde (RN-001): si una reserva termina el día en que empieza otra, se pisan.
+    borde_inclusivo = models.BooleanField(default=True)
+    # Si la reserva pendiente (tentativa) ocupa cupo para el bloqueo duro (RN-002).
+    tentativa_bloquea = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "parámetros de disponibilidad"
+        verbose_name_plural = "parámetros de disponibilidad"
+
+    def __str__(self) -> str:
+        return "Parámetros de disponibilidad"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *_args: Any, **_kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValueError("Los parámetros de disponibilidad no se borran.")

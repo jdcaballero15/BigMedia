@@ -21,7 +21,7 @@ export default function ReservasCampania({ campaniaId }: { campaniaId: number })
 
   useEffect(() => {
     let active = true
-    void apiGet<Cartel[]>('/api/inventario/carteles/')
+    void apiGet<Cartel[]>('/api/inventario/carteles/?incluir_bajas=1')
       .then((rows) => {
         if (active) setCarteles(rows)
       })

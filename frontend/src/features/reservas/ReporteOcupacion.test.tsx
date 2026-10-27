@@ -130,3 +130,14 @@ test('exporta el reporte a CSV', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }))
   expect(crearUrl).toHaveBeenCalled()
 })
+
+test('marca los carteles de baja que tuvieron reservas en el período', async () => {
+  const conBaja = {
+    ...reporte,
+    carteles: [{ ...reporte.carteles[0], de_baja: true }, reporte.carteles[1]],
+  }
+  stubFetch(conBaja)
+  render(<ReporteOcupacionPage />)
+  expect(await screen.findByText('Av. San Martín 1234 (de baja)')).toBeDefined()
+  expect(screen.getByText('Ruta 40 km 10')).toBeDefined()
+})

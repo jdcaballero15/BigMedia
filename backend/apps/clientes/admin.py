@@ -1,37 +1,30 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from django.contrib import admin
 from django.http import HttpRequest
 
+from config.admin_borrado import BorradoAuditadoAdmin
+
 from . import services
-from .models import Cliente, Marca, Rubro
+from .models import Cliente, Contacto, Marca, Rubro
 
 if TYPE_CHECKING:
     from django.forms import ModelForm
 
-    ModelAdminBase = admin.ModelAdmin[Any]
-else:
-    ModelAdminBase = admin.ModelAdmin
-
-
-class SinBorrarAdmin(ModelAdminBase):
-    """Baja lógica: se inactiva con `activo`, nunca se borra."""
-
-    def has_delete_permission(self, _request: HttpRequest, _obj: Any = None) -> bool:
-        return False
-
 
 @admin.register(Rubro)
-class RubroAdmin(SinBorrarAdmin):
+class RubroAdmin(BorradoAuditadoAdmin):
+    entidad = "rubro"
     list_display = ["nombre", "activo"]
     list_filter = ["activo"]
     search_fields = ["nombre"]
 
 
 @admin.register(Cliente)
-class ClienteAdmin(SinBorrarAdmin):
+class ClienteAdmin(BorradoAuditadoAdmin):
+    entidad = "cliente"
     list_display = ["nombre_visible", "razon_social", "cuit", "tipo", "activo"]
     list_filter = ["tipo", "activo"]
     search_fields = ["nombre", "razon_social", "cuit"]
@@ -50,9 +43,20 @@ class ClienteAdmin(SinBorrarAdmin):
 
 
 @admin.register(Marca)
-class MarcaAdmin(SinBorrarAdmin):
+class MarcaAdmin(BorradoAuditadoAdmin):
+    entidad = "marca"
     list_display = ["nombre", "cliente", "rubro", "activo"]
     list_filter = ["activo", "rubro"]
     search_fields = ["nombre", "cliente__nombre"]
     list_select_related = ["cliente", "rubro"]
     autocomplete_fields = ["cliente", "rubro"]
+
+
+@admin.register(Contacto)
+class ContactoAdmin(BorradoAuditadoAdmin):
+    entidad = "contacto"
+    list_display = ["nombre", "cliente", "cargo", "principal", "activo"]
+    list_filter = ["activo", "principal"]
+    search_fields = ["nombre", "cliente__nombre"]
+    list_select_related = ["cliente"]
+    autocomplete_fields = ["cliente"]

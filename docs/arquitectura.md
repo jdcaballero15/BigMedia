@@ -75,8 +75,8 @@ Los límites vienen de la unidad [`base-del-repositorio`](aidlc/units/base-del-r
 | --- | --- | --- | --- |
 | `usuarios` | Cuentas, sesión y permisos. | Acceso no autorizado a datos o acciones. | iniciada (solo el comando `asegurar_admin`) |
 | `inventario` | Formatos, proveedores, zonas, carteles, estados físicos y capacidad. | Capacidad mal cargada, que luego rompe la disponibilidad. | implementada |
-| `clientes` | Clientes pagadores, marcas, contactos e interacciones. | Datos personales mal tratados. | implementada parcial (clientes, marcas y rubros) |
-| `campanias` | Campañas y posiciones solicitadas por formato. | Posiciones inconsistentes con lo vendido. | planificada |
+| `clientes` | Clientes pagadores, marcas y contactos. | Datos personales mal tratados. | implementada parcial (clientes, marcas y rubros) |
+| `campanias` | Campañas, posiciones solicitadas por formato e interacciones comerciales (viven acá porque pueden llevar campaña). | Posiciones inconsistentes con lo vendido. | planificada |
 | `reservas` | Reservas, disponibilidad, confirmación, cancelación y carga masiva. Toda vía de entrada usa el mismo servicio de confirmación. | Sobreventa de un cartel. | planificada |
 | `costos` | Costos asociados a reservas e ítems de facturación, evitando contabilizarlos dos veces. | Contabilizar un costo dos veces. | planificada |
 | `facturacion` | Ítems, cálculo de importes, cierre mensual y exportación XLSX. | Importes y cierre mensual incorrectos. | planificada |

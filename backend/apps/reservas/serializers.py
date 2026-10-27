@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from . import services
-from .models import Reserva
+from .models import ParametrosDisponibilidad, Reserva
 
 
 class ReservaSerializer(serializers.ModelSerializer[Reserva]):
@@ -52,17 +52,24 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
             )
 
         cartel = attrs.get("cartel")
-        if cartel is not None and cartel.estado.es_baja:
+        sin_cambios = (
+            self.instance is not None
+            and cartel is not None
+            and self.instance.cartel_id == cartel.pk
+        )
+        if cartel is not None and cartel.estado.es_baja and not sin_cambios:
             raise serializers.ValidationError(
                 {"cartel": "El cartel está de baja: no se puede reservar."}
             )
 
         nuevo_estado = attrs.get("estado")
-        if self.instance is not None and nuevo_estado is not None:
-            try:
+        try:
+            if self.instance is None:
+                services.validar_estado_inicial(nuevo_estado or Reserva.Estado.PENDIENTE)
+            elif nuevo_estado is not None:
                 services.validar_transicion(self.instance.estado, nuevo_estado)
-            except DjangoValidationError as error:
-                raise serializers.ValidationError(error.message_dict) from error
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.message_dict) from error
         return attrs
 
     def create(self, validated_data: dict[str, Any]) -> Reserva:
@@ -70,3 +77,9 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
             tarifa = validated_data["cartel"].tarifa_lista
             validated_data["precio_alquiler"] = tarifa if tarifa is not None else Decimal("0.00")
         return super().create(validated_data)
+
+
+class ParametrosDisponibilidadSerializer(serializers.ModelSerializer[ParametrosDisponibilidad]):
+    class Meta:
+        model = ParametrosDisponibilidad
+        fields = ["borde_inclusivo", "tentativa_bloquea"]

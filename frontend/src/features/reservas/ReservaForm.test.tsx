@@ -77,3 +77,62 @@ test('muestra el error de campo de la API', async () => {
     expect(screen.getByText('La fecha de fin no puede ser anterior.')).toBeDefined(),
   )
 })
+
+const deBaja = { ...carteles[0], id: 8, nombre_visible: 'Ruta 40 km 10', es_baja: true } as Cartel
+
+test('no ofrece un cartel de baja en una reserva nueva', () => {
+  render(
+    <ReservaForm
+      campaniaId={5}
+      carteles={[...carteles, deBaja]}
+      onSave={vi.fn()}
+      onCancel={vi.fn()}
+    />,
+  )
+  expect(screen.queryByRole('option', { name: /Ruta 40 km 10/ })).toBeNull()
+})
+
+test('muestra el cartel de baja ya asignado al editar una reserva', () => {
+  const reserva = { id: 3, cartel: 8, fecha_inicio: '2026-08-01', fecha_fin: '2026-08-31' }
+  render(
+    <ReservaForm
+      campaniaId={5}
+      reserva={reserva as never}
+      carteles={[...carteles, deBaja]}
+      onSave={vi.fn()}
+      onCancel={vi.fn()}
+    />,
+  )
+  expect((screen.getByLabelText('Cartel') as HTMLSelectElement).value).toBe('8')
+  expect(screen.getByRole('option', { name: 'Ruta 40 km 10 (de baja)' })).toBeDefined()
+})
+
+function estadosOfrecidos(): string[] {
+  const select = screen.getByLabelText('Estado') as HTMLSelectElement
+  return Array.from(select.options).map((opcion) => opcion.textContent ?? '')
+}
+
+test('una reserva nueva solo ofrece Pendiente y Confirmada', () => {
+  render(<ReservaForm campaniaId={5} carteles={carteles} onSave={vi.fn()} onCancel={vi.fn()} />)
+  expect(estadosOfrecidos()).toEqual(['Pendiente', 'Confirmada'])
+})
+
+test('al editar una reserva se ofrecen los cuatro estados', () => {
+  const reserva = {
+    id: 3,
+    cartel: 7,
+    estado: 'confirmada',
+    fecha_inicio: '2026-08-01',
+    fecha_fin: '2026-08-31',
+  }
+  render(
+    <ReservaForm
+      campaniaId={5}
+      reserva={reserva as never}
+      carteles={carteles}
+      onSave={vi.fn()}
+      onCancel={vi.fn()}
+    />,
+  )
+  expect(estadosOfrecidos()).toEqual(['Pendiente', 'Confirmada', 'Finalizada', 'Cancelada'])
+})

@@ -14,11 +14,11 @@ from rest_framework.views import APIView
 
 from apps.auditoria import services as auditoria_services
 from apps.inventario.models import Cartel
-from config.permisos import LecturaConSesionEdicionOperativo
+from config.permisos import LecturaConSesionEdicionOperativo, SoloAdministrador
 
 from . import services
-from .models import Reserva
-from .serializers import ReservaSerializer
+from .models import ParametrosDisponibilidad, Reserva
+from .serializers import ParametrosDisponibilidadSerializer, ReservaSerializer
 
 
 def _id_positivo(valor: str, campo: str) -> int:
@@ -47,21 +47,17 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
     serializer_class = ReservaSerializer
 
     def perform_create(self, serializer: BaseSerializer[Reserva]) -> None:
-        necesita = serializer.validated_data.get("estado") == Reserva.Estado.CONFIRMADA
+        estado = serializer.validated_data.get("estado", Reserva.Estado.PENDIENTE)
+        necesita = services.necesita_validar_cupo(None, estado, cambia_ocupacion=True)
         self._guardar_con_disponibilidad(serializer, necesita)
 
     def perform_update(self, serializer: BaseSerializer[Reserva]) -> None:
         datos = serializer.validated_data
         instancia = cast(Reserva, serializer.instance)
         nuevo_estado = datos.get("estado", instancia.estado)
-        va_a_confirmada = datos.get("estado") == Reserva.Estado.CONFIRMADA
-        sigue_confirmada = (
-            instancia.estado == Reserva.Estado.CONFIRMADA
-            and nuevo_estado == Reserva.Estado.CONFIRMADA
-        )
         cambia_ocupacion = any(c in datos for c in ("fecha_inicio", "fecha_fin", "cartel"))
-        # No se revalida si solo cambia un precio de una confirmada (matriz caso 13).
-        necesita = va_a_confirmada or (sigue_confirmada and cambia_ocupacion)
+        # No se revalida si solo cambia un precio (matriz caso 13).
+        necesita = services.necesita_validar_cupo(instancia.estado, nuevo_estado, cambia_ocupacion)
         # El cambio y su auditoría en la misma transacción: nunca un cambio sin su registro.
         anteriores = _campos_auditados(instancia)
         with transaction.atomic():
@@ -238,3 +234,42 @@ class RepartoView(APIView):
         if reserva is None:
             raise ValidationError({"reserva": "No existe la reserva."})
         return Response(services.reparto_por_mes(reserva))
+
+
+def _parametros_auditados(parametros: ParametrosDisponibilidad) -> dict[str, str]:
+    return {
+        "borde_inclusivo": str(parametros.borde_inclusivo),
+        "tentativa_bloquea": str(parametros.tentativa_bloquea),
+    }
+
+
+class ParametrosView(APIView):
+    """Parámetros del motor de disponibilidad (HU-001): solo el rol Administrador."""
+
+    permission_classes = [permissions.IsAuthenticated, SoloAdministrador]
+    http_method_names = ["get", "patch", "head", "options"]
+
+    def get(self, _request: Request) -> Response:
+        return Response(
+            ParametrosDisponibilidadSerializer(services.parametros_disponibilidad()).data
+        )
+
+    def patch(self, request: Request) -> Response:
+        # El cambio y su auditoría en la misma transacción, con la fila bloqueada.
+        with transaction.atomic():
+            services.parametros_disponibilidad()
+            parametros = ParametrosDisponibilidad.objects.select_for_update().get(pk=1)
+            anteriores = _parametros_auditados(parametros)
+            serializer = ParametrosDisponibilidadSerializer(
+                parametros, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            auditoria_services.registrar_cambios(
+                "parametros",
+                parametros.pk,
+                anteriores,
+                _parametros_auditados(parametros),
+                request.user,
+            )
+        return Response(serializer.data)
