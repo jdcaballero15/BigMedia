@@ -1,6 +1,6 @@
 # Unidad: Sobreventa por reservas Finalizadas
 
-- **Estado:** en curso · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** `reservas`
+- **Estado:** en revisión · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** `reservas`
 - **Origen:** hallazgo de la prueba manual de reservas (24/10/2026), reproducido el 26/10/2026 ·
   HU-031, HU-035 · **Rama:** `fix/reservas-sobreventa-finalizada`
 
@@ -88,5 +88,5 @@ opción. Con la API, que se rechace.
   archivos, `makemigrations --check` sin cambios, `pytest --cov` 513 en verde (96,05 %). Frontend:
   `format:check` ok, `lint` y `typecheck` sin errores, `test:coverage` 182 en verde (sentencias
   87,92 %, líneas 91,01 %), `build` ok. `pre-commit run --all-files` en verde, gitleaks incluido.
-  Falta la prueba a mano en `localhost`.
-- Gate 3 (PR): pendiente
+  Prueba a mano en `localhost` el 26/10/2026: ok (Juan Diego).
+- Gate 3 (PR): 2026-10-26 — pedido por Juan Diego; PR a `develop`.
