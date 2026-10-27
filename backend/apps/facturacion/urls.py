@@ -1,10 +1,17 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import CatalogosFacturacionView, IngresosView, ItemFacturacionViewSet, PorRubroView
+from .views import (
+    CatalogosFacturacionView,
+    EnvioFacturacionViewSet,
+    IngresosView,
+    ItemFacturacionViewSet,
+    PorRubroView,
+)
 
 router = DefaultRouter()
 router.register("items", ItemFacturacionViewSet, basename="item-facturacion")
+router.register("envios", EnvioFacturacionViewSet, basename="envio-facturacion")
 
 urlpatterns = [
     path("ingresos/", IngresosView.as_view(), name="ingresos"),

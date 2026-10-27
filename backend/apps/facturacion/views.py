@@ -1,8 +1,11 @@
 from datetime import date, timedelta
 from typing import cast
 
+from django.contrib.auth.models import AbstractBaseUser
 from django.db import transaction
 from django.db.models import QuerySet
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
@@ -16,8 +19,8 @@ from apps.auditoria import services as auditoria_services
 from config.permisos import LecturaConSesionEdicionOperativo, LecturaSoloGerencia
 
 from . import services
-from .models import ItemFacturacion, Sector, TipoVenta
-from .serializers import ItemFacturacionSerializer
+from .models import EnvioFacturacion, ItemFacturacion, Sector, TipoVenta
+from .serializers import EnvioFacturacionSerializer, ItemFacturacionSerializer
 
 # Cambios del ítem que quedan auditados (HU-007): estado, número e importes.
 CAMPOS_AUDITADOS = ("estado", "numero_factura", "neto", "alicuota_iva", "cliente_id")
@@ -153,4 +156,40 @@ class CatalogosFacturacionView(APIView):
                 "sectores": list(Sector.objects.filter(activo=True).values("id", "nombre")),
                 "tipos_venta": list(TipoVenta.objects.filter(activo=True).values("id", "nombre")),
             }
+        )
+
+
+class EnvioFacturacionViewSet(viewsets.GenericViewSet[EnvioFacturacion]):
+    """Envíos a facturar del mes (HU-066): se crean y se consultan, no se editan ni se borran."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+    queryset = EnvioFacturacion.objects.select_related("enviado_por").prefetch_related("items")
+    serializer_class = EnvioFacturacionSerializer
+
+    def list(self, request: Request) -> Response:
+        envios = self.get_queryset().filter(mes=_mes(request.query_params.get("mes")))
+        return Response(self.get_serializer(envios, many=True).data)
+
+    def create(self, request: Request) -> Response:
+        valor = request.data.get("mes") if isinstance(request.data, dict) else None
+        # El permiso exige sesión: el usuario siempre está autenticado.
+        usuario = cast(AbstractBaseUser, request.user)
+        envio, incompletos = services.enviar_a_facturar(
+            _mes(valor if isinstance(valor, str) else None), usuario
+        )
+        datos = {
+            "envio": self.get_serializer(envio).data if envio else None,
+            "incompletos": incompletos,
+        }
+        return Response(datos, status=201 if envio else 200)
+
+    @action(detail=True, methods=["get"])
+    def planilla(self, _request: Request, pk: str) -> HttpResponse:
+        """Descarga la planilla .xlsx del envío para Administración (HU-066)."""
+        envio = get_object_or_404(self.get_queryset(), pk=pk)
+        nombre = f"facturacion-{envio.mes:%Y-%m}-{envio.pk}.xlsx"
+        return HttpResponse(
+            services.planilla_xlsx(envio),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f'attachment; filename="{nombre}"'},
         )

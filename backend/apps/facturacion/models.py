@@ -180,3 +180,23 @@ class ItemFacturacion(models.Model):
         if update_fields is not None:
             kwargs["update_fields"] = set(update_fields) | {"mes", "iva", "total"}
         super().save(*args, **kwargs)
+
+
+class EnvioFacturacion(models.Model):
+    """Envío a facturar de un mes (HU-066): quién, cuándo y qué ítems. No se edita ni se borra."""
+
+    mes = models.DateField()
+    enviado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="envios_facturacion"
+    )
+    enviado_en = models.DateTimeField(auto_now_add=True)
+    items = models.ManyToManyField(ItemFacturacion, related_name="envios")
+
+    class Meta:
+        ordering = ["-enviado_en", "-id"]
+        verbose_name = "envío a facturar"
+        verbose_name_plural = "envíos a facturar"
+
+    def __str__(self) -> str:
+        cuando = timezone.localtime(self.enviado_en).strftime("%d/%m/%Y %H:%M")
+        return f"Envío {self.mes:%Y-%m} · {cuando}"
