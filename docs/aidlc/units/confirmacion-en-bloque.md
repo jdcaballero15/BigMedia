@@ -1,6 +1,6 @@
 # Unidad: Confirmación en bloque
 
-- **Estado:** en revisión · **Épica:** E10 Armado de campañas y reserva masiva · **App dueña:** `reservas`
+- **Estado:** mergeada · **Épica:** E10 Armado de campañas y reserva masiva · **App dueña:** `reservas`
 - **Origen:** HU-059, más los criterios 3 y 4 de HU-058 · **Rama:** `feature/reservas-confirmacion-en-bloque`
 
 ## Objetivo
