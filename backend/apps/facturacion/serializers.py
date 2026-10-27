@@ -6,7 +6,15 @@ from rest_framework import serializers
 from apps.clientes.validators import normalizar_cuit, validar_cuit
 
 from . import services
-from .models import EnvioFacturacion, ItemFacturacion, Sector, TipoVenta, neto_sugerido
+from .models import (
+    EnvioFacturacion,
+    GrupoFactura,
+    ItemFacturacion,
+    OrdenCompraPdf,
+    Sector,
+    TipoVenta,
+    neto_sugerido,
+)
 
 
 class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
@@ -22,6 +30,8 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
     creado_por_nombre = serializers.CharField(
         source="creado_por.username", read_only=True, default=None
     )
+    grupo_codigo = serializers.CharField(source="grupo.codigo", read_only=True, default=None)
+    orden_compra_pdf = serializers.SerializerMethodField()
     # Se acepta con o sin guiones y se guardan los 11 dígitos (como en clientes).
     cuit_facturacion = serializers.CharField(max_length=13, allow_blank=True, required=False)
 
@@ -53,13 +63,26 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
             "tipo_venta",
             "tipo_venta_nombre",
             "notas",
+            "orden_compra_numero",
+            "orden_compra_fecha",
+            "orden_compra_pdf",
+            "grupo",
+            "grupo_codigo",
             "estado",
             "numero_factura",
             "creado_por_nombre",
             "creado_en",
             "actualizado_en",
         ]
-        read_only_fields = ["iva", "total", "creado_en", "actualizado_en"]
+        read_only_fields = ["iva", "total", "grupo", "creado_en", "actualizado_en"]
+
+    def get_orden_compra_pdf(self, item: ItemFacturacion) -> dict[str, Any] | None:
+        """Nombre y tamaño del PDF de la OC, sin el contenido (HU-062)."""
+        try:
+            pdf = item.orden_compra_pdf
+        except OrdenCompraPdf.DoesNotExist:
+            return None
+        return {"nombre": pdf.nombre, "tamanio": pdf.tamanio}
 
     def get_campania_nombre(self, item: ItemFacturacion) -> str | None:
         return str(item.campania) if item.campania is not None else None
@@ -75,6 +98,9 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
         return cuit
 
     def validate_numero_factura(self, value: str) -> str:
+        return value.strip()
+
+    def validate_orden_compra_numero(self, value: str) -> str:
         return value.strip()
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
@@ -130,3 +156,15 @@ class EnvioFacturacionSerializer(serializers.ModelSerializer[EnvioFacturacion]):
 
     def get_cantidad(self, envio: EnvioFacturacion) -> int:
         return len(envio.items.all())
+
+
+class GrupoFacturaSerializer(serializers.ModelSerializer[GrupoFactura]):
+    mes = serializers.DateField(format="%Y-%m", read_only=True)
+    items = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GrupoFactura
+        fields = ["id", "codigo", "mes", "items"]
+
+    def get_items(self, grupo: GrupoFactura) -> list[int]:
+        return sorted(item.pk for item in grupo.items.all())
