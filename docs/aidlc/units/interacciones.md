@@ -1,6 +1,6 @@
 # Unidad: Interacciones comerciales
 
-- **Estado:** en revisión · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** `campanias`
+- **Estado:** mergeada · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** `campanias`
 - **Origen:** HU-020, más los criterios 5 y 7 de HU-068 · **Rama:** `feature/campanias-interacciones`
 
 ## Objetivo

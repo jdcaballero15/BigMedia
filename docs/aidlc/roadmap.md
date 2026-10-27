@@ -12,7 +12,8 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 - **E2 Inventario de soportes** — HU-008 a HU-014. HU-015 (importación) espera los relevamientos (RN-009).
 - **E3 Clientes, marcas y CRM** — clientes y marcas (HU-016, HU-017, HU-018) y aviso de marcas
   duplicadas (HU-019; su criterio 3 espera un importador de marcas) y contactos del intermediario
-  formal (HU-068; sus criterios 5 y 7 llegan con HU-020). Faltan las interacciones (HU-020).
+  formal (HU-068) e interacciones comerciales (HU-020, en `campanias` por
+  [ADR-0006](../adr/0006-interacciones-en-campanias.md)). El vínculo a marca espera RN-018.
 - **E4 Campañas** — crear campañas y sus estados (HU-023, HU-024).
 - **E5 Reservas y motor de disponibilidad** — reservas, ciclo de vida y motor de disponibilidad
   (HU-028 a HU-040).
@@ -35,7 +36,7 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 
 ## Próximas
 
-1. **Resto de E3** — interacciones comerciales (HU-020), que completan los criterios 5 y 7 de HU-068.
+- A definir con Juan Diego: E3 quedó completa.
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
@@ -53,3 +54,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-10-21 | Roadmap puesto al día: E2 a E8 pasan a Hecho y la unidad de entornos queda como próxima | El roadmap había quedado atrás respecto del trabajo ya mergeado (E3 a E8) |
 | 2026-10-23 | Entornos, el cierre de E8 (salvo grupo económico) y parte de E1 pasan a Hecho; E1 queda primera | El roadmap había quedado atrás respecto de las unidades ya mergeadas |
 | 2026-10-26 | HU-005, HU-006 y HU-001 pasan a Hecho; el resto de E3 queda primero | Gestión de usuarios, baja lógica y parámetros configurables quedaron mergeadas (PR #65, #66 y #67) |
+| 2026-10-27 | E3 pasa a Hecho con HU-020; las próximas quedan a definir | Interacciones comerciales quedaron mergeadas (PR #73) |
