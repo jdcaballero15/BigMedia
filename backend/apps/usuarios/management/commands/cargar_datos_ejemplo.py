@@ -78,7 +78,7 @@ class Command(BaseCommand):
     @staticmethod
     def _reservar(cartel: Cartel, marca: Marca, inicio: date, fin: date, total: str) -> None:
         reserva = Reserva(
-            campania=Campania.objects.create(marca=marca),
+            campania=Campania.objects.create(marca=marca, estado=Campania.Estado.CONFIRMADA),
             cartel=cartel,
             fecha_inicio=inicio,
             fecha_fin=fin,
