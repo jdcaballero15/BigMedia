@@ -220,3 +220,51 @@ test('muestra los errores del servidor', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Guardar ítem' }))
   expect(await screen.findByText('El CUIT no es válido.')).toBeDefined()
 })
+
+// --- HU-062: orden de compra ---
+
+test('manda el número y la fecha de la orden de compra', async () => {
+  const onSave = renderizar()
+  cambiar('Número de orden de compra', 'OC-123')
+  cambiar('Fecha de aprobación de la OC', '20/10/2026')
+  const entrada = await guardar(onSave)
+  expect(entrada).toMatchObject({
+    orden_compra_numero: 'OC-123',
+    orden_compra_fecha: '2026-10-20',
+  })
+})
+
+test('sin fecha de OC viaja null y una fecha inválida no se envía', async () => {
+  const onSave = renderizar()
+  cambiar('Fecha de aprobación de la OC', '99/99/2026')
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar ítem' }))
+  expect(onSave).not.toHaveBeenCalled()
+  cambiar('Fecha de aprobación de la OC', '')
+  const entrada = await guardar(onSave)
+  expect(entrada.orden_compra_fecha).toBeNull()
+})
+
+test('un ítem nuevo pide guardarlo antes de adjuntar el PDF', () => {
+  renderizar()
+  expect(
+    screen.getByText('Guardá el ítem para adjuntar el PDF de la orden de compra.'),
+  ).toBeDefined()
+  expect(screen.queryByLabelText('PDF de la orden de compra')).toBeNull()
+})
+
+test('un ítem guardado muestra su OC y permite adjuntar el PDF', () => {
+  renderizar({
+    id: 8,
+    mes: '2026-11-01',
+    orden_compra_numero: 'OC-5',
+    orden_compra_fecha: '2026-10-20',
+    orden_compra_pdf: { nombre: 'oc.pdf', tamanio: 10 },
+  } as ItemFacturacion)
+  expect((screen.getByLabelText('Número de orden de compra') as HTMLInputElement).value).toBe(
+    'OC-5',
+  )
+  expect((screen.getByLabelText('Fecha de aprobación de la OC') as HTMLInputElement).value).toBe(
+    '20/10/2026',
+  )
+  expect(screen.getByRole('link', { name: 'Abrir oc.pdf' })).toBeDefined()
+})

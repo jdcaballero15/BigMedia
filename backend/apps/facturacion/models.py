@@ -67,6 +67,32 @@ class TipoVenta(CatalogoFacturacion):
         constraints = [models.UniqueConstraint(Lower("nombre"), name="tipo_venta_nombre_ci")]
 
 
+class GrupoFactura(models.Model):
+    """Ítems que van en una misma factura (HU-064). Todos del mismo mes."""
+
+    mes = models.DateField()
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="grupos_factura",
+        null=True,
+        editable=False,
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-creado_en", "-id"]
+        verbose_name = "grupo de factura"
+        verbose_name_plural = "grupos de factura"
+
+    def __str__(self) -> str:
+        return self.codigo
+
+    @property
+    def codigo(self) -> str:
+        return f"G-{self.pk}"
+
+
 class ItemFacturacion(models.Model):
     """Ítem a facturar del mes (HU-060). Nada es obligatorio hasta enviarlo (HU-066).
 
@@ -127,6 +153,16 @@ class ItemFacturacion(models.Model):
         TipoVenta, on_delete=models.PROTECT, related_name="items", null=True, blank=True
     )
     notas = models.TextField(blank=True)
+    orden_compra_numero = models.CharField("número de orden de compra", max_length=50, blank=True)
+    orden_compra_fecha = models.DateField("fecha de aprobación de la OC", null=True, blank=True)
+    grupo = models.ForeignKey(
+        GrupoFactura,
+        on_delete=models.PROTECT,
+        related_name="items",
+        null=True,
+        blank=True,
+        editable=False,
+    )
     estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.BORRADOR)
     numero_factura = models.CharField(max_length=50, blank=True)
     creado_por = models.ForeignKey(
@@ -180,6 +216,31 @@ class ItemFacturacion(models.Model):
         if update_fields is not None:
             kwargs["update_fields"] = set(update_fields) | {"mes", "iva", "total"}
         super().save(*args, **kwargs)
+
+
+class OrdenCompraPdf(models.Model):
+    """PDF de la orden de compra del ítem (HU-062), guardado en la base (ADR-0009).
+
+    Va aparte del ítem para no traer el archivo cada vez que se listan ítems.
+    """
+
+    item = models.OneToOneField(
+        ItemFacturacion, on_delete=models.PROTECT, related_name="orden_compra_pdf"
+    )
+    nombre = models.CharField(max_length=255)
+    tamanio = models.PositiveIntegerField()
+    contenido = models.BinaryField()
+    subido_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="ordenes_compra_pdf"
+    )
+    subido_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "PDF de orden de compra"
+        verbose_name_plural = "PDF de órdenes de compra"
+
+    def __str__(self) -> str:
+        return self.nombre
 
 
 class EnvioFacturacion(models.Model):

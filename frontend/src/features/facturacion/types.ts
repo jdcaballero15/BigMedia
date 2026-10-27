@@ -69,7 +69,24 @@ export type ItemFacturacion = {
   notas: string
   estado: EstadoItem
   numero_factura: string
+  orden_compra_numero: string
+  orden_compra_fecha: string | null
+  orden_compra_pdf: PdfOrdenCompra | null
+  grupo: number | null
+  grupo_codigo: string | null
   creado_por_nombre: string | null
+}
+
+/** PDF de la orden de compra (HU-062): la API informa nombre y tamaño, no el contenido. */
+export type PdfOrdenCompra = { nombre: string; tamanio: number }
+
+/** Ítems con el mismo número de OC: el servidor avisa y guarda igual (HU-062, criterio 2). */
+export type AvisosItem = { orden_compra: { id: number; descripcion: string }[] }
+
+export type ItemGuardado = ItemFacturacion & { avisos: AvisosItem }
+
+export function urlPdfOrdenCompra(itemId: number): string {
+  return `/api/facturacion/items/${itemId}/orden-compra-pdf/`
 }
 
 export type TotalesMes = {

@@ -7,6 +7,7 @@ import { FieldErrors } from '../../shared/FieldErrors'
 import { vigentes } from '../../shared/opciones'
 import type { Campania } from '../campanias/types'
 import type { Cliente, Marca } from '../clientes/types'
+import PdfOrdenCompra from './PdfOrdenCompra'
 import type { CatalogosFacturacion, ItemFacturacion } from './types'
 import { TIPOS_SERVICIO, mesActual } from './types'
 
@@ -20,12 +21,20 @@ type Props = {
   catalogos: CatalogosFacturacion
   onSave: (input: ItemInput) => Promise<void>
   onCancel: () => void
+  onPdfCambiado?: () => void
 }
 
 type Datos = Record<string, string>
 
 const CAMPOS_ID = ['cliente', 'marca', 'campania', 'sector', 'tipo_venta']
-const CAMPOS_NULLABLES = ['cantidad', 'precio_unitario', 'neto', 'periodo_desde', 'periodo_hasta']
+const CAMPOS_NULLABLES = [
+  'cantidad',
+  'precio_unitario',
+  'neto',
+  'periodo_desde',
+  'periodo_hasta',
+  'orden_compra_fecha',
+]
 
 function datosIniciales(item: ItemFacturacion | null): Datos {
   const texto = (valor: string | number | null | undefined) =>
@@ -48,6 +57,8 @@ function datosIniciales(item: ItemFacturacion | null): Datos {
     sector: texto(item?.sector),
     tipo_venta: texto(item?.tipo_venta),
     notas: item?.notas ?? '',
+    orden_compra_numero: item?.orden_compra_numero ?? '',
+    orden_compra_fecha: texto(item?.orden_compra_fecha),
   }
 }
 
@@ -67,9 +78,9 @@ function aEntrada(datos: Datos): ItemInput {
   return entrada
 }
 
-/** Alta y edición de un ítem a facturar, con las precargas de HU-060 (criterios 3 y 4). */
+/** Alta y edición de un ítem a facturar, con las precargas de HU-060 y su OC (HU-062). */
 export default function ItemForm(props: Props) {
-  const { item, clientes, marcas, campanias, catalogos, onSave, onCancel } = props
+  const { item, clientes, marcas, campanias, catalogos, onSave, onCancel, onPdfCambiado } = props
   const [datos, setDatos] = useState<Datos>(() => datosIniciales(item))
   const [netoTocado, setNetoTocado] = useState(false)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
@@ -119,6 +130,7 @@ export default function ItemForm(props: Props) {
     const fechasInvalidas = erroresDeFechas({
       periodo_desde: datos.periodo_desde,
       periodo_hasta: datos.periodo_hasta,
+      orden_compra_fecha: datos.orden_compra_fecha,
     })
     setErrors(fechasInvalidas)
     if (Object.keys(fechasInvalidas).length > 0) return
@@ -291,6 +303,18 @@ export default function ItemForm(props: Props) {
           </select>
           <FieldErrors messages={errors.tipo_venta} />
         </label>
+        {campoTexto('orden_compra_numero', 'Número de orden de compra')}
+        <CampoFecha
+          label="Fecha de aprobación de la OC"
+          value={datos.orden_compra_fecha}
+          onChange={(valor) => cambiar('orden_compra_fecha', valor)}
+          errores={errors.orden_compra_fecha}
+        />
+        <PdfOrdenCompra
+          itemId={item?.id ?? null}
+          pdf={item?.orden_compra_pdf ?? null}
+          onCambio={() => onPdfCambiado?.()}
+        />
         <label className="wide">
           Notas para Administración
           <textarea

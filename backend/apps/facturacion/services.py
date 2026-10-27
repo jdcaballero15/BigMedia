@@ -1,12 +1,16 @@
-"""Reglas de facturación: ítems a facturar (HU-060, HU-061, HU-065) y reportes de ingresos."""
+"""Reglas de facturación: ítems a facturar (HU-060 a HU-066) y reportes de ingresos."""
+
+from __future__ import annotations
 
 import io
 from datetime import date
 from decimal import Decimal
 from typing import Any
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Count, Sum
 from openpyxl import Workbook
@@ -15,7 +19,7 @@ from apps.auditoria import services as auditoria_services
 from apps.reservas.models import MESES_ABREV, Reserva
 from apps.reservas.services import reparto_por_mes
 
-from .models import EnvioFacturacion, ItemFacturacion, al_centavo
+from .models import EnvioFacturacion, GrupoFactura, ItemFacturacion, OrdenCompraPdf, al_centavo
 
 CERO = Decimal("0.00")
 
@@ -332,12 +336,158 @@ def enviar_a_facturar(
     return envio, incompletos
 
 
+def ordenes_de_compra_duplicadas(item: ItemFacturacion) -> list[dict[str, Any]]:
+    """Otros ítems no anulados con el mismo número de OC (HU-062, criterio 2). Solo avisa."""
+    numero = item.orden_compra_numero.strip()
+    if not numero:
+        return []
+    coincidentes = (
+        ItemFacturacion.objects.filter(orden_compra_numero__iexact=numero)
+        .exclude(pk=item.pk)
+        .exclude(estado=ItemFacturacion.Estado.ANULADO)
+        .order_by("id")
+        .values_list("pk", "descripcion")
+    )
+    return [{"id": pk, "descripcion": desc or "Sin descripción"} for pk, desc in coincidentes]
+
+
+def _exigir_borrador(item: ItemFacturacion, que: str) -> None:
+    if item.estado != ItemFacturacion.Estado.BORRADOR:
+        raise ValidationError({"estado": f"Solo se puede {que} de un ítem en Borrador."})
+
+
+def validar_pdf(archivo: UploadedFile[bytes] | None) -> UploadedFile[bytes]:
+    """Solo PDF, hasta el tamaño máximo configurado (HU-062, criterio 3)."""
+    if archivo is None:
+        raise ValidationError({"archivo": "Adjuntá el PDF de la orden de compra."})
+    archivo.seek(0)
+    es_pdf = (archivo.name or "").lower().endswith(".pdf") and archivo.read(5) == b"%PDF-"
+    if not es_pdf:
+        raise ValidationError({"archivo": "El archivo tiene que ser un PDF."})
+    maximo = settings.FACTURACION_OC_MAX_MB
+    if (archivo.size or 0) > maximo * 1024 * 1024:
+        raise ValidationError({"archivo": f"El PDF supera el tamaño máximo de {maximo} MB."})
+    archivo.seek(0)
+    return archivo
+
+
+def _nombre_pdf(item: ItemFacturacion) -> str:
+    pdf = OrdenCompraPdf.objects.filter(item=item).only("nombre").first()
+    return pdf.nombre if pdf is not None else ""
+
+
+def guardar_pdf_orden_compra(
+    item_id: int, archivo: UploadedFile[bytes] | None, usuario: AbstractBaseUser
+) -> OrdenCompraPdf:
+    """Adjunta (o reemplaza) el PDF de la OC de un ítem en Borrador, auditado (HU-062)."""
+    with transaction.atomic():
+        item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
+        _exigir_borrador(item, "cambiar la orden de compra")
+        archivo = validar_pdf(archivo)
+        anterior = _nombre_pdf(item)
+        nombre = (archivo.name or "orden-de-compra.pdf")[-255:]
+        pdf, _ = OrdenCompraPdf.objects.update_or_create(
+            item=item,
+            defaults={
+                "nombre": nombre,
+                "tamanio": archivo.size or 0,
+                "contenido": archivo.read(),
+                "subido_por_id": usuario.pk,
+            },
+        )
+        auditoria_services.registrar_cambios(
+            "item_facturacion",
+            item.pk,
+            {"orden_compra_pdf": anterior},
+            {"orden_compra_pdf": nombre},
+            usuario,
+        )
+    return pdf
+
+
+def quitar_pdf_orden_compra(item_id: int, usuario: AbstractBaseUser) -> bool:
+    """Saca el PDF de la OC de un ítem en Borrador, auditado. Devuelve False si no tenía."""
+    with transaction.atomic():
+        item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
+        _exigir_borrador(item, "cambiar la orden de compra")
+        anterior = _nombre_pdf(item)
+        if not anterior:
+            return False
+        OrdenCompraPdf.objects.filter(item=item).delete()
+        auditoria_services.registrar_cambios(
+            "item_facturacion",
+            item.pk,
+            {"orden_compra_pdf": anterior},
+            {"orden_compra_pdf": ""},
+            usuario,
+        )
+    return True
+
+
+def _mes_agrupable(ids: list[int], items: list[ItemFacturacion]) -> date:
+    """Valida que los ítems se puedan agrupar y devuelve su mes común."""
+    if len(items) != len(ids):
+        raise ValidationError({"items": "Alguno de los ítems no existe."})
+    if any(item.estado != ItemFacturacion.Estado.BORRADOR for item in items):
+        raise ValidationError({"items": "Solo se agrupan ítems en Borrador."})
+    meses = {item.mes for item in items}
+    mes = meses.pop() if len(meses) == 1 else None
+    if mes is None:
+        raise ValidationError({"items": "Los ítems de un grupo tienen que ser del mismo mes."})
+    return mes
+
+
+def agrupar(ids: list[int], usuario: AbstractBaseUser) -> GrupoFactura:
+    """Pone los ítems en un mismo grupo de factura (HU-064, criterio 1).
+
+    Si alguno ya tiene grupo, los demás se suman a ese; dos grupos distintos se rechazan.
+    """
+    ids = sorted(set(ids))
+    if len(ids) < 2:
+        raise ValidationError({"items": "Elegí al menos dos ítems para agrupar."})
+    with transaction.atomic():
+        items = list(ItemFacturacion.objects.select_for_update().filter(pk__in=ids).order_by("id"))
+        mes = _mes_agrupable(ids, items)
+        existentes = {item.grupo_id for item in items if item.grupo_id is not None}
+        if len(existentes) > 1:
+            raise ValidationError({"items": "Los ítems ya están en dos grupos distintos."})
+        if existentes:
+            grupo = GrupoFactura.objects.get(pk=existentes.pop())
+        else:
+            grupo = GrupoFactura.objects.create(mes=mes, creado_por_id=usuario.pk)
+        for item in items:
+            if item.grupo_id == grupo.pk:
+                continue
+            item.grupo = grupo
+            item.save(update_fields=["grupo", "actualizado_en"])
+            auditoria_services.registrar_cambios(
+                "item_facturacion", item.pk, {"grupo": ""}, {"grupo": grupo.codigo}, usuario
+            )
+    return grupo
+
+
+def quitar_del_grupo(item_id: int, usuario: AbstractBaseUser) -> ItemFacturacion:
+    """Deja el ítem independiente de su grupo de factura (HU-064, criterio 2)."""
+    with transaction.atomic():
+        item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
+        if item.grupo_id is None:
+            raise ValidationError({"grupo": "El ítem no está en un grupo de factura."})
+        _exigir_borrador(item, "cambiar el grupo de factura")
+        anterior = f"G-{item.grupo_id}"
+        item.grupo = None
+        item.save(update_fields=["grupo", "actualizado_en"])
+        auditoria_services.registrar_cambios(
+            "item_facturacion", item.pk, {"grupo": anterior}, {"grupo": ""}, usuario
+        )
+    return item
+
+
 def _numero(valor: Decimal | None) -> float | None:
     return float(valor) if valor is not None else None
 
 
 # Columnas de la planilla para Administración (RN-024, provisoria hasta tener la planilla real):
-# las de hoy y, al final, las nuevas. Orden de compra (HU-062) y grupo (HU-064) llegan el 04/11.
+# las de hoy y, al final, las nuevas: orden de compra (HU-062) y grupo de factura (HU-064).
 COLUMNAS_PLANILLA: list[tuple[str, Any]] = [
     ("Mes", lambda i: i.mes.strftime("%Y-%m") if i.mes else None),
     ("Cliente", lambda i: i.cliente.nombre_visible if i.cliente else None),
@@ -357,19 +507,34 @@ COLUMNAS_PLANILLA: list[tuple[str, Any]] = [
     ("Gob/Priv", lambda i: i.sector.nombre if i.sector else None),
     ("Tipo de venta", lambda i: i.tipo_venta.nombre if i.tipo_venta else None),
     ("Notas", lambda i: i.notas or None),
-    ("Orden de compra", lambda _i: None),
-    ("Grupo de factura", lambda _i: None),
+    ("Orden de compra", lambda i: i.orden_compra_numero or None),
+    ("Fecha OC", lambda i: i.orden_compra_fecha),
+    ("Grupo de factura", lambda i: i.grupo.codigo if i.grupo else None),
 ]
 
 
+def _filas_agrupadas(items: list[ItemFacturacion]) -> list[ItemFacturacion]:
+    """Por cliente, y los ítems de un grupo juntos donde aparece el primero (HU-064, criterio 3)."""
+    ordenados = sorted(items, key=lambda i: (i.cliente.nombre_visible if i.cliente else "", i.pk))
+    filas: list[ItemFacturacion] = []
+    grupos_puestos: set[int] = set()
+    for item in ordenados:
+        if item.grupo_id is None:
+            filas.append(item)
+        elif item.grupo_id not in grupos_puestos:
+            grupos_puestos.add(item.grupo_id)
+            filas.extend(i for i in ordenados if i.grupo_id == item.grupo_id)
+    return filas
+
+
 def planilla_xlsx(envio: EnvioFacturacion) -> bytes:
-    """Planilla .xlsx del envío para Administración (HU-066, criterio 3), ordenada por cliente."""
+    """Planilla .xlsx del envío para Administración (HU-066, criterio 3), por cliente y grupo."""
     libro = Workbook()
     hoja = libro.worksheets[0]
     hoja.title = f"Facturación {envio.mes:%Y-%m}"
     hoja.append([titulo for titulo, _ in COLUMNAS_PLANILLA])
-    items = envio.items.select_related("cliente", "marca", "sector", "tipo_venta")
-    for item in sorted(items, key=lambda i: (i.cliente.nombre_visible if i.cliente else "", i.pk)):
+    items = envio.items.select_related("cliente", "marca", "sector", "tipo_venta", "grupo")
+    for item in _filas_agrupadas(list(items)):
         hoja.append([valor(item) for _, valor in COLUMNAS_PLANILLA])
     salida = io.BytesIO()
     libro.save(salida)

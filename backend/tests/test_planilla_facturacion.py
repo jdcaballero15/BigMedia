@@ -1,4 +1,4 @@
-"""Planilla .xlsx del envío a facturar (HU-066, criterios 3 y 5)."""
+"""Planilla .xlsx del envío a facturar (HU-066, criterios 3 y 5; HU-062 y HU-064)."""
 
 import io
 import json
@@ -11,7 +11,7 @@ from django.test import Client
 from openpyxl import load_workbook
 
 from apps.clientes.models import Cliente, Marca
-from apps.facturacion.models import ItemFacturacion, Sector, TipoVenta
+from apps.facturacion.models import GrupoFactura, ItemFacturacion, Sector, TipoVenta
 
 URL = "/api/facturacion/envios/"
 
@@ -35,6 +35,7 @@ COLUMNAS = [
     "Tipo de venta",
     "Notas",
     "Orden de compra",
+    "Fecha OC",
     "Grupo de factura",
 ]
 
@@ -96,7 +97,11 @@ def test_planilla_con_las_columnas_y_los_importes_como_numeros(operativo_client)
         "Privado",
         "F",
     )
-    assert (fila["Orden de compra"], fila["Grupo de factura"]) == (None, None)
+    assert (fila["Orden de compra"], fila["Fecha OC"], fila["Grupo de factura"]) == (
+        None,
+        None,
+        None,
+    )
 
 
 @pytest.mark.django_db
@@ -117,3 +122,58 @@ def test_planilla_solo_con_los_items_del_envio_ordenados_por_cliente(operativo_c
 @pytest.mark.django_db
 def test_planilla_de_envio_inexistente_da_404(lector_client):
     assert lector_client.get(f"{URL}999999/planilla/").status_code == 404
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-024")
+def test_planilla_con_la_orden_de_compra_y_el_grupo(operativo_client):
+    grupo = GrupoFactura.objects.create(mes=date(2026, 11, 1))
+    ItemFacturacion.objects.create(
+        mes=date(2026, 11, 1),
+        cliente=Cliente.objects.create(nombre="Alfa SA"),
+        neto=Decimal("1.00"),
+        orden_compra_numero="OC-77",
+        orden_compra_fecha=date(2026, 10, 20),
+        grupo=grupo,
+    )
+    _, filas = _planilla(operativo_client, _enviar(operativo_client))
+    fila = dict(zip(COLUMNAS, filas[1], strict=True))
+    assert fila["Orden de compra"] == "OC-77"
+    assert fila["Fecha OC"].date() == date(2026, 10, 20)
+    assert fila["Grupo de factura"] == f"G-{grupo.pk}"
+
+
+@pytest.mark.django_db
+def test_los_items_de_un_grupo_salen_juntos(operativo_client):
+    """HU-064 criterio 3 y HU-066 criterio 3: juntos y con el mismo identificador."""
+    grupo = GrupoFactura.objects.create(mes=date(2026, 11, 1))
+    alfa, beta, zeta = (Cliente.objects.create(nombre=n) for n in ("Alfa SA", "Beta SA", "Zeta SA"))
+    for cliente, en_grupo in ((alfa, True), (beta, False), (zeta, True), (alfa, False)):
+        ItemFacturacion.objects.create(
+            mes=date(2026, 11, 1),
+            cliente=cliente,
+            neto=Decimal("1.00"),
+            grupo=grupo if en_grupo else None,
+        )
+    _, filas = _planilla(operativo_client, _enviar(operativo_client))
+    codigo = f"G-{grupo.pk}"
+    assert [(fila[1], fila[-1]) for fila in filas[1:]] == [
+        ("Alfa SA", codigo),
+        ("Zeta SA", codigo),
+        ("Alfa SA", None),
+        ("Beta SA", None),
+    ]
+
+
+@pytest.mark.django_db
+def test_planilla_con_el_cuit_del_item_distinto_del_cliente(operativo_client):
+    """HU-064 criterio 4: el cliente no cambia y la planilla muestra el CUIT del ítem."""
+    cliente = Cliente.objects.create(nombre="Alfa SA", cuit="20123456786")
+    ItemFacturacion.objects.create(
+        mes=date(2026, 11, 1), cliente=cliente, cuit_facturacion="27123456780", neto=Decimal("1")
+    )
+    _, filas = _planilla(operativo_client, _enviar(operativo_client))
+    fila = dict(zip(COLUMNAS, filas[1], strict=True))
+    assert fila["CUIT"] == "27123456780"
+    cliente.refresh_from_db()
+    assert cliente.cuit == "20123456786"

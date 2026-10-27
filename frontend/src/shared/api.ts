@@ -46,7 +46,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 
 export async function apiWrite<T>(
   path: string,
-  method: 'POST' | 'PATCH',
+  method: 'POST' | 'PATCH' | 'DELETE',
   body?: unknown,
 ): Promise<T> {
   const response = await fetch(path, {
@@ -54,6 +54,18 @@ export async function apiWrite<T>(
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
     body: JSON.stringify(body ?? {}),
+  })
+  notificarSesionExpirada(path, response.status)
+  return parseResponse<T>(response)
+}
+
+/** Sube un archivo como multipart; el navegador pone el Content-Type con su separador. */
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  const response = await fetch(path, {
+    method: 'PUT',
+    credentials: 'same-origin',
+    headers: { 'X-CSRFToken': csrfToken() },
+    body: form,
   })
   notificarSesionExpirada(path, response.status)
   return parseResponse<T>(response)

@@ -2,14 +2,16 @@ from datetime import date, timedelta
 from typing import cast
 
 from django.contrib.auth.models import AbstractBaseUser
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import QuerySet
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import MultiPartParser
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
@@ -19,8 +21,19 @@ from apps.auditoria import services as auditoria_services
 from config.permisos import LecturaConSesionEdicionOperativo, LecturaSoloGerencia
 
 from . import services
-from .models import EnvioFacturacion, ItemFacturacion, Sector, TipoVenta
-from .serializers import EnvioFacturacionSerializer, ItemFacturacionSerializer
+from .models import (
+    EnvioFacturacion,
+    GrupoFactura,
+    ItemFacturacion,
+    OrdenCompraPdf,
+    Sector,
+    TipoVenta,
+)
+from .serializers import (
+    EnvioFacturacionSerializer,
+    GrupoFacturaSerializer,
+    ItemFacturacionSerializer,
+)
 
 # Cambios del ítem que quedan auditados (HU-007): estado, número e importes.
 CAMPOS_AUDITADOS = ("estado", "numero_factura", "neto", "alicuota_iva", "cliente_id")
@@ -93,6 +106,15 @@ def _mes(valor: str | None) -> date:
         raise ValidationError({"mes": "Formato de mes inválido (AAAA-MM)."}) from error
 
 
+def _usuario(request: Request) -> AbstractBaseUser:
+    # El permiso exige sesión: el usuario siempre está autenticado.
+    return cast(AbstractBaseUser, request.user)
+
+
+def _a_drf(error: DjangoValidationError) -> ValidationError:
+    return ValidationError(error.message_dict)
+
+
 def _auditables(item: ItemFacturacion) -> dict[str, str]:
     valores = {campo: getattr(item, campo) for campo in CAMPOS_AUDITADOS}
     return {
@@ -106,10 +128,30 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
 
     permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
     http_method_names = ["get", "post", "patch", "head", "options"]
+    # El PDF de la OC se informa (nombre y tamaño) sin traer su contenido.
     queryset = ItemFacturacion.objects.select_related(
-        "cliente", "marca", "campania", "sector", "tipo_venta", "creado_por"
-    )
+        "cliente",
+        "marca",
+        "campania",
+        "sector",
+        "tipo_venta",
+        "creado_por",
+        "grupo",
+        "orden_compra_pdf",
+    ).defer("orden_compra_pdf__contenido")
     serializer_class = ItemFacturacionSerializer
+
+    def _con_avisos(self, respuesta: Response) -> Response:
+        """Suma el aviso de OC duplicada (HU-062, criterio 2): avisa, no bloquea."""
+        item = ItemFacturacion.objects.get(pk=respuesta.data["id"])
+        respuesta.data["avisos"] = {"orden_compra": services.ordenes_de_compra_duplicadas(item)}
+        return respuesta
+
+    def create(self, request: Request, *args: object, **kwargs: object) -> Response:
+        return self._con_avisos(super().create(request, *args, **kwargs))
+
+    def update(self, request: Request, *args: object, **kwargs: object) -> Response:
+        return self._con_avisos(super().update(request, *args, **kwargs))
 
     def perform_create(self, serializer: BaseSerializer[ItemFacturacion]) -> None:
         serializer.save(creado_por=self.request.user)
@@ -139,10 +181,78 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
                 queryset = queryset.filter(**{f"{campo}_id": _id_positivo(params[campo], campo)})
         return queryset
 
+    @action(detail=True, methods=["post"], url_path="quitar-del-grupo")
+    def quitar_del_grupo(self, request: Request, pk: str) -> Response:
+        """Deja el ítem independiente de su grupo de factura (HU-064, criterio 2)."""
+        item = get_object_or_404(self.get_queryset(), pk=pk)
+        try:
+            services.quitar_del_grupo(item.pk, _usuario(request))
+        except DjangoValidationError as error:
+            raise _a_drf(error) from error
+        return Response(self.get_serializer(self.get_queryset().get(pk=item.pk)).data)
+
     @action(detail=False, methods=["get"])
     def totales(self, request: Request) -> Response:
         """Neto, IVA y total del mes, sin los anulados (HU-065, criterio 3)."""
         return Response(services.totales_del_mes(_mes(request.query_params.get("mes"))))
+
+
+class OrdenCompraPdfView(APIView):
+    """PDF de la orden de compra del ítem (HU-062): se sube, se abre y se quita."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+    parser_classes = [MultiPartParser]
+
+    def _item(self, pk: int) -> ItemFacturacion:
+        return get_object_or_404(ItemFacturacion.objects.only("id"), pk=pk)
+
+    def get(self, _request: Request, pk: int) -> HttpResponse:
+        pdf = get_object_or_404(OrdenCompraPdf, item=self._item(pk))
+        return HttpResponse(
+            bytes(pdf.contenido),
+            content_type="application/pdf",
+            headers={"Content-Disposition": f'inline; filename="{pdf.nombre}"'},
+        )
+
+    def put(self, request: Request, pk: int) -> Response:
+        item = self._item(pk)
+        archivo = request.FILES.get("archivo")
+        try:
+            pdf = services.guardar_pdf_orden_compra(item.pk, archivo, _usuario(request))
+        except DjangoValidationError as error:
+            raise _a_drf(error) from error
+        return Response({"nombre": pdf.nombre, "tamanio": pdf.tamanio})
+
+    def delete(self, request: Request, pk: int) -> Response:
+        item = self._item(pk)
+        try:
+            quitado = services.quitar_pdf_orden_compra(item.pk, _usuario(request))
+        except DjangoValidationError as error:
+            raise _a_drf(error) from error
+        if not quitado:
+            raise Http404
+        return Response(status=204)
+
+
+class GrupoFacturaViewSet(viewsets.GenericViewSet[GrupoFactura]):
+    """Grupos de factura (HU-064): se crean agrupando ítems; quitar es una acción del ítem."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+    queryset = GrupoFactura.objects.prefetch_related("items")
+    serializer_class = GrupoFacturaSerializer
+
+    def create(self, request: Request) -> Response:
+        ids = request.data.get("items") if isinstance(request.data, dict) else None
+        validos = isinstance(ids, list) and all(
+            isinstance(pk, int) and not isinstance(pk, bool) and pk > 0 for pk in ids
+        )
+        if not validos:
+            raise ValidationError({"items": "Indicá la lista de ítems a agrupar."})
+        try:
+            grupo = services.agrupar(cast(list[int], ids), _usuario(request))
+        except DjangoValidationError as error:
+            raise _a_drf(error) from error
+        return Response(self.get_serializer(self.get_queryset().get(pk=grupo.pk)).data, status=201)
 
 
 class CatalogosFacturacionView(APIView):
@@ -172,10 +282,8 @@ class EnvioFacturacionViewSet(viewsets.GenericViewSet[EnvioFacturacion]):
 
     def create(self, request: Request) -> Response:
         valor = request.data.get("mes") if isinstance(request.data, dict) else None
-        # El permiso exige sesión: el usuario siempre está autenticado.
-        usuario = cast(AbstractBaseUser, request.user)
         envio, incompletos = services.enviar_a_facturar(
-            _mes(valor if isinstance(valor, str) else None), usuario
+            _mes(valor if isinstance(valor, str) else None), _usuario(request)
         )
         datos = {
             "envio": self.get_serializer(envio).data if envio else None,

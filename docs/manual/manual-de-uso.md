@@ -208,6 +208,25 @@ Administración.
 
 Arriba de la lista ves los totales del mes (neto, IVA y total), sin contar los anulados.
 
+### Orden de compra
+
+- En el ítem cargá el **Número de orden de compra** y su **Fecha de aprobación**.
+- Para adjuntar el **PDF de la orden de compra**, guardá el ítem primero y volvé a **Editar**. Solo
+  se aceptan PDF de hasta 5 MB. Desde el formulario podés abrirlo o quitarlo, y en la lista aparece
+  el enlace **PDF**.
+- Si el número de OC ya está cargado en otro ítem, el sistema lo guarda igual y te avisa en cuál
+  está, por si es un duplicado.
+
+### Varios ítems en una misma factura
+
+1. Marcá los ítems en Borrador del mismo mes que van juntos.
+2. Tocá **Agrupar en una factura**. Comparten un grupo (por ejemplo, G-12), que se ve en la columna
+   **Grupo** y en la planilla, donde salen juntos.
+3. **Quitar del grupo** deja un ítem independiente.
+
+El CUIT de facturación del ítem puede ser distinto del CUIT del cliente: la planilla muestra el del
+ítem.
+
 ### Enviar el mes a facturar
 
 1. Elegí el **Mes** y tocá **Enviar a facturar**.

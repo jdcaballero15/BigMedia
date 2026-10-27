@@ -115,6 +115,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Panel principal (HU-047): ventana de "reservas por vencer" en días.
 PANEL_DIAS_POR_VENCER = int(os.environ.get("PANEL_DIAS_POR_VENCER", "30"))
 
+# Tamaño máximo del PDF de la orden de compra en MB (HU-062, ADR-0009).
+FACTURACION_OC_MAX_MB = int(os.environ.get("FACTURACION_OC_MAX_MB", "5"))
+
 # Sesión por inactividad (HU-003 criterio 4): timeout deslizante configurable.
 # SESSION_SAVE_EVERY_REQUEST renueva el vencimiento en cada request (sliding window).
 SESSION_SAVE_EVERY_REQUEST = True

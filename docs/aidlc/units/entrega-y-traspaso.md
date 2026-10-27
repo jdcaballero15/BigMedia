@@ -1,6 +1,6 @@
 # Unidad: Entrega y traspaso
 
-- **Estado:** en revisión · **Épica:** E9 Entrega y traspaso · **App dueña:** docs
+- **Estado:** mergeada · **Épica:** E9 Entrega y traspaso · **App dueña:** docs
 - **Origen:** HU-053, HU-054 · **Rama:** `docs/entrega-y-traspaso`
 
 ## Objetivo
