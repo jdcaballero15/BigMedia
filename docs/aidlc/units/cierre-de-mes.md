@@ -111,4 +111,4 @@ Una nueva en `facturacion`: crea `EnvioFacturacion` y su relación con los ítem
   frontend `format:check`, `lint`, `typecheck` y `build` en verde, `test:coverage` con 284 tests
   en verde y 93,03 % de líneas (90,46 % de sentencias); `pre-commit run --all-files` en verde.
   Espera revisión de Gonza o Juan Diego.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #79, pedido por Gonza el 2026-10-27
