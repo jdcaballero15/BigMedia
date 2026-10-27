@@ -1,3 +1,5 @@
+import type { TipoCosto } from '../costos/types'
+
 export type Periodo = { mes: string; etiqueta: string }
 
 export type MarcaFila = {
@@ -60,6 +62,8 @@ export type ItemFacturacion = {
   alicuota_iva: string
   iva: string | null
   total: string | null
+  costo_total: string
+  neto_final: string | null
   tipo_servicio: string
   tipo_soporte: string
   sector: number | null
@@ -95,6 +99,29 @@ export type TotalesMes = {
   neto: string
   iva: string
   total: string
+  costos: string
+  neto_final: string
+}
+
+/** Costo de un ítem (HU-063): propio (sin reserva) o de una reserva de su campaña, vinculado. */
+export type CostoDelItem = {
+  id: number
+  tipo: TipoCosto
+  tipo_nombre: string
+  proveedor: number | null
+  proveedor_nombre: string | null
+  destinatario: string
+  porcentaje: string | null
+  monto: string
+  fecha: string
+  reserva: number | null
+  cartel_nombre: string | null
+  anulado: boolean
+  motivo_anulacion: string
+}
+
+export function urlCostosDelItem(itemId: number): string {
+  return `/api/facturacion/items/${itemId}/costos/`
 }
 
 export type CatalogosFacturacion = {

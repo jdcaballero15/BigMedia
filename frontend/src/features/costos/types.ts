@@ -1,9 +1,10 @@
-export type TipoCosto = 'alquiler' | 'impresion' | 'fijacion' | 'otro'
+export type TipoCosto = 'alquiler' | 'impresion' | 'fijacion' | 'comision' | 'otro'
 
 export const TIPOS_COSTO: { value: TipoCosto; label: string }[] = [
   { value: 'impresion', label: 'Impresión' },
   { value: 'fijacion', label: 'Fijación' },
   { value: 'alquiler', label: 'Alquiler' },
+  { value: 'comision', label: 'Comisión' },
   { value: 'otro', label: 'Otro' },
 ]
 

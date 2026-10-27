@@ -28,6 +28,8 @@ function item(id: number, extra: Partial<ItemFacturacion> = {}): ItemFacturacion
     alicuota_iva: '21.00',
     iva: '2100.00',
     total: '12100.00',
+    costo_total: '0.00',
+    neto_final: '10000.00',
     tipo_servicio: 'alquiler',
     tipo_soporte: '',
     sector: null,
@@ -52,7 +54,15 @@ function guardado(base: ItemFacturacion, coincidentes: { id: number; descripcion
   return ok({ ...base, avisos: { orden_compra: coincidentes } })
 }
 
-const totales = { mes: '2026-11', cantidad: 2, neto: '10000.00', iva: '2100.00', total: '12100.00' }
+const totales = {
+  mes: '2026-11',
+  cantidad: 2,
+  neto: '10000.00',
+  iva: '2100.00',
+  total: '12100.00',
+  costos: '1500.00',
+  neto_final: '8500.00',
+}
 
 function stubFetch(
   items: ItemFacturacion[],
@@ -83,6 +93,17 @@ function patches(fetchMock: ReturnType<typeof stubFetch>) {
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+})
+
+test('muestra el costo total y el neto final de cada ítem y del mes (HU-063)', async () => {
+  stubFetch([item(1, { costo_total: '1500.00', neto_final: '8500.00' })])
+  render(<ItemsPage />)
+  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  expect(within(fila).getByText('$1.500,00')).toBeDefined()
+  expect(within(fila).getByText('$8.500,00')).toBeDefined()
+  const suma = screen.getByLabelText('Totales del mes').textContent
+  expect(suma).toContain('Costos $1.500,00')
+  expect(suma).toContain('Neto final $8.500,00')
 })
 
 test('lista los ítems del mes actual con sus importes y los totales sin anulados', async () => {
