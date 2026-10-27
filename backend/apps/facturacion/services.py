@@ -1,11 +1,16 @@
-"""Reportes de facturación (solo lectura)."""
+"""Reglas de facturación: ítems a facturar (HU-060, HU-061, HU-065) y reportes de ingresos."""
 
 from datetime import date
 from decimal import Decimal
 from typing import Any
 
+from django.core.exceptions import ValidationError
+from django.db.models import Count, Sum
+
 from apps.reservas.models import MESES_ABREV, Reserva
 from apps.reservas.services import reparto_por_mes
+
+from .models import ItemFacturacion, al_centavo
 
 CERO = Decimal("0.00")
 
@@ -199,3 +204,70 @@ def reporte_ingresos(desde: date, hasta: date) -> dict[str, Any]:
         total += cl["total"]
     clientes = [_formatear_cliente(cl, claves) for cl in ordenados]
     return {"periodos": periodos, "clientes": clientes, "total": _fmt(total)}
+
+
+# Transiciones de estado del ítem (HU-065). Borrador pasa a Enviado solo con "Enviar a facturar"
+# (HU-066); corregir un Facturado espera RN-026.
+TRANSICIONES_ITEM: dict[str, set[str]] = {
+    ItemFacturacion.Estado.BORRADOR: {ItemFacturacion.Estado.ANULADO},
+    ItemFacturacion.Estado.ENVIADO: {
+        ItemFacturacion.Estado.FACTURADO,
+        ItemFacturacion.Estado.ANULADO,
+    },
+    ItemFacturacion.Estado.FACTURADO: set(),
+    ItemFacturacion.Estado.ANULADO: set(),
+}
+# Fuera de Borrador solo se cambia el estado (y el número al facturar); reabrir es HU-067.
+CAMPOS_FUERA_DE_BORRADOR = {"estado", "numero_factura"}
+
+
+def _etiqueta(estado: str) -> str:
+    return str(ItemFacturacion.Estado(estado).label)
+
+
+def _validar_estado(actual: str, nuevo: str, campos: set[str]) -> None:
+    if actual != ItemFacturacion.Estado.BORRADOR and campos - CAMPOS_FUERA_DE_BORRADOR:
+        raise ValidationError({"estado": "Solo se pueden editar los datos de un ítem en Borrador."})
+    if nuevo != actual and nuevo not in TRANSICIONES_ITEM[actual]:
+        raise ValidationError(
+            {"estado": f"No se puede pasar de {_etiqueta(actual)} a {_etiqueta(nuevo)}."}
+        )
+
+
+def _validar_numero_factura(actual: str, nuevo: str, numero: str, cargado: bool) -> None:
+    if nuevo == ItemFacturacion.Estado.FACTURADO and actual != nuevo and not numero:
+        raise ValidationError(
+            {"numero_factura": "Cargá el número de factura para pasar el ítem a Facturado."}
+        )
+    if cargado and nuevo != ItemFacturacion.Estado.FACTURADO:
+        raise ValidationError(
+            {"numero_factura": "El número de factura se carga al pasar el ítem a Facturado."}
+        )
+
+
+def validar_cambio_de_item(item: ItemFacturacion | None, datos: dict[str, Any]) -> None:
+    """Estados y número de factura de un alta (`item` None) o una edición (HU-065)."""
+    if item is None:
+        if datos.get("estado", ItemFacturacion.Estado.BORRADOR) != ItemFacturacion.Estado.BORRADOR:
+            raise ValidationError({"estado": "Un ítem nuevo nace en Borrador."})
+        actual = ItemFacturacion.Estado.BORRADOR.value
+    else:
+        actual = item.estado
+    nuevo = datos.get("estado", actual)
+    _validar_estado(actual, nuevo, set(datos))
+    numero = datos.get("numero_factura", getattr(item, "numero_factura", "")).strip()
+    _validar_numero_factura(actual, nuevo, numero, "numero_factura" in datos)
+
+
+def totales_del_mes(mes: date) -> dict[str, Any]:
+    """Neto, IVA y total de los ítems del mes, sin los anulados (HU-065, criterio 3)."""
+    fila = (
+        ItemFacturacion.objects.filter(mes=mes)
+        .exclude(estado=ItemFacturacion.Estado.ANULADO)
+        .aggregate(cantidad=Count("id"), neto=Sum("neto"), iva=Sum("iva"), total=Sum("total"))
+    )
+    return {
+        "mes": mes.strftime("%Y-%m"),
+        "cantidad": fila["cantidad"],
+        **{campo: str(al_centavo(fila[campo] or CERO)) for campo in ("neto", "iva", "total")},
+    }
