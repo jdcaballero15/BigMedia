@@ -43,12 +43,12 @@ Definidas por Gonza el 27/10/2026.
   mes con la planilla para Administración (HU-060, HU-061, HU-065, HU-066).
 - **E9 Entrega y traspaso** — documentación de traspaso, modelo de datos, manual de usuario y
   guion de capacitación (HU-053, HU-054).
+- **E11 Facturación mensual, Should** — orden de compra y grupos de factura, costos del ítem y
+  reapertura de un ítem enviado (HU-062, HU-063, HU-064, HU-067).
 
 ## En curso
 
-- **E11 Facturación mensual, Should** (para el 04/11) — en tres unidades:
-  `orden-de-compra-y-grupos` (HU-062 y HU-064), `costos-del-item` (HU-063) y `reabrir-item`
-  (HU-067).
+—
 
 ## Próximas
 
@@ -75,3 +75,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-10-27 | Se fija la fecha de entrega: viernes 30/10/2026 | Definida por Gonza |
 | 2026-10-27 | E11 se parte: las Must y E9 para el 30/10, las Should para el 04/11 | No entra todo para el 30/10; Gonza fijó una segunda entrega |
 | 2026-10-27 | E9, E10 y el Must de E11 pasan a Hecho; el Should de E11 pasa a En curso, en tres unidades | Quedaron mergeados los PR #75 a #80 |
+| 2026-10-27 | El Should de E11 pasa a Hecho | Quedaron mergeados los PR #81, #82 y #83 |
