@@ -1,6 +1,6 @@
 # Unidad: Ajuste del selector y el formato de fechas
 
-- **Estado:** en curso · **Épica:** — (unidad técnica) · **App dueña:** `frontend`
+- **Estado:** en revisión · **Épica:** — (unidad técnica) · **App dueña:** `frontend`
 - **Origen:** hallazgo de la prueba manual de reservas del 24/10/2026 (Juan Diego) · **Rama:** `fix/frontend-selector-de-fechas`
 
 ## Objetivo
@@ -70,10 +70,10 @@ pero es una regla del backend y va en su propia unidad.
   ok (bundle 827 kB; el aviso de más de 500 kB ya estaba en `develop` con 751 kB). Backend sin
   cambios: `ruff format --check` y `ruff check` ok, `mypy` sin errores, `makemigrations --check`
   sin cambios, `pytest --cov` 388 en verde (95,53 %). `pre-commit run --all-files` en verde,
-  gitleaks incluido. Falta la prueba a mano en `localhost`.
+  gitleaks incluido. Prueba a mano en `localhost` el 26/10/2026: ok (Juan Diego).
+- Gate 3 (PR): 2026-10-26 — pedido por Juan Diego; PR a `develop`.
 
 ## Pendiente fuera de esta unidad
 
 - El mensaje de conflicto de cupo lo arma el backend con fechas `aaaa-mm-dd` ("entre 2026-11-01 y
   2026-11-30"). Pasarlo a dd/mm/aaaa es un cambio de `reservas` y va en otra unidad.
-- Gate 3 (PR): pendiente
