@@ -4,6 +4,10 @@ Corto y reordenable: la épica en curso, las próximas y lo que queda para más 
 cuando cambian las prioridades de Big Media; cada cambio de orden se anota abajo con fecha y motivo.
 Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/historias-de-usuario.md).
 
+## Fecha de entrega
+
+**Viernes 30/10/2026** (definida por Gonza el 27/10/2026).
+
 ## Hecho
 
 - **E0 Plataforma base** — base del repositorio y despliegue en Render, y parámetros del motor de disponibilidad configurables desde la
@@ -58,3 +62,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-10-26 | HU-005, HU-006 y HU-001 pasan a Hecho; el resto de E3 queda primero | Gestión de usuarios, baja lógica y parámetros configurables quedaron mergeadas (PR #65, #66 y #67) |
 | 2026-10-27 | E3 pasa a Hecho con HU-020; las próximas quedan a definir | Interacciones comerciales quedaron mergeadas (PR #73) |
 | 2026-10-27 | E10 pasa a En curso, partida en tres unidades | Gonza eligió E10: se apoya en campañas y reservas y es lo que más trabajo manual ahorra |
+| 2026-10-27 | Se fija la fecha de entrega: viernes 30/10/2026 | Definida por Gonza |
