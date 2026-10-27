@@ -1,6 +1,6 @@
 # Unidad: Orden de compra y grupos de factura
 
-- **Estado:** en curso · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
+- **Estado:** en revisión · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
 - **Origen:** HU-062, HU-064 (RN-024) · **Rama:** `feature/facturacion-orden-de-compra-y-grupos`
 
 ## Objetivo
@@ -106,5 +106,5 @@ al ítem. No mueve datos.
   `pytest --cov`: 710 tests en verde, coverage 96,79 %; frontend `format:check`, `lint`,
   `typecheck` y `build` en verde, `test:coverage` con 311 tests en verde y 93,4 % de líneas
   (90,9 % de sentencias); `pre-commit run --all-files` en verde. Espera revisión de Gonza o Juan
-  Diego.
+  Diego. Aprobado por Gonza el 2026-10-27.
 - Gate 3 (PR): pendiente
