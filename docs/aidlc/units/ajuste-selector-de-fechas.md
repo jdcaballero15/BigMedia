@@ -71,7 +71,7 @@ pero es una regla del backend y va en su propia unidad.
   cambios: `ruff format --check` y `ruff check` ok, `mypy` sin errores, `makemigrations --check`
   sin cambios, `pytest --cov` 388 en verde (95,53 %). `pre-commit run --all-files` en verde,
   gitleaks incluido. Prueba a mano en `localhost` el 26/10/2026: ok (Juan Diego).
-- Gate 3 (PR): 2026-10-26 — pedido por Juan Diego; PR a `develop`.
+- Gate 3 (PR): 2026-10-26 — pedido por Juan Diego; [PR #71](https://github.com/jdcaballero15/BigMedia/pull/71) a `develop`.
 
 ## Pendiente fuera de esta unidad
 
