@@ -105,5 +105,10 @@ Una nueva en `facturacion`: crea `EnvioFacturacion` y su relación con los ítem
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-27 — aprobado por Gonza
-- Gate 2 (verificación): pendiente
+- Gate 2 (verificación): 2026-10-27 — `ruff format --check` (129 archivos) y `ruff check`
+  sin errores; `mypy backend` sin errores (129 archivos); `makemigrations --check` sin cambios;
+  `pytest --cov`: 651 tests en verde (incluida la concurrencia de dos envíos), coverage 96,66 %;
+  frontend `format:check`, `lint`, `typecheck` y `build` en verde, `test:coverage` con 284 tests
+  en verde y 93,03 % de líneas (90,46 % de sentencias); `pre-commit run --all-files` en verde.
+  Espera revisión de Gonza o Juan Diego.
 - Gate 3 (PR): pendiente

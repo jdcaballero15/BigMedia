@@ -89,3 +89,18 @@ export type CatalogosFacturacion = {
 export function mesActual(hoy: Date = new Date()): string {
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
 }
+
+/** Envío a facturar de un mes (HU-066). */
+export type EnvioFacturacion = {
+  id: number
+  mes: string
+  enviado_por_nombre: string
+  enviado_en: string
+  items: number[]
+  cantidad: number
+}
+
+export type ResultadoEnvio = {
+  envio: EnvioFacturacion | null
+  incompletos: { item: number; descripcion: string; faltan: string[] }[]
+}
