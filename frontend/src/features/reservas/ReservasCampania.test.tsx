@@ -111,6 +111,21 @@ const resultadoConfirmacion = {
   ],
 }
 
+test('con varias reservas confirmadas y en conflicto lo dice en plural', async () => {
+  const conflicto = resultadoConfirmacion.conflictos[0]
+  stubFetch((input, options) =>
+    input.includes('/confirmar-en-bloque/') && options?.method === 'POST'
+      ? ok({ confirmadas: [3, 5], conflictos: [conflicto, { ...conflicto, reserva: 6 }] })
+      : undefined,
+  )
+  render(<ReservasCampania campaniaId={5} campaniaConfirmada onCambio={vi.fn()} />)
+  await screen.findByText(reserva.nombre)
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar reservas' }))
+  const resultado = await screen.findByRole('status', { name: 'Resultado de la confirmación' })
+  expect(within(resultado).getByText('Se confirmaron 2 reservas.')).toBeDefined()
+  expect(within(resultado).getByText('2 quedaron Pendientes por falta de cupo:')).toBeDefined()
+})
+
 test('confirma las Pendientes en bloque y lista los conflictos', async () => {
   const onCambio = vi.fn()
   const fetchMock = stubFetch((input, options) =>
@@ -122,7 +137,8 @@ test('confirma las Pendientes en bloque y lista los conflictos', async () => {
   await screen.findByText(reserva.nombre)
   fireEvent.click(screen.getByRole('button', { name: 'Confirmar reservas' }))
   const resultado = await screen.findByRole('status', { name: 'Resultado de la confirmación' })
-  expect(within(resultado).getByText('Se confirmaron 1 reservas.')).toBeDefined()
+  expect(within(resultado).getByText('Se confirmó 1 reserva.')).toBeDefined()
+  expect(within(resultado).getByText('1 quedó Pendiente por falta de cupo:')).toBeDefined()
   expect(
     within(resultado).getByText(
       'Av. Corrientes 1 · 6x3, 01/08/2026 → 31/08/2026: ocupado por Invierno',

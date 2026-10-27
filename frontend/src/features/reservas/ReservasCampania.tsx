@@ -186,10 +186,18 @@ function ResumenConfirmacion({ resultado }: { resultado: ResultadoConfirmacion }
   const { confirmadas, conflictos } = resultado
   return (
     <div role="status" aria-label="Resultado de la confirmación">
-      <p>Se confirmaron {confirmadas.length} reservas.</p>
+      <p>
+        {confirmadas.length === 1
+          ? 'Se confirmó 1 reserva.'
+          : `Se confirmaron ${confirmadas.length} reservas.`}
+      </p>
       {conflictos.length > 0 && (
         <>
-          <p className="error">{conflictos.length} quedaron Pendientes por falta de cupo:</p>
+          <p className="error">
+            {conflictos.length === 1
+              ? '1 quedó Pendiente por falta de cupo:'
+              : `${conflictos.length} quedaron Pendientes por falta de cupo:`}
+          </p>
           <ul aria-label="Conflictos">
             {conflictos.map((item) => (
               <li key={item.reserva}>

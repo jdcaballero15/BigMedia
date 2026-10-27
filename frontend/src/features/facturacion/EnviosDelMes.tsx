@@ -100,14 +100,21 @@ function ResumenEnvio({ resultado }: { resultado: ResultadoEnvio }) {
     <div role="status" aria-label="Resultado del envío">
       {envio ? (
         <p>
-          Se enviaron {envio.cantidad} ítems a facturar. <EnlacePlanilla envio={envio} />
+          {envio.cantidad === 1
+            ? 'Se envió 1 ítem a facturar.'
+            : `Se enviaron ${envio.cantidad} ítems a facturar.`}{' '}
+          <EnlacePlanilla envio={envio} />
         </p>
       ) : (
         <p className="notice">No hay ítems completos para enviar.</p>
       )}
       {incompletos.length > 0 && (
         <>
-          <p className="error">{incompletos.length} quedaron en Borrador porque les falta:</p>
+          <p className="error">
+            {incompletos.length === 1
+              ? '1 quedó en Borrador porque le falta:'
+              : `${incompletos.length} quedaron en Borrador porque les falta:`}
+          </p>
           <ul aria-label="Ítems incompletos">
             {incompletos.map((item) => (
               <li key={item.item}>
