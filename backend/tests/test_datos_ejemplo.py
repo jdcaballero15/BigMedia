@@ -6,6 +6,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from apps.auditoria.models import RegistroAuditoria
+from apps.campanias import services as campanias
 from apps.campanias.models import Campania
 from apps.clientes.models import Cliente, Marca, Rubro
 from apps.costos.models import Costo
@@ -148,3 +149,11 @@ def test_carga_campanias_con_reservas_confirmadas_quedan_confirmadas():
         Campania.objects.filter(reservas__in=confirmadas).values_list("estado", flat=True)
     )
     assert estados == {Campania.Estado.CONFIRMADA}
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-011")
+def test_carga_campanias_confirmadas_cumplen_lo_que_exige_confirmar():
+    call_command("cargar_datos_ejemplo")
+    for campania in Campania.objects.filter(estado=Campania.Estado.CONFIRMADA):
+        campanias.validar_confirmacion(campania)
