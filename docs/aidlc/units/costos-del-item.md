@@ -1,6 +1,6 @@
 # Unidad: Costos del ítem y neto final
 
-- **Estado:** en curso · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
+- **Estado:** en revisión · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
   (con cambios en `costos`)
 - **Origen:** HU-063, HU-066 criterio 1 · **Rama:** `feature/facturacion-costos-del-item`
 
@@ -66,5 +66,12 @@ quedan iguales); en `facturacion`, `CostoDeItem`.
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-27 — aprobado por Gonza
-- Gate 2 (verificación): pendiente
-- Gate 3 (PR): pendiente
+- Gate 2 (verificación): 2026-10-27 — `ruff format --check` (134 archivos) y `ruff check` sin
+  errores; `mypy backend` sin errores (134 archivos); `makemigrations --check` sin cambios;
+  `pytest --cov`: 743 tests en verde, coverage 96,86 %; frontend `format:check`, `lint`,
+  `typecheck` y `build` en verde, `test:coverage` con 324 tests en verde y 93,62 % de líneas
+  (91,15 % de sentencias); `pre-commit run --all-files` en verde. Aprobado por Gonza el
+  2026-10-27, con estas decisiones: los costos se cargan, vinculan y anulan solo con el ítem en
+  Borrador; un costo de reserva vinculado se anula desde Costos; un porcentaje sin neto da 0; el
+  neto final del mes es el neto menos los costos.
+- Gate 3 (PR): pedido por Gonza el 2026-10-27
