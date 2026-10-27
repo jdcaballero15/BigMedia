@@ -40,6 +40,7 @@ COLUMNAS = [
     "Grupo de factura",
     "Costos",
     "Neto final",
+    "Reenviado",
 ]
 
 
@@ -205,5 +206,5 @@ def test_planilla_con_los_costos_y_el_neto_final_al_final(operativo_client):
         mes=date(2026, 11, 1), cliente=Cliente.objects.create(nombre="Beta SA"), neto=Decimal("1")
     )
     _, filas = _planilla(operativo_client, _enviar(operativo_client))
-    assert filas[0][-2:] == ["Costos", "Neto final"]
-    assert [fila[-2:] for fila in filas[1:]] == [[1500, 8500], [0, 1]]
+    assert filas[0][-3:-1] == ["Costos", "Neto final"]
+    assert [fila[-3:-1] for fila in filas[1:]] == [[1500, 8500], [0, 1]]

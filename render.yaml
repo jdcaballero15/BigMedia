@@ -37,6 +37,21 @@ services:
         sync: false
       - key: DJANGO_SUPERUSER_PASSWORD
         sync: false
+      # Correo de avisos a Administración (HU-067). Se cargan en el panel; vacías, no se envía.
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_USE_TLS
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+      - key: FACTURACION_CORREO_ADMINISTRACION
+        sync: false
 
   - type: web
     name: bigmedia-web-staging
@@ -63,4 +78,19 @@ services:
         sync: false
       # Contraseña de los usuarios de demo (opcional; sin ella no se crean).
       - key: DJANGO_DEMO_PASSWORD
+        sync: false
+      # Correo de avisos a Administración (HU-067). Se cargan en el panel; vacías, no se envía.
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_USE_TLS
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+      - key: FACTURACION_CORREO_ADMINISTRACION
         sync: false

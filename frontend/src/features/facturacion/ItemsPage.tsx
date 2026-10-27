@@ -294,12 +294,15 @@ function FilaItem(props: FilaProps) {
   const { item, puedeEditar, seleccionado, onAlternar, onEditar, onCambio } = props
   const [facturando, setFacturando] = useState(false)
   const [numero, setNumero] = useState('')
+  const [reabriendo, setReabriendo] = useState(false)
+  const [motivo, setMotivo] = useState('')
   const [errores, setErrores] = useState<Record<string, string[]>>({})
 
   async function escribir(url: string, method: 'POST' | 'PATCH', datos?: Record<string, string>) {
     try {
       await apiWrite(url, method, datos)
       setFacturando(false)
+      setReabriendo(false)
       onCambio()
     } catch (cause) {
       const campos = cause instanceof ApiError ? cause.fields : {}
@@ -365,7 +368,11 @@ function FilaItem(props: FilaProps) {
       <td>
         {etiquetaEstadoItem(item.estado)}
         {item.numero_factura && <small className="muted"> · {item.numero_factura}</small>}
-        <FieldErrors messages={errores.estado ?? errores.numero_factura} />
+        {item.reenviado && <small className="muted"> · Reenviado</small>}
+        {borrador && item.reabierto_en && (
+          <small className="muted"> · Reabierto: {item.motivo_reapertura}</small>
+        )}
+        <FieldErrors messages={errores.estado ?? errores.numero_factura ?? errores.motivo} />
       </td>
       {puedeEditar && (
         <td className="row-actions">
@@ -394,6 +401,26 @@ function FilaItem(props: FilaProps) {
             ) : (
               <button className="button-ghost" onClick={() => setFacturando(true)}>
                 Marcar facturado
+              </button>
+            ))}
+          {item.estado === 'enviado' &&
+            (reabriendo ? (
+              <>
+                <input
+                  aria-label="Motivo de la reapertura"
+                  value={motivo}
+                  onChange={(event) => setMotivo(event.target.value)}
+                />
+                <button
+                  className="button-primary"
+                  onClick={() => void escribir(`${ITEMS}${item.id}/reabrir/`, 'POST', { motivo })}
+                >
+                  Confirmar reapertura
+                </button>
+              </>
+            ) : (
+              <button className="button-ghost" onClick={() => setReabriendo(true)}>
+                Reabrir
               </button>
             ))}
           {(item.estado === 'borrador' || item.estado === 'enviado') && (

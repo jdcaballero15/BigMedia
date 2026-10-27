@@ -54,8 +54,8 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E11 Facturación mensual | [cierre-de-mes](units/cierre-de-mes.md) | facturacion | HU-066 (RN-022, RN-024, RN-025) | items-a-facturar | Gonza | feature/facturacion-cierre-de-mes | mergeada |
 | E9 Entrega y traspaso | [entrega-y-traspaso](units/entrega-y-traspaso.md) | docs | HU-053, HU-054 | — | Gonza | docs/entrega-y-traspaso | mergeada |
 | E11 Facturación mensual | [orden-de-compra-y-grupos](units/orden-de-compra-y-grupos.md) | facturacion | HU-062, HU-064 (RN-024) | cierre-de-mes | Gonza | feature/facturacion-orden-de-compra-y-grupos | mergeada |
-| E11 Facturación mensual | [costos-del-item](units/costos-del-item.md) | facturacion | HU-063, HU-066 criterio 1 (RN-024) | cierre-de-mes, costos-y-margen | Gonza | feature/facturacion-costos-del-item | en revisión |
-| E11 Facturación mensual | [reabrir-item](units/reabrir-item.md) | facturacion | HU-067 (RN-022) | cierre-de-mes, auditoria-base | Gonza | feature/facturacion-reabrir-item | pendiente |
+| E11 Facturación mensual | [costos-del-item](units/costos-del-item.md) | facturacion | HU-063, HU-066 criterio 1 (RN-024) | cierre-de-mes, costos-y-margen | Gonza | feature/facturacion-costos-del-item | mergeada |
+| E11 Facturación mensual | [reabrir-item](units/reabrir-item.md) | facturacion | HU-067 (RN-022) | cierre-de-mes, auditoria-base | Gonza | feature/facturacion-reabrir-item | en revisión |
 
 ## Notas
 
