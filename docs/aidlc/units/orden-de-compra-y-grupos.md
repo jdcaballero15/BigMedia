@@ -23,9 +23,9 @@ tres unidades del Should de E11 para el miércoles 04/11.
 2. **Orden de compra en el ítem** (HU-062): `orden_compra_numero` y `orden_compra_fecha`,
    opcionales (criterio 4). Se editan solo en Borrador, como el resto de los datos.
 3. **Duplicado de OC** (criterio 2): al guardar, la respuesta trae `avisos.orden_compra` con los
-   ítems no anulados que tienen el mismo número. No bloquea. El formulario muestra el aviso con
-   enlace al ítem coincidente. El número se compara sin espacios al principio ni al final y sin
-   distinguir mayúsculas.
+   ítems no anulados que tienen el mismo número. No bloquea. Al guardar, la página muestra el
+   aviso con el número y la descripción de cada ítem coincidente (sin enlace: puede ser de otro
+   mes). El número se compara sin espacios al principio ni al final y sin distinguir mayúsculas.
 4. **Grupo de factura** (HU-064): un modelo `GrupoFactura` (mes, creado por, creado en) y un
    `grupo` opcional en el ítem.
    - Agrupar: se eligen ítems del listado y se usa "Agrupar en una factura". Si alguno ya tiene
@@ -59,10 +59,13 @@ tres unidades del Should de E11 para el miércoles 04/11.
     `POST /api/facturacion/items/<id>/quitar-del-grupo/`.
   - Permisos: los de los ítems (el operativo edita, Lectura ve y abre el PDF).
 - `config/settings.py` y `backend/.env.example`: `FACTURACION_OC_MAX_MB`.
+- `docs/manual/manual-de-uso.md`: orden de compra y grupos de factura.
 - `docs/adr/0009-pdf-de-orden-de-compra-en-postgresql.md`.
 - Frontend:
-  - `ItemForm`: sección "Orden de compra" con número, fecha, adjuntar, abrir y quitar el PDF, y
-    el aviso de duplicado.
+  - `ItemForm`: número y fecha de la OC, y `PdfOrdenCompra` para adjuntar, abrir y quitar el
+    PDF. El PDF se adjunta a un ítem ya guardado; en uno nuevo se pide guardarlo primero.
+  - `ItemsPage`: el aviso de OC duplicada después de guardar, y la OC con el enlace al PDF en la
+    fila.
   - `ItemsPage`: selección de ítems en Borrador, "Agrupar en una factura", columna Grupo y
     "Quitar del grupo".
 
@@ -98,5 +101,10 @@ al ítem. No mueve datos.
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-27 — aprobado por Gonza
-- Gate 2 (verificación): pendiente
+- Gate 2 (verificación): 2026-10-27 — `ruff format --check` (133 archivos) y `ruff check` sin
+  errores; `mypy backend` sin errores (133 archivos); `makemigrations --check` sin cambios;
+  `pytest --cov`: 710 tests en verde, coverage 96,79 %; frontend `format:check`, `lint`,
+  `typecheck` y `build` en verde, `test:coverage` con 311 tests en verde y 93,4 % de líneas
+  (90,9 % de sentencias); `pre-commit run --all-files` en verde. Espera revisión de Gonza o Juan
+  Diego.
 - Gate 3 (PR): pendiente

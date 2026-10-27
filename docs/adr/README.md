@@ -44,3 +44,4 @@ No hace falta un ADR para: nombrar una función, agregar un test, corregir un bu
 | [0006](0006-interacciones-en-campanias.md) | Ubicar las interacciones comerciales en la app `campanias` | Propuesto | 2026-10-27 |
 | [0007](0007-campanias-importa-de-inventario.md) | Permitir que `campanias` importe de `inventario` | Propuesto | 2026-10-27 |
 | [0008](0008-planilla-xlsx-con-openpyxl.md) | Generar la planilla de facturación en el servidor con `openpyxl` | Propuesto | 2026-10-27 |
+| [0009](0009-pdf-de-orden-de-compra-en-postgresql.md) | Guardar el PDF de la orden de compra en PostgreSQL | Propuesto | 2026-10-27 |
