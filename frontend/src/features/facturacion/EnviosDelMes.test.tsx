@@ -64,6 +64,7 @@ test('envía a facturar y muestra los incompletos con lo que les falta', async (
   fireEvent.click(screen.getByRole('button', { name: 'Enviar a facturar' }))
   const resumen = await screen.findByRole('status', { name: 'Resultado del envío' })
   expect(resumen.textContent).toContain('Se enviaron 2 ítems a facturar.')
+  expect(within(resumen).getByText('1 quedó en Borrador porque le falta:')).toBeDefined()
   expect(within(resumen).getByText('Sin cliente: cliente, importe neto')).toBeDefined()
   expect(within(resumen).getByRole('link', { name: 'Descargar planilla' })).toBeDefined()
   expect(onEnviado).toHaveBeenCalledTimes(1)
@@ -72,6 +73,20 @@ test('envía a facturar y muestra los incompletos con lo que les falta', async (
   await waitFor(() =>
     expect(fetchMock.mock.calls.filter(([, o]) => o?.method !== 'POST')).toHaveLength(2),
   )
+})
+
+test('con un solo ítem enviado y varios incompletos concuerda el número', async () => {
+  const incompleto = { item: 3, descripcion: 'Sin cliente', faltan: ['cliente'] }
+  stubFetch([], {
+    envio: { ...envio, cantidad: 1 },
+    incompletos: [incompleto, { ...incompleto, item: 5, descripcion: 'Sin importe' }],
+  })
+  renderizar()
+  await screen.findByText('Todavía no se envió nada de este mes.')
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar a facturar' }))
+  const resumen = await screen.findByRole('status', { name: 'Resultado del envío' })
+  expect(resumen.textContent).toContain('Se envió 1 ítem a facturar.')
+  expect(within(resumen).getByText('2 quedaron en Borrador porque les falta:')).toBeDefined()
 })
 
 test('sin ítems completos lo avisa y no recarga los ítems', async () => {
