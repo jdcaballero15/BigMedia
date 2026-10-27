@@ -266,3 +266,35 @@ test('sin permiso de edición solo muestra el seguimiento', async () => {
   expect(screen.queryByRole('columnheader', { name: 'Acciones' })).toBeNull()
   expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/formatos/'))).toBe(false)
 })
+
+test('agregar carteles abre la tanda de esa línea con las fechas de la campaña', async () => {
+  const onReservasCreadas = vi.fn()
+  const fetchMock = stubFetch(undefined, (input) =>
+    input.includes('/inventario/zonas/') ||
+    input.includes('/inventario/proveedores/') ||
+    input.includes('/carteles-para-tanda/')
+      ? ok([])
+      : undefined,
+  )
+  render(
+    <PosicionesPorFormato
+      campaniaId={5}
+      fechaInicio="2026-11-01"
+      fechaFin="2026-11-30"
+      onReservasCreadas={onReservasCreadas}
+    />,
+  )
+  const fila = (await screen.findByText('Gran Formato')).closest('tr') as HTMLElement
+  fireEvent.click(within(fila).getByRole('button', { name: 'Agregar carteles' }))
+  const tanda = screen.getByRole('region', { name: 'Agregar carteles' })
+  expect(within(tanda).getByText('Agregar carteles · Gran Formato')).toBeDefined()
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.some(([url]) =>
+        String(url).includes('formato=10&desde=2026-11-01&hasta=2026-11-30'),
+      ),
+    ).toBe(true),
+  )
+  fireEvent.click(within(tanda).getByRole('button', { name: 'Cerrar' }))
+  expect(screen.queryByRole('region', { name: 'Agregar carteles' })).toBeNull()
+})

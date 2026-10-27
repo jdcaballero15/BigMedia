@@ -130,5 +130,10 @@ Ninguna.
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-27 — aprobado por Gonza
-- Gate 2 (verificación): pendiente
+- Gate 2 (verificación): 2026-10-27 — `ruff format --check` (121 archivos) y `ruff check`
+  sin errores; `mypy backend` sin errores (121 archivos); `makemigrations --check` sin cambios;
+  `pytest --cov`: 589 tests en verde, coverage 96,41 %; frontend `format:check`, `lint`,
+  `typecheck` y `build` en verde, `test:coverage` con 255 tests en verde y 92,49 % de líneas
+  (89,81 % de sentencias); `pre-commit run --all-files` (gitleaks incluido) en verde.
+  Espera revisión de Gonza o Juan Diego.
 - Gate 3 (PR): pendiente

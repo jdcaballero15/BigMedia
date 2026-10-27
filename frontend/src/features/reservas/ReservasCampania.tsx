@@ -9,7 +9,14 @@ import { etiquetaEstadoReserva } from './types'
 import CostosReserva from '../costos/CostosReserva'
 import { usePuedeEditar } from '../../shared/sesion'
 
-export default function ReservasCampania({ campaniaId }: { campaniaId: number }) {
+type Props = {
+  campaniaId: number
+  /** Cambia cuando se crean reservas desde otra sección (por ejemplo, "Agregar carteles"). */
+  revisionExterna?: number
+  onCambio?: () => void
+}
+
+export default function ReservasCampania({ campaniaId, revisionExterna = 0, onCambio }: Props) {
   const puedeEditar = usePuedeEditar()
   const [reservas, setReservas] = useState<Reserva[]>([])
   const [carteles, setCarteles] = useState<Cartel[]>([])
@@ -51,7 +58,7 @@ export default function ReservasCampania({ campaniaId }: { campaniaId: number })
     return () => {
       active = false
     }
-  }, [campaniaId, revision])
+  }, [campaniaId, revision, revisionExterna])
 
   async function saveReserva(input: ReservaInput) {
     if (editing === null) return
@@ -60,6 +67,7 @@ export default function ReservasCampania({ campaniaId }: { campaniaId: number })
     await apiWrite(path, editing === 'new' ? 'POST' : 'PATCH', input)
     setEditing(null)
     setRevision((current) => current + 1)
+    onCambio?.()
   }
 
   return (
