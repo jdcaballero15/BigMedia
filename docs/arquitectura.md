@@ -73,14 +73,14 @@ Los límites vienen de la unidad [`base-del-repositorio`](aidlc/units/base-del-r
 
 | App | Responsabilidad | Riesgo dominante | Estado |
 | --- | --- | --- | --- |
-| `usuarios` | Cuentas, sesión y permisos. | Acceso no autorizado a datos o acciones. | iniciada (solo el comando `asegurar_admin`) |
+| `usuarios` | Cuentas, sesión y permisos. | Acceso no autorizado a datos o acciones. | implementada |
 | `inventario` | Formatos, proveedores, zonas, carteles, estados físicos y capacidad. | Capacidad mal cargada, que luego rompe la disponibilidad. | implementada |
-| `clientes` | Clientes pagadores, marcas y contactos. | Datos personales mal tratados. | implementada parcial (clientes, marcas y rubros) |
-| `campanias` | Campañas, posiciones solicitadas por formato e interacciones comerciales (viven acá porque pueden llevar campaña). | Posiciones inconsistentes con lo vendido. | planificada |
-| `reservas` | Reservas, disponibilidad, confirmación, cancelación y carga masiva. Toda vía de entrada usa el mismo servicio de confirmación. | Sobreventa de un cartel. | planificada |
-| `costos` | Costos asociados a reservas e ítems de facturación, evitando contabilizarlos dos veces. | Contabilizar un costo dos veces. | planificada |
+| `clientes` | Clientes pagadores, marcas y contactos. | Datos personales mal tratados. | implementada |
+| `campanias` | Campañas, posiciones solicitadas por formato e interacciones comerciales (viven acá porque pueden llevar campaña). | Posiciones inconsistentes con lo vendido. | implementada |
+| `reservas` | Reservas, disponibilidad, confirmación, cancelación y carga masiva. Toda vía de entrada usa el mismo servicio de confirmación. | Sobreventa de un cartel. | implementada (falta la carga masiva, E10) |
+| `costos` | Costos asociados a reservas e ítems de facturación, evitando contabilizarlos dos veces. | Contabilizar un costo dos veces. | implementada (costos de reservas) |
 | `facturacion` | Ítems, cálculo de importes, cierre mensual y exportación XLSX. | Importes y cierre mensual incorrectos. | planificada |
-| `auditoria` | Registro inmutable de cambios relevantes. | Pérdida de inmutabilidad del registro. | planificada |
+| `auditoria` | Registro inmutable de cambios relevantes. | Pérdida de inmutabilidad del registro. | implementada |
 
 ## 4. Dependencias permitidas entre apps
 
@@ -91,7 +91,7 @@ Una app no importa modelos de otra fuera de esta tabla. Cualquier app puede impo
 | `inventario` | — |
 | `clientes` | — |
 | `usuarios` | — |
-| `campanias` | `clientes` |
+| `campanias` | `clientes`, `inventario` ([ADR-0007](adr/0007-campanias-importa-de-inventario.md)) |
 | `reservas` | `inventario`, `campanias` |
 | `costos` | `reservas`, `inventario` |
 | `facturacion` | `campanias`, `reservas`, `costos`, `clientes` |

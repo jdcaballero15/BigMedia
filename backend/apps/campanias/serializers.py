@@ -4,9 +4,10 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from apps.clientes.models import Cliente
+from apps.inventario.models import Formato
 
 from . import services
-from .models import Campania, Interaccion
+from .models import Campania, Interaccion, LineaFormato
 
 
 class CampaniaSerializer(serializers.ModelSerializer[Campania]):
@@ -71,6 +72,46 @@ class CampaniaSerializer(serializers.ModelSerializer[Campania]):
             "fecha_inicio": self.instance.fecha_inicio,
             "fecha_fin": self.instance.fecha_fin,
         }
+
+
+class LineaFormatoSerializer(serializers.ModelSerializer[LineaFormato]):
+    formato_nombre = serializers.CharField(source="formato.nombre", read_only=True)
+
+    class Meta:
+        model = LineaFormato
+        fields = [
+            "id",
+            "campania",
+            "formato",
+            "formato_nombre",
+            "cantidad",
+            "activa",
+            "creado_en",
+            "actualizado_en",
+        ]
+        read_only_fields = ["creado_en", "actualizado_en"]
+        # El formato repetido lo valida el servicio, con un mensaje claro (HU-055, criterio 3).
+        validators: list[object] = []
+
+    def update(self, instance: LineaFormato, validated_data: dict[str, Any]) -> LineaFormato:
+        # La línea pertenece a su campaña: no se mueve a otra.
+        validated_data.pop("campania", None)
+        return super().update(instance, validated_data)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        actual = self.instance
+        # En un alta, campaña y formato vienen en attrs; en una edición, de la instancia.
+        campania: Campania = actual.campania if actual is not None else attrs["campania"]
+        formato: Formato = (
+            attrs["formato"] if "formato" in attrs else cast(LineaFormato, actual).formato
+        )
+        activa = attrs.get("activa", getattr(actual, "activa", True))
+        formato_sin_cambios = actual is not None and actual.formato_id == formato.pk
+        try:
+            services.validar_linea_formato(campania, formato, activa, actual, formato_sin_cambios)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.message_dict) from error
+        return attrs
 
 
 class InteraccionSerializer(serializers.ModelSerializer[Interaccion]):

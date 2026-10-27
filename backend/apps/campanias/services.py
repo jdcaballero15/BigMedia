@@ -3,8 +3,9 @@
 from django.core.exceptions import ValidationError
 
 from apps.clientes.models import Cliente, Contacto
+from apps.inventario.models import Formato
 
-from .models import Campania
+from .models import Campania, LineaFormato
 
 
 def validar_confirmacion(campania: Campania) -> None:
@@ -44,3 +45,22 @@ def validar_campania_de_interaccion(cliente: Cliente, campania: Campania | None)
     duenio_marca = campania.marca.cliente_id if campania.marca is not None else None
     if cliente.pk not in {getattr(facturador, "pk", None), duenio_marca}:
         raise ValidationError({"campania": "La campaña no es de ese cliente."})
+
+
+def validar_linea_formato(
+    campania: Campania,
+    formato: Formato,
+    activa: bool,
+    actual: LineaFormato | None,
+    formato_sin_cambios: bool,
+) -> None:
+    """Formato activo y sin repetir entre las líneas activas de la campaña (HU-055)."""
+    if not formato.activo and not formato_sin_cambios:
+        raise ValidationError({"formato": "Seleccioná un formato activo."})
+    if not activa:
+        return
+    repetidas = LineaFormato.objects.filter(campania=campania, formato=formato, activa=True)
+    if actual is not None:
+        repetidas = repetidas.exclude(pk=actual.pk)
+    if repetidas.exists():
+        raise ValidationError({"formato": f"La campaña ya tiene una línea de {formato.nombre}."})

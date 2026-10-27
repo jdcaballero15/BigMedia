@@ -50,3 +50,15 @@ export type Interaccion = {
   campania_nombre: string | null
   registrada_por_nombre: string | null
 }
+
+/** Solicitado, reservado y faltante de un formato en la campaña (HU-055, HU-058). */
+export type FilaSeguimiento = {
+  /** `null` cuando hay reservas del formato pero la campaña no tiene línea activa. */
+  linea: number | null
+  formato: number
+  formato_nombre: string
+  solicitadas: number | null
+  reservadas: number
+  faltantes: number | null
+  excedente: number | null
+}

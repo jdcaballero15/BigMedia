@@ -42,3 +42,4 @@ No hace falta un ADR para: nombrar una función, agregar un test, corregir un bu
 | [0004](0004-gates-de-calidad-estrictos.md) | Exigir gates de calidad estrictos desde el inicio | Aceptado | 2026-10-16 |
 | [0005](0005-base-de-staging-en-neon.md) | Usar Neon para la base de staging y Render pago para producción | Propuesto | 2026-10-21 |
 | [0006](0006-interacciones-en-campanias.md) | Ubicar las interacciones comerciales en la app `campanias` | Propuesto | 2026-10-27 |
+| [0007](0007-campanias-importa-de-inventario.md) | Permitir que `campanias` importe de `inventario` | Propuesto | 2026-10-27 |

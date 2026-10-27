@@ -1,6 +1,7 @@
 import ReservasCampania from '../reservas/ReservasCampania'
 import RentabilidadCampania from '../costos/RentabilidadCampania'
 import InteraccionesLista from './InteraccionesLista'
+import PosicionesPorFormato from './PosicionesPorFormato'
 import type { Campania } from './types'
 import { etiquetaEstado } from './types'
 import { formatearFecha } from '../../shared/fechas'
@@ -58,6 +59,7 @@ export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props)
           </div>
         </dl>
       </div>
+      <PosicionesPorFormato campaniaId={campania.id} />
       <ReservasCampania campaniaId={campania.id} />
       <RentabilidadCampania campaniaId={campania.id} />
       <InteraccionesLista

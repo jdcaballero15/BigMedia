@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count, F, Q, QuerySet
 from django.utils import timezone
 
+from apps.campanias.models import Campania
 from apps.inventario.models import Cartel, Formato
 
 from .models import MESES_ABREV, ParametrosDisponibilidad, Reserva
@@ -487,3 +488,52 @@ def panel_principal() -> dict[str, object]:
             for r in por_vencer.order_by("fecha_fin", "id")
         ],
     }
+
+
+def _fila_seguimiento(
+    linea: int | None, formato: int, nombre: str, solicitadas: int | None, reservadas: int
+) -> dict[str, Any]:
+    if solicitadas is None:
+        faltantes, excedente = None, None
+    else:
+        faltantes = max(0, solicitadas - reservadas)
+        excedente = max(0, reservadas - solicitadas)
+    return {
+        "linea": linea,
+        "formato": formato,
+        "formato_nombre": nombre,
+        "solicitadas": solicitadas,
+        "reservadas": reservadas,
+        "faltantes": faltantes,
+        "excedente": excedente,
+    }
+
+
+def seguimiento_de_campania(campania: Campania) -> list[dict[str, Any]]:
+    """Solicitado, reservado y faltante por formato de la campaña (HU-058).
+
+    Reservada es toda reserva no Cancelada de la campaña cuyo cartel es del formato. Los formatos
+    con reservas pero sin línea activa se muestran aparte, sin cantidad solicitada.
+    """
+    reservadas = dict(
+        Reserva.objects.filter(campania=campania)
+        .exclude(estado=Reserva.Estado.CANCELADA)
+        .values("cartel__formato")
+        .annotate(total=Count("id"))
+        .values_list("cartel__formato", "total")
+    )
+    filas = [
+        _fila_seguimiento(
+            linea.pk,
+            linea.formato_id,
+            linea.formato.nombre,
+            linea.cantidad,
+            reservadas.pop(linea.formato_id, 0),
+        )
+        for linea in campania.lineas.filter(activa=True).select_related("formato")
+    ]
+    for formato in Formato.objects.filter(pk__in=reservadas).order_by("nombre"):
+        filas.append(
+            _fila_seguimiento(None, formato.pk, formato.nombre, None, reservadas[formato.pk])
+        )
+    return filas
