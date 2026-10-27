@@ -120,4 +120,4 @@ y lo aclara donde una regla todavía puede cambiar (por ejemplo, si una Pendient
   - **Enlaces:** 0 rotos (rutas y anclas) en los ocho documentos tocados.
   - `pre-commit run --all-files` en la rama: 13 hooks en verde, salida 0.
   - Sin verificar: que GitHub dibuje los diagramas Mermaid. Se ve al abrir el PR.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #80, pedido por Gonza el 2026-10-27
