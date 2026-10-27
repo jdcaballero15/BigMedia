@@ -129,4 +129,4 @@ los valores iniciales de los catálogos. No tocan datos existentes.
   `typecheck` y `build` en verde, `test:coverage` con 278 tests en verde y 92,91 % de líneas
   (90,34 % de sentencias); `pre-commit run --all-files` en verde.
   Espera revisión de Gonza o Juan Diego.
-- Gate 3 (PR): pedido por Gonza el 2026-10-27
+- Gate 3 (PR): #77, pedido por Gonza el 2026-10-27
