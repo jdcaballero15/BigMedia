@@ -89,4 +89,4 @@ opción. Con la API, que se rechace.
   `format:check` ok, `lint` y `typecheck` sin errores, `test:coverage` 182 en verde (sentencias
   87,92 %, líneas 91,01 %), `build` ok. `pre-commit run --all-files` en verde, gitleaks incluido.
   Prueba a mano en `localhost` el 26/10/2026: ok (Juan Diego).
-- Gate 3 (PR): 2026-10-26 — pedido por Juan Diego; PR a `develop`.
+- Gate 3 (PR): 2026-10-26 — pedido por Juan Diego; [PR #72](https://github.com/jdcaballero15/BigMedia/pull/72) a `develop`.
