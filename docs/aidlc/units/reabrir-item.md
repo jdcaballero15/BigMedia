@@ -72,4 +72,4 @@ Una en `facturacion`: cuatro campos opcionales en el ítem. No mueve datos.
   (91,18 % de sentencias); `pre-commit run --all-files` en verde. Aprobado por Gonza el
   2026-10-27, con dos ajustes al plan: un quinto campo, `valores_al_reabrir` (el ítem como sale
   en la planilla al reabrirlo), y el aviso de reenvío compara las columnas de la planilla.
-- Gate 3 (PR): pedido por Gonza el 2026-10-27
+- Gate 3 (PR): #83, pedido por Gonza el 2026-10-27
