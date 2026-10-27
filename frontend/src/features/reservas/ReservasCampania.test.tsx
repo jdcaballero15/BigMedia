@@ -96,3 +96,70 @@ test('pide también los carteles de baja para mostrar el ya asignado', async () 
     expect.anything(),
   )
 })
+
+const resultadoConfirmacion = {
+  confirmadas: [3],
+  conflictos: [
+    {
+      reserva: 4,
+      nombre: 'Axe - Av. Corrientes 1 · 6x3 - Ago 2026',
+      cartel_nombre: 'Av. Corrientes 1 · 6x3',
+      fecha_inicio: '2026-08-01',
+      fecha_fin: '2026-08-31',
+      ocupada_por: [{ campania: 8, campania_nombre: 'Invierno' }],
+    },
+  ],
+}
+
+test('confirma las Pendientes en bloque y lista los conflictos', async () => {
+  const onCambio = vi.fn()
+  const fetchMock = stubFetch((input, options) =>
+    input.includes('/confirmar-en-bloque/') && options?.method === 'POST'
+      ? ok(resultadoConfirmacion)
+      : undefined,
+  )
+  render(<ReservasCampania campaniaId={5} campaniaConfirmada onCambio={onCambio} />)
+  await screen.findByText(reserva.nombre)
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar reservas' }))
+  const resultado = await screen.findByRole('status', { name: 'Resultado de la confirmación' })
+  expect(within(resultado).getByText('Se confirmaron 1 reservas.')).toBeDefined()
+  expect(
+    within(resultado).getByText(
+      'Av. Corrientes 1 · 6x3, 01/08/2026 → 31/08/2026: ocupado por Invierno',
+    ),
+  ).toBeDefined()
+  const [, options] =
+    fetchMock.mock.calls.find(([url]) => String(url).includes('/confirmar-en-bloque/')) ?? []
+  expect(JSON.parse(String(options?.body))).toEqual({ campania: 5 })
+  expect(onCambio).toHaveBeenCalledTimes(1)
+})
+
+test('sin la campaña Confirmada no ofrece confirmar en bloque', async () => {
+  stubFetch()
+  render(<ReservasCampania campaniaId={5} />)
+  await screen.findByText(reserva.nombre)
+  expect(screen.queryByRole('button', { name: 'Confirmar reservas' })).toBeNull()
+})
+
+test('sin Pendientes no ofrece confirmar en bloque', async () => {
+  stubFetch((input) =>
+    input.includes('/reservas/reservas/') ? ok([{ ...reserva, estado: 'confirmada' }]) : undefined,
+  )
+  render(<ReservasCampania campaniaId={5} campaniaConfirmada />)
+  await screen.findByText(reserva.nombre)
+  expect(screen.queryByRole('button', { name: 'Confirmar reservas' })).toBeNull()
+})
+
+test('si falla la confirmación en bloque lo avisa', async () => {
+  stubFetch((input) =>
+    input.includes('/confirmar-en-bloque/')
+      ? { ok: false, status: 400, json: async () => ({}) }
+      : undefined,
+  )
+  render(<ReservasCampania campaniaId={5} campaniaConfirmada />)
+  await screen.findByText(reserva.nombre)
+  fireEvent.click(screen.getByRole('button', { name: 'Confirmar reservas' }))
+  expect((await screen.findByRole('alert')).textContent).toBe(
+    'No se pudieron confirmar las reservas.',
+  )
+})
