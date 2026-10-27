@@ -33,7 +33,7 @@ Monolito modular: una API Django y una base PostgreSQL; cada área de negocio es
 | `usuarios` | Cuentas, sesión y permisos | — |
 | `inventario` | Formatos, proveedores, zonas, carteles y capacidad | — |
 | `clientes` | Clientes, marcas, contactos | — |
-| `campanias` | Campañas y posiciones por formato | `clientes` |
+| `campanias` | Campañas, posiciones por formato e interacciones comerciales | `clientes` |
 | `reservas` | Disponibilidad, confirmación, cancelación | `inventario`, `campanias` |
 | `costos` | Costos de reservas e ítems de facturación | `reservas`, `inventario` |
 | `facturacion` | Importes, cierre mensual, exportación | `campanias`, `reservas`, `costos`, `clientes` |

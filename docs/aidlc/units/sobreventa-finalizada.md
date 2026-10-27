@@ -1,6 +1,6 @@
 # Unidad: Sobreventa por reservas Finalizadas
 
-- **Estado:** en revisión · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** `reservas`
+- **Estado:** mergeada · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** `reservas`
 - **Origen:** hallazgo de la prueba manual de reservas (24/10/2026), reproducido el 26/10/2026 ·
   HU-031, HU-035 · **Rama:** `fix/reservas-sobreventa-finalizada`
 

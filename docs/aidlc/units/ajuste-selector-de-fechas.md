@@ -1,6 +1,6 @@
 # Unidad: Ajuste del selector y el formato de fechas
 
-- **Estado:** en revisión · **Épica:** — (unidad técnica) · **App dueña:** `frontend`
+- **Estado:** mergeada · **Épica:** — (unidad técnica) · **App dueña:** `frontend`
 - **Origen:** hallazgo de la prueba manual de reservas del 24/10/2026 (Juan Diego) · **Rama:** `fix/frontend-selector-de-fechas`
 
 ## Objetivo
