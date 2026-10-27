@@ -1,6 +1,6 @@
 # Unidad: Ítems a facturar
 
-- **Estado:** en curso · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
+- **Estado:** mergeada · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
 - **Origen:** HU-060, HU-061, HU-065 (RN-022, RN-023) · **Rama:** `feature/facturacion-items-a-facturar`
 
 ## Objetivo
@@ -129,4 +129,4 @@ los valores iniciales de los catálogos. No tocan datos existentes.
   `typecheck` y `build` en verde, `test:coverage` con 278 tests en verde y 92,91 % de líneas
   (90,34 % de sentencias); `pre-commit run --all-files` en verde.
   Espera revisión de Gonza o Juan Diego.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #77, pedido por Gonza el 2026-10-27

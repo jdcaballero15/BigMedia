@@ -1,6 +1,6 @@
 # Unidad: Cierre de mes
 
-- **Estado:** en curso · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
+- **Estado:** en revisión · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
 - **Origen:** HU-066 (RN-022, RN-024, RN-025) · **Rama:** `feature/facturacion-cierre-de-mes`
 
 ## Objetivo

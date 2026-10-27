@@ -101,6 +101,19 @@ class ReservasEnBloqueSerializer(serializers.Serializer[dict[str, Any]]):
         return attrs
 
 
+class CampaniaDeReservasSerializer(serializers.Serializer[dict[str, Any]]):
+    """Pedido de confirmación en bloque de las Pendientes de una campaña (HU-059)."""
+
+    campania = serializers.PrimaryKeyRelatedField(queryset=Campania.objects.all())
+
+
+class MoverPendientesSerializer(CampaniaDeReservasSerializer):
+    """Fechas que tenía la campaña antes del cambio (HU-058, criterio 3)."""
+
+    fecha_inicio_anterior = serializers.DateField()
+    fecha_fin_anterior = serializers.DateField()
+
+
 class ParametrosDisponibilidadSerializer(serializers.ModelSerializer[ParametrosDisponibilidad]):
     class Meta:
         model = ParametrosDisponibilidad
