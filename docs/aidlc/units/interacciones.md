@@ -1,6 +1,6 @@
 # Unidad: Interacciones comerciales
 
-- **Estado:** en curso · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** `campanias`
+- **Estado:** en revisión · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** `campanias`
 - **Origen:** HU-020, más los criterios 5 y 7 de HU-068 · **Rama:** `feature/campanias-interacciones`
 
 ## Objetivo
@@ -97,5 +97,6 @@ campaña, y verla en la sección, en la ficha del cliente y en la campaña.
   errores en 117 archivos, `makemigrations --check` sin cambios, `pytest --cov` 518 en verde
   (96,14 %). Frontend: `format:check` ok, `lint` y `typecheck` sin errores, `test:coverage` 193 en
   verde (sentencias 88,38 %, líneas 91,39 %), `build` ok. `pre-commit run --all-files` en verde,
-  gitleaks incluido. Falta la prueba a mano en `localhost`.
-- Gate 3 (PR): pendiente
+  gitleaks incluido. La prueba a mano en `localhost` quedó sin resultado informado: Juan Diego
+  pidió el PR directamente.
+- Gate 3 (PR): 2026-10-27 — pedido por Juan Diego; PR a `develop`.
