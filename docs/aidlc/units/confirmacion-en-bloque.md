@@ -1,6 +1,6 @@
 # Unidad: Confirmación en bloque
 
-- **Estado:** en curso · **Épica:** E10 Armado de campañas y reserva masiva · **App dueña:** `reservas`
+- **Estado:** en revisión · **Épica:** E10 Armado de campañas y reserva masiva · **App dueña:** `reservas`
 - **Origen:** HU-059, más los criterios 3 y 4 de HU-058 · **Rama:** `feature/reservas-confirmacion-en-bloque`
 
 ## Objetivo
@@ -103,4 +103,4 @@ Ninguna.
   frontend `format:check`, `lint`, `typecheck` y `build` en verde, `test:coverage` con 266 tests
   en verde y 92,76 % de líneas (90,06 % de sentencias); `pre-commit run --all-files` en verde.
   Espera revisión de Gonza o Juan Diego.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): pedido por Gonza el 2026-10-27
