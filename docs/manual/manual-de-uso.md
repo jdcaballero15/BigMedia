@@ -140,7 +140,7 @@ las que entran en el cartel.
 3. El sistema confirma las que entran y te lista las que no. Por ejemplo:
 
    > Se confirmaron 3 reservas.
-   > 1 quedaron Pendientes por falta de cupo:
+   > 1 quedó Pendiente por falta de cupo:
    > - Acceso Este 2500, 25/10/2026 → 10/11/2026: ocupado por Campaña #2
 
 Las que quedaron Pendientes no se pierden. Podés cambiarles las fechas, elegir otro cartel o hablar
@@ -166,7 +166,7 @@ Los más comunes:
 | Mensaje | Qué pasó | Qué hacer |
 | --- | --- | --- |
 | "Acceso Este 2500: sin cupo libre (1 de 1) entre 2026-10-20 y 2026-11-10. En conflicto: Moda Urbana - Acceso Este 2500 - Oct 2026." | El cartel tiene 1 lugar y ya lo ocupa la reserva "Moda Urbana - Acceso Este 2500 - Oct 2026" en parte de esas fechas | Cambiá las fechas para que no se pisen, elegí otro cartel o, si la otra reserva ya no va, cancelala primero |
-| "1 quedaron Pendientes por falta de cupo: Acceso Este 2500, 25/10/2026 → 10/11/2026: ocupado por Campaña #2" | Al confirmar la campaña, esa reserva no entró porque otra campaña ocupa el cartel | Lo mismo que el anterior; las demás reservas sí se confirmaron |
+| "1 quedó Pendiente por falta de cupo: Acceso Este 2500, 25/10/2026 → 10/11/2026: ocupado por Campaña #2" | Al confirmar la campaña, esa reserva no entró porque otra campaña ocupa el cartel | Lo mismo que el anterior; las demás reservas sí se confirmaron |
 | "Primero confirmá la campaña." | Tocaste **Confirmar reservas** con la campaña Cotizada | Confirmá la campaña y volvé a intentar |
 | "Para confirmar falta cargar las fechas." | La campaña no tiene todo lo necesario para confirmarse | Cargá lo que dice (marca, cliente que factura o fechas) |
 | "El cartel está de baja: no se puede reservar." | El cartel está fuera de servicio | Elegí otro cartel |
@@ -253,7 +253,7 @@ El CUIT de facturación del ítem puede ser distinto del CUIT del cliente: la pl
    quedan en Borrador y el sistema te dice qué les falta. Por ejemplo:
 
    > Se enviaron 5 ítems a facturar. Descargar planilla
-   > 1 quedaron en Borrador porque les falta: Impresión lona Vendimia: cliente, importe neto
+   > 1 quedó en Borrador porque le falta: Impresión lona Vendimia: cliente, importe neto
 
 3. **Descargar planilla** baja el .xlsx de ese envío para Administración. Cada envío queda
    registrado en **Envíos a facturar**, con quién lo mandó y cuándo, y su planilla se puede volver
