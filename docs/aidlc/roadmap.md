@@ -37,17 +37,22 @@ Definidas por Gonza el 27/10/2026.
   de reservas, campañas y tarifas con su pantalla (HU-007), expiración de sesión por inactividad
   (HU-003 criterio 4), bloqueo temporal por intentos fallidos (HU-003 criterio 3), roles Operativo,
   Administrador y Lectura (HU-004), gestión de usuarios (HU-005) y baja lógica (HU-006).
+- **E10 Armado de campañas y reserva masiva** — posiciones por formato, reserva masiva y
+  confirmación en bloque (HU-055 a HU-059).
+- **E11 Facturación mensual, Must** — ítems a facturar con importes, IVA y estados, y cierre de
+  mes con la planilla para Administración (HU-060, HU-061, HU-065, HU-066).
+- **E9 Entrega y traspaso** — documentación de traspaso, modelo de datos, manual de usuario y
+  guion de capacitación (HU-053, HU-054).
 
 ## En curso
 
-- **E10 Armado de campañas y reserva masiva** — en tres unidades: `posiciones-por-formato`
-  (HU-055 y HU-058, criterios 1 y 2), `reserva-masiva` (HU-056 y HU-057) y
-  `confirmacion-en-bloque` (HU-059 y HU-058, criterios 3 y 4).
+- **E11 Facturación mensual, Should** (para el 04/11) — en tres unidades:
+  `orden-de-compra-y-grupos` (HU-062 y HU-064), `costos-del-item` (HU-063) y `reabrir-item`
+  (HU-067).
 
 ## Próximas
 
-- E11 Facturación mensual, Must (HU-060, HU-061, HU-065, HU-066), y E9 Entrega y traspaso: para el 30/10.
-- E11 Facturación mensual, Should (HU-062, HU-063, HU-064, HU-067): para el 04/11.
+- A definir después del 04/11.
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
@@ -69,3 +74,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-10-27 | E10 pasa a En curso, partida en tres unidades | Gonza eligió E10: se apoya en campañas y reservas y es lo que más trabajo manual ahorra |
 | 2026-10-27 | Se fija la fecha de entrega: viernes 30/10/2026 | Definida por Gonza |
 | 2026-10-27 | E11 se parte: las Must y E9 para el 30/10, las Should para el 04/11 | No entra todo para el 30/10; Gonza fijó una segunda entrega |
+| 2026-10-27 | E9, E10 y el Must de E11 pasan a Hecho; el Should de E11 pasa a En curso, en tres unidades | Quedaron mergeados los PR #75 a #80 |
