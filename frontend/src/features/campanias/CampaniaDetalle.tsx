@@ -1,5 +1,6 @@
 import ReservasCampania from '../reservas/ReservasCampania'
 import RentabilidadCampania from '../costos/RentabilidadCampania'
+import InteraccionesLista from './InteraccionesLista'
 import type { Campania } from './types'
 import { etiquetaEstado } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
@@ -58,6 +59,11 @@ export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props)
       </div>
       <ReservasCampania campaniaId={campania.id} />
       <RentabilidadCampania campaniaId={campania.id} />
+      <InteraccionesLista
+        filtro={{ campania: campania.id }}
+        titulo="Interacciones de la campaña"
+        ocultar="campania"
+      />
     </section>
   )
 }

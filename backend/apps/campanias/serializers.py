@@ -1,10 +1,12 @@
-from typing import Any
+from typing import Any, cast
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
+from apps.clientes.models import Cliente
+
 from . import services
-from .models import Campania
+from .models import Campania, Interaccion
 
 
 class CampaniaSerializer(serializers.ModelSerializer[Campania]):
@@ -69,3 +71,57 @@ class CampaniaSerializer(serializers.ModelSerializer[Campania]):
             "fecha_inicio": self.instance.fecha_inicio,
             "fecha_fin": self.instance.fecha_fin,
         }
+
+
+class InteraccionSerializer(serializers.ModelSerializer[Interaccion]):
+    cliente_nombre = serializers.CharField(source="cliente.nombre_visible", read_only=True)
+    contacto_nombre = serializers.CharField(source="contacto.nombre", read_only=True, default=None)
+    campania_nombre = serializers.SerializerMethodField()
+    registrada_por_nombre = serializers.CharField(
+        source="registrada_por.username", read_only=True, default=None
+    )
+
+    class Meta:
+        model = Interaccion
+        fields = [
+            "id",
+            "tipo",
+            "asunto",
+            "fecha",
+            "notas",
+            "cliente",
+            "cliente_nombre",
+            "contacto",
+            "contacto_nombre",
+            "campania",
+            "campania_nombre",
+            "registrada_por_nombre",
+            "creado_en",
+            "actualizado_en",
+        ]
+        read_only_fields = ["creado_en", "actualizado_en"]
+
+    def get_campania_nombre(self, interaccion: Interaccion) -> str | None:
+        return str(interaccion.campania) if interaccion.campania is not None else None
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        actual = self.instance
+        # El cliente es obligatorio: en un alta viene en attrs; en una edición, de la instancia.
+        cliente: Cliente = (
+            attrs["cliente"] if "cliente" in attrs else cast(Interaccion, actual).cliente
+        )
+        contacto = attrs.get("contacto", getattr(actual, "contacto", None))
+        campania = attrs.get("campania", getattr(actual, "campania", None))
+        if (actual is None or actual.cliente_id != cliente.pk) and not cliente.activo:
+            raise serializers.ValidationError({"cliente": "Seleccioná un cliente activo."})
+        contacto_sin_cambios = (
+            self.instance is not None
+            and contacto is not None
+            and self.instance.contacto_id == contacto.pk
+        )
+        try:
+            services.validar_contacto_de_interaccion(cliente, contacto, contacto_sin_cambios)
+            services.validar_campania_de_interaccion(cliente, campania)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.message_dict) from error
+        return attrs

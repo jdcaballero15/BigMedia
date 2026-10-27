@@ -43,7 +43,10 @@ type Route = (url: string, options?: RequestInit) => unknown
 
 function mockFetch(route: Route) {
   const fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
-    const response = route(input, options)
+    // La ficha también lista las interacciones del cliente; acá no son el tema del test.
+    const response =
+      route(input, options) ??
+      (input.startsWith('/api/campanias/interacciones/') ? ok([]) : undefined)
     if (response === undefined) throw new Error(`URL inesperada: ${input}`)
     return response
   })

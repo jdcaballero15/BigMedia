@@ -8,6 +8,7 @@ import {
   Layers,
   LogOut,
   Megaphone,
+  MessagesSquare,
   Menu,
   ScrollText,
   Settings,
@@ -27,6 +28,7 @@ import CatalogosPage from './features/inventario/CatalogosPage'
 import ClientesPage from './features/clientes/ClientesPage'
 import MarcasPage from './features/clientes/MarcasPage'
 import CampaniasPage from './features/campanias/CampaniasPage'
+import InteraccionesPage from './features/campanias/InteraccionesPage'
 import CostosPage from './features/costos/CostosPage'
 import DisponibilidadPage from './features/disponibilidad/DisponibilidadPage'
 import ReporteIngresosPage from './features/facturacion/ReporteIngresos'
@@ -53,6 +55,7 @@ type Page =
   | 'clientes'
   | 'marcas'
   | 'campanias'
+  | 'interacciones'
   | 'carteles'
   | 'disponibilidad'
   | 'proveedores'
@@ -113,6 +116,12 @@ const sections: { title: string; items: Item[] }[] = [
       { id: 'clientes', label: 'Clientes', icon: Users, render: () => <ClientesPage /> },
       { id: 'marcas', label: 'Marcas', icon: Tags, render: () => <MarcasPage /> },
       { id: 'campanias', label: 'Campañas', icon: Megaphone, render: () => <CampaniasPage /> },
+      {
+        id: 'interacciones',
+        label: 'Interacciones',
+        icon: MessagesSquare,
+        render: () => <InteraccionesPage />,
+      },
     ],
   },
   {
