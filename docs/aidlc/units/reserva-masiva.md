@@ -136,4 +136,4 @@ Ninguna.
   `typecheck` y `build` en verde, `test:coverage` con 255 tests en verde y 92,49 % de líneas
   (89,81 % de sentencias); `pre-commit run --all-files` (gitleaks incluido) en verde.
   Espera revisión de Gonza o Juan Diego.
-- Gate 3 (PR): pedido por Gonza el 2026-10-27
+- Gate 3 (PR): #76, pedido por Gonza el 2026-10-27
