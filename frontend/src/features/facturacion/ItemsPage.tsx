@@ -4,6 +4,7 @@ import { FieldErrors } from '../../shared/FieldErrors'
 import { usePuedeEditar } from '../../shared/sesion'
 import type { Campania } from '../campanias/types'
 import type { Cliente, Marca } from '../clientes/types'
+import EnviosDelMes from './EnviosDelMes'
 import ItemForm from './ItemForm'
 import type { ItemInput } from './ItemForm'
 import { formatearMonto } from './montos'
@@ -144,6 +145,12 @@ export default function ItemsPage() {
           {error}
         </p>
       )}
+      <EnviosDelMes
+        mes={mes}
+        puedeEditar={puedeEditar}
+        hayBorradores={estado !== '' || (items ?? []).some((item) => item.estado === 'borrador')}
+        onEnviado={recargar}
+      />
       {items === null ? (
         !error && <p className="empty">Cargando ítems…</p>
       ) : items.length === 0 ? (

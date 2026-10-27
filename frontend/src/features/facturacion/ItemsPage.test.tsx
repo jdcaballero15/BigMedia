@@ -56,6 +56,7 @@ function stubFetch(
     if (input.includes('/campanias/campanias/')) return ok([])
     if (input.includes('/facturacion/catalogos/')) return ok({ sectores: [], tipos_venta: [] })
     if (input.includes('/items/totales/')) return ok(totales)
+    if (input.includes('/facturacion/envios/')) return ok([])
     if (input.includes('/facturacion/items/')) return ok(items)
     throw new Error(`URL inesperada: ${input}`)
   })

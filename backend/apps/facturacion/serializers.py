@@ -6,7 +6,7 @@ from rest_framework import serializers
 from apps.clientes.validators import normalizar_cuit, validar_cuit
 
 from . import services
-from .models import ItemFacturacion, Sector, TipoVenta, neto_sugerido
+from .models import EnvioFacturacion, ItemFacturacion, Sector, TipoVenta, neto_sugerido
 
 
 class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
@@ -113,3 +113,20 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
         sugerido = neto_sugerido(cantidad, precio)
         if sugerido is not None or "neto" in attrs:
             attrs["neto"] = sugerido
+
+
+class EnvioFacturacionSerializer(serializers.ModelSerializer[EnvioFacturacion]):
+    mes = serializers.DateField(format="%Y-%m", read_only=True)
+    enviado_por_nombre = serializers.CharField(source="enviado_por.username", read_only=True)
+    items = serializers.SerializerMethodField()
+    cantidad = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EnvioFacturacion
+        fields = ["id", "mes", "enviado_por_nombre", "enviado_en", "items", "cantidad"]
+
+    def get_items(self, envio: EnvioFacturacion) -> list[int]:
+        return sorted(item.pk for item in envio.items.all())
+
+    def get_cantidad(self, envio: EnvioFacturacion) -> int:
+        return len(envio.items.all())
