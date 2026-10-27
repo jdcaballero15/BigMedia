@@ -33,5 +33,5 @@ test('muestra los contadores y las reservas por vencer', async () => {
   render(<PanelPrincipal />)
   expect(await screen.findByText('McDonalds - Centro - Nov 2026')).toBeDefined()
   expect(screen.getByText('4')).toBeDefined()
-  expect(screen.getByText('2026-11-15')).toBeDefined()
+  expect(screen.getByText('15/11/2026')).toBeDefined()
 })

@@ -31,7 +31,7 @@ test('muestra el cliente que factura, el estado y las secciones próximas', () =
   expect(screen.getByRole('heading', { name: 'Verano 2027' })).toBeDefined()
   expect(screen.getByText('Unilever')).toBeDefined()
   expect(screen.getByText('Confirmada')).toBeDefined()
-  expect(screen.getByText('2027-01-01 → 2027-01-31')).toBeDefined()
+  expect(screen.getByText('01/01/2027 → 31/01/2027')).toBeDefined()
   expect(screen.getByRole('heading', { name: 'Reservas' })).toBeDefined()
   expect(screen.getByRole('heading', { name: 'Costos y rentabilidad' })).toBeDefined()
 })

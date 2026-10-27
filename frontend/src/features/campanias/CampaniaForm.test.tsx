@@ -57,6 +57,27 @@ test('crea una campaña enviando los campos cargados', async () => {
   )
 })
 
+test('envía las fechas escritas como dd/mm/aaaa en formato de la API', async () => {
+  const onSave = vi.fn().mockResolvedValue(undefined)
+  render(<CampaniaForm {...base} onSave={onSave} onCrearMarca={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText('Fecha de inicio'), { target: { value: '01/11/2026' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar campaña' }))
+  await waitFor(() =>
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ fecha_inicio: '2026-11-01', fecha_fin: null }),
+    ),
+  )
+})
+
+test('no envía la campaña si una fecha escrita es inválida', () => {
+  const onSave = vi.fn()
+  render(<CampaniaForm {...base} onSave={onSave} onCrearMarca={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText('Fecha de fin'), { target: { value: '30/11' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar campaña' }))
+  expect(onSave).not.toHaveBeenCalled()
+  expect(screen.getByText('Fecha inválida. Usá dd/mm/aaaa.')).toBeDefined()
+})
+
 test('muestra el error de campo devuelto por la API', async () => {
   const onSave = vi.fn().mockRejectedValue(new ApiError(400, { estado: ['Para confirmar falta.'] }))
   render(<CampaniaForm {...base} onSave={onSave} onCrearMarca={vi.fn()} />)

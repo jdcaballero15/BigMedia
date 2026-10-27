@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
+import CampoFecha from '../../shared/CampoFecha'
+import { FECHA_INVALIDA } from '../../shared/fechas'
 import type { RegistroAuditoria, UsuarioAuditoria } from './types'
 
 function toIsoDate(d: Date): string {
@@ -88,6 +90,11 @@ export default function AuditoriaPage() {
     apply()
   }
 
+  // Mientras la fecha escrita sea inválida, el filtro sigue con la última válida.
+  function filtrarFecha(setter: (valor: string) => void, valor: string) {
+    if (valor !== FECHA_INVALIDA) cambiar(() => setter(valor))
+  }
+
   return (
     <>
       <div className="section-heading">
@@ -111,22 +118,16 @@ export default function AuditoriaPage() {
             ))}
           </select>
         </label>
-        <label>
-          Desde
-          <input
-            type="date"
-            value={desde}
-            onChange={(event) => cambiar(() => setDesde(event.target.value))}
-          />
-        </label>
-        <label>
-          Hasta
-          <input
-            type="date"
-            value={hasta}
-            onChange={(event) => cambiar(() => setHasta(event.target.value))}
-          />
-        </label>
+        <CampoFecha
+          label="Desde"
+          value={desde}
+          onChange={(valor) => filtrarFecha(setDesde, valor)}
+        />
+        <CampoFecha
+          label="Hasta"
+          value={hasta}
+          onChange={(valor) => filtrarFecha(setHasta, valor)}
+        />
         <label>
           Entidad
           <select

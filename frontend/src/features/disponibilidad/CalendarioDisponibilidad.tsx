@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
+import { formatearFecha } from '../../shared/fechas'
 import type { Catalogo, Formato } from '../inventario/types'
 import type { Calendario, FilaCalendario } from './types'
 
@@ -199,8 +200,8 @@ export default function CalendarioDisponibilidad() {
             <ul>
               {detalle.map((reserva) => (
                 <li key={reserva.id}>
-                  {reserva.campania_nombre} — {reserva.nombre} ({reserva.fecha_inicio} →{' '}
-                  {reserva.fecha_fin})
+                  {reserva.campania_nombre} — {reserva.nombre} (
+                  {formatearFecha(reserva.fecha_inicio)} → {formatearFecha(reserva.fecha_fin)})
                 </li>
               ))}
             </ul>

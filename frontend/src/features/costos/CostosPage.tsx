@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
+import { formatearFecha } from '../../shared/fechas'
 import type { Proveedor } from '../inventario/types'
 import type { CostoListado, TipoCosto } from './types'
 import { TIPOS_COSTO } from './types'
@@ -108,7 +109,7 @@ export default function CostosPage() {
           <tbody>
             {costos.map((costo) => (
               <tr key={costo.id}>
-                <td>{costo.fecha}</td>
+                <td>{formatearFecha(costo.fecha)}</td>
                 <td className="primary-cell">{costo.campania_nombre}</td>
                 <td>{costo.cartel_nombre}</td>
                 <td>{costo.tipo_nombre}</td>
