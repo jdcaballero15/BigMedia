@@ -39,6 +39,10 @@ function item(id: number, extra: Partial<ItemFacturacion> = {}): ItemFacturacion
     notas: '',
     estado: 'borrador',
     numero_factura: '',
+    reabierto_en: null,
+    reabierto_por_nombre: null,
+    motivo_reapertura: '',
+    reenviado: false,
     orden_compra_numero: '',
     orden_compra_fecha: null,
     orden_compra_pdf: null,
@@ -405,4 +409,54 @@ test('muestra el error al quitar del grupo', async () => {
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
   fireEvent.click(within(fila).getByRole('button', { name: 'Quitar del grupo' }))
   expect(await within(fila).findByText('El ítem no está en un grupo de factura.')).toBeDefined()
+})
+
+// --- HU-067: reabrir un ítem enviado ---
+
+test('reabre un ítem enviado con motivo', async () => {
+  const fetchMock = stubFetch([item(1, { estado: 'enviado' })], (_input, options) =>
+    options?.method === 'POST' ? ok(item(1)) : undefined,
+  )
+  render(<ItemsPage />)
+  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  expect(within(fila).queryByRole('button', { name: 'Editar' })).toBeNull()
+  fireEvent.click(within(fila).getByRole('button', { name: 'Reabrir' }))
+  fireEvent.change(within(fila).getByLabelText('Motivo de la reapertura'), {
+    target: { value: 'Cambió el neto' },
+  })
+  fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar reapertura' }))
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, options]) =>
+          url === '/api/facturacion/items/1/reabrir/' &&
+          JSON.parse(String(options?.body)).motivo === 'Cambió el neto',
+      ),
+    ).toBe(true),
+  )
+})
+
+test('una reapertura rechazada muestra el motivo del servidor', async () => {
+  stubFetch([item(1, { estado: 'enviado' })], (_input, options) =>
+    options?.method === 'POST'
+      ? rechazo({ motivo: ['Indicá el motivo de la reapertura.'] })
+      : undefined,
+  )
+  render(<ItemsPage />)
+  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  fireEvent.click(within(fila).getByRole('button', { name: 'Reabrir' }))
+  fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar reapertura' }))
+  expect(await within(fila).findByText('Indicá el motivo de la reapertura.')).toBeDefined()
+})
+
+test('marca los reenviados y los reabiertos con su motivo', async () => {
+  stubFetch([
+    item(1, { estado: 'enviado', reenviado: true }),
+    item(2, { reabierto_en: '2026-11-03T10:00:00Z', motivo_reapertura: 'Cambió el neto' }),
+  ])
+  render(<ItemsPage />)
+  const reenviado = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  expect(reenviado.textContent).toContain('Reenviado')
+  const reabierto = screen.getByText('Ítem 2').closest('tr') as HTMLElement
+  expect(reabierto.textContent).toContain('Reabierto: Cambió el neto')
 })

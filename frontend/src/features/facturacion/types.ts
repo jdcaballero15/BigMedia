@@ -73,6 +73,10 @@ export type ItemFacturacion = {
   notas: string
   estado: EstadoItem
   numero_factura: string
+  reabierto_en: string | null
+  reabierto_por_nombre: string | null
+  motivo_reapertura: string
+  reenviado: boolean
   orden_compra_numero: string
   orden_compra_fecha: string | null
   orden_compra_pdf: PdfOrdenCompra | null
