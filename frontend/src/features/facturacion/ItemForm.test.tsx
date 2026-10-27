@@ -268,3 +268,38 @@ test('un ítem guardado muestra su OC y permite adjuntar el PDF', () => {
   )
   expect(screen.getByRole('link', { name: 'Abrir oc.pdf' })).toBeDefined()
 })
+
+// --- HU-063: costos del ítem ---
+
+test('un ítem nuevo pide guardarlo antes de cargar costos', () => {
+  renderizar()
+  expect(screen.getByText('Guardá el ítem para cargar sus costos.')).toBeDefined()
+})
+
+test('un ítem guardado muestra sus costos y avisa cuando cambian', async () => {
+  const fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
+    if (options?.method === 'POST') return { ok: true, status: 201, json: async () => ({}) }
+    return ok(input.includes('/costos/') ? [] : [{ id: 4, nombre: 'Imprenta Cuyo' }])
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  const onCostosCambiados = vi.fn()
+  render(
+    <ItemForm
+      item={{ id: 4, mes: '2026-11-01', campania: null } as ItemFacturacion}
+      clientes={clientes}
+      marcas={marcas}
+      campanias={campanias}
+      catalogos={catalogos}
+      onSave={vi.fn()}
+      onCancel={vi.fn()}
+      onCostosCambiados={onCostosCambiados}
+    />,
+  )
+  await screen.findByText('El ítem no tiene costos.')
+  fireEvent.change(screen.getByLabelText('Monto fijo'), { target: { value: '100' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Agregar costo' }))
+  await waitFor(() => expect(onCostosCambiados).toHaveBeenCalledTimes(1))
+  expect(fetchMock.mock.calls.some(([url]) => url === '/api/facturacion/items/4/costos/')).toBe(
+    true,
+  )
+})

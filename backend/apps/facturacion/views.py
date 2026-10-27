@@ -30,9 +30,11 @@ from .models import (
     TipoVenta,
 )
 from .serializers import (
+    CostoDelItemSerializer,
     EnvioFacturacionSerializer,
     GrupoFacturaSerializer,
     ItemFacturacionSerializer,
+    NuevoCostoSerializer,
 )
 
 # Cambios del ítem que quedan auditados (HU-007): estado, número e importes.
@@ -161,6 +163,7 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
         # El cambio y su auditoría en la misma transacción: nunca un cambio sin su registro.
         with transaction.atomic():
             item = serializer.save()
+            services.recalcular_porcentuales(item)
             auditoria_services.registrar_cambios(
                 "item_facturacion", item.pk, anteriores, _auditables(item), self.request.user
             )
@@ -169,6 +172,8 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
         queryset = super().get_queryset()
         if self.action != "list":
             return queryset
+        # En el listado, el costo total viene sumado en la consulta (HU-063).
+        queryset = services.con_costo_total(queryset)
         params = self.request.query_params
         if params.get("mes"):
             queryset = queryset.filter(mes=_mes(params["mes"]))
@@ -190,6 +195,57 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
         except DjangoValidationError as error:
             raise _a_drf(error) from error
         return Response(self.get_serializer(self.get_queryset().get(pk=item.pk)).data)
+
+    def _item_para_costos(self, pk: str) -> ItemFacturacion:
+        return get_object_or_404(ItemFacturacion.objects.only("id", "campania_id"), pk=pk)
+
+    @action(detail=True, methods=["get", "post"])
+    def costos(self, request: Request, pk: str) -> Response:
+        """Costos del ítem (HU-063): se listan todos, anulados incluidos, y se cargan."""
+        item = self._item_para_costos(pk)
+        if request.method == "GET":
+            costos = services.costos_del_item(item)
+            return Response(CostoDelItemSerializer(costos, many=True).data)
+        datos = NuevoCostoSerializer(data=request.data)
+        datos.is_valid(raise_exception=True)
+        try:
+            costo = services.agregar_costo(item.pk, datos.validated_data, _usuario(request))
+        except DjangoValidationError as error:
+            raise _a_drf(error) from error
+        return Response(CostoDelItemSerializer(costo).data, status=201)
+
+    @action(detail=True, methods=["get"], url_path="costos/vinculables")
+    def costos_vinculables(self, _request: Request, pk: str) -> Response:
+        """Costos de reservas de la campaña del ítem que se pueden vincular (HU-063)."""
+        costos = services.costos_vinculables(self._item_para_costos(pk))
+        return Response(CostoDelItemSerializer(costos, many=True).data)
+
+    @action(detail=True, methods=["post"], url_path="costos/vincular")
+    def vincular_costo(self, request: Request, pk: str) -> Response:
+        """Vincula un costo de reserva de la campaña, sin copiarlo (HU-063, criterio 4)."""
+        item = self._item_para_costos(pk)
+        costo_id = request.data.get("costo") if isinstance(request.data, dict) else None
+        if not isinstance(costo_id, int) or isinstance(costo_id, bool) or costo_id < 1:
+            raise ValidationError({"costo": "Indicá el costo a vincular."})
+        try:
+            costo = services.vincular_costo(item.pk, costo_id, _usuario(request))
+        except DjangoValidationError as error:
+            raise _a_drf(error) from error
+        return Response(CostoDelItemSerializer(costo).data, status=201)
+
+    @action(detail=True, methods=["post"], url_path=r"costos/(?P<costo_id>\d+)/anular")
+    def anular_costo(self, request: Request, pk: str, costo_id: str) -> Response:
+        """Anula con motivo un costo propio del ítem; deja de sumar (HU-063)."""
+        item = self._item_para_costos(pk)
+        get_object_or_404(services.costos_del_item(item), pk=costo_id)
+        motivo = request.data.get("motivo") if isinstance(request.data, dict) else None
+        try:
+            costo = services.anular_costo(
+                item.pk, int(costo_id), motivo if isinstance(motivo, str) else "", _usuario(request)
+            )
+        except DjangoValidationError as error:
+            raise _a_drf(error) from error
+        return Response(CostoDelItemSerializer(costo).data)
 
     @action(detail=False, methods=["get"])
     def totales(self, request: Request) -> Response:

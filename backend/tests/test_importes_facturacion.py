@@ -121,6 +121,8 @@ def test_totales_del_mes_no_suman_los_anulados(operativo_client):
         "neto": "1500.00",
         "iva": "315.00",
         "total": "1815.00",
+        "costos": "0.00",
+        "neto_final": "1500.00",
     }
     # Los anulados siguen en el listado del mes.
     assert len(operativo_client.get(f"{URL}?mes=2026-11").json()) == 4

@@ -206,7 +206,26 @@ Administración.
 4. **IVA y total** se calculan solos con la alícuota (21 % si no la cambiás).
 5. **Guardar ítem**. Nace en **Borrador**.
 
-Arriba de la lista ves los totales del mes (neto, IVA y total), sin contar los anulados.
+Arriba de la lista ves los totales del mes (neto, IVA, total, costos y neto final), sin contar los
+anulados.
+
+### Costos del ítem
+
+Guardá el ítem y volvé a **Editar**: abajo está **Costos del ítem**.
+
+1. Elegí el **Tipo de costo** (por ejemplo, Comisión o Impresión) y **Cómo se calcula**: **Monto
+   fijo** o **Porcentaje del neto**. Con un 15 % sobre un neto de $10.000, el costo es $1.500.
+2. Indicá a quién se le paga: un **Proveedor** o, si no lo es, escribilo en **A quién se le paga**.
+3. Tocá **Agregar costo**.
+
+- Si cambiás el importe neto, los costos en porcentaje se recalculan solos.
+- Si el ítem tiene campaña, podés **Vincular** un costo ya cargado en una de sus reservas. No se
+  copia: es el mismo costo, así la rentabilidad de la campaña lo cuenta una sola vez.
+- **Anular** un costo pide un motivo; deja de sumar pero queda a la vista. Un costo de reserva
+  vinculado se anula desde **Costos**.
+
+La lista muestra el **costo total** y el **neto final** (neto menos costos) de cada ítem, y la
+planilla los suma al final.
 
 ### Orden de compra
 

@@ -11,15 +11,26 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
-from django.db import transaction
-from django.db.models import Count, Sum
+from django.db import IntegrityError, transaction
+from django.db.models import Count, DecimalField, Q, QuerySet, Sum, Value
+from django.db.models.functions import Coalesce
+from django.utils import timezone
 from openpyxl import Workbook
 
 from apps.auditoria import services as auditoria_services
+from apps.costos import services as costos_services
+from apps.costos.models import Costo
 from apps.reservas.models import MESES_ABREV, Reserva
 from apps.reservas.services import reparto_por_mes
 
-from .models import EnvioFacturacion, GrupoFactura, ItemFacturacion, OrdenCompraPdf, al_centavo
+from .models import (
+    CostoDeItem,
+    EnvioFacturacion,
+    GrupoFactura,
+    ItemFacturacion,
+    OrdenCompraPdf,
+    al_centavo,
+)
 
 CERO = Decimal("0.00")
 
@@ -269,17 +280,189 @@ def validar_cambio_de_item(item: ItemFacturacion | None, datos: dict[str, Any]) 
 
 
 def totales_del_mes(mes: date) -> dict[str, Any]:
-    """Neto, IVA y total de los ítems del mes, sin los anulados (HU-065, criterio 3)."""
-    fila = (
-        ItemFacturacion.objects.filter(mes=mes)
-        .exclude(estado=ItemFacturacion.Estado.ANULADO)
-        .aggregate(cantidad=Count("id"), neto=Sum("neto"), iva=Sum("iva"), total=Sum("total"))
+    """Neto, IVA, total, costos y neto final del mes, sin los anulados (HU-065, HU-063)."""
+    items = ItemFacturacion.objects.filter(mes=mes).exclude(estado=ItemFacturacion.Estado.ANULADO)
+    fila = items.aggregate(
+        cantidad=Count("id"), neto=Sum("neto"), iva=Sum("iva"), total=Sum("total")
     )
+    costos = (
+        Costo.objects.filter(item_vinculado__item__in=items, anulado=False).aggregate(
+            total=Sum("monto")
+        )["total"]
+        or CERO
+    )
+    neto = fila["neto"] or CERO
     return {
         "mes": mes.strftime("%Y-%m"),
         "cantidad": fila["cantidad"],
         **{campo: str(al_centavo(fila[campo] or CERO)) for campo in ("neto", "iva", "total")},
+        "costos": str(al_centavo(costos)),
+        "neto_final": str(al_centavo(neto - costos)),
     }
+
+
+# --- Costos del ítem y neto final (HU-063) ---
+
+
+def con_costo_total(items: QuerySet[ItemFacturacion]) -> QuerySet[ItemFacturacion]:
+    """Anota `costo_total_anotado`: la suma de los costos no anulados de cada ítem."""
+    return items.annotate(
+        costo_total_anotado=Coalesce(
+            Sum("costos__costo__monto", filter=Q(costos__costo__anulado=False)),
+            Value(CERO),
+            output_field=DecimalField(max_digits=14, decimal_places=2),
+        )
+    )
+
+
+def costo_total(item: ItemFacturacion) -> Decimal:
+    """Suma de los costos no anulados del ítem (usa la anotación si la trae)."""
+    anotado: Decimal | None = getattr(item, "costo_total_anotado", None)
+    if anotado is not None:
+        return al_centavo(anotado)
+    total = Costo.objects.filter(item_vinculado__item=item, anulado=False).aggregate(
+        total=Sum("monto")
+    )["total"]
+    return al_centavo(total or CERO)
+
+
+def neto_final(item: ItemFacturacion) -> Decimal | None:
+    """Importe neto menos los costos del ítem; None si el ítem no tiene neto."""
+    if item.neto is None:
+        return None
+    return al_centavo(item.neto) - costo_total(item)
+
+
+def monto_por_porcentaje(neto: Decimal | None, porcentaje: Decimal) -> Decimal:
+    """Porcentaje del neto, redondeado al centavo; sin neto da 0 (HU-063, criterio 1)."""
+    if neto is None:
+        return CERO
+    return al_centavo(neto * porcentaje / Decimal(100))
+
+
+def costos_del_item(item: ItemFacturacion) -> QuerySet[Costo]:
+    return (
+        Costo.objects.filter(item_vinculado__item=item)
+        .select_related("proveedor", "reserva__cartel")
+        .order_by("item_vinculado__id")
+    )
+
+
+def costos_vinculables(item: ItemFacturacion) -> QuerySet[Costo]:
+    """Costos no anulados de reservas de la campaña del ítem que no están en otro ítem."""
+    if item.campania_id is None:
+        return Costo.objects.none()
+    return (
+        Costo.objects.filter(
+            reserva__campania_id=item.campania_id, anulado=False, item_vinculado__isnull=True
+        )
+        .select_related("proveedor", "reserva__cartel")
+        .order_by("id")
+    )
+
+
+def _describir(costo: Costo) -> str:
+    return f"{costo.get_tipo_display()} {costo.monto:.2f}"
+
+
+def _auditar_costo(
+    item: ItemFacturacion, antes: str, despues: str, usuario: AbstractBaseUser
+) -> None:
+    auditoria_services.registrar_cambios(
+        "item_facturacion", item.pk, {"costos": antes}, {"costos": despues}, usuario
+    )
+
+
+def _validar_importe(datos: dict[str, Any]) -> None:
+    if (datos.get("monto") is None) == (datos.get("porcentaje") is None):
+        raise ValidationError({"monto": "Cargá un monto fijo o un porcentaje del neto, uno solo."})
+
+
+def agregar_costo(item_id: int, datos: dict[str, Any], usuario: AbstractBaseUser) -> Costo:
+    """Carga un costo propio del ítem en Borrador, fijo o en porcentaje del neto (HU-063).
+
+    Crea el costo sin reserva y su vínculo en la misma transacción, y lo deja auditado.
+    """
+    _validar_importe(datos)
+    if datos.get("proveedor") is not None:
+        costos_services.validar_proveedor_activo(datos["proveedor"])
+    with transaction.atomic():
+        item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
+        _exigir_borrador(item, "cargar costos")
+        porcentaje = datos.get("porcentaje")
+        costo = Costo.objects.create(
+            tipo=datos["tipo"],
+            proveedor_id=datos.get("proveedor"),
+            destinatario=datos.get("destinatario", "").strip(),
+            porcentaje=porcentaje,
+            monto=(
+                monto_por_porcentaje(item.neto, porcentaje)
+                if porcentaje is not None
+                else datos["monto"]
+            ),
+            fecha=timezone.localdate(),
+        )
+        CostoDeItem.objects.create(item=item, costo=costo, vinculado_por_id=usuario.pk)
+        _auditar_costo(item, "", f"Alta: {_describir(costo)}", usuario)
+    return costo
+
+
+def vincular_costo(item_id: int, costo_id: int, usuario: AbstractBaseUser) -> Costo:
+    """Vincula al ítem un costo de una reserva de su campaña, sin copiarlo (HU-063, criterio 4)."""
+    with transaction.atomic():
+        item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
+        _exigir_borrador(item, "cargar costos")
+        if item.campania_id is None:
+            raise ValidationError(
+                {"campania": "Solo se vinculan costos de reserva a un ítem con campaña."}
+            )
+        costo = costos_vinculables(item).select_for_update(of=("self",)).filter(pk=costo_id).first()
+        if costo is None:
+            raise ValidationError(
+                {"costo": "El costo no es de una reserva de la campaña o ya está en otro ítem."}
+            )
+        try:
+            with transaction.atomic():
+                CostoDeItem.objects.create(item=item, costo=costo, vinculado_por_id=usuario.pk)
+        except IntegrityError as error:
+            # Otro ítem lo vinculó a la vez: la unicidad del costo lo frena.
+            raise ValidationError({"costo": "El costo ya está en otro ítem."}) from error
+        _auditar_costo(item, "", f"Vínculo: {_describir(costo)}", usuario)
+    return costo
+
+
+def anular_costo(item_id: int, costo_id: int, motivo: str, usuario: AbstractBaseUser) -> Costo:
+    """Anula con motivo un costo propio del ítem: deja de sumar y no se borra (HU-063).
+
+    Un costo de reserva vinculado se anula desde Costos, porque también es de la reserva.
+    """
+    motivo = motivo.strip()
+    if not motivo:
+        raise ValidationError({"motivo": "Indicá el motivo de la anulación."})
+    with transaction.atomic():
+        item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
+        _exigir_borrador(item, "anular costos")
+        costo = Costo.objects.select_for_update().get(item_vinculado__item=item, pk=costo_id)
+        if costo.reserva_id is not None:
+            raise ValidationError({"costo": "Es un costo de una reserva: anulalo desde Costos."})
+        if costo.anulado:
+            raise ValidationError({"costo": "El costo ya está anulado."})
+        costo.anulado = True
+        costo.motivo_anulacion = motivo[:200]
+        costo.save(update_fields=["anulado", "motivo_anulacion", "actualizado_en"])
+        _auditar_costo(item, _describir(costo), f"Anulado: {motivo[:200]}", usuario)
+    return costo
+
+
+def recalcular_porcentuales(item: ItemFacturacion) -> None:
+    """Vuelve a calcular los costos en porcentaje con el neto actual (HU-063, criterio 3)."""
+    for costo in Costo.objects.select_for_update().filter(item_vinculado__item=item):
+        if costo.porcentaje is None:
+            continue
+        nuevo = monto_por_porcentaje(item.neto, costo.porcentaje)
+        if nuevo != costo.monto:
+            costo.monto = nuevo
+            costo.save(update_fields=["monto", "actualizado_en"])
 
 
 def faltantes_para_enviar(item: ItemFacturacion) -> list[str]:
@@ -487,7 +670,8 @@ def _numero(valor: Decimal | None) -> float | None:
 
 
 # Columnas de la planilla para Administración (RN-024, provisoria hasta tener la planilla real):
-# las de hoy y, al final, las nuevas: orden de compra (HU-062) y grupo de factura (HU-064).
+# las de hoy y, al final, las nuevas: orden de compra (HU-062), grupo de factura (HU-064), y
+# costos y neto final (HU-063).
 COLUMNAS_PLANILLA: list[tuple[str, Any]] = [
     ("Mes", lambda i: i.mes.strftime("%Y-%m") if i.mes else None),
     ("Cliente", lambda i: i.cliente.nombre_visible if i.cliente else None),
@@ -510,6 +694,8 @@ COLUMNAS_PLANILLA: list[tuple[str, Any]] = [
     ("Orden de compra", lambda i: i.orden_compra_numero or None),
     ("Fecha OC", lambda i: i.orden_compra_fecha),
     ("Grupo de factura", lambda i: i.grupo.codigo if i.grupo else None),
+    ("Costos", lambda i: _numero(costo_total(i))),
+    ("Neto final", lambda i: _numero(neto_final(i))),
 ]
 
 
@@ -533,7 +719,9 @@ def planilla_xlsx(envio: EnvioFacturacion) -> bytes:
     hoja = libro.worksheets[0]
     hoja.title = f"Facturación {envio.mes:%Y-%m}"
     hoja.append([titulo for titulo, _ in COLUMNAS_PLANILLA])
-    items = envio.items.select_related("cliente", "marca", "sector", "tipo_venta", "grupo")
+    items = con_costo_total(
+        envio.items.select_related("cliente", "marca", "sector", "tipo_venta", "grupo")
+    )
     for item in _filas_agrupadas(list(items)):
         hoja.append([valor(item) for _, valor in COLUMNAS_PLANILLA])
     salida = io.BytesIO()

@@ -11,7 +11,8 @@ from django.test import Client
 from openpyxl import load_workbook
 
 from apps.clientes.models import Cliente, Marca
-from apps.facturacion.models import GrupoFactura, ItemFacturacion, Sector, TipoVenta
+from apps.costos.models import Costo
+from apps.facturacion.models import CostoDeItem, GrupoFactura, ItemFacturacion, Sector, TipoVenta
 
 URL = "/api/facturacion/envios/"
 
@@ -37,6 +38,8 @@ COLUMNAS = [
     "Orden de compra",
     "Fecha OC",
     "Grupo de factura",
+    "Costos",
+    "Neto final",
 ]
 
 
@@ -157,7 +160,8 @@ def test_los_items_de_un_grupo_salen_juntos(operativo_client):
         )
     _, filas = _planilla(operativo_client, _enviar(operativo_client))
     codigo = f"G-{grupo.pk}"
-    assert [(fila[1], fila[-1]) for fila in filas[1:]] == [
+    grupo_col = COLUMNAS.index("Grupo de factura")
+    assert [(fila[1], fila[grupo_col]) for fila in filas[1:]] == [
         ("Alfa SA", codigo),
         ("Zeta SA", codigo),
         ("Alfa SA", None),
@@ -177,3 +181,29 @@ def test_planilla_con_el_cuit_del_item_distinto_del_cliente(operativo_client):
     assert fila["CUIT"] == "27123456780"
     cliente.refresh_from_db()
     assert cliente.cuit == "20123456786"
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-024")
+def test_planilla_con_los_costos_y_el_neto_final_al_final(operativo_client):
+    """HU-063 y HU-066 criterio 1: costos y neto final del ítem, sin los costos anulados."""
+    item = ItemFacturacion.objects.create(
+        mes=date(2026, 11, 1),
+        cliente=Cliente.objects.create(nombre="Alfa SA"),
+        neto=Decimal("10000"),
+    )
+    for porcentaje, anulado in (("15", False), ("5", True)):
+        costo = Costo.objects.create(
+            tipo="comision",
+            porcentaje=Decimal(porcentaje),
+            monto=Decimal(porcentaje) * 100,
+            fecha=date(2026, 11, 1),
+            anulado=anulado,
+        )
+        CostoDeItem.objects.create(item=item, costo=costo)
+    ItemFacturacion.objects.create(
+        mes=date(2026, 11, 1), cliente=Cliente.objects.create(nombre="Beta SA"), neto=Decimal("1")
+    )
+    _, filas = _planilla(operativo_client, _enviar(operativo_client))
+    assert filas[0][-2:] == ["Costos", "Neto final"]
+    assert [fila[-2:] for fila in filas[1:]] == [[1500, 8500], [0, 1]]

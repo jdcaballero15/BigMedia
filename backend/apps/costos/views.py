@@ -22,7 +22,8 @@ def _id_positivo(valor: str, campo: str) -> int:
 class CostoViewSet(viewsets.ModelViewSet[Costo]):
     permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
     http_method_names = ["get", "post", "patch", "head", "options"]
-    queryset = Costo.objects.select_related(
+    # Los costos sin reserva son de ítems a facturar y se manejan desde `facturacion` (HU-063).
+    queryset = Costo.objects.filter(reserva__isnull=False).select_related(
         "proveedor", "reserva__cartel__formato", "reserva__campania"
     )
     serializer_class = CostoSerializer

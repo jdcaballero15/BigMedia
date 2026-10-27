@@ -150,6 +150,7 @@ export default function ItemsPage() {
           onSave={guardar}
           onCancel={() => setEditando(null)}
           onPdfCambiado={recargar}
+          onCostosCambiados={recargar}
         />
       )}
       <div className="filters card" role="search" aria-label="Filtros de ítems">
@@ -172,7 +173,9 @@ export default function ItemsPage() {
       {totales && (
         <p className="costos-total" aria-label="Totales del mes">
           {totales.cantidad} ítems · Neto <strong>{formatearMonto(totales.neto)}</strong> · IVA{' '}
-          {formatearMonto(totales.iva)} · Total <strong>{formatearMonto(totales.total)}</strong>{' '}
+          {formatearMonto(totales.iva)} · Total <strong>{formatearMonto(totales.total)}</strong> ·
+          Costos {formatearMonto(totales.costos)} · Neto final{' '}
+          <strong>{formatearMonto(totales.neto_final)}</strong>{' '}
           <small className="muted">(sin anulados)</small>
         </p>
       )}
@@ -253,6 +256,8 @@ function TablaItems(props: TablaProps) {
             <th>Neto</th>
             <th>IVA</th>
             <th>Total</th>
+            <th>Costos</th>
+            <th>Neto final</th>
             <th>Grupo</th>
             <th>Estado</th>
             {puedeEditar && <th>Acciones</th>}
@@ -343,6 +348,8 @@ function FilaItem(props: FilaProps) {
       <td>{monto(item.neto)}</td>
       <td>{monto(item.iva)}</td>
       <td>{monto(item.total)}</td>
+      <td>{monto(item.costo_total)}</td>
+      <td>{monto(item.neto_final)}</td>
       <td>
         {item.grupo_codigo ?? '—'}
         {item.grupo_codigo && puedeEditar && borrador && (

@@ -11,6 +11,7 @@ from django.utils import timezone
 from apps.campanias.models import Campania
 from apps.clientes.models import Cliente, Marca
 from apps.clientes.validators import validar_cuit
+from apps.costos.models import Costo
 
 ALICUOTA_IVA_POR_DEFECTO = Decimal("21.00")
 CENTAVO = Decimal("0.01")
@@ -241,6 +242,33 @@ class OrdenCompraPdf(models.Model):
 
     def __str__(self) -> str:
         return self.nombre
+
+
+class CostoDeItem(models.Model):
+    """Une un ítem a facturar con sus costos (HU-063). Un costo va en un solo ítem.
+
+    Vive en `facturacion` porque `costos` no puede importar de esta app. El costo es propio del
+    ítem (sin reserva) o uno de una reserva de la campaña del ítem, vinculado sin copiarlo.
+    """
+
+    item = models.ForeignKey(ItemFacturacion, on_delete=models.PROTECT, related_name="costos")
+    costo = models.OneToOneField(Costo, on_delete=models.PROTECT, related_name="item_vinculado")
+    vinculado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="costos_de_items",
+        null=True,
+        editable=False,
+    )
+    vinculado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "costo del ítem"
+        verbose_name_plural = "costos de los ítems"
+
+    def __str__(self) -> str:
+        return f"{self.item} · {self.costo}"
 
 
 class EnvioFacturacion(models.Model):

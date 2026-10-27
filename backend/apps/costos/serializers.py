@@ -25,9 +25,11 @@ class CostoSerializer(serializers.ModelSerializer[Costo]):
             "tipo_nombre",
             "proveedor",
             "proveedor_nombre",
+            "destinatario",
             "cartel_nombre",
             "campania",
             "campania_nombre",
+            "porcentaje",
             "monto",
             "fecha",
             "anulado",
@@ -35,8 +37,11 @@ class CostoSerializer(serializers.ModelSerializer[Costo]):
             "creado_en",
             "actualizado_en",
         ]
-        read_only_fields = ["creado_en", "actualizado_en"]
+        # Los porcentuales son solo de ítems a facturar (HU-063): acá no se cargan.
+        read_only_fields = ["porcentaje", "creado_en", "actualizado_en"]
         extra_kwargs = {
+            # La reserva pasó a opcional en el modelo por los costos de ítems; acá sigue exigida.
+            "reserva": {"required": True, "allow_null": False},
             "fecha": {"required": False},
             "monto": {"min_value": Decimal("0.01")},
         }

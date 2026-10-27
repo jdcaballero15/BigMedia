@@ -7,6 +7,7 @@ import { FieldErrors } from '../../shared/FieldErrors'
 import { vigentes } from '../../shared/opciones'
 import type { Campania } from '../campanias/types'
 import type { Cliente, Marca } from '../clientes/types'
+import CostosDelItem from './CostosDelItem'
 import PdfOrdenCompra from './PdfOrdenCompra'
 import type { CatalogosFacturacion, ItemFacturacion } from './types'
 import { TIPOS_SERVICIO, mesActual } from './types'
@@ -22,6 +23,7 @@ type Props = {
   onSave: (input: ItemInput) => Promise<void>
   onCancel: () => void
   onPdfCambiado?: () => void
+  onCostosCambiados?: () => void
 }
 
 type Datos = Record<string, string>
@@ -78,9 +80,10 @@ function aEntrada(datos: Datos): ItemInput {
   return entrada
 }
 
-/** Alta y edición de un ítem a facturar, con las precargas de HU-060 y su OC (HU-062). */
+/** Alta y edición de un ítem a facturar: precargas (HU-060), OC (HU-062) y costos (HU-063). */
 export default function ItemForm(props: Props) {
-  const { item, clientes, marcas, campanias, catalogos, onSave, onCancel, onPdfCambiado } = props
+  const { item, clientes, marcas, campanias, catalogos, onSave, onCancel } = props
+  const { onPdfCambiado, onCostosCambiados } = props
   const [datos, setDatos] = useState<Datos>(() => datosIniciales(item))
   const [netoTocado, setNetoTocado] = useState(false)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
@@ -314,6 +317,11 @@ export default function ItemForm(props: Props) {
           itemId={item?.id ?? null}
           pdf={item?.orden_compra_pdf ?? null}
           onCambio={() => onPdfCambiado?.()}
+        />
+        <CostosDelItem
+          itemId={item?.id ?? null}
+          campania={item?.campania ?? null}
+          onCambio={() => onCostosCambiados?.()}
         />
         <label className="wide">
           Notas para Administración
