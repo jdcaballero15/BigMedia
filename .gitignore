@@ -20,3 +20,6 @@ backend/*.egg-info/
 .coverage
 coverage.xml
 frontend/coverage/
+
+# Ajustes locales de Docker Compose (ver docs/operacion/desarrollo-local.md)
+compose.override.yaml
