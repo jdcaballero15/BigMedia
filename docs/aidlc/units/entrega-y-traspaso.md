@@ -92,5 +92,32 @@ y lo aclara donde una regla todavía puede cambiar (por ejemplo, si una Pendient
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-27 — aprobado por Gonza
-- Gate 2 (verificación): pendiente
+- Gate 2 (verificación): 2026-10-27 — corrida, espera el OK de Gonza o Juan Diego.
+  - **Validación en limpio** (macOS, Python 3.12.3, Node 22.23.1): clon nuevo de `develop`
+    (`24caccf`) desde GitHub, en una carpeta temporal y con una base vacía aparte. Siguiendo la
+    guía:
+    - `migrate` aplicó todas las migraciones y `cargar_datos_ejemplo` respondió "Datos de ejemplo
+      creados." y "Datos de demo creados.".
+    - `/api/health/` → `{"status": "ok"}` HTTP 200. Login por la API → 200 y `/api/auth/me/` → 200.
+    - `pytest --cov`: **589 passed**, coverage **96.41 %**.
+    - ruff format y check, mypy (121 archivos), `makemigrations --check` y
+      `pre-commit run --all-files` sin errores.
+    - Frontend: `npm ci`, `format:check`, `lint`, `typecheck`, `test:coverage` (255 tests, 36
+      archivos) y `build` en verde.
+  - **Correcciones que salieron de la validación**, ya en la guía:
+    - Faltaban los comandos de macOS y Linux.
+    - Faltaba qué hacer si el puerto 5433 está ocupado (pasó en esta máquina): ahora explica el
+      `compose.override.yaml`.
+    - No decía que el proxy de Vite apunta fijo a `127.0.0.1:8000`.
+    - No mencionaba `cargar_datos_ejemplo`.
+    - El cierre describía la aplicación como solo inventario.
+  - **Manual contra la pantalla real:** se combinaron #78 y `cierre-de-mes` en la copia temporal,
+    se levantaron API y frontend con los datos de ejemplo y se recorrieron campañas, posiciones por
+    formato, agregar carteles en tanda, confirmar reservas, disponibilidad e ítems a facturar. Los
+    mensajes de conflicto del manual son los que devolvió el sistema.
+  - **Modelo de datos:** se leyeron los modelos de `feature/facturacion-cierre-de-mes`, que incluye
+    #77; el #78 no cambia modelos. Se leyeron a mano, sin script.
+  - **Enlaces:** 0 rotos (rutas y anclas) en los ocho documentos tocados.
+  - `pre-commit run --all-files` en la rama: 13 hooks en verde, salida 0.
+  - Sin verificar: que GitHub dibuje los diagramas Mermaid. Se ve al abrir el PR.
 - Gate 3 (PR): pendiente

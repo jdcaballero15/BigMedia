@@ -4,11 +4,22 @@ Sistema de inventario, campañas y reservas de publicidad de vía pública. Es u
 
 ## Estado
 
-El inventario está disponible: inicio de sesión y administración de carteles y sus catálogos. Las campañas y las reservas **no están implementadas**: esta versión no permite confirmar reservas ni calcula disponibilidad.
+Están disponibles el inventario de carteles, los clientes y marcas, las campañas con sus posiciones por formato, las reservas con su disponibilidad y su confirmación, los costos, los reportes, la auditoría y los ítems a facturar con su envío mensual. Qué hace cada pantalla está en el [manual de uso](docs/manual/manual-de-uso.md).
 
 ## Cómo arrancar
 
-Seguí [desarrollo local](docs/operacion/desarrollo-local.md) para instalar dependencias y ejecutar base, API y frontend. Abrí la carpeta raíz `bigMedia` en VS Code. Para la versión online, [despliegue en Render](docs/operacion/despliegue-render.md).
+Seguí [desarrollo local](docs/operacion/desarrollo-local.md) para instalar dependencias y ejecutar base, API y frontend, en Windows, macOS o Linux. Para la versión online, [despliegue en Render](docs/operacion/despliegue-render.md).
+
+## Si llegás a mantener el sistema
+
+- [Guía de contribución](docs/guia-de-contribucion.md): qué leer y cómo llevar un cambio hasta el PR.
+- [Modelo de datos](docs/modelo-de-datos.md): qué guarda cada app.
+- [Traspaso de accesos](docs/operacion/traspaso-de-accesos.md): qué cuentas pasan a Big Media y cómo.
+
+## Para quienes usan el sistema
+
+- [Manual de uso](docs/manual/manual-de-uso.md).
+- [Guion de capacitación](docs/manual/guion-de-capacitacion.md).
 
 ## Cómo se trabaja
 
