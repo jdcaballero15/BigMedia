@@ -4,6 +4,7 @@ from typing import cast
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import QuerySet
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, viewsets
 from rest_framework.exceptions import ValidationError
@@ -13,6 +14,7 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
 from apps.auditoria import services as auditoria_services
+from apps.campanias.models import Campania
 from apps.inventario.models import Cartel
 from config.permisos import LecturaConSesionEdicionOperativo, SoloAdministrador
 
@@ -234,6 +236,17 @@ class RepartoView(APIView):
         if reserva is None:
             raise ValidationError({"reserva": "No existe la reserva."})
         return Response(services.reparto_por_mes(reserva))
+
+
+class SeguimientoView(APIView):
+    """Solicitado, reservado y faltante por formato de una campaña (HU-058)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, request: Request) -> Response:
+        valor = request.query_params.get("campania", "")
+        campania = get_object_or_404(Campania, pk=_id_positivo(valor, "campania"))
+        return Response(services.seguimiento_de_campania(campania))
 
 
 def _parametros_auditados(parametros: ParametrosDisponibilidad) -> dict[str, str]:

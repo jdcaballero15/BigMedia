@@ -10,8 +10,8 @@ from apps.auditoria import services as auditoria_services
 from config.permisos import LecturaConSesionEdicionOperativo
 from config.texto import normalizar_busqueda
 
-from .models import Campania, Interaccion
-from .serializers import CampaniaSerializer, InteraccionSerializer
+from .models import Campania, Interaccion, LineaFormato
+from .serializers import CampaniaSerializer, InteraccionSerializer, LineaFormatoSerializer
 
 
 def _id_positivo(valor: str, campo: str) -> int:
@@ -62,6 +62,25 @@ class CampaniaViewSet(viewsets.ModelViewSet[Campania]):
             queryset = queryset.filter(
                 nombre_busqueda__icontains=normalizar_busqueda(params["q"].strip())
             )
+        return queryset
+
+
+class LineaFormatoViewSet(viewsets.ModelViewSet[LineaFormato]):
+    """Posiciones solicitadas por formato (HU-055); quitar es `activa=false`, sin DELETE."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+    http_method_names = ["get", "post", "patch", "head", "options"]
+    queryset = LineaFormato.objects.select_related("formato")
+    serializer_class = LineaFormatoSerializer
+
+    def get_queryset(self) -> QuerySet[LineaFormato]:
+        queryset = super().get_queryset()
+        if self.action != "list":
+            return queryset
+        queryset = queryset.filter(activa=True)
+        campania = self.request.query_params.get("campania")
+        if campania:
+            queryset = queryset.filter(campania_id=_id_positivo(campania, "campania"))
         return queryset
 
 
