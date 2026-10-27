@@ -119,5 +119,5 @@ y lo aclara donde una regla todavía puede cambiar (por ejemplo, si una Pendient
     #77; el #78 no cambia modelos. Se leyeron a mano, sin script.
   - **Enlaces:** 0 rotos (rutas y anclas) en los ocho documentos tocados.
   - `pre-commit run --all-files` en la rama: 13 hooks en verde, salida 0.
-  - Sin verificar: que GitHub dibuje los diagramas Mermaid. Se ve al abrir el PR.
+  - Mermaid: GitHub dibuja los 10 diagramas sin errores (vista del archivo en la rama).
 - Gate 3 (PR): #80, pedido por Gonza el 2026-10-27
