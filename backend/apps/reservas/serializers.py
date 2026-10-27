@@ -4,6 +4,8 @@ from typing import Any
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
+from apps.campanias.models import Campania
+
 from . import services
 from .models import ParametrosDisponibilidad, Reserva
 
@@ -77,6 +79,26 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
             tarifa = validated_data["cartel"].tarifa_lista
             validated_data["precio_alquiler"] = tarifa if tarifa is not None else Decimal("0.00")
         return super().create(validated_data)
+
+
+class ReservasEnBloqueSerializer(serializers.Serializer[dict[str, Any]]):
+    """Pedido de creación en bloque (HU-057): la pantalla lo manda por lotes."""
+
+    MAX_CARTELES = 50
+
+    campania = serializers.PrimaryKeyRelatedField(queryset=Campania.objects.all())
+    fecha_inicio = serializers.DateField()
+    fecha_fin = serializers.DateField()
+    carteles = serializers.ListField(
+        child=serializers.IntegerField(min_value=1), min_length=1, max_length=MAX_CARTELES
+    )
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if attrs["fecha_fin"] < attrs["fecha_inicio"]:
+            raise serializers.ValidationError(
+                {"fecha_fin": "La fecha de fin no puede ser anterior a la de inicio."}
+            )
+        return attrs
 
 
 class ParametrosDisponibilidadSerializer(serializers.ModelSerializer[ParametrosDisponibilidad]):

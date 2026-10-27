@@ -48,7 +48,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E3 Clientes, marcas y CRM | [interacciones](units/interacciones.md) | campanias | HU-020, HU-068 (criterios 5 y 7) | contactos-intermediario, campanias | Juan Diego | feature/campanias-interacciones | mergeada |
 | — (unidad técnica) | [ajuste-selector-de-fechas](units/ajuste-selector-de-fechas.md) | frontend | prueba manual 24/10/2026 | — | Juan Diego | fix/frontend-selector-de-fechas | mergeada |
 | E10 Armado de campañas y reserva masiva | [posiciones-por-formato](units/posiciones-por-formato.md) | campanias | HU-055, HU-058 (criterios 1 y 2) | campanias, reservas-base | Gonza | feature/campanias-posiciones-por-formato | en revisión |
-| E10 Armado de campañas y reserva masiva | reserva-masiva | reservas | HU-056, HU-057 (RN-002, RN-003, RN-004, RN-005) | posiciones-por-formato | — | feature/reservas-reserva-masiva | pendiente |
+| E10 Armado de campañas y reserva masiva | [reserva-masiva](units/reserva-masiva.md) | reservas | HU-056, HU-057 (RN-001, RN-002, RN-003, RN-004, RN-005) | posiciones-por-formato | Gonza | feature/reservas-reserva-masiva | en curso |
 | E10 Armado de campañas y reserva masiva | confirmacion-en-bloque | reservas | HU-059, HU-058 (criterios 3 y 4) (RN-011) | reserva-masiva | — | feature/reservas-confirmacion-en-bloque | pendiente |
 
 ## Notas

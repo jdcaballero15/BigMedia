@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from typing import cast
+from typing import Any, cast
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
@@ -7,6 +7,7 @@ from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -15,12 +16,16 @@ from rest_framework.views import APIView
 
 from apps.auditoria import services as auditoria_services
 from apps.campanias.models import Campania
-from apps.inventario.models import Cartel
+from apps.inventario.models import Cartel, Formato
 from config.permisos import LecturaConSesionEdicionOperativo, SoloAdministrador
 
 from . import services
 from .models import ParametrosDisponibilidad, Reserva
-from .serializers import ParametrosDisponibilidadSerializer, ReservaSerializer
+from .serializers import (
+    ParametrosDisponibilidadSerializer,
+    ReservasEnBloqueSerializer,
+    ReservaSerializer,
+)
 
 
 def _id_positivo(valor: str, campo: str) -> int:
@@ -52,6 +57,18 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
         estado = serializer.validated_data.get("estado", Reserva.Estado.PENDIENTE)
         necesita = services.necesita_validar_cupo(None, estado, cambia_ocupacion=True)
         self._guardar_con_disponibilidad(serializer, necesita)
+
+    @action(detail=False, methods=["post"], url_path="en-bloque")
+    def en_bloque(self, request: Request) -> Response:
+        """Una reserva Pendiente por cartel de la tanda (HU-057)."""
+        entrada = ReservasEnBloqueSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        datos = entrada.validated_data
+        return Response(
+            services.crear_reservas_en_bloque(
+                datos["campania"], datos["carteles"], datos["fecha_inicio"], datos["fecha_fin"]
+            )
+        )
 
     def perform_update(self, serializer: BaseSerializer[Reserva]) -> None:
         datos = serializer.validated_data
@@ -236,6 +253,41 @@ class RepartoView(APIView):
         if reserva is None:
             raise ValidationError({"reserva": "No existe la reserva."})
         return Response(services.reparto_por_mes(reserva))
+
+
+def _fecha_requerida(valor: str | None, campo: str) -> date:
+    if not valor:
+        raise ValidationError({campo: "Indicá la fecha (AAAA-MM-DD)."})
+    try:
+        return date.fromisoformat(valor)
+    except ValueError as error:
+        raise ValidationError({campo: "Formato de fecha inválido (AAAA-MM-DD)."}) from error
+
+
+class CartelesParaTandaView(APIView):
+    """Carteles de un formato con cupo libre en el rango, para "Agregar carteles" (HU-056)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, request: Request) -> Response:
+        params = request.query_params
+        campania = get_object_or_404(
+            Campania, pk=_id_positivo(params.get("campania", ""), "campania")
+        )
+        formato = get_object_or_404(Formato, pk=_id_positivo(params.get("formato", ""), "formato"))
+        desde = _fecha_requerida(params.get("desde"), "desde")
+        hasta = _fecha_requerida(params.get("hasta"), "hasta")
+        if hasta < desde:
+            raise ValidationError(
+                {"hasta": "La fecha de fin no puede ser anterior a la de inicio."}
+            )
+        filtros: dict[str, Any] = {
+            campo: _id_positivo(params[campo], campo)
+            for campo in ("zona", "proveedor")
+            if params.get(campo)
+        }
+        filtros["direccion"] = params.get("q", "")
+        return Response(services.carteles_para_tanda(campania, formato, desde, hasta, filtros))
 
 
 class SeguimientoView(APIView):
