@@ -20,6 +20,7 @@ import {
   UserCog,
   Users,
   X,
+  Receipt,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import Login from './app/Login'
@@ -33,6 +34,7 @@ import CostosPage from './features/costos/CostosPage'
 import DisponibilidadPage from './features/disponibilidad/DisponibilidadPage'
 import ReporteIngresosPage from './features/facturacion/ReporteIngresos'
 import PorRubroPage from './features/facturacion/PorRubro'
+import ItemsPage from './features/facturacion/ItemsPage'
 import PanelPrincipal from './features/panel/PanelPrincipal'
 import AuditoriaPage from './features/auditoria/Auditoria'
 import ParametrosPage from './features/reservas/ParametrosPage'
@@ -56,6 +58,7 @@ type Page =
   | 'marcas'
   | 'campanias'
   | 'interacciones'
+  | 'items-facturacion'
   | 'carteles'
   | 'disponibilidad'
   | 'proveedores'
@@ -121,6 +124,12 @@ const sections: { title: string; items: Item[] }[] = [
         label: 'Interacciones',
         icon: MessagesSquare,
         render: () => <InteraccionesPage />,
+      },
+      {
+        id: 'items-facturacion',
+        label: 'Ítems a facturar',
+        icon: Receipt,
+        render: () => <ItemsPage />,
       },
     ],
   },

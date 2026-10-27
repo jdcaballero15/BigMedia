@@ -77,7 +77,7 @@ del viernes 30/10. Le sigue `cierre-de-mes` (HU-066, "Enviar a facturar" y la pl
   - `GET /api/facturacion/items/totales/?mes=` devuelve neto, IVA y total del mes sin los
     anulados.
   - `GET /api/facturacion/catalogos/` devuelve sectores y tipos de venta activos.
-- `facturacion/admin.py`: `Sector`, `TipoVenta` e `ItemFacturacion` (solo lectura en el admin).
+- `facturacion/admin.py`: `Sector` y `TipoVenta` administrables. `ItemFacturacion` es de solo lectura, salvo que el superusuario puede borrar una carga errónea con auditoría, como en el resto de las apps (`SoloBorrarAdmin`, HU-006).
 - Frontend `features/facturacion/`:
   - `ItemsPage.tsx`: lista por mes (por defecto el actual) con totales, filtro por estado y las
     acciones Anular y Marcar facturado (pide el número).
@@ -123,5 +123,10 @@ los valores iniciales de los catálogos. No tocan datos existentes.
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-27 — aprobado por Gonza
-- Gate 2 (verificación): pendiente
+- Gate 2 (verificación): 2026-10-27 — `ruff format --check` (127 archivos) y `ruff check`
+  sin errores; `mypy backend` sin errores (127 archivos); `makemigrations --check` sin cambios;
+  `pytest --cov`: 634 tests en verde, coverage 96,56 %; frontend `format:check`, `lint`,
+  `typecheck` y `build` en verde, `test:coverage` con 278 tests en verde y 92,91 % de líneas
+  (90,34 % de sentencias); `pre-commit run --all-files` en verde.
+  Espera revisión de Gonza o Juan Diego.
 - Gate 3 (PR): pendiente
