@@ -51,7 +51,8 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E10 Armado de campañas y reserva masiva | [reserva-masiva](units/reserva-masiva.md) | reservas | HU-056, HU-057 (RN-001, RN-002, RN-003, RN-004, RN-005) | posiciones-por-formato | Gonza | feature/reservas-reserva-masiva | mergeada |
 | E10 Armado de campañas y reserva masiva | [confirmacion-en-bloque](units/confirmacion-en-bloque.md) | reservas | HU-059, HU-058 (criterios 3 y 4) (RN-001, RN-002, RN-003, RN-011) | reserva-masiva | Gonza | feature/reservas-confirmacion-en-bloque | mergeada |
 | E11 Facturación mensual | [items-a-facturar](units/items-a-facturar.md) | facturacion | HU-060, HU-061, HU-065 (RN-022, RN-023) | clientes-y-marcas, campanias | Gonza | feature/facturacion-items-a-facturar | mergeada |
-| E11 Facturación mensual | [cierre-de-mes](units/cierre-de-mes.md) | facturacion | HU-066 (RN-022, RN-024, RN-025) | items-a-facturar | Gonza | feature/facturacion-cierre-de-mes | en revisión |
+| E11 Facturación mensual | [cierre-de-mes](units/cierre-de-mes.md) | facturacion | HU-066 (RN-022, RN-024, RN-025) | items-a-facturar | Gonza | feature/facturacion-cierre-de-mes | mergeada |
+| E9 Entrega y traspaso | [entrega-y-traspaso](units/entrega-y-traspaso.md) | docs | HU-053, HU-054 | — | Gonza | docs/entrega-y-traspaso | en revisión |
 
 ## Notas
 
