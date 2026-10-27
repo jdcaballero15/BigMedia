@@ -1,11 +1,21 @@
-"""Reportes de facturación (solo lectura)."""
+"""Reglas de facturación: ítems a facturar (HU-060, HU-061, HU-065) y reportes de ingresos."""
 
+import io
 from datetime import date
 from decimal import Decimal
 from typing import Any
 
+from django.contrib.auth.models import AbstractBaseUser
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Count, Sum
+from openpyxl import Workbook
+
+from apps.auditoria import services as auditoria_services
 from apps.reservas.models import MESES_ABREV, Reserva
 from apps.reservas.services import reparto_por_mes
+
+from .models import EnvioFacturacion, ItemFacturacion, al_centavo
 
 CERO = Decimal("0.00")
 
@@ -199,3 +209,168 @@ def reporte_ingresos(desde: date, hasta: date) -> dict[str, Any]:
         total += cl["total"]
     clientes = [_formatear_cliente(cl, claves) for cl in ordenados]
     return {"periodos": periodos, "clientes": clientes, "total": _fmt(total)}
+
+
+# Transiciones de estado del ítem (HU-065). Borrador pasa a Enviado solo con "Enviar a facturar"
+# (HU-066); corregir un Facturado espera RN-026.
+TRANSICIONES_ITEM: dict[str, set[str]] = {
+    ItemFacturacion.Estado.BORRADOR: {ItemFacturacion.Estado.ANULADO},
+    ItemFacturacion.Estado.ENVIADO: {
+        ItemFacturacion.Estado.FACTURADO,
+        ItemFacturacion.Estado.ANULADO,
+    },
+    ItemFacturacion.Estado.FACTURADO: set(),
+    ItemFacturacion.Estado.ANULADO: set(),
+}
+# Fuera de Borrador solo se cambia el estado (y el número al facturar); reabrir es HU-067.
+CAMPOS_FUERA_DE_BORRADOR = {"estado", "numero_factura"}
+
+
+def _etiqueta(estado: str) -> str:
+    return str(ItemFacturacion.Estado(estado).label)
+
+
+def _validar_estado(actual: str, nuevo: str, campos: set[str]) -> None:
+    if actual != ItemFacturacion.Estado.BORRADOR and campos - CAMPOS_FUERA_DE_BORRADOR:
+        raise ValidationError({"estado": "Solo se pueden editar los datos de un ítem en Borrador."})
+    if nuevo != actual and nuevo not in TRANSICIONES_ITEM[actual]:
+        raise ValidationError(
+            {"estado": f"No se puede pasar de {_etiqueta(actual)} a {_etiqueta(nuevo)}."}
+        )
+
+
+def _validar_numero_factura(actual: str, nuevo: str, numero: str, cargado: bool) -> None:
+    if nuevo == ItemFacturacion.Estado.FACTURADO and actual != nuevo and not numero:
+        raise ValidationError(
+            {"numero_factura": "Cargá el número de factura para pasar el ítem a Facturado."}
+        )
+    if cargado and nuevo != ItemFacturacion.Estado.FACTURADO:
+        raise ValidationError(
+            {"numero_factura": "El número de factura se carga al pasar el ítem a Facturado."}
+        )
+
+
+def validar_cambio_de_item(item: ItemFacturacion | None, datos: dict[str, Any]) -> None:
+    """Estados y número de factura de un alta (`item` None) o una edición (HU-065)."""
+    if item is None:
+        if datos.get("estado", ItemFacturacion.Estado.BORRADOR) != ItemFacturacion.Estado.BORRADOR:
+            raise ValidationError({"estado": "Un ítem nuevo nace en Borrador."})
+        actual = ItemFacturacion.Estado.BORRADOR.value
+    else:
+        actual = item.estado
+    nuevo = datos.get("estado", actual)
+    _validar_estado(actual, nuevo, set(datos))
+    numero = datos.get("numero_factura", getattr(item, "numero_factura", "")).strip()
+    _validar_numero_factura(actual, nuevo, numero, "numero_factura" in datos)
+
+
+def totales_del_mes(mes: date) -> dict[str, Any]:
+    """Neto, IVA y total de los ítems del mes, sin los anulados (HU-065, criterio 3)."""
+    fila = (
+        ItemFacturacion.objects.filter(mes=mes)
+        .exclude(estado=ItemFacturacion.Estado.ANULADO)
+        .aggregate(cantidad=Count("id"), neto=Sum("neto"), iva=Sum("iva"), total=Sum("total"))
+    )
+    return {
+        "mes": mes.strftime("%Y-%m"),
+        "cantidad": fila["cantidad"],
+        **{campo: str(al_centavo(fila[campo] or CERO)) for campo in ("neto", "iva", "total")},
+    }
+
+
+def faltantes_para_enviar(item: ItemFacturacion) -> list[str]:
+    """Lo que se exige al enviar a facturar (HU-066): cliente, importe neto y mes."""
+    faltan = []
+    if item.cliente_id is None:
+        faltan.append("cliente")
+    if item.neto is None:
+        faltan.append("importe neto")
+    if item.mes is None:
+        faltan.append("mes")
+    return faltan
+
+
+def enviar_a_facturar(
+    mes: date, usuario: AbstractBaseUser
+) -> tuple[EnvioFacturacion | None, list[dict[str, Any]]]:
+    """Pasa a Enviado los Borradores completos del mes y registra el envío (HU-066).
+
+    Los incompletos no se envían y se devuelven con lo que les falta (RN-025). Bloquea los
+    Borradores del mes, así dos envíos simultáneos no mandan un ítem dos veces. Sin ítems
+    completos no crea un envío.
+    """
+    with transaction.atomic():
+        borradores = list(
+            ItemFacturacion.objects.select_for_update()
+            .filter(mes=mes, estado=ItemFacturacion.Estado.BORRADOR)
+            .order_by("id")
+        )
+        completos = [item for item in borradores if not faltantes_para_enviar(item)]
+        incompletos = [
+            {
+                "item": item.pk,
+                "descripcion": item.descripcion or "Sin descripción",
+                "faltan": faltantes_para_enviar(item),
+            }
+            for item in borradores
+            if faltantes_para_enviar(item)
+        ]
+        if not completos:
+            return None, incompletos
+        envio = EnvioFacturacion.objects.create(mes=mes, enviado_por_id=usuario.pk)
+        envio.items.set(completos)
+        for item in completos:
+            item.estado = ItemFacturacion.Estado.ENVIADO
+            item.save(update_fields=["estado", "actualizado_en"])
+            auditoria_services.registrar_cambios(
+                "item_facturacion",
+                item.pk,
+                {"estado": ItemFacturacion.Estado.BORRADOR.value},
+                {"estado": ItemFacturacion.Estado.ENVIADO.value},
+                usuario,
+            )
+    return envio, incompletos
+
+
+def _numero(valor: Decimal | None) -> float | None:
+    return float(valor) if valor is not None else None
+
+
+# Columnas de la planilla para Administración (RN-024, provisoria hasta tener la planilla real):
+# las de hoy y, al final, las nuevas. Orden de compra (HU-062) y grupo (HU-064) llegan el 04/11.
+COLUMNAS_PLANILLA: list[tuple[str, Any]] = [
+    ("Mes", lambda i: i.mes.strftime("%Y-%m") if i.mes else None),
+    ("Cliente", lambda i: i.cliente.nombre_visible if i.cliente else None),
+    ("CUIT", lambda i: i.cuit_facturacion or None),
+    ("Marca", lambda i: i.marca.nombre if i.marca else None),
+    ("Descripción", lambda i: i.descripcion or None),
+    ("Período desde", lambda i: i.periodo_desde),
+    ("Período hasta", lambda i: i.periodo_hasta),
+    ("Cantidad", lambda i: _numero(i.cantidad)),
+    ("Precio unitario", lambda i: _numero(i.precio_unitario)),
+    ("Importe neto", lambda i: _numero(i.neto)),
+    ("Alícuota IVA", lambda i: _numero(i.alicuota_iva)),
+    ("IVA", lambda i: _numero(i.iva)),
+    ("Total", lambda i: _numero(i.total)),
+    ("Tipo de servicio", lambda i: i.get_tipo_servicio_display() or None),
+    ("Tipo de soporte", lambda i: i.tipo_soporte or None),
+    ("Gob/Priv", lambda i: i.sector.nombre if i.sector else None),
+    ("Tipo de venta", lambda i: i.tipo_venta.nombre if i.tipo_venta else None),
+    ("Notas", lambda i: i.notas or None),
+    ("Orden de compra", lambda _i: None),
+    ("Grupo de factura", lambda _i: None),
+]
+
+
+def planilla_xlsx(envio: EnvioFacturacion) -> bytes:
+    """Planilla .xlsx del envío para Administración (HU-066, criterio 3), ordenada por cliente."""
+    libro = Workbook()
+    hoja = libro.worksheets[0]
+    hoja.title = f"Facturación {envio.mes:%Y-%m}"
+    hoja.append([titulo for titulo, _ in COLUMNAS_PLANILLA])
+    items = envio.items.select_related("cliente", "marca", "sector", "tipo_venta")
+    for item in sorted(items, key=lambda i: (i.cliente.nombre_visible if i.cliente else "", i.pk)):
+        hoja.append([valor(item) for _, valor in COLUMNAS_PLANILLA])
+    salida = io.BytesIO()
+    libro.save(salida)
+    return salida.getvalue()

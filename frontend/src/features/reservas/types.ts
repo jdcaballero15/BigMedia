@@ -56,3 +56,16 @@ export type ResultadoTanda = {
   existentes: { cartel: number; reserva: number }[]
   fallidas: { cartel: number; motivo: string }[]
 }
+
+/** Resultado de "Confirmar reservas" (HU-059). */
+export type ResultadoConfirmacion = {
+  confirmadas: number[]
+  conflictos: {
+    reserva: number
+    nombre: string
+    cartel_nombre: string
+    fecha_inicio: string
+    fecha_fin: string
+    ocupada_por: { campania: number; campania_nombre: string }[]
+  }[]
+}
