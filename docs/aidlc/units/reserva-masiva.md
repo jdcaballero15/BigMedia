@@ -1,6 +1,6 @@
 # Unidad: Reserva masiva
 
-- **Estado:** en curso · **Épica:** E10 Armado de campañas y reserva masiva · **App dueña:** `reservas`
+- **Estado:** en revisión · **Épica:** E10 Armado de campañas y reserva masiva · **App dueña:** `reservas`
 - **Origen:** HU-056, HU-057 · **Rama:** `feature/reservas-reserva-masiva`
 
 ## Objetivo
@@ -136,4 +136,4 @@ Ninguna.
   `typecheck` y `build` en verde, `test:coverage` con 255 tests en verde y 92,49 % de líneas
   (89,81 % de sentencias); `pre-commit run --all-files` (gitleaks incluido) en verde.
   Espera revisión de Gonza o Juan Diego.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): pedido por Gonza el 2026-10-27

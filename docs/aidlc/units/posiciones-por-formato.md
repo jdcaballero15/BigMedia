@@ -1,6 +1,6 @@
 # Unidad: Posiciones por formato
 
-- **Estado:** en revisión · **Épica:** E10 Armado de campañas y reserva masiva · **App dueña:** `campanias`
+- **Estado:** mergeada · **Épica:** E10 Armado de campañas y reserva masiva · **App dueña:** `campanias`
 - **Origen:** HU-055, más los criterios 1 y 2 de HU-058 · **Rama:** `feature/campanias-posiciones-por-formato`
 
 ## Objetivo
@@ -92,4 +92,4 @@ de RN-002 (si la Pendiente bloquea o no): una Pendiente cuenta como reservada en
   `typecheck` y `build` en verde, `test:coverage` con 238 tests en verde y 92,22 % de líneas
   (89,41 % de sentencias); `pre-commit run --all-files` (gitleaks incluido) en verde.
   Espera revisión de Gonza o Juan Diego.
-- Gate 3 (PR): #75, pedido por Gonza el 2026-10-27
+- Gate 3 (PR): #75, pedido por Gonza el 2026-10-27; mergeado el 2026-10-27
