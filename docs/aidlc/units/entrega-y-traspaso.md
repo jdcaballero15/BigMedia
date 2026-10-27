@@ -1,6 +1,6 @@
 # Unidad: Entrega y traspaso
 
-- **Estado:** en curso · **Épica:** E9 Entrega y traspaso · **App dueña:** docs
+- **Estado:** en revisión · **Épica:** E9 Entrega y traspaso · **App dueña:** docs
 - **Origen:** HU-053, HU-054 · **Rama:** `docs/entrega-y-traspaso`
 
 ## Objetivo
@@ -92,7 +92,7 @@ y lo aclara donde una regla todavía puede cambiar (por ejemplo, si una Pendient
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-27 — aprobado por Gonza
-- Gate 2 (verificación): 2026-10-27 — corrida, espera el OK de Gonza o Juan Diego.
+- Gate 2 (verificación): 2026-10-27 — corrida y aprobada por Gonza.
   - **Validación en limpio** (macOS, Python 3.12.3, Node 22.23.1): clon nuevo de `develop`
     (`24caccf`) desde GitHub, en una carpeta temporal y con una base vacía aparte. Siguiendo la
     guía:
