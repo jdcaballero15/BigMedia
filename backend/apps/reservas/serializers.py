@@ -63,11 +63,13 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
             )
 
         nuevo_estado = attrs.get("estado")
-        if self.instance is not None and nuevo_estado is not None:
-            try:
+        try:
+            if self.instance is None:
+                services.validar_estado_inicial(nuevo_estado or Reserva.Estado.PENDIENTE)
+            elif nuevo_estado is not None:
                 services.validar_transicion(self.instance.estado, nuevo_estado)
-            except DjangoValidationError as error:
-                raise serializers.ValidationError(error.message_dict) from error
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.message_dict) from error
         return attrs
 
     def create(self, validated_data: dict[str, Any]) -> Reserva:

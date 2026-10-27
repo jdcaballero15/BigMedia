@@ -4,7 +4,7 @@ import { ApiError } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import type { Cartel } from '../inventario/types'
 import type { EstadoReserva, Reserva } from './types'
-import { ESTADOS_RESERVA } from './types'
+import { ESTADOS_INICIALES, ESTADOS_RESERVA } from './types'
 
 export type ReservaInput = {
   campania: number
@@ -36,6 +36,10 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
   const [saving, setSaving] = useState(false)
+  // Una reserva nueva nace Pendiente o Confirmada; al editar, el servidor valida la transición.
+  const estadosOfrecidos = reserva
+    ? ESTADOS_RESERVA
+    : ESTADOS_RESERVA.filter((item) => ESTADOS_INICIALES.includes(item.value))
 
   function elegirCartel(value: string) {
     setCartel(value)
@@ -111,7 +115,7 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
             value={estado}
             onChange={(event) => setEstado(event.target.value as EstadoReserva)}
           >
-            {ESTADOS_RESERVA.map((item) => (
+            {estadosOfrecidos.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
               </option>
