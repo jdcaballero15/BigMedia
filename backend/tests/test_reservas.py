@@ -1,5 +1,5 @@
 import json
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
@@ -11,6 +11,7 @@ from django.utils import timezone
 from apps.campanias.models import Campania
 from apps.clientes.models import Cliente, Marca
 from apps.inventario.models import Cartel, EstadoCartel, Formato, Zona
+from apps.reservas import services
 from apps.reservas.models import Reserva
 
 
@@ -283,3 +284,106 @@ def test_operativo_sin_csrf_es_rechazado():
         content_type="application/json",
     )
     assert respuesta.status_code == 403
+
+
+def reservar_orm(cartel: Cartel, inicio: str, fin: str, estado: str = "confirmada") -> Reserva:
+    reserva = Reserva(
+        campania=crear_campania(marca_nombre=None),
+        cartel=cartel,
+        fecha_inicio=date.fromisoformat(inicio),
+        fecha_fin=date.fromisoformat(fin),
+        estado=estado,
+    )
+    reserva.save()
+    return reserva
+
+
+@pytest.mark.django_db
+def test_alta_finalizada_cartel_ocupado_se_rechaza(operativo_client):
+    cartel = crear_cartel()
+    reservar_orm(cartel, "2026-08-01", "2026-08-31")
+    respuesta = crear(operativo_client, **payload(cartel, crear_campania(), estado="finalizada"))
+    assert respuesta.status_code == 400
+    assert "estado" in respuesta.json()
+    assert Reserva.objects.filter(cartel=cartel).count() == 1
+
+
+@pytest.mark.django_db
+def test_alta_cancelada_se_rechaza(operativo_client):
+    cartel = crear_cartel()
+    respuesta = crear(operativo_client, **payload(cartel, crear_campania(), estado="cancelada"))
+    assert respuesta.status_code == 400
+    assert "estado" in respuesta.json()
+
+
+@pytest.mark.django_db
+def test_alta_pendiente_y_confirmada_libres_se_permiten(operativo_client):
+    campania = crear_campania()
+    for estado in ("pendiente", "confirmada"):
+        respuesta = crear(operativo_client, **payload(crear_cartel(), campania, estado=estado))
+        assert respuesta.status_code == 201
+        assert respuesta.json()["estado"] == estado
+
+
+@pytest.mark.django_db
+def test_confirmada_a_finalizada_moviendo_fechas_sobre_ocupado_se_rechaza(operativo_client):
+    cartel = crear_cartel()
+    reservar_orm(cartel, "2026-08-01", "2026-08-31")
+    propia = reservar_orm(cartel, "2026-09-01", "2026-09-30")
+    respuesta = editar(
+        operativo_client,
+        propia.pk,
+        estado="finalizada",
+        fecha_inicio="2026-08-10",
+        fecha_fin="2026-08-20",
+    )
+    assert respuesta.status_code == 400
+    assert "disponibilidad" in respuesta.json()
+    propia.refresh_from_db()
+    assert propia.estado == "confirmada"
+
+
+@pytest.mark.django_db
+def test_confirmada_a_finalizada_sin_cambios_no_revalida(operativo_client):
+    cartel = crear_cartel()
+    # Dos confirmadas encimadas cargadas sin pasar por la API: el cupo ya está excedido.
+    reservar_orm(cartel, "2026-08-01", "2026-08-31")
+    propia = reservar_orm(cartel, "2026-08-01", "2026-08-31")
+    respuesta = editar(operativo_client, propia.pk, estado="finalizada")
+    assert respuesta.status_code == 200
+    assert respuesta.json()["estado"] == "finalizada"
+
+
+@pytest.mark.django_db
+def test_finalizada_cambia_cartel_a_ocupado_se_rechaza(operativo_client):
+    libre = crear_cartel()
+    ocupado = crear_cartel()
+    reservar_orm(ocupado, "2026-08-01", "2026-08-31")
+    propia = reservar_orm(libre, "2026-08-01", "2026-08-31", estado="finalizada")
+    respuesta = editar(operativo_client, propia.pk, cartel=ocupado.pk)
+    assert respuesta.status_code == 400
+    assert "disponibilidad" in respuesta.json()
+    propia.refresh_from_db()
+    assert propia.cartel_id == libre.pk
+
+
+@pytest.mark.parametrize(
+    ("anterior", "nuevo", "cambia_ocupacion", "esperado"),
+    [
+        (None, "pendiente", False, False),
+        (None, "confirmada", False, True),
+        (None, "finalizada", False, True),
+        ("pendiente", "pendiente", True, False),
+        ("pendiente", "confirmada", False, True),
+        ("cancelada", "confirmada", False, True),
+        ("confirmada", "confirmada", False, False),
+        ("confirmada", "confirmada", True, True),
+        ("confirmada", "finalizada", False, False),
+        ("confirmada", "finalizada", True, True),
+        ("finalizada", "finalizada", False, False),
+        ("finalizada", "finalizada", True, True),
+        ("confirmada", "cancelada", True, False),
+    ],
+)
+def test_necesita_validar_cupo_segun_estados_y_cambios(anterior, nuevo, cambia_ocupacion, esperado):
+    assert services.necesita_validar_cupo(anterior, nuevo, cambia_ocupacion) is esperado
