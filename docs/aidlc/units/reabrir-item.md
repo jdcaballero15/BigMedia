@@ -1,6 +1,6 @@
 # Unidad: Reabrir un ítem enviado
 
-- **Estado:** pendiente · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
+- **Estado:** en curso · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
 - **Origen:** HU-067 (RN-022) · **Rama:** `feature/facturacion-reabrir-item`
 
 ## Objetivo

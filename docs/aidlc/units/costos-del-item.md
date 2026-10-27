@@ -1,6 +1,6 @@
 # Unidad: Costos del ítem y neto final
 
-- **Estado:** en revisión · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
+- **Estado:** mergeada · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
   (con cambios en `costos`)
 - **Origen:** HU-063, HU-066 criterio 1 · **Rama:** `feature/facturacion-costos-del-item`
 

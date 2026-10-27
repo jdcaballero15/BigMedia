@@ -31,7 +31,7 @@ bien. La columna **Hecho** se completa con la fecha y las iniciales de quien lo 
 | 5 | Superusuario de Django en producción | Quien lo creó en el primer deploy | Administrador de Big Media | El administrador de Big Media crea su propio usuario con rol Administrador desde **Administración › Usuarios** | Entra con su usuario y ve **Usuarios** y **Parámetros** | |
 | 6 | Superusuario de Django en staging | Quien lo creó en el primer deploy | Administrador de Big Media | Igual que el anterior, en staging | Igual que el anterior | |
 | 7 | Dominio propio, si se usa | A completar (o "no aplica") | Big Media | Transferir el dominio a una cuenta de Big Media y apuntarlo a Render (**Settings → Custom Domains**) | La URL del dominio carga la aplicación por HTTPS | |
-| 8 | Correo para avisos, si se configura | A completar (o "no aplica") | Big Media | Cuenta de correo o de proveedor de envío a nombre de Big Media | Llega un correo de prueba | |
+| 8 | Correo para avisos a Administración (HU-067), si se configura | A completar (o "no aplica") | Big Media | Cuenta de correo o de proveedor de envío a nombre de Big Media. En **Environment** de cada servicio de Render se cargan `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` y `FACTURACION_CORREO_ADMINISTRACION` | Reabrir un ítem Enviado de prueba en staging hace llegar el aviso a la dirección de Administración | |
 | 9 | Planillas e historias originales fuera de Git | Equipo de desarrollo | Carpeta compartida de Big Media | Copiar los archivos a la carpeta de Big Media | Big Media los abre desde su carpeta | |
 
 ## Después del traspaso: rotar todo
@@ -49,6 +49,8 @@ contraseñas de Big Media y al panel donde se usa.
       desde la aplicación y borrar o reemplazar la variable en Render (`asegurar_admin` no pisa una
       contraseña existente).
 - [ ] **`DJANGO_DEMO_PASSWORD`** de staging: cambiarla o dejarla vacía.
+- [ ] **`EMAIL_HOST_PASSWORD`** de los dos entornos, si el correo de avisos está configurado:
+      generar una clave nueva en el proveedor de correo y reemplazarla en Render.
 - [ ] **Usuarios del equipo de desarrollo** en la aplicación: inactivarlos desde **Administración ›
       Usuarios**, salvo que Big Media quiera mantener a alguien para soporte.
 - [ ] **Colaboradores de GitHub, Render y Neon**: quitar al equipo de desarrollo o bajarlo a un
