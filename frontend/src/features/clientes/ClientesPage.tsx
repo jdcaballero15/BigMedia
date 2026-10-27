@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { apiGet, apiWrite } from '../../shared/api'
 import ClienteForm from './ClienteForm'
 import ContactosDelCliente from './ContactosDelCliente'
+import InteraccionesLista from '../campanias/InteraccionesLista'
 import type { ClienteInput } from './ClienteForm'
 import { TIPOS_CLIENTE } from './types'
 import type { Cliente, Marca } from './types'
@@ -184,6 +185,14 @@ export default function ClientesPage() {
       {/* Solo el intermediario formal tiene contactos múltiples (HU-068, RN-015). */}
       {ficha !== null && ficha.cliente.tipo === 'intermediario_formal' && (
         <ContactosDelCliente key={`contactos-${ficha.cliente.id}`} cliente={ficha.cliente} />
+      )}
+      {ficha !== null && (
+        <InteraccionesLista
+          key={`interacciones-${ficha.cliente.id}`}
+          filtro={{ cliente: ficha.cliente.id }}
+          titulo={`Interacciones con ${ficha.cliente.nombre_visible}`}
+          ocultar="cliente"
+        />
       )}
       <div className="filters card" role="search" aria-label="Filtros de clientes">
         <label>
