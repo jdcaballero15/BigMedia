@@ -32,17 +32,19 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 
 ## En curso
 
-- Ninguna.
+- **E10 Armado de campañas y reserva masiva** — en tres unidades: `posiciones-por-formato`
+  (HU-055 y HU-058, criterios 1 y 2), `reserva-masiva` (HU-056 y HU-057) y
+  `confirmacion-en-bloque` (HU-059 y HU-058, criterios 3 y 4).
 
 ## Próximas
 
-- A definir con Juan Diego: E3 quedó completa.
+- A definir con Juan Diego.
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
 ## Más adelante
 
-E9 Entrega y traspaso · E10 Armado de campañas y reserva masiva · E11 Facturación mensual.
+E9 Entrega y traspaso · E11 Facturación mensual.
 
 E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y nunca adentro.
 
@@ -55,3 +57,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-10-23 | Entornos, el cierre de E8 (salvo grupo económico) y parte de E1 pasan a Hecho; E1 queda primera | El roadmap había quedado atrás respecto de las unidades ya mergeadas |
 | 2026-10-26 | HU-005, HU-006 y HU-001 pasan a Hecho; el resto de E3 queda primero | Gestión de usuarios, baja lógica y parámetros configurables quedaron mergeadas (PR #65, #66 y #67) |
 | 2026-10-27 | E3 pasa a Hecho con HU-020; las próximas quedan a definir | Interacciones comerciales quedaron mergeadas (PR #73) |
+| 2026-10-27 | E10 pasa a En curso, partida en tres unidades | Gonza eligió E10: se apoya en campañas y reservas y es lo que más trabajo manual ahorra |
