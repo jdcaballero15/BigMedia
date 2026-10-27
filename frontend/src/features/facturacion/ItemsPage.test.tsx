@@ -37,9 +37,19 @@ function item(id: number, extra: Partial<ItemFacturacion> = {}): ItemFacturacion
     notas: '',
     estado: 'borrador',
     numero_factura: '',
+    orden_compra_numero: '',
+    orden_compra_fecha: null,
+    orden_compra_pdf: null,
+    grupo: null,
+    grupo_codigo: null,
     creado_por_nombre: 'operativo',
     ...extra,
   }
+}
+
+/** Respuesta de alta o edición: el ítem con los avisos de OC duplicada (HU-062). */
+function guardado(base: ItemFacturacion, coincidentes: { id: number; descripcion: string }[] = []) {
+  return ok({ ...base, avisos: { orden_compra: coincidentes } })
 }
 
 const totales = { mes: '2026-11', cantidad: 2, neto: '10000.00', iva: '2100.00', total: '12100.00' }
@@ -123,7 +133,7 @@ test('si falla la carga muestra el error', async () => {
 
 test('crea un ítem nuevo y recarga', async () => {
   const fetchMock = stubFetch([], (_input, options) =>
-    options?.method === 'POST' ? ok(item(9)) : undefined,
+    options?.method === 'POST' ? guardado(item(9)) : undefined,
   )
   render(<ItemsPage />)
   await screen.findByText('No hay ítems en este mes.')
@@ -150,7 +160,7 @@ test('solo los ítems en Borrador se editan', async () => {
 
 test('guarda la edición de un ítem', async () => {
   const fetchMock = stubFetch([item(1)], (_input, options) =>
-    options?.method === 'PATCH' ? ok(item(1)) : undefined,
+    options?.method === 'PATCH' ? guardado(item(1)) : undefined,
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
@@ -213,7 +223,7 @@ test('un error sin campos muestra un mensaje general', async () => {
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
   fireEvent.click(within(fila).getByRole('button', { name: 'Anular' }))
-  expect(await within(fila).findByText('No se pudo cambiar el estado.')).toBeDefined()
+  expect(await within(fila).findByText('No se pudo guardar el cambio.')).toBeDefined()
 })
 
 test('sin permiso de edición solo lista', async () => {
@@ -226,6 +236,8 @@ test('sin permiso de edición solo lista', async () => {
   await screen.findByText('Ítem 1')
   expect(screen.queryByRole('button', { name: 'Nuevo ítem' })).toBeNull()
   expect(screen.queryByRole('columnheader', { name: 'Acciones' })).toBeNull()
+  expect(screen.queryByRole('button', { name: /Agrupar en una factura/ })).toBeNull()
+  expect(screen.queryByRole('checkbox')).toBeNull()
 })
 
 test('si fallan las referencias lo avisa', async () => {
@@ -238,4 +250,138 @@ test('si fallan las referencias lo avisa', async () => {
   expect(
     await screen.findByText('No se pudieron cargar clientes, marcas o campañas.'),
   ).toBeDefined()
+})
+
+// --- HU-062: orden de compra en el listado y aviso de duplicado ---
+
+test('muestra la orden de compra y el enlace al PDF', async () => {
+  stubFetch([
+    item(1, { orden_compra_numero: 'OC-77', orden_compra_pdf: { nombre: 'oc.pdf', tamanio: 9 } }),
+  ])
+  render(<ItemsPage />)
+  const fila = (await screen.findByText(/Ítem 1/)).closest('tr') as HTMLElement
+  expect(fila.textContent).toContain('OC OC-77')
+  expect(within(fila).getByRole('link', { name: 'PDF' }).getAttribute('href')).toBe(
+    '/api/facturacion/items/1/orden-compra-pdf/',
+  )
+})
+
+test('al guardar con una OC repetida avisa con el ítem coincidente', async () => {
+  stubFetch([item(1)], (_input, options) =>
+    options?.method === 'PATCH'
+      ? guardado(item(1, { orden_compra_numero: 'OC-9' }), [
+          { id: 4, descripcion: 'Alquiler octubre' },
+        ])
+      : undefined,
+  )
+  render(<ItemsPage />)
+  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  fireEvent.click(within(fila).getByRole('button', { name: 'Editar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar ítem' }))
+  const aviso = await screen.findByRole('status', { name: 'Aviso de orden de compra' })
+  expect(aviso.textContent).toContain(
+    'La orden de compra OC-9 ya está cargada en: #4 (Alquiler octubre)',
+  )
+  fireEvent.click(within(aviso).getByRole('button', { name: 'Entendido' }))
+  expect(screen.queryByRole('status', { name: 'Aviso de orden de compra' })).toBeNull()
+})
+
+// --- HU-064: agrupar y quitar del grupo ---
+
+function posts(fetchMock: ReturnType<typeof stubFetch>) {
+  return fetchMock.mock.calls
+    .filter(([, options]) => options?.method === 'POST')
+    .map(([url, options]) => [url, JSON.parse(String(options?.body))])
+}
+
+test('agrupa los ítems seleccionados en una factura', async () => {
+  const fetchMock = stubFetch(
+    [item(1), item(2), item(3, { estado: 'enviado' })],
+    (input, options) =>
+      options?.method === 'POST' && input.includes('/grupos/')
+        ? ok({ id: 5, codigo: 'G-5', mes: '2026-11', items: [1, 2] })
+        : undefined,
+  )
+  render(<ItemsPage />)
+  await screen.findByText('Ítem 1')
+  const boton = screen.getByRole('button', { name: 'Agrupar en una factura (0)' })
+  expect((boton as HTMLButtonElement).disabled).toBe(true)
+  expect(screen.queryByRole('checkbox', { name: 'Seleccionar ítem 3' })).toBeNull()
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar ítem 1' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar ítem 2' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar ítem 2' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar ítem 2' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Agrupar en una factura (2)' }))
+  await waitFor(() =>
+    expect(posts(fetchMock)).toEqual([['/api/facturacion/grupos/', { items: [1, 2] }]]),
+  )
+  // Recarga y limpia la selección.
+  expect(await screen.findByRole('button', { name: 'Agrupar en una factura (0)' })).toBeDefined()
+})
+
+test('si no se pueden agrupar muestra el motivo', async () => {
+  stubFetch([item(1), item(2)], (input, options) =>
+    options?.method === 'POST' && input.includes('/grupos/')
+      ? rechazo({ items: ['Los ítems de un grupo tienen que ser del mismo mes.'] })
+      : undefined,
+  )
+  render(<ItemsPage />)
+  await screen.findByText('Ítem 1')
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar ítem 1' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar ítem 2' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Agrupar en una factura (2)' }))
+  expect((await screen.findByRole('alert')).textContent).toBe(
+    'Los ítems de un grupo tienen que ser del mismo mes.',
+  )
+})
+
+test('un error sin motivo al agrupar muestra un mensaje general', async () => {
+  stubFetch([item(1), item(2)], (input, options) =>
+    options?.method === 'POST' && input.includes('/grupos/')
+      ? { ok: false, status: 500, json: async () => ({}) }
+      : undefined,
+  )
+  render(<ItemsPage />)
+  await screen.findByText('Ítem 1')
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar ítem 1' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar ítem 2' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Agrupar en una factura (2)' }))
+  expect((await screen.findByRole('alert')).textContent).toBe('No se pudieron agrupar los ítems.')
+})
+
+test('muestra el grupo y lo quita de un ítem en Borrador', async () => {
+  const fetchMock = stubFetch(
+    [
+      item(1, { grupo: 5, grupo_codigo: 'G-5' }),
+      item(2, { grupo: 5, grupo_codigo: 'G-5', estado: 'enviado' }),
+    ],
+    (input, options) =>
+      options?.method === 'POST' && input.includes('/quitar-del-grupo/') ? ok(item(1)) : undefined,
+  )
+  render(<ItemsPage />)
+  const enviado = (await screen.findByText('Ítem 2')).closest('tr') as HTMLElement
+  expect(enviado.textContent).toContain('G-5')
+  expect(within(enviado).queryByRole('button', { name: 'Quitar del grupo' })).toBeNull()
+  const fila = screen.getByText('Ítem 1').closest('tr') as HTMLElement
+  fireEvent.click(within(fila).getByRole('button', { name: 'Quitar del grupo' }))
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, options]) =>
+          url === '/api/facturacion/items/1/quitar-del-grupo/' && options?.method === 'POST',
+      ),
+    ).toBe(true),
+  )
+})
+
+test('muestra el error al quitar del grupo', async () => {
+  stubFetch([item(1, { grupo: 5, grupo_codigo: 'G-5' })], (input, options) =>
+    options?.method === 'POST' && input.includes('/quitar-del-grupo/')
+      ? rechazo({ grupo: ['El ítem no está en un grupo de factura.'] })
+      : undefined,
+  )
+  render(<ItemsPage />)
+  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  fireEvent.click(within(fila).getByRole('button', { name: 'Quitar del grupo' }))
+  expect(await within(fila).findByText('El ítem no está en un grupo de factura.')).toBeDefined()
 })

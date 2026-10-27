@@ -8,10 +8,17 @@ import EnviosDelMes from './EnviosDelMes'
 import ItemForm from './ItemForm'
 import type { ItemInput } from './ItemForm'
 import { formatearMonto } from './montos'
-import type { CatalogosFacturacion, ItemFacturacion, TotalesMes } from './types'
-import { ESTADOS_ITEM, etiquetaEstadoItem, mesActual } from './types'
+import type {
+  AvisosItem,
+  CatalogosFacturacion,
+  ItemFacturacion,
+  ItemGuardado,
+  TotalesMes,
+} from './types'
+import { ESTADOS_ITEM, etiquetaEstadoItem, mesActual, urlPdfOrdenCompra } from './types'
 
 const ITEMS = '/api/facturacion/items/'
+const GRUPOS = '/api/facturacion/grupos/'
 const SIN_CATALOGOS: CatalogosFacturacion = { sectores: [], tipos_venta: [] }
 
 type Referencias = {
@@ -25,7 +32,9 @@ function monto(valor: string | null): string {
   return valor === null ? '—' : formatearMonto(valor)
 }
 
-/** Ítems a facturar del mes con sus totales y estados (HU-060, HU-061, HU-065). */
+type AvisoOrdenCompra = { numero: string; items: AvisosItem['orden_compra'] }
+
+/** Ítems a facturar del mes con totales, estados, OC y grupos (HU-060 a HU-065). */
 export default function ItemsPage() {
   const puedeEditar = usePuedeEditar()
   const [mes, setMes] = useState(mesActual())
@@ -41,6 +50,9 @@ export default function ItemsPage() {
   const [error, setError] = useState('')
   const [editando, setEditando] = useState<ItemFacturacion | 'nuevo' | null>(null)
   const [revision, setRevision] = useState(0)
+  const [aviso, setAviso] = useState<AvisoOrdenCompra | null>(null)
+  const [seleccion, setSeleccion] = useState<number[]>([])
+  const [errorGrupo, setErrorGrupo] = useState('')
 
   useEffect(() => {
     let active = true
@@ -74,6 +86,7 @@ export default function ItemsPage() {
         setItems(filas)
         setTotales(suma)
         setError('')
+        setSeleccion([])
       })
       .catch(() => {
         if (active) setError('No se pudieron cargar los ítems del mes.')
@@ -87,11 +100,33 @@ export default function ItemsPage() {
 
   async function guardar(input: ItemInput) {
     if (editando === null) return
-    if (editando === 'nuevo') await apiWrite(ITEMS, 'POST', input)
-    else await apiWrite(`${ITEMS}${editando.id}/`, 'PATCH', input)
+    const guardado =
+      editando === 'nuevo'
+        ? await apiWrite<ItemGuardado>(ITEMS, 'POST', input)
+        : await apiWrite<ItemGuardado>(`${ITEMS}${editando.id}/`, 'PATCH', input)
+    const coincidentes = guardado.avisos.orden_compra
+    setAviso(
+      coincidentes.length ? { numero: guardado.orden_compra_numero, items: coincidentes } : null,
+    )
     setEditando(null)
     recargar()
   }
+
+  async function agrupar() {
+    setErrorGrupo('')
+    try {
+      await apiWrite(GRUPOS, 'POST', { items: seleccion })
+      recargar()
+    } catch (cause) {
+      const campos = cause instanceof ApiError ? cause.fields : {}
+      setErrorGrupo(campos.items?.join(' ') ?? 'No se pudieron agrupar los ítems.')
+    }
+  }
+
+  const alternar = (id: number) =>
+    setSeleccion((actual) =>
+      actual.includes(id) ? actual.filter((otro) => otro !== id) : [...actual, id],
+    )
 
   return (
     <section>
@@ -114,6 +149,7 @@ export default function ItemsPage() {
           {...referencias}
           onSave={guardar}
           onCancel={() => setEditando(null)}
+          onPdfCambiado={recargar}
         />
       )}
       <div className="filters card" role="search" aria-label="Filtros de ítems">
@@ -145,6 +181,32 @@ export default function ItemsPage() {
           {error}
         </p>
       )}
+      {aviso && (
+        <p className="card" role="status" aria-label="Aviso de orden de compra">
+          La orden de compra {aviso.numero} ya está cargada en:{' '}
+          {aviso.items.map((otro) => `#${otro.id} (${otro.descripcion})`).join(', ')}. El ítem se
+          guardó igual.{' '}
+          <button className="button-ghost" onClick={() => setAviso(null)}>
+            Entendido
+          </button>
+        </p>
+      )}
+      {puedeEditar && (items ?? []).length > 0 && (
+        <div className="row-actions">
+          <button
+            className="button-ghost"
+            disabled={seleccion.length < 2}
+            onClick={() => void agrupar()}
+          >
+            Agrupar en una factura ({seleccion.length})
+          </button>
+          {errorGrupo && (
+            <span className="error" role="alert">
+              {errorGrupo}
+            </span>
+          )}
+        </div>
+      )}
       <EnviosDelMes
         mes={mes}
         puedeEditar={puedeEditar}
@@ -159,6 +221,8 @@ export default function ItemsPage() {
         <TablaItems
           items={items}
           puedeEditar={puedeEditar}
+          seleccion={seleccion}
+          onAlternar={alternar}
           onEditar={setEditando}
           onCambio={recargar}
         />
@@ -170,21 +234,26 @@ export default function ItemsPage() {
 type TablaProps = {
   items: ItemFacturacion[]
   puedeEditar: boolean
+  seleccion: number[]
+  onAlternar: (id: number) => void
   onEditar: (item: ItemFacturacion) => void
   onCambio: () => void
 }
 
-function TablaItems({ items, puedeEditar, onEditar, onCambio }: TablaProps) {
+function TablaItems(props: TablaProps) {
+  const { items, puedeEditar, seleccion, onAlternar, onEditar, onCambio } = props
   return (
     <div className="card table-wrap">
       <table aria-label="Ítems a facturar">
         <thead>
           <tr>
+            {puedeEditar && <th aria-label="Selección" />}
             <th>Cliente</th>
             <th>Descripción</th>
             <th>Neto</th>
             <th>IVA</th>
             <th>Total</th>
+            <th>Grupo</th>
             <th>Estado</th>
             {puedeEditar && <th>Acciones</th>}
           </tr>
@@ -195,6 +264,8 @@ function TablaItems({ items, puedeEditar, onEditar, onCambio }: TablaProps) {
               key={item.id}
               item={item}
               puedeEditar={puedeEditar}
+              seleccionado={seleccion.includes(item.id)}
+              onAlternar={() => onAlternar(item.id)}
               onEditar={() => onEditar(item)}
               onCambio={onCambio}
             />
@@ -208,39 +279,82 @@ function TablaItems({ items, puedeEditar, onEditar, onCambio }: TablaProps) {
 type FilaProps = {
   item: ItemFacturacion
   puedeEditar: boolean
+  seleccionado: boolean
+  onAlternar: () => void
   onEditar: () => void
   onCambio: () => void
 }
 
-function FilaItem({ item, puedeEditar, onEditar, onCambio }: FilaProps) {
+function FilaItem(props: FilaProps) {
+  const { item, puedeEditar, seleccionado, onAlternar, onEditar, onCambio } = props
   const [facturando, setFacturando] = useState(false)
   const [numero, setNumero] = useState('')
   const [errores, setErrores] = useState<Record<string, string[]>>({})
 
-  async function cambiarEstado(datos: Record<string, string>) {
+  async function escribir(url: string, method: 'POST' | 'PATCH', datos?: Record<string, string>) {
     try {
-      await apiWrite(`${ITEMS}${item.id}/`, 'PATCH', datos)
+      await apiWrite(url, method, datos)
       setFacturando(false)
       onCambio()
     } catch (cause) {
       const campos = cause instanceof ApiError ? cause.fields : {}
       setErrores(
-        Object.keys(campos).length ? campos : { estado: ['No se pudo cambiar el estado.'] },
+        Object.keys(campos).length ? campos : { estado: ['No se pudo guardar el cambio.'] },
       )
     }
   }
+  const cambiarEstado = (datos: Record<string, string>) =>
+    escribir(`${ITEMS}${item.id}/`, 'PATCH', datos)
 
   const anulado = item.estado === 'anulado'
+  const borrador = item.estado === 'borrador'
   return (
     <tr className={anulado ? 'muted' : undefined}>
+      {puedeEditar && (
+        <td>
+          {borrador && (
+            <input
+              type="checkbox"
+              aria-label={`Seleccionar ítem ${item.id}`}
+              checked={seleccionado}
+              onChange={onAlternar}
+            />
+          )}
+        </td>
+      )}
       <td className="primary-cell">
         {item.cliente_nombre ?? 'Sin cliente'}
         {item.cuit_facturacion && <small className="muted"> · CUIT {item.cuit_facturacion}</small>}
       </td>
-      <td>{item.descripcion || '—'}</td>
+      <td>
+        {item.descripcion || '—'}
+        {item.orden_compra_numero && (
+          <small className="muted"> · OC {item.orden_compra_numero}</small>
+        )}
+        {item.orden_compra_pdf && (
+          <>
+            {' '}
+            <a href={urlPdfOrdenCompra(item.id)} target="_blank" rel="noreferrer">
+              PDF
+            </a>
+          </>
+        )}
+      </td>
       <td>{monto(item.neto)}</td>
       <td>{monto(item.iva)}</td>
       <td>{monto(item.total)}</td>
+      <td>
+        {item.grupo_codigo ?? '—'}
+        {item.grupo_codigo && puedeEditar && borrador && (
+          <button
+            className="button-ghost"
+            onClick={() => void escribir(`${ITEMS}${item.id}/quitar-del-grupo/`, 'POST')}
+          >
+            Quitar del grupo
+          </button>
+        )}
+        <FieldErrors messages={errores.grupo} />
+      </td>
       <td>
         {etiquetaEstadoItem(item.estado)}
         {item.numero_factura && <small className="muted"> · {item.numero_factura}</small>}
@@ -248,7 +362,7 @@ function FilaItem({ item, puedeEditar, onEditar, onCambio }: FilaProps) {
       </td>
       {puedeEditar && (
         <td className="row-actions">
-          {item.estado === 'borrador' && (
+          {borrador && (
             <button className="button-ghost" onClick={onEditar}>
               Editar
             </button>
