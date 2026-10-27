@@ -22,6 +22,8 @@ from config.permisos import LecturaConSesionEdicionOperativo, SoloAdministrador
 from . import services
 from .models import ParametrosDisponibilidad, Reserva
 from .serializers import (
+    CampaniaDeReservasSerializer,
+    MoverPendientesSerializer,
     ParametrosDisponibilidadSerializer,
     ReservasEnBloqueSerializer,
     ReservaSerializer,
@@ -69,6 +71,36 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
                 datos["campania"], datos["carteles"], datos["fecha_inicio"], datos["fecha_fin"]
             )
         )
+
+    @action(detail=False, methods=["post"], url_path="confirmar-en-bloque")
+    def confirmar_en_bloque(self, request: Request) -> Response:
+        """Confirma las Pendientes de la campaña que entran y lista los conflictos (HU-059)."""
+        entrada = CampaniaDeReservasSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        try:
+            resultado = services.confirmar_reservas_de_campania(
+                entrada.validated_data["campania"], request.user
+            )
+        except DjangoValidationError as error:
+            raise ValidationError(error.message_dict) from error
+        return Response(resultado)
+
+    @action(detail=False, methods=["post"], url_path="mover-pendientes")
+    def mover_pendientes(self, request: Request) -> Response:
+        """Lleva las Pendientes a las fechas nuevas de la campaña (HU-058, criterio 3)."""
+        entrada = MoverPendientesSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        datos = entrada.validated_data
+        try:
+            movidas = services.mover_pendientes(
+                datos["campania"],
+                datos["fecha_inicio_anterior"],
+                datos["fecha_fin_anterior"],
+                request.user,
+            )
+        except DjangoValidationError as error:
+            raise ValidationError(error.message_dict) from error
+        return Response({"movidas": movidas})
 
     def perform_update(self, serializer: BaseSerializer[Reserva]) -> None:
         datos = serializer.validated_data

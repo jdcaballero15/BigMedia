@@ -5,11 +5,13 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from django.conf import settings
+from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, F, Q, QuerySet
 from django.utils import timezone
 
+from apps.auditoria import services as auditoria_services
 from apps.campanias.models import Campania
 from apps.inventario.models import Cartel, Formato
 from config.texto import normalizar_busqueda
@@ -375,8 +377,8 @@ def _fin_efectivo(fin: date, borde_inclusivo: bool) -> date:
     return fin if borde_inclusivo else fin - timedelta(days=1)
 
 
-def validar_disponibilidad(reserva: Reserva) -> None:
-    """Bloquea si el cartel no tiene cupo libre en el rango pedido (HU-031).
+def conflictos_de(reserva: Reserva) -> list[Reserva]:
+    """Reservas que ocupan el cupo en el día pico si `reserva` no entra; vacía si entra (HU-031).
 
     Usa pico diario (RN-003): la ocupación máxima en cualquier tramo del rango, no el conteo de
     reservas que tocan el rango. Debe correr dentro de una transacción que ya bloqueó el cartel
@@ -385,53 +387,53 @@ def validar_disponibilidad(reserva: Reserva) -> None:
     """
     parametros = parametros_disponibilidad()
     borde = parametros.borde_inclusivo
-    capacidad = reserva.cartel.capacidad
     fin_nueva = _fin_efectivo(reserva.fecha_fin, borde)
-    otras = Reserva.objects.filter(
-        cartel=reserva.cartel, estado__in=_estados_que_bloquean(parametros.tentativa_bloquea)
-    ).exclude(pk=reserva.pk)
+    otras = (
+        Reserva.objects.filter(
+            cartel=reserva.cartel, estado__in=_estados_que_bloquean(parametros.tentativa_bloquea)
+        )
+        .exclude(pk=reserva.pk)
+        .select_related("campania")
+    )
     # Solo las que se solapan con el rango pedido (intervalos inclusivos con fin efectivo).
-    conflictivas = [
+    solapadas = [
         otra
         for otra in otras
         if otra.fecha_inicio <= fin_nueva
         and reserva.fecha_inicio <= _fin_efectivo(otra.fecha_fin, borde)
     ]
-    if not conflictivas:
-        return
-
     # La ocupación solo sube en un inicio de reserva: basta mirar esos días dentro del rango.
     dias_candidatos = {reserva.fecha_inicio} | {
         otra.fecha_inicio
-        for otra in conflictivas
+        for otra in solapadas
         if reserva.fecha_inicio <= otra.fecha_inicio <= fin_nueva
     }
-    pico, dia_pico = 0, reserva.fecha_inicio
-    for dia in dias_candidatos:
-        cubren = sum(
-            1
-            for otra in conflictivas
-            if otra.fecha_inicio <= dia <= _fin_efectivo(otra.fecha_fin, borde)
-        )
-        if cubren > pico:
-            pico, dia_pico = cubren, dia
-
-    # La reserva nueva suma 1: si en el día pico ya hay `capacidad` ocupados, no entra.
-    if pico >= capacidad:
-        culpables = [
-            otra.nombre
-            for otra in conflictivas
-            if otra.fecha_inicio <= dia_pico <= _fin_efectivo(otra.fecha_fin, borde)
+    culpables: list[Reserva] = []
+    for dia in sorted(dias_candidatos):
+        cubren = [
+            o for o in solapadas if o.fecha_inicio <= dia <= _fin_efectivo(o.fecha_fin, borde)
         ]
-        raise ValidationError(
-            {
-                "disponibilidad": (
-                    f"{reserva.cartel.nombre_visible}: sin cupo libre "
-                    f"({pico} de {capacidad}) entre {reserva.fecha_inicio} y {reserva.fecha_fin}. "
-                    f"En conflicto: {', '.join(culpables)}."
-                )
-            }
-        )
+        if len(cubren) > len(culpables):
+            culpables = cubren
+    # La reserva nueva suma 1: si en el día pico ya hay `capacidad` ocupados, no entra.
+    return culpables if len(culpables) >= reserva.cartel.capacidad else []
+
+
+def validar_disponibilidad(reserva: Reserva) -> None:
+    """Bloquea si el cartel no tiene cupo libre en el rango pedido (HU-031); ver `conflictos_de`."""
+    culpables = conflictos_de(reserva)
+    if not culpables:
+        return
+    raise ValidationError(
+        {
+            "disponibilidad": (
+                f"{reserva.cartel.nombre_visible}: sin cupo libre "
+                f"({len(culpables)} de {reserva.cartel.capacidad}) "
+                f"entre {reserva.fecha_inicio} y {reserva.fecha_fin}. "
+                f"En conflicto: {', '.join(otra.nombre for otra in culpables)}."
+            )
+        }
+    )
 
 
 def reparto_por_mes(reserva: Reserva) -> list[dict[str, Any]]:
@@ -680,3 +682,113 @@ def crear_reservas_en_bloque(
         grupo, item = _crear_en_tanda(campania, cartel_id, desde, hasta)
         resultado[grupo].append(item)
     return resultado
+
+
+def _conflicto(reserva: Reserva, culpables: list[Reserva]) -> dict[str, Any]:
+    campanias = {otra.campania_id: str(otra.campania) for otra in culpables}
+    return {
+        "reserva": reserva.pk,
+        "nombre": reserva.nombre,
+        "cartel_nombre": reserva.cartel.nombre_visible,
+        "fecha_inicio": reserva.fecha_inicio.isoformat(),
+        "fecha_fin": reserva.fecha_fin.isoformat(),
+        "ocupada_por": [
+            {"campania": pk, "campania_nombre": nombre} for pk, nombre in campanias.items()
+        ],
+    }
+
+
+def _confirmar_pendiente(
+    reserva_pk: int, usuario: AbstractBaseUser | AnonymousUser
+) -> tuple[bool, dict[str, Any] | None]:
+    """Confirma una Pendiente con el cartel bloqueado (HU-034).
+
+    Devuelve si se confirmó y, si no entra, su conflicto. Si mientras tanto dejó de estar
+    Pendiente, no se confirmó ni tiene conflicto.
+    """
+    with transaction.atomic():
+        cartel_pk = Reserva.objects.values_list("cartel_id", flat=True).get(pk=reserva_pk)
+        Cartel.objects.select_for_update().get(pk=cartel_pk)
+        # Se relee con el cartel bloqueado: otro pedido pudo haberla confirmado o cancelado.
+        reserva = Reserva.objects.select_related("cartel__formato", "campania__marca").get(
+            pk=reserva_pk
+        )
+        if reserva.estado != Reserva.Estado.PENDIENTE:
+            return False, None
+        culpables = conflictos_de(reserva)
+        if culpables:
+            return False, _conflicto(reserva, culpables)
+        reserva.estado = Reserva.Estado.CONFIRMADA
+        reserva.save()
+        auditoria_services.registrar_cambios(
+            "reserva",
+            reserva.pk,
+            {"estado": Reserva.Estado.PENDIENTE.value},
+            {"estado": Reserva.Estado.CONFIRMADA.value},
+            usuario,
+        )
+    return True, None
+
+
+def confirmar_reservas_de_campania(
+    campania: Campania, usuario: AbstractBaseUser | AnonymousUser
+) -> dict[str, list[Any]]:
+    """Confirma las Pendientes de la campaña que entran y lista las que no (HU-059).
+
+    Exige la campaña Confirmada. Cada Pendiente va en su propia transacción con el cartel
+    bloqueado, con la misma validación que la confirmación individual (HU-031, HU-034). Repetir
+    solo procesa lo que sigue Pendiente.
+    """
+    if campania.estado != Campania.Estado.CONFIRMADA:
+        raise ValidationError({"campania": "Primero confirmá la campaña."})
+    pendientes = Reserva.objects.filter(
+        campania=campania, estado=Reserva.Estado.PENDIENTE
+    ).order_by("creado_en", "id")
+    confirmadas: list[int] = []
+    conflictos: list[dict[str, Any]] = []
+    for reserva_pk in list(pendientes.values_list("pk", flat=True)):
+        confirmada, conflicto = _confirmar_pendiente(reserva_pk, usuario)
+        if confirmada:
+            confirmadas.append(reserva_pk)
+        if conflicto is not None:
+            conflictos.append(conflicto)
+    return {"confirmadas": confirmadas, "conflictos": conflictos}
+
+
+def mover_pendientes(
+    campania: Campania,
+    inicio_anterior: date,
+    fin_anterior: date,
+    usuario: AbstractBaseUser | AnonymousUser,
+) -> list[int]:
+    """Lleva a las fechas actuales de la campaña sus Pendientes con las fechas anteriores (HU-058).
+
+    Solo mueve las que tenían exactamente las fechas anteriores de la campaña: una tanda cargada
+    con otras fechas no se pisa. Las Confirmadas no se tocan. Como toda edición de una Pendiente,
+    no valida cupo (RN-002); eso pasa al confirmar.
+    """
+    if campania.fecha_inicio is None or campania.fecha_fin is None:
+        raise ValidationError({"campania": "La campaña no tiene fechas."})
+    movidas: list[int] = []
+    with transaction.atomic():
+        reservas = Reserva.objects.select_related("cartel__formato", "campania__marca").filter(
+            campania=campania,
+            estado=Reserva.Estado.PENDIENTE,
+            fecha_inicio=inicio_anterior,
+            fecha_fin=fin_anterior,
+        )
+        for reserva in reservas.order_by("id"):
+            anteriores = {
+                "fecha_inicio": str(reserva.fecha_inicio),
+                "fecha_fin": str(reserva.fecha_fin),
+            }
+            reserva.fecha_inicio = campania.fecha_inicio
+            reserva.fecha_fin = campania.fecha_fin
+            reserva.save()
+            nuevos = {
+                "fecha_inicio": str(reserva.fecha_inicio),
+                "fecha_fin": str(reserva.fecha_fin),
+            }
+            auditoria_services.registrar_cambios("reserva", reserva.pk, anteriores, nuevos, usuario)
+            movidas.append(reserva.pk)
+    return movidas

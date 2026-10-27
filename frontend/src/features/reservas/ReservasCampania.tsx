@@ -4,7 +4,7 @@ import { formatearFecha } from '../../shared/fechas'
 import type { Cartel } from '../inventario/types'
 import ReservaForm from './ReservaForm'
 import type { ReservaInput } from './ReservaForm'
-import type { Reserva } from './types'
+import type { Reserva, ResultadoConfirmacion } from './types'
 import { etiquetaEstadoReserva } from './types'
 import CostosReserva from '../costos/CostosReserva'
 import { usePuedeEditar } from '../../shared/sesion'
@@ -14,9 +14,12 @@ type Props = {
   /** Cambia cuando se crean reservas desde otra sección (por ejemplo, "Agregar carteles"). */
   revisionExterna?: number
   onCambio?: () => void
+  /** "Confirmar reservas" solo se ofrece con la campaña Confirmada (HU-059). */
+  campaniaConfirmada?: boolean
 }
 
-export default function ReservasCampania({ campaniaId, revisionExterna = 0, onCambio }: Props) {
+export default function ReservasCampania(props: Props) {
+  const { campaniaId, revisionExterna = 0, onCambio, campaniaConfirmada = false } = props
   const puedeEditar = usePuedeEditar()
   const [reservas, setReservas] = useState<Reserva[]>([])
   const [carteles, setCarteles] = useState<Cartel[]>([])
@@ -25,6 +28,8 @@ export default function ReservasCampania({ campaniaId, revisionExterna = 0, onCa
   const [editing, setEditing] = useState<Reserva | 'new' | null>(null)
   const [costosDe, setCostosDe] = useState<number | null>(null)
   const [revision, setRevision] = useState(0)
+  const [confirmacion, setConfirmacion] = useState<ResultadoConfirmacion | null>(null)
+  const [confirmando, setConfirmando] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -70,16 +75,49 @@ export default function ReservasCampania({ campaniaId, revisionExterna = 0, onCa
     onCambio?.()
   }
 
+  async function confirmarReservas() {
+    setConfirmando(true)
+    try {
+      const resultado = await apiWrite<ResultadoConfirmacion>(
+        '/api/reservas/reservas/confirmar-en-bloque/',
+        'POST',
+        { campania: campaniaId },
+      )
+      setConfirmacion(resultado)
+      setError('')
+      setRevision((current) => current + 1)
+      onCambio?.()
+    } catch {
+      setError('No se pudieron confirmar las reservas.')
+    } finally {
+      setConfirmando(false)
+    }
+  }
+
+  const hayPendientes = reservas.some((item) => item.estado === 'pendiente')
+
   return (
     <div className="card section-gap">
       <div className="section-heading">
         <h3>Reservas</h3>
         {puedeEditar && (
-          <button className="button-primary" onClick={() => setEditing('new')}>
-            Nueva reserva
-          </button>
+          <div className="row-actions">
+            {campaniaConfirmada && hayPendientes && (
+              <button
+                className="button-primary"
+                onClick={() => void confirmarReservas()}
+                disabled={confirmando}
+              >
+                Confirmar reservas
+              </button>
+            )}
+            <button className="button-primary" onClick={() => setEditing('new')}>
+              Nueva reserva
+            </button>
+          </div>
         )}
       </div>
+      {confirmacion && <ResumenConfirmacion resultado={confirmacion} />}
       {editing !== null && (
         <ReservaForm
           key={editing === 'new' ? 'new' : editing.id}
@@ -140,6 +178,29 @@ export default function ReservasCampania({ campaniaId, revisionExterna = 0, onCa
         </table>
       )}
       {costosDe !== null && <CostosReserva reservaId={costosDe} />}
+    </div>
+  )
+}
+
+function ResumenConfirmacion({ resultado }: { resultado: ResultadoConfirmacion }) {
+  const { confirmadas, conflictos } = resultado
+  return (
+    <div role="status" aria-label="Resultado de la confirmación">
+      <p>Se confirmaron {confirmadas.length} reservas.</p>
+      {conflictos.length > 0 && (
+        <>
+          <p className="error">{conflictos.length} quedaron Pendientes por falta de cupo:</p>
+          <ul aria-label="Conflictos">
+            {conflictos.map((item) => (
+              <li key={item.reserva}>
+                {item.cartel_nombre}, {formatearFecha(item.fecha_inicio)} →{' '}
+                {formatearFecha(item.fecha_fin)}: ocupado por{' '}
+                {item.ocupada_por.map((otra) => otra.campania_nombre).join(', ')}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   )
 }

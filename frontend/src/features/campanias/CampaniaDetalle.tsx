@@ -73,6 +73,7 @@ export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props)
       <ReservasCampania
         campaniaId={campania.id}
         revisionExterna={revisionReservas}
+        campaniaConfirmada={campania.estado === 'confirmada'}
         onCambio={() => setRevisionPosiciones((actual) => actual + 1)}
       />
       <RentabilidadCampania campaniaId={campania.id} />
