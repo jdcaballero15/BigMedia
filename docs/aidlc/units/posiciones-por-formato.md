@@ -92,4 +92,4 @@ de RN-002 (si la Pendiente bloquea o no): una Pendiente cuenta como reservada en
   `typecheck` y `build` en verde, `test:coverage` con 238 tests en verde y 92,22 % de líneas
   (89,41 % de sentencias); `pre-commit run --all-files` (gitleaks incluido) en verde.
   Espera revisión de Gonza o Juan Diego.
-- Gate 3 (PR): pedido por Gonza el 2026-10-27
+- Gate 3 (PR): #75, pedido por Gonza el 2026-10-27
