@@ -1,6 +1,6 @@
 # Unidad: Reabrir un ítem enviado
 
-- **Estado:** en curso · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
+- **Estado:** en revisión · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
 - **Origen:** HU-067 (RN-022) · **Rama:** `feature/facturacion-reabrir-item`
 
 ## Objetivo
@@ -65,5 +65,11 @@ Una en `facturacion`: cuatro campos opcionales en el ítem. No mueve datos.
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-27 — aprobado por Gonza
-- Gate 2 (verificación): pendiente
-- Gate 3 (PR): pendiente
+- Gate 2 (verificación): 2026-10-27 — `ruff format --check` (135 archivos) y `ruff check` sin
+  errores; `mypy backend` sin errores (135 archivos); `makemigrations --check` sin cambios;
+  `pytest --cov`: 767 tests en verde, coverage 96,89 %; frontend `format:check`, `lint`,
+  `typecheck` y `build` en verde, `test:coverage` con 327 tests en verde y 93,64 % de líneas
+  (91,18 % de sentencias); `pre-commit run --all-files` en verde. Aprobado por Gonza el
+  2026-10-27, con dos ajustes al plan: un quinto campo, `valores_al_reabrir` (el ítem como sale
+  en la planilla al reabrirlo), y el aviso de reenvío compara las columnas de la planilla.
+- Gate 3 (PR): pedido por Gonza el 2026-10-27
