@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import io
+import logging
+import smtplib
 from datetime import date
 from decimal import Decimal
+from functools import partial
 from typing import Any
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
+from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.db.models import Count, DecimalField, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
@@ -33,6 +37,8 @@ from .models import (
 )
 
 CERO = Decimal("0.00")
+
+logger = logging.getLogger(__name__)
 
 
 def _dias_solape(inicio: date, fin: date, desde: date, hasta: date) -> int:
@@ -237,7 +243,8 @@ TRANSICIONES_ITEM: dict[str, set[str]] = {
     ItemFacturacion.Estado.FACTURADO: set(),
     ItemFacturacion.Estado.ANULADO: set(),
 }
-# Fuera de Borrador solo se cambia el estado (y el número al facturar); reabrir es HU-067.
+# Fuera de Borrador solo se cambia el estado (y el número al facturar); para corregir un Enviado
+# se lo reabre (HU-067).
 CAMPOS_FUERA_DE_BORRADOR = {"estado", "numero_factura"}
 
 
@@ -507,16 +514,25 @@ def enviar_a_facturar(
         envio = EnvioFacturacion.objects.create(mes=mes, enviado_por_id=usuario.pk)
         envio.items.set(completos)
         for item in completos:
-            item.estado = ItemFacturacion.Estado.ENVIADO
-            item.save(update_fields=["estado", "actualizado_en"])
-            auditoria_services.registrar_cambios(
-                "item_facturacion",
-                item.pk,
-                {"estado": ItemFacturacion.Estado.BORRADOR.value},
-                {"estado": ItemFacturacion.Estado.ENVIADO.value},
-                usuario,
-            )
+            _marcar_enviado(item, usuario)
     return envio, incompletos
+
+
+def _marcar_enviado(item: ItemFacturacion, usuario: AbstractBaseUser) -> None:
+    """Pasa el ítem a Enviado; si estaba reabierto, lo marca reenviado y avisa (HU-067)."""
+    item.estado = ItemFacturacion.Estado.ENVIADO
+    item.reenviado = item.reabierto_en is not None
+    item.save(update_fields=["estado", "reenviado", "actualizado_en"])
+    auditoria_services.registrar_cambios(
+        "item_facturacion",
+        item.pk,
+        {"estado": ItemFacturacion.Estado.BORRADOR.value},
+        {"estado": ItemFacturacion.Estado.ENVIADO.value},
+        usuario,
+    )
+    if item.reenviado:
+        asunto, cuerpo = _aviso_de_reenvio(item)
+        transaction.on_commit(partial(avisar_a_administracion, asunto, cuerpo))
 
 
 def ordenes_de_compra_duplicadas(item: ItemFacturacion) -> list[dict[str, Any]]:
@@ -671,7 +687,7 @@ def _numero(valor: Decimal | None) -> float | None:
 
 # Columnas de la planilla para Administración (RN-024, provisoria hasta tener la planilla real):
 # las de hoy y, al final, las nuevas: orden de compra (HU-062), grupo de factura (HU-064), y
-# costos y neto final (HU-063).
+# costos y neto final (HU-063), y la marca de reenviado (HU-067).
 COLUMNAS_PLANILLA: list[tuple[str, Any]] = [
     ("Mes", lambda i: i.mes.strftime("%Y-%m") if i.mes else None),
     ("Cliente", lambda i: i.cliente.nombre_visible if i.cliente else None),
@@ -696,6 +712,7 @@ COLUMNAS_PLANILLA: list[tuple[str, Any]] = [
     ("Grupo de factura", lambda i: i.grupo.codigo if i.grupo else None),
     ("Costos", lambda i: _numero(costo_total(i))),
     ("Neto final", lambda i: _numero(neto_final(i))),
+    ("Reenviado", lambda i: "Sí" if i.reenviado else None),
 ]
 
 
@@ -727,3 +744,106 @@ def planilla_xlsx(envio: EnvioFacturacion) -> bytes:
     salida = io.BytesIO()
     libro.save(salida)
     return salida.getvalue()
+
+
+# --- Reabrir un ítem enviado y avisar a Administración (HU-067, RN-022) ---
+
+
+def _como_texto(valor: Any) -> str:
+    if valor is None:
+        return ""
+    if isinstance(valor, float):
+        return f"{valor:.2f}"
+    if isinstance(valor, date):
+        return valor.isoformat()
+    return str(valor)
+
+
+def valores_de_planilla(item: ItemFacturacion) -> dict[str, str]:
+    """Lo que Administración ve del ítem en la planilla, como texto, para comparar."""
+    return {
+        titulo: _como_texto(valor(item))
+        for titulo, valor in COLUMNAS_PLANILLA
+        if titulo != "Reenviado"
+    }
+
+
+def avisar_a_administracion(asunto: str, cuerpo: str) -> None:
+    """Manda el aviso por correo (RN-022). Si no hay dirección o falla, lo deja en el log."""
+    destino = settings.FACTURACION_CORREO_ADMINISTRACION
+    if not destino:
+        logger.warning(
+            "Aviso a Administración sin enviar (falta FACTURACION_CORREO_ADMINISTRACION): %s",
+            asunto,
+        )
+        return
+    try:
+        send_mail(asunto, cuerpo, None, [destino])
+    except (smtplib.SMTPException, OSError):
+        logger.exception("No se pudo enviar el aviso a Administración: %s", asunto)
+
+
+def _titulo(item: ItemFacturacion) -> str:
+    return f"Ítem #{item.pk} · {item.descripcion or 'Sin descripción'}"
+
+
+def _reapertura(item: ItemFacturacion) -> str:
+    cuando = timezone.localtime(item.reabierto_en).strftime("%d/%m/%Y %H:%M")
+    quien = item.reabierto_por.get_username() if item.reabierto_por else "—"
+    return f"Reabierto por {quien} el {cuando}.\nMotivo: {item.motivo_reapertura}"
+
+
+def _aviso_de_reapertura(item: ItemFacturacion) -> tuple[str, str]:
+    mes = item.mes.strftime("%Y-%m") if item.mes else "sin mes"
+    cuerpo = (
+        f"{_titulo(item)} (mes {mes}) se reabrió para corregirlo.\n"
+        f"{_reapertura(item)}\n\n"
+        "No lo facturen hasta que se reenvíe: les va a llegar otro aviso con lo que cambió."
+    )
+    return f"Ítem #{item.pk} reabierto: no facturar hasta el reenvío", cuerpo
+
+
+def _aviso_de_reenvio(item: ItemFacturacion) -> tuple[str, str]:
+    antes = item.valores_al_reabrir
+    ahora = valores_de_planilla(item)
+    cambios = [
+        f"- {campo}: {antes.get(campo, '') or '(vacío)'} → {valor or '(vacío)'}"
+        for campo, valor in ahora.items()
+        if antes.get(campo, "") != valor
+    ]
+    detalle = "\n".join(cambios) if cambios else "Sin cambios desde la reapertura."
+    cuerpo = f"{_titulo(item)} se reenvió a facturar.\n{_reapertura(item)}\n\nCambios:\n{detalle}"
+    return f"Ítem #{item.pk} reenviado a facturar", cuerpo
+
+
+def reabrir(item_id: int, motivo: str, usuario: AbstractBaseUser) -> ItemFacturacion:
+    """Vuelve a Borrador un ítem Enviado para corregirlo, con motivo y auditado (HU-067).
+
+    Guarda cómo estaba en la planilla para avisar qué cambió al reenviarlo. El aviso sale al
+    confirmarse la transacción.
+    """
+    motivo = motivo.strip()[:200]
+    if not motivo:
+        raise ValidationError({"motivo": "Indicá el motivo de la reapertura."})
+    with transaction.atomic():
+        item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
+        if item.estado != ItemFacturacion.Estado.ENVIADO:
+            raise ValidationError({"estado": "Solo se reabre un ítem Enviado a facturar."})
+        anteriores = {"estado": item.estado, "motivo_reapertura": item.motivo_reapertura}
+        item.valores_al_reabrir = valores_de_planilla(item)
+        item.estado = ItemFacturacion.Estado.BORRADOR
+        item.reabierto_en = timezone.now()
+        item.reabierto_por_id = usuario.pk
+        item.motivo_reapertura = motivo
+        item.reenviado = False
+        item.save()
+        auditoria_services.registrar_cambios(
+            "item_facturacion",
+            item.pk,
+            anteriores,
+            {"estado": item.estado, "motivo_reapertura": motivo},
+            usuario,
+        )
+        asunto, cuerpo = _aviso_de_reapertura(item)
+        transaction.on_commit(partial(avisar_a_administracion, asunto, cuerpo))
+    return item

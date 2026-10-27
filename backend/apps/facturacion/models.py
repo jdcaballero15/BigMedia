@@ -166,6 +166,20 @@ class ItemFacturacion(models.Model):
     )
     estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.BORRADOR)
     numero_factura = models.CharField(max_length=50, blank=True)
+    # Reapertura de un ítem enviado (HU-067): quién, cuándo, por qué, y la planilla de ese momento
+    # para avisar a Administración qué cambió al reenviarlo.
+    reabierto_en = models.DateTimeField(null=True, blank=True, editable=False)
+    reabierto_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="items_facturacion_reabiertos",
+        null=True,
+        blank=True,
+        editable=False,
+    )
+    motivo_reapertura = models.CharField(max_length=200, blank=True, editable=False)
+    valores_al_reabrir = models.JSONField(default=dict, blank=True, editable=False)
+    reenviado = models.BooleanField(default=False, editable=False)
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

@@ -34,6 +34,9 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
     )
     grupo_codigo = serializers.CharField(source="grupo.codigo", read_only=True, default=None)
     orden_compra_pdf = serializers.SerializerMethodField()
+    reabierto_por_nombre = serializers.CharField(
+        source="reabierto_por.username", read_only=True, default=None
+    )
     costo_total = serializers.SerializerMethodField()
     neto_final = serializers.SerializerMethodField()
     # Se acepta con o sin guiones y se guardan los 11 dígitos (como en clientes).
@@ -76,6 +79,10 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
             "grupo_codigo",
             "estado",
             "numero_factura",
+            "reabierto_en",
+            "reabierto_por_nombre",
+            "motivo_reapertura",
+            "reenviado",
             "creado_por_nombre",
             "creado_en",
             "actualizado_en",

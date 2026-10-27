@@ -139,6 +139,7 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
         "tipo_venta",
         "creado_por",
         "grupo",
+        "reabierto_por",
         "orden_compra_pdf",
     ).defer("orden_compra_pdf__contenido")
     serializer_class = ItemFacturacionSerializer
@@ -192,6 +193,17 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
         item = get_object_or_404(self.get_queryset(), pk=pk)
         try:
             services.quitar_del_grupo(item.pk, _usuario(request))
+        except DjangoValidationError as error:
+            raise _a_drf(error) from error
+        return Response(self.get_serializer(self.get_queryset().get(pk=item.pk)).data)
+
+    @action(detail=True, methods=["post"])
+    def reabrir(self, request: Request, pk: str) -> Response:
+        """Vuelve a Borrador un ítem Enviado, con motivo, y avisa a Administración (HU-067)."""
+        item = get_object_or_404(ItemFacturacion.objects.only("id"), pk=pk)
+        motivo = request.data.get("motivo") if isinstance(request.data, dict) else None
+        try:
+            services.reabrir(item.pk, motivo if isinstance(motivo, str) else "", _usuario(request))
         except DjangoValidationError as error:
             raise _a_drf(error) from error
         return Response(self.get_serializer(self.get_queryset().get(pk=item.pk)).data)
