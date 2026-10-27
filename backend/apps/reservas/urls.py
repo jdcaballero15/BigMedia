@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     CalendarioView,
+    CartelesParaTandaView,
     DisponibilidadView,
     OcupacionView,
     PanelView,
@@ -22,6 +23,7 @@ urlpatterns = [
     path("calendario/", CalendarioView.as_view(), name="calendario"),
     path("panel/", PanelView.as_view(), name="panel"),
     path("reparto/", RepartoView.as_view(), name="reparto"),
+    path("carteles-para-tanda/", CartelesParaTandaView.as_view(), name="carteles-para-tanda"),
     path("seguimiento/", SeguimientoView.as_view(), name="seguimiento"),
     path("parametros/", ParametrosView.as_view(), name="parametros"),
     path("reporte-ocupacion/", ReporteOcupacionView.as_view(), name="reporte-ocupacion"),

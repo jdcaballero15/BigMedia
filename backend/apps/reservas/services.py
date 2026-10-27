@@ -6,11 +6,13 @@ from typing import Any
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, F, Q, QuerySet
 from django.utils import timezone
 
 from apps.campanias.models import Campania
 from apps.inventario.models import Cartel, Formato
+from config.texto import normalizar_busqueda
 
 from .models import MESES_ABREV, ParametrosDisponibilidad, Reserva
 
@@ -537,3 +539,144 @@ def seguimiento_de_campania(campania: Campania) -> list[dict[str, Any]]:
             _fila_seguimiento(None, formato.pk, formato.nombre, None, reservadas[formato.pk])
         )
     return filas
+
+
+def _reservas_por_cartel(
+    carteles: QuerySet[Cartel], desde: date, hasta: date
+) -> dict[int, list[Reserva]]:
+    """Reservas que ocupan y tocan el rango, de todos los carteles en una sola consulta."""
+    reservas = Reserva.objects.filter(
+        cartel__in=carteles,
+        estado__in=Reserva.ESTADOS_QUE_OCUPAN,
+        fecha_inicio__lte=hasta,
+        fecha_fin__gte=desde,
+    )
+    por_cartel: dict[int, list[Reserva]] = {}
+    for reserva in reservas:
+        por_cartel.setdefault(reserva.cartel_id, []).append(reserva)
+    return por_cartel
+
+
+def _fila_tanda(
+    cartel: Cartel,
+    solapadas: list[Reserva],
+    campania: Campania,
+    rango: tuple[date, date],
+    parametros: ParametrosDisponibilidad,
+) -> dict[str, Any] | None:
+    """Fila de "Agregar carteles", o None si el cartel no tiene cupo libre en el rango."""
+    bloquean = _estados_que_bloquean(parametros.tentativa_bloquea)
+    ocupados = _pico_en_rango(
+        [r for r in solapadas if r.estado in bloquean], *rango, parametros.borde_inclusivo
+    )
+    if ocupados >= cartel.capacidad:
+        return None
+    tentativas = sum(
+        1 for r in solapadas if r.estado not in bloquean and r.campania_id != campania.pk
+    )
+    return {
+        "id": cartel.pk,
+        "nombre_visible": cartel.nombre_visible,
+        "zona_nombre": cartel.zona.nombre,
+        "proveedor_nombre": cartel.proveedor.nombre if cartel.proveedor else None,
+        "tarifa_lista": str(cartel.tarifa_lista) if cartel.tarifa_lista is not None else None,
+        "capacidad": cartel.capacidad,
+        "ocupados": ocupados,
+        "tentativas": tentativas,
+        "en_campania": any(r.campania_id == campania.pk for r in solapadas),
+    }
+
+
+def carteles_para_tanda(
+    campania: Campania,
+    formato: Formato,
+    desde: date,
+    hasta: date,
+    filtros: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Carteles del formato con cupo libre en el rango, para "Agregar carteles" (HU-056).
+
+    "Libre" es lo mismo que exige la validación dura (HU-031): pico diario (RN-003), día de borde
+    (RN-001) y Pendientes según el parámetro (RN-002). Las Pendientes de otras campañas que no
+    bloquean se informan como `tentativas`; `en_campania` marca los que la campaña ya reservó.
+    `filtros` admite `zona`, `proveedor` (IDs) y `direccion` (parcial, sin tildes).
+    """
+    filtros = filtros or {}
+    parametros = parametros_disponibilidad()
+    fin = _fin_efectivo(hasta, parametros.borde_inclusivo)
+    carteles = Cartel.objects.filter(formato=formato, estado__es_baja=False)
+    for campo in ("zona", "proveedor"):
+        if filtros.get(campo) is not None:
+            carteles = carteles.filter(**{f"{campo}_id": filtros[campo]})
+    if filtros.get("direccion"):
+        buscado = normalizar_busqueda(str(filtros["direccion"]).strip())
+        carteles = carteles.filter(direccion_busqueda__icontains=buscado)
+    por_cartel = _reservas_por_cartel(carteles, desde, hasta)
+    filas = []
+    for cartel in carteles.select_related("formato", "zona", "proveedor").order_by(
+        "direccion", "id"
+    ):
+        solapadas = [
+            r
+            for r in por_cartel.get(cartel.pk, [])
+            if r.fecha_inicio <= fin
+            and desde <= _fin_efectivo(r.fecha_fin, parametros.borde_inclusivo)
+        ]
+        fila = _fila_tanda(cartel, solapadas, campania, (desde, fin), parametros)
+        if fila is not None:
+            filas.append(fila)
+    return filas
+
+
+def _crear_en_tanda(
+    campania: Campania, cartel_id: int, desde: date, hasta: date
+) -> tuple[str, dict[str, Any]]:
+    """Crea la reserva de un cartel de la tanda; devuelve en qué grupo del resumen va."""
+    with transaction.atomic():
+        # Bloquea solo el cartel, como el alta individual (HU-034).
+        cartel = (
+            Cartel.objects.select_for_update(of=("self",))
+            .select_related("estado", "formato")
+            .filter(pk=cartel_id)
+            .first()
+        )
+        if cartel is None:
+            return "fallidas", {"cartel": cartel_id, "motivo": "No existe el cartel."}
+        if cartel.estado.es_baja:
+            motivo = "El cartel está de baja: no se puede reservar."
+            return "fallidas", {"cartel": cartel_id, "motivo": motivo}
+        existente = (
+            Reserva.objects.filter(
+                campania=campania, cartel=cartel, fecha_inicio=desde, fecha_fin=hasta
+            )
+            .exclude(estado=Reserva.Estado.CANCELADA)
+            .first()
+        )
+        if existente is not None:
+            return "existentes", {"cartel": cartel_id, "reserva": existente.pk}
+        tarifa = cartel.tarifa_lista
+        reserva = Reserva(
+            campania=campania,
+            cartel=cartel,
+            fecha_inicio=desde,
+            fecha_fin=hasta,
+            precio_alquiler=tarifa if tarifa is not None else Decimal("0.00"),
+        )
+        reserva.save()
+    return "creadas", {"cartel": cartel_id, "reserva": reserva.pk}
+
+
+def crear_reservas_en_bloque(
+    campania: Campania, carteles: list[int], desde: date, hasta: date
+) -> dict[str, list[dict[str, Any]]]:
+    """Una reserva Pendiente por cartel (HU-057), con la tarifa de lista y el nombre autogenerado.
+
+    Es idempotente: una reserva no Cancelada de la misma campaña, cartel y fechas se informa como
+    existente y no se duplica. Cada cartel va en su propia transacción, así una falla no frena al
+    resto. Como en el alta individual, crear una Pendiente no valida cupo: eso pasa al confirmar.
+    """
+    resultado: dict[str, list[dict[str, Any]]] = {"creadas": [], "existentes": [], "fallidas": []}
+    for cartel_id in dict.fromkeys(carteles):
+        grupo, item = _crear_en_tanda(campania, cartel_id, desde, hasta)
+        resultado[grupo].append(item)
+    return resultado

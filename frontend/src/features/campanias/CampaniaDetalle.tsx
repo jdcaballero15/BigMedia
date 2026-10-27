@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import ReservasCampania from '../reservas/ReservasCampania'
 import RentabilidadCampania from '../costos/RentabilidadCampania'
 import InteraccionesLista from './InteraccionesLista'
@@ -15,6 +16,9 @@ type Props = {
 
 export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props) {
   const puedeEditar = usePuedeEditar()
+  // Las posiciones y la lista de reservas se recargan cuando la otra crea o edita reservas.
+  const [revisionPosiciones, setRevisionPosiciones] = useState(0)
+  const [revisionReservas, setRevisionReservas] = useState(0)
   const periodo =
     campania.fecha_inicio && campania.fecha_fin
       ? `${formatearFecha(campania.fecha_inicio)} → ${formatearFecha(campania.fecha_fin)}`
@@ -59,8 +63,18 @@ export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props)
           </div>
         </dl>
       </div>
-      <PosicionesPorFormato campaniaId={campania.id} />
-      <ReservasCampania campaniaId={campania.id} />
+      <PosicionesPorFormato
+        campaniaId={campania.id}
+        fechaInicio={campania.fecha_inicio}
+        fechaFin={campania.fecha_fin}
+        revisionReservas={revisionPosiciones}
+        onReservasCreadas={() => setRevisionReservas((actual) => actual + 1)}
+      />
+      <ReservasCampania
+        campaniaId={campania.id}
+        revisionExterna={revisionReservas}
+        onCambio={() => setRevisionPosiciones((actual) => actual + 1)}
+      />
       <RentabilidadCampania campaniaId={campania.id} />
       <InteraccionesLista
         filtro={{ campania: campania.id }}
