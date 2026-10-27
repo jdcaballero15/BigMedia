@@ -103,4 +103,4 @@ Ninguna.
   frontend `format:check`, `lint`, `typecheck` y `build` en verde, `test:coverage` con 266 tests
   en verde y 92,76 % de líneas (90,06 % de sentencias); `pre-commit run --all-files` en verde.
   Espera revisión de Gonza o Juan Diego.
-- Gate 3 (PR): pedido por Gonza el 2026-10-27
+- Gate 3 (PR): #78, pedido por Gonza el 2026-10-27
