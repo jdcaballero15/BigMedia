@@ -7,6 +7,9 @@ export const ESTADOS_RESERVA: { value: EstadoReserva; label: string }[] = [
   { value: 'cancelada', label: 'Cancelada' },
 ]
 
+/** Estados con los que puede nacer una reserva (HU-035). */
+export const ESTADOS_INICIALES: EstadoReserva[] = ['pendiente', 'confirmada']
+
 export function etiquetaEstadoReserva(estado: EstadoReserva): string {
   return ESTADOS_RESERVA.find((item) => item.value === estado)?.label ?? estado
 }

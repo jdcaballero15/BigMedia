@@ -47,21 +47,17 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
     serializer_class = ReservaSerializer
 
     def perform_create(self, serializer: BaseSerializer[Reserva]) -> None:
-        necesita = serializer.validated_data.get("estado") == Reserva.Estado.CONFIRMADA
+        estado = serializer.validated_data.get("estado", Reserva.Estado.PENDIENTE)
+        necesita = services.necesita_validar_cupo(None, estado, cambia_ocupacion=True)
         self._guardar_con_disponibilidad(serializer, necesita)
 
     def perform_update(self, serializer: BaseSerializer[Reserva]) -> None:
         datos = serializer.validated_data
         instancia = cast(Reserva, serializer.instance)
         nuevo_estado = datos.get("estado", instancia.estado)
-        va_a_confirmada = datos.get("estado") == Reserva.Estado.CONFIRMADA
-        sigue_confirmada = (
-            instancia.estado == Reserva.Estado.CONFIRMADA
-            and nuevo_estado == Reserva.Estado.CONFIRMADA
-        )
         cambia_ocupacion = any(c in datos for c in ("fecha_inicio", "fecha_fin", "cartel"))
-        # No se revalida si solo cambia un precio de una confirmada (matriz caso 13).
-        necesita = va_a_confirmada or (sigue_confirmada and cambia_ocupacion)
+        # No se revalida si solo cambia un precio (matriz caso 13).
+        necesita = services.necesita_validar_cupo(instancia.estado, nuevo_estado, cambia_ocupacion)
         # El cambio y su auditoría en la misma transacción: nunca un cambio sin su registro.
         anteriores = _campos_auditados(instancia)
         with transaction.atomic():

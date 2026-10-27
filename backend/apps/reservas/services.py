@@ -30,6 +30,32 @@ def validar_transicion(actual: str, nuevo: str) -> None:
         raise ValidationError({"estado": f"No se puede pasar de {actual} a {nuevo}."})
 
 
+# Una reserva nace Pendiente o Confirmada (HU-035); las históricas Finalizadas entran por HU-038.
+ESTADOS_INICIALES = {Reserva.Estado.PENDIENTE, Reserva.Estado.CONFIRMADA}
+
+# Estados que ocupan cupo de forma dura y por eso pasan por la validación (HU-031).
+ESTADOS_CON_VALIDACION_DURA = {Reserva.Estado.CONFIRMADA, Reserva.Estado.FINALIZADA}
+
+
+def validar_estado_inicial(estado: str) -> None:
+    if estado not in ESTADOS_INICIALES:
+        raise ValidationError(
+            {"estado": "Una reserva nueva solo puede crearse Pendiente o Confirmada."}
+        )
+
+
+def necesita_validar_cupo(anterior: str | None, nuevo: str, cambia_ocupacion: bool) -> bool:
+    """Si guardar la reserva exige validar el cupo. `anterior` es None en un alta.
+
+    Valida cuando la reserva queda ocupando de forma dura y antes no lo hacía, o cuando ya
+    ocupaba y cambian sus fechas o su cartel. Confirmada -> Finalizada sin otros cambios no
+    revalida: ese cupo ya estaba validado.
+    """
+    if nuevo not in ESTADOS_CON_VALIDACION_DURA:
+        return False
+    return anterior not in ESTADOS_CON_VALIDACION_DURA or cambia_ocupacion
+
+
 def ocupacion_del_cartel(cartel: Cartel, dia: date | None = None) -> dict[str, int]:
     """Cupos ocupados vigentes sobre la capacidad del cartel, al momento (HU-040)."""
     dia = dia or timezone.localdate()
