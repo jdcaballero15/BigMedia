@@ -136,3 +136,15 @@ def test_carga_demo_sin_clave_no_crea_usuarios(monkeypatch):
 
     assert not User.objects.filter(username__in=USUARIOS_DEMO).exists()
     assert RegistroAuditoria.objects.filter(origen=RegistroAuditoria.Origen.SISTEMA).exists()
+
+
+@pytest.mark.django_db
+def test_carga_campanias_con_reservas_confirmadas_quedan_confirmadas():
+    call_command("cargar_datos_ejemplo")
+    confirmadas = Reserva.objects.filter(
+        estado__in=[Reserva.Estado.CONFIRMADA, Reserva.Estado.FINALIZADA]
+    )
+    estados = set(
+        Campania.objects.filter(reservas__in=confirmadas).values_list("estado", flat=True)
+    )
+    assert estados == {Campania.Estado.CONFIRMADA}
