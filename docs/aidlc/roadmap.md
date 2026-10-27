@@ -4,9 +4,13 @@ Corto y reordenable: la épica en curso, las próximas y lo que queda para más 
 cuando cambian las prioridades de Big Media; cada cambio de orden se anota abajo con fecha y motivo.
 Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/historias-de-usuario.md).
 
-## Fecha de entrega
+## Fechas de entrega
 
-**Viernes 30/10/2026** (definida por Gonza el 27/10/2026).
+Definidas por Gonza el 27/10/2026.
+
+- **Viernes 30/10/2026:** E10 completa, las historias Must de E11 (HU-060, HU-061, HU-065 y
+  HU-066) y E9 Entrega y traspaso.
+- **Miércoles 04/11/2026:** las historias Should de E11 (HU-062, HU-063, HU-064 y HU-067).
 
 ## Hecho
 
@@ -42,13 +46,14 @@ Las épicas vienen del mapa de [`inputs/historias-de-usuario.md`](inputs/histori
 
 ## Próximas
 
-- A definir con Juan Diego.
+- E11 Facturación mensual, Must (HU-060, HU-061, HU-065, HU-066), y E9 Entrega y traspaso: para el 30/10.
+- E11 Facturación mensual, Should (HU-062, HU-063, HU-064, HU-067): para el 04/11.
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
 ## Más adelante
 
-E9 Entrega y traspaso · E11 Facturación mensual.
+—
 
 E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y nunca adentro.
 
@@ -63,3 +68,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-10-27 | E3 pasa a Hecho con HU-020; las próximas quedan a definir | Interacciones comerciales quedaron mergeadas (PR #73) |
 | 2026-10-27 | E10 pasa a En curso, partida en tres unidades | Gonza eligió E10: se apoya en campañas y reservas y es lo que más trabajo manual ahorra |
 | 2026-10-27 | Se fija la fecha de entrega: viernes 30/10/2026 | Definida por Gonza |
+| 2026-10-27 | E11 se parte: las Must y E9 para el 30/10, las Should para el 04/11 | No entra todo para el 30/10; Gonza fijó una segunda entrega |
