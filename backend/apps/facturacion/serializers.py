@@ -1,9 +1,11 @@
+from decimal import Decimal
 from typing import Any
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from apps.clientes.validators import normalizar_cuit, validar_cuit
+from apps.costos.models import Costo
 
 from . import services
 from .models import (
@@ -32,6 +34,8 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
     )
     grupo_codigo = serializers.CharField(source="grupo.codigo", read_only=True, default=None)
     orden_compra_pdf = serializers.SerializerMethodField()
+    costo_total = serializers.SerializerMethodField()
+    neto_final = serializers.SerializerMethodField()
     # Se acepta con o sin guiones y se guardan los 11 dígitos (como en clientes).
     cuit_facturacion = serializers.CharField(max_length=13, allow_blank=True, required=False)
 
@@ -56,6 +60,8 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
             "alicuota_iva",
             "iva",
             "total",
+            "costo_total",
+            "neto_final",
             "tipo_servicio",
             "tipo_soporte",
             "sector",
@@ -83,6 +89,13 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
         except OrdenCompraPdf.DoesNotExist:
             return None
         return {"nombre": pdf.nombre, "tamanio": pdf.tamanio}
+
+    def get_costo_total(self, item: ItemFacturacion) -> str:
+        return f"{services.costo_total(item):.2f}"
+
+    def get_neto_final(self, item: ItemFacturacion) -> str | None:
+        valor = services.neto_final(item)
+        return f"{valor:.2f}" if valor is not None else None
 
     def get_campania_nombre(self, item: ItemFacturacion) -> str | None:
         return str(item.campania) if item.campania is not None else None
@@ -168,3 +181,58 @@ class GrupoFacturaSerializer(serializers.ModelSerializer[GrupoFactura]):
 
     def get_items(self, grupo: GrupoFactura) -> list[int]:
         return sorted(item.pk for item in grupo.items.all())
+
+
+class CostoDelItemSerializer(serializers.ModelSerializer[Costo]):
+    """Costo de un ítem a facturar (HU-063): propio del ítem o de una reserva vinculada."""
+
+    tipo_nombre = serializers.CharField(source="get_tipo_display", read_only=True)
+    proveedor_nombre = serializers.CharField(
+        source="proveedor.nombre", read_only=True, default=None
+    )
+    cartel_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Costo
+        fields = [
+            "id",
+            "tipo",
+            "tipo_nombre",
+            "proveedor",
+            "proveedor_nombre",
+            "destinatario",
+            "porcentaje",
+            "monto",
+            "fecha",
+            "reserva",
+            "cartel_nombre",
+            "anulado",
+            "motivo_anulacion",
+        ]
+        read_only_fields = fields
+
+    def get_cartel_nombre(self, costo: Costo) -> str | None:
+        return costo.reserva.cartel.nombre_visible if costo.reserva is not None else None
+
+
+class NuevoCostoSerializer(serializers.Serializer[dict[str, Any]]):
+    """Alta de un costo propio del ítem: monto fijo o porcentaje del neto (HU-063)."""
+
+    tipo = serializers.ChoiceField(choices=Costo.Tipo.choices)
+    proveedor = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    destinatario = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    monto = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        min_value=Decimal("0.01"),
+        required=False,
+        allow_null=True,
+    )
+    porcentaje = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        min_value=Decimal("0.01"),
+        max_value=Decimal("100"),
+        required=False,
+        allow_null=True,
+    )
