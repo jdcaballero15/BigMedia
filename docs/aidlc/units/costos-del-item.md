@@ -74,4 +74,4 @@ quedan iguales); en `facturacion`, `CostoDeItem`.
   2026-10-27, con estas decisiones: los costos se cargan, vinculan y anulan solo con el ítem en
   Borrador; un costo de reserva vinculado se anula desde Costos; un porcentaje sin neto da 0; el
   neto final del mes es el neto menos los costos.
-- Gate 3 (PR): pedido por Gonza el 2026-10-27
+- Gate 3 (PR): #82, pedido por Gonza el 2026-10-27
