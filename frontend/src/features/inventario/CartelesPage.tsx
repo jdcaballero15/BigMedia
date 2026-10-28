@@ -4,6 +4,7 @@ import type { Cartel, Catalogo, Estado, Formato, Proveedor } from './types'
 import CartelForm from './CartelForm'
 import type { CartelInput } from './CartelForm'
 import { usePuedeEditar } from '../../shared/sesion'
+import MenuFila from '../../shared/MenuFila'
 
 type Catalogos = {
   formatos: Formato[]
@@ -239,9 +240,9 @@ export default function CartelesPage() {
                 <th>Cartel</th>
                 <th>Formato</th>
                 <th>Zona</th>
-                <th>Proveedor</th>
+                <th className="col-secundaria">Proveedor</th>
                 <th>Estado</th>
-                <th>Capacidad</th>
+                <th className="col-secundaria">Capacidad</th>
                 <th>Tarifa de lista</th>
                 <th>Acciones</th>
               </tr>
@@ -252,9 +253,9 @@ export default function CartelesPage() {
                   <td className="primary-cell">{item.nombre_visible}</td>
                   <td>{item.formato_nombre}</td>
                   <td>{item.zona_nombre}</td>
-                  <td>{item.proveedor_nombre ?? '—'}</td>
+                  <td className="col-secundaria">{item.proveedor_nombre ?? '—'}</td>
                   <td>{item.estado_nombre}</td>
-                  <td>{item.capacidad}</td>
+                  <td className="col-secundaria">{item.capacidad}</td>
                   <td>{item.tarifa_lista ?? 'Sin tarifa'}</td>
                   <td className="row-actions">
                     {puedeEditar && (
@@ -262,12 +263,15 @@ export default function CartelesPage() {
                         Editar
                       </button>
                     )}
-                    {puedeEditar &&
-                      !catalogos.estados.find((state) => state.id === item.estado)?.es_baja && (
-                        <button className="button-ghost" onClick={() => void darDeBaja(item)}>
-                          Dar de baja
-                        </button>
-                      )}
+                    <MenuFila
+                      acciones={[
+                        !catalogos.estados.find((state) => state.id === item.estado)?.es_baja && {
+                          etiqueta: 'Dar de baja',
+                          onClick: () => void darDeBaja(item),
+                          edicion: true,
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

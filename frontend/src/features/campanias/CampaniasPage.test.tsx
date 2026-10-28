@@ -1,6 +1,7 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import CampaniasPage from './CampaniasPage'
+import { abrirAcciones } from '../../shared/pruebas'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 
@@ -98,7 +99,7 @@ test('al cambiar las fechas pregunta si mover las Pendientes', async () => {
     return undefined
   })
   render(<CampaniasPage />)
-  await screen.findByText('Verano 2027')
+  abrirAcciones((await screen.findByText('Verano 2027')).closest('tr')!)
   fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
   const form = screen.getByRole('form', { name: 'Formulario de campaña' })
   fireEvent.change(within(form).getByLabelText('Fecha de inicio'), {
@@ -123,7 +124,7 @@ test('guardar sin cambiar las fechas no pregunta', async () => {
     return undefined
   })
   render(<CampaniasPage />)
-  await screen.findByText('Verano 2027')
+  abrirAcciones((await screen.findByText('Verano 2027')).closest('tr')!)
   fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
   const form = screen.getByRole('form', { name: 'Formulario de campaña' })
   fireEvent.click(within(form).getByRole('button', { name: 'Guardar campaña' }))

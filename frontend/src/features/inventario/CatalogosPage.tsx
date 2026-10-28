@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { ApiError, apiGet, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import { usePuedeEditar } from '../../shared/sesion'
+import MenuFila from '../../shared/MenuFila'
 
 export type Categoria = 'zonas' | 'proveedores' | 'formatos' | 'estados'
 type Registro = {
@@ -297,11 +298,15 @@ export default function CatalogosPage({
                       Editar
                     </button>
                   )}
-                  {puedeEditar && row.activo && (
-                    <button className="button-ghost" onClick={() => void inactivate(row)}>
-                      Inactivar
-                    </button>
-                  )}
+                  <MenuFila
+                    acciones={[
+                      row.activo && {
+                        etiqueta: 'Inactivar',
+                        onClick: () => void inactivate(row),
+                        edicion: true,
+                      },
+                    ]}
+                  />
                 </td>
               </tr>
             ))}

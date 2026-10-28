@@ -34,9 +34,7 @@ export default function Login({ onLogin, mensaje }: LoginProps) {
 
   return (
     <div className="auth-shell">
-      <div className="brand-mark">
-        BM<span>.</span>
-      </div>
+      <div className="brand-mark">BM</div>
       <p className="eyebrow">Big Media Argentina</p>
       <h1>Inventario de carteles</h1>
       <p className="muted">Ingresá con tu usuario para administrar los espacios publicitarios.</p>

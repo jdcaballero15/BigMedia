@@ -4,6 +4,7 @@ import {
   MENSAJE_FECHA_INVALIDA,
   dateAIso,
   erroresDeFechas,
+  fechaLarga,
   formatearFecha,
   formatearPeriodo,
   isoADate,
@@ -76,4 +77,9 @@ test('erroresDeFechas_todasValidasOVacias_devuelveVacio', () => {
 
 test('dateAIso_fechaLocal_devuelveIso', () => {
   expect(dateAIso(new Date(2026, 0, 9))).toBe('2026-01-09')
+})
+
+test('fechaLarga_fecha_devuelveDiaDeLaSemanaYMesEnPalabras', () => {
+  expect(fechaLarga(new Date(2026, 9, 28))).toBe('Miércoles 28 de octubre de 2026')
+  expect(fechaLarga(new Date(2027, 0, 3))).toBe('Domingo 3 de enero de 2027')
 })

@@ -4,6 +4,7 @@ import { ApiError, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import type { Rubro } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
+import MenuFila from '../../shared/MenuFila'
 
 type Props = {
   rubros: Rubro[]
@@ -124,11 +125,15 @@ export default function RubrosAdmin({ rubros, onChanged }: Props) {
                         Renombrar
                       </button>
                     )}
-                    {puedeEditar && rubro.activo && (
-                      <button className="button-ghost" onClick={() => void inactivate(rubro)}>
-                        Inactivar
-                      </button>
-                    )}
+                    <MenuFila
+                      acciones={[
+                        rubro.activo && {
+                          etiqueta: 'Inactivar',
+                          onClick: () => void inactivate(rubro),
+                          edicion: true,
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

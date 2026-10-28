@@ -58,3 +58,26 @@ export function isoADate(iso: string): Date | undefined {
 export function dateAIso(fecha: Date): string {
   return `${fecha.getFullYear()}-${dos(fecha.getMonth() + 1)}-${dos(fecha.getDate())}`
 }
+
+const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+const MESES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+]
+
+/** `Date` local → "Miércoles 28 de octubre de 2026". */
+export function fechaLarga(fecha: Date): string {
+  const dia = DIAS[fecha.getDay()]
+  const mes = MESES[fecha.getMonth()]
+  return `${dia} ${fecha.getDate()} de ${mes} de ${fecha.getFullYear()}`
+}

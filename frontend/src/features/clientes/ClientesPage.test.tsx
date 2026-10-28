@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import ClientesPage from './ClientesPage'
 import type { Cliente, Marca } from './types'
+import { abrirAcciones } from '../../shared/pruebas'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 const fail = (status: number, data: unknown) => ({ ok: false, status, json: async () => data })
@@ -258,7 +259,8 @@ test('edita un cliente con PATCH y muestra su ficha mientras se edita', async ()
   })
   render(<ClientesPage />)
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+  abrirAcciones(await screen.findByRole('table'))
+  fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
   const form = screen.getByRole('form', { name: 'Formulario de cliente' })
   expect(await screen.findByText('Agua Cumbre')).toBeDefined()
   fireEvent.change(within(form).getByLabelText('Teléfono'), { target: { value: '261 999' } })
@@ -281,7 +283,8 @@ test('inactiva un cliente sin borrarlo', async () => {
   vi.stubGlobal('confirm', () => true)
   render(<ClientesPage />)
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Inactivar' }))
+  abrirAcciones(await screen.findByRole('table'))
+  fireEvent.click(screen.getByRole('button', { name: 'Inactivar' }))
   await waitFor(() => {
     const patch = fetchMock.mock.calls.find(([, options]) => options?.method === 'PATCH')
     expect(body(patch?.[1])).toEqual({ activo: false })
@@ -297,7 +300,8 @@ test('informa el error de la API al inactivar', async () => {
   vi.stubGlobal('confirm', () => true)
   render(<ClientesPage />)
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Inactivar' }))
+  abrirAcciones(await screen.findByRole('table'))
+  fireEvent.click(screen.getByRole('button', { name: 'Inactivar' }))
   expect((await screen.findByRole('alert')).textContent).toBe('No tenés permiso.')
 })
 

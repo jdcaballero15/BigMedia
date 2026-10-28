@@ -6,6 +6,7 @@ import type { MarcaInput } from './MarcaForm'
 import RubrosAdmin from './RubrosAdmin'
 import type { Cliente, Marca, Rubro } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
+import MenuFila from '../../shared/MenuFila'
 
 const ERROR_RUBROS = 'No se pudieron cargar los rubros.'
 
@@ -243,16 +244,16 @@ export default function MarcasPage() {
                     <button className="button-ghost" onClick={() => setFicha(item)}>
                       Ver ficha
                     </button>
-                    {puedeEditar && (
-                      <button className="button-ghost" onClick={() => setEditing(item)}>
-                        Editar
-                      </button>
-                    )}
-                    {puedeEditar && item.activo && (
-                      <button className="button-ghost" onClick={() => void inactivar(item)}>
-                        Inactivar
-                      </button>
-                    )}
+                    <MenuFila
+                      acciones={[
+                        { etiqueta: 'Editar', onClick: () => setEditing(item), edicion: true },
+                        item.activo && {
+                          etiqueta: 'Inactivar',
+                          onClick: () => void inactivar(item),
+                          edicion: true,
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

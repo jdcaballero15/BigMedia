@@ -1,6 +1,7 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import App from './App'
+import { abrirAcciones } from './shared/pruebas'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 
@@ -191,6 +192,7 @@ test('inactiva un proveedor conservando su registro', async () => {
 
   await irA('Proveedores')
   await screen.findByText('Norte')
+  abrirAcciones(screen.getByText('Norte').closest('tr') as HTMLElement)
   fireEvent.click(screen.getByRole('button', { name: 'Inactivar' }))
 
   await waitFor(() =>
@@ -242,6 +244,7 @@ test('da de baja un cartel y permite consultar las bajas', async () => {
 
   await screen.findByText('San Martín 1234')
   await screen.findByRole('option', { name: 'De baja' })
+  abrirAcciones(screen.getByText('San Martín 1234').closest('tr') as HTMLElement)
   fireEvent.click(screen.getByRole('button', { name: 'Dar de baja' }))
   await waitFor(() =>
     expect(
@@ -297,7 +300,12 @@ test('agrupa el menú lateral en secciones y abre en clientes', async () => {
 
   const nav = await screen.findByRole('navigation', { name: 'Navegación' })
   for (const titulo of ['Comercial', 'Inventario', 'Operación', 'Configuración'])
-    expect(within(nav).getByText(titulo)).toBeDefined()
+    expect(within(nav).getByRole('group', { name: titulo })).toBeDefined()
+  expect(
+    within(within(nav).getByRole('group', { name: 'Comercial' })).getByRole('button', {
+      name: 'Marcas',
+    }),
+  ).toBeDefined()
   expect(within(nav).getByRole('button', { name: 'Clientes' }).getAttribute('aria-current')).toBe(
     'page',
   )
@@ -565,4 +573,56 @@ test('el link de contraseña muestra el formulario y después el login', async (
     token: 'abc-123',
     clave: 'una-clave-larga-1',
   })
+})
+
+test('la barra superior muestra la ruta de la pantalla activa y la fecha de hoy', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(2026, 9, 28, 10, 0))
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'ale' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      if (input.startsWith('/api/inventario/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  try {
+    render(<App />)
+
+    const barra = await screen.findByRole('banner', { name: 'Ubicación' })
+    expect(barra.textContent).toContain('Big Media / Comercial / Clientes')
+    expect(within(barra).getByText('Miércoles 28 de octubre de 2026')).toBeDefined()
+    await irA('Carteles')
+    expect(barra.textContent).toContain('Big Media / Inventario / Carteles')
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+test('el menú de iconos muestra el nombre de cada pantalla al pasar el mouse', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'ale' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  const marcas = within(nav).getByRole('button', { name: 'Marcas' })
+  fireEvent.mouseEnter(marcas)
+  expect(screen.getByRole('tooltip').textContent).toBe('Marcas')
+  fireEvent.mouseLeave(marcas)
+  expect(screen.queryByRole('tooltip')).toBeNull()
+
+  fireEvent.focus(screen.getByRole('button', { name: 'Salir' }))
+  expect(screen.getByRole('tooltip').textContent).toBe('Salir')
+  fireEvent.blur(screen.getByRole('button', { name: 'Salir' }))
+  fireEvent.mouseEnter(screen.getByTitle('ale'))
+  expect(screen.getByRole('tooltip').textContent).toBe('ale')
+  fireEvent.mouseLeave(screen.getByTitle('ale'))
+  expect(screen.queryByRole('tooltip')).toBeNull()
 })
