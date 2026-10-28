@@ -43,7 +43,7 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | RN-013 | Vista de disponibilidad a futuro | `provisoria` | Se construye como Should | Documento de historias (decisión D-13 del 15/10/2026) | HU-041, HU-042 | Sin implementar |
 | RN-014 | Cambio de pagador de una marca | `provisoria` | La campaña puede llevar un cliente que factura propio que reemplaza la deducción desde la marca; HU-027 sigue viva | Seba (2026-10-19), sobre la decisión D-14 del 15/10/2026 | HU-027 | Modelo `Campania.cliente_facturacion` y propiedad `cliente_factura` (unidad campanias) |
 | RN-015 | Intermediario formal y sus contactos | `provisoria` | Tipo aparte con contactos múltiples | Documento de historias (decisión D-15 del 15/10/2026) | HU-016, HU-068 | Servicio `apps/clientes/services.py` (`acepta_contactos`, `guardar_contacto`), modelo `Contacto`, `backend/tests/test_contactos.py` |
-| RN-016 | Grupo económico | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-017, HU-022, HU-050 | Sin implementar |
+| RN-016 | Grupo económico | `provisoria` | Catálogo editable; cada marca, a lo sumo en un grupo (opcional) | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-017, HU-022, HU-050 | Sin implementar |
 | RN-017 | Cambio de razón social de un cliente directo | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-018 | Sin implementar |
 | RN-018 | Interacciones antes de la campaña | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-020 | Sin implementar |
 | RN-019 | Dimensiones estándar por formato | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-009 | Sin implementar |
@@ -329,7 +329,12 @@ Pregunta menor del bloque «Otras preguntas menores» de D-16.
 
 **Grupo económico (pregunta 16):** ¿quieren agrupar marcas de un mismo grupo? Afecta HU-017, HU-022 y HU-050.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** sí, provisoriamente, hasta que Seba la confirme. Los grupos económicos son un
+catálogo editable, como los rubros. Cada marca pertenece a lo sumo a un grupo, y el grupo es
+opcional e independiente del cliente que factura: dos marcas del mismo grupo pueden entrar por
+agencias distintas. El grupo se usa en la ficha de la marca (las otras marcas del grupo, HU-022) y
+en el corte de ingresos y ocupación por grupo (HU-050). Crean grupos y los asignan Operativo y
+Administrador, igual que los rubros. · **Fecha:** 2026-10-28 · **Quién respondió:** Gonza
 
 ### RN-017 Cambio de razón social de un cliente directo (D-16)
 

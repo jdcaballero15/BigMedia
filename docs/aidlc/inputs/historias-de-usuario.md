@@ -267,7 +267,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-016 completa.
-- **Regla de negocio:** La marca no tiene datos de facturación y no se le puede facturar. El cliente de la marca es obligatorio, sea cual sea la vía de entrada (pantalla, importación o API). El rubro vive en la marca, no en el cliente, porque el cliente suele ser una agencia. El grupo económico (por ejemplo, un grupo con varias marcas) es opcional y depende de la pregunta 16.
+- **Regla de negocio:** La marca no tiene datos de facturación y no se le puede facturar. El cliente de la marca es obligatorio, sea cual sea la vía de entrada (pantalla, importación o API). El rubro vive en la marca, no en el cliente, porque el cliente suele ser una agencia. El grupo económico (por ejemplo, un grupo con varias marcas) es opcional: cada marca pertenece a lo sumo a uno, sin importar el cliente que factura (RN-016).
 - **Criterios de aceptación:**
   1. Dada una marca nueva sin cliente, cuando se guarda por cualquier vía, entonces se rechaza.
   2. Dado un cliente intermediario, cuando se abre su ficha, entonces se listan todas sus marcas.
@@ -337,7 +337,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Regla de negocio:** Las campañas de una marca se listan aunque el pagador haya sido distinto en distintos momentos.
 - **Criterios de aceptación:**
   1. Dada la ficha de una marca, cuando se abre, entonces se ven todas sus campañas con su estado.
-  2. Dado un grupo económico (si se implementa), cuando se abre la ficha, entonces se ven las marcas del mismo grupo.
+  2. Dada una marca de un grupo económico, cuando se abre su ficha, entonces se ven las otras marcas del mismo grupo (RN-016).
 
 ### HU-068 Gestionar varios contactos de un intermediario formal
 
@@ -721,7 +721,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Descripción:** Como gerencia, quiero cortar ingresos y ocupación por rubro de la marca y por grupo económico, para saber qué industrias pautan más en vía pública.
 - **Prioridad:** Could
 - **Complejidad:** S
-- **Precondición:** HU-017 completa. El grupo económico depende de la pregunta 16.
+- **Precondición:** HU-017 completa. El grupo económico se toma de la marca (RN-016).
 - **Regla de negocio:** El rubro se toma de la marca y no del cliente, que suele ser una agencia.
 - **Criterios de aceptación:**
   1. Dada una campaña de una agencia para una marca de gastronomía, cuando se corta por rubro, entonces aparece Gastronomía y no Agencia de medios.
