@@ -91,5 +91,5 @@ test('clientes: Lectura no ve Editar ni Inactivar en las filas', async () => {
   expect(await screen.findByText('Acme')).toBeDefined()
   expect(screen.queryByRole('button', { name: 'Editar' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'Inactivar' })).toBeNull()
-  expect(screen.getByRole('button', { name: 'Ver marcas' })).toBeDefined()
+  expect(screen.getByRole('button', { name: 'Ver ficha' })).toBeDefined()
 })

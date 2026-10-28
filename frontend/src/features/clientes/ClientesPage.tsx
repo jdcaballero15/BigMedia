@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { apiGet, apiWrite } from '../../shared/api'
 import ClienteForm from './ClienteForm'
 import ContactosDelCliente from './ContactosDelCliente'
+import CampaniasLista from '../campanias/CampaniasLista'
 import InteraccionesLista from '../campanias/InteraccionesLista'
 import type { ClienteInput } from './ClienteForm'
 import { TIPOS_CLIENTE } from './types'
@@ -182,6 +183,13 @@ export default function ClientesPage() {
           onClose={() => setFicha(null)}
         />
       )}
+      {ficha !== null && (
+        <CampaniasLista
+          key={`campanias-${ficha.cliente.id}`}
+          filtro={{ cliente: ficha.cliente.id }}
+          titulo={`Campañas de ${ficha.cliente.nombre_visible}`}
+        />
+      )}
       {/* Solo el intermediario formal tiene contactos múltiples (HU-068, RN-015). */}
       {ficha !== null && ficha.cliente.tipo === 'intermediario_formal' && (
         <ContactosDelCliente key={`contactos-${ficha.cliente.id}`} cliente={ficha.cliente} />
@@ -268,7 +276,7 @@ export default function ClientesPage() {
                       className="button-ghost"
                       onClick={() => setFicha({ cliente: item, recienCreado: false })}
                     >
-                      Ver marcas
+                      Ver ficha
                     </button>
                     {puedeEditar && (
                       <button className="button-ghost" onClick={() => abrirEdicion(item)}>

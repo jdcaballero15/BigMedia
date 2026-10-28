@@ -268,3 +268,56 @@ test('muestra el error de la API al guardar un rubro repetido', async () => {
   fireEvent.click(within(form).getByRole('button', { name: 'Cancelar' }))
   expect(within(seccion).queryByRole('form', { name: 'Formulario de rubro' })).toBeNull()
 })
+
+test('la ficha de una marca muestra todas sus campañas con su estado', async () => {
+  const fetchMock = mockFetch((url) =>
+    url === '/api/campanias/campanias/?marca=7'
+      ? ok([
+          {
+            id: 11,
+            nombre: 'Verano 2027',
+            marca: 7,
+            marca_nombre: 'Agua Cumbre',
+            cliente_facturacion: null,
+            cliente_factura: 1,
+            cliente_factura_nombre: 'Agencia Andes',
+            fecha_inicio: '2027-01-01',
+            fecha_fin: '2027-01-31',
+            estado: 'confirmada',
+          },
+          {
+            id: 9,
+            nombre: 'Invierno 2026',
+            marca: 7,
+            marca_nombre: 'Agua Cumbre',
+            cliente_facturacion: 2,
+            cliente_factura: 2,
+            cliente_factura_nombre: 'Medios del Sur',
+            fecha_inicio: '2026-06-01',
+            fecha_fin: '2026-06-30',
+            estado: 'cancelada',
+          },
+        ])
+      : undefined,
+  )
+  render(<MarcasPage />)
+
+  const tabla = await screen.findByRole('table', { name: 'Marcas' })
+  await within(tabla).findByText('Agua Cumbre')
+  fireEvent.click(within(tabla).getByRole('button', { name: 'Ver ficha' }))
+  const ficha = screen.getByRole('region', { name: 'Ficha de Agua Cumbre' })
+  expect(within(ficha).getByText(/Agencia Andes · Bebidas/)).toBeDefined()
+  const campanias = within(ficha).getByRole('region', { name: 'Campañas de Agua Cumbre' })
+  expect(await within(campanias).findByText('Verano 2027')).toBeDefined()
+  expect(within(campanias).getByText('Confirmada')).toBeDefined()
+  // Aunque la haya pagado otro cliente o esté cancelada, la campaña es de la marca.
+  expect(within(campanias).getByText('Invierno 2026')).toBeDefined()
+  expect(within(campanias).getByText('Cancelada')).toBeDefined()
+  expect(within(campanias).getByText('Medios del Sur')).toBeDefined()
+  expect(fetchMock.mock.calls.some(([url]) => url === '/api/campanias/campanias/?marca=7')).toBe(
+    true,
+  )
+
+  fireEvent.click(within(ficha).getByRole('button', { name: 'Cerrar' }))
+  expect(screen.queryByRole('region', { name: 'Ficha de Agua Cumbre' })).toBeNull()
+})

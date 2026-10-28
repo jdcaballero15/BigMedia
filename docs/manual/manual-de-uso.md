@@ -59,6 +59,13 @@ las reservas se **cancelan** y los ítems a facturar se **anulan**. Así queda l
    marca con un nombre igual o muy parecido") para que no la cargues dos veces. Revisá la lista y
    decidí.
 
+### Ver la ficha de un cliente o de una marca
+
+- En **Comercial › Clientes**, **Ver ficha** muestra sus marcas, sus campañas y sus interacciones
+  (y sus contactos, si es Intermediario formal). Sirve para tener el contexto antes de llamarlo.
+- En **Comercial › Marcas**, **Ver ficha** muestra todas las campañas de la marca con su estado,
+  aunque las haya pagado otro cliente.
+
 ## 3. Crear una campaña
 
 Una **campaña** agrupa lo que se le vende a un cliente para una marca: sus reservas, sus costos y lo

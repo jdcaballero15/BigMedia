@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiWrite } from '../../shared/api'
+import CampaniasLista from '../campanias/CampaniasLista'
 import MarcaForm from './MarcaForm'
 import type { MarcaInput } from './MarcaForm'
 import RubrosAdmin from './RubrosAdmin'
@@ -7,6 +8,32 @@ import type { Cliente, Marca, Rubro } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
 
 const ERROR_RUBROS = 'No se pudieron cargar los rubros.'
+
+/** Ficha de una marca: todas sus campañas, sin importar quién las pagó (HU-022 criterio 1). */
+function FichaMarca({ marca, onClose }: { marca: Marca; onClose: () => void }) {
+  const titulo = `Ficha de ${marca.nombre}`
+  return (
+    <section className="card edit-form" aria-label={titulo}>
+      <div className="form-heading">
+        <div>
+          <h3>{titulo}</h3>
+          <p className="muted">
+            {marca.cliente_nombre} · {marca.rubro_nombre ?? 'Sin rubro'} ·{' '}
+            {marca.activo ? 'Activa' : 'Inactiva'}
+          </p>
+        </div>
+        <button type="button" className="button-ghost" onClick={onClose}>
+          Cerrar
+        </button>
+      </div>
+      <CampaniasLista
+        filtro={{ marca: marca.id }}
+        titulo={`Campañas de ${marca.nombre}`}
+        ocultar="marca"
+      />
+    </section>
+  )
+}
 
 export default function MarcasPage() {
   const puedeEditar = usePuedeEditar()
@@ -21,6 +48,7 @@ export default function MarcasPage() {
   const [error, setError] = useState('')
   const [errorCatalogos, setErrorCatalogos] = useState('')
   const [editing, setEditing] = useState<Marca | 'new' | null>(null)
+  const [ficha, setFicha] = useState<Marca | null>(null)
   const [revision, setRevision] = useState(0)
   const [revisionRubros, setRevisionRubros] = useState(0)
 
@@ -129,6 +157,7 @@ export default function MarcasPage() {
           onCancel={() => setEditing(null)}
         />
       )}
+      {ficha !== null && <FichaMarca key={ficha.id} marca={ficha} onClose={() => setFicha(null)} />}
       <div className="filters card" role="search" aria-label="Filtros de marcas">
         <label>
           Cliente
@@ -211,6 +240,9 @@ export default function MarcasPage() {
                   <td>{item.rubro_nombre ?? 'Sin rubro'}</td>
                   <td>{item.activo ? 'Activa' : 'Inactiva'}</td>
                   <td className="row-actions">
+                    <button className="button-ghost" onClick={() => setFicha(item)}>
+                      Ver ficha
+                    </button>
                     {puedeEditar && (
                       <button className="button-ghost" onClick={() => setEditing(item)}>
                         Editar
