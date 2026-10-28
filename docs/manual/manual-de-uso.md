@@ -30,6 +30,10 @@ la campaña. Al final de cada fila queda a la vista la acción principal (**Ver 
 **Dar de baja** y similares. Si el manual nombra una acción que no ves en la fila, está en los tres
 puntos. El menú se cierra con Escape o tocando afuera.
 
+Arriba de cada reporte y de Ítems a facturar hay cifras con lo más importante del período; la que
+está en azul es la principal. En los reportes, el período se elige con **mes** y **año** de
+**Desde** y de **Hasta**; el fin nunca queda antes del inicio.
+
 Lo que podés hacer depende de tu rol: **Operativo** carga y edita; **Lectura** solo consulta;
 **Ingresos** y **Auditoría** necesitan además el permiso de Gerencia; **Usuarios** y
 **Parámetros** son del administrador.
@@ -87,11 +91,16 @@ marca puede estar en un solo grupo.
 
 ### Ver la ficha de un cliente o de una marca
 
-- En **Comercial › Clientes**, **Ver ficha** muestra sus marcas, sus campañas y sus interacciones
-  (y sus contactos, si es Intermediario formal). Sirve para tener el contexto antes de llamarlo.
-- En **Comercial › Marcas**, **Ver ficha** muestra todas las campañas de la marca con su estado,
-  aunque las haya pagado otro cliente, y, si la marca tiene grupo económico, las otras marcas del
-  grupo.
+- En **Comercial › Clientes**, **Ver ficha** abre la ficha en lugar de la lista. Arriba, en azul,
+  están sus datos y cuántas marcas, campañas e interacciones tiene (y contactos, si es
+  Intermediario formal). A la izquierda elegís qué ver: **Campañas** (como tarjetas, con filtro por
+  estado), **Marcas** o **Interacciones**; debajo, los contactos del Intermediario formal. Sirve
+  para tener el contexto antes de llamarlo.
+- En **Comercial › Marcas**, **Ver ficha** abre la ficha de la marca: todas sus campañas con su
+  estado, aunque las haya pagado otro cliente, y, si la marca tiene grupo económico, las otras
+  marcas del grupo.
+- Para volver a la lista, tocá **← Volver** o el nombre de la pantalla en la ruta de arriba (por
+  ejemplo, «Clientes» en «Big Media / Comercial / Clientes / Agencia Cordillera»).
 
 ## 3. Crear una campaña
 
@@ -219,7 +228,11 @@ reglas todavía pueden cambiar (RN-001 a RN-003); si cambian, el manual se actua
 
 - **Hoy**: qué carteles están **Libres** u **Ocupados** en este momento, con su ocupación (por
   ejemplo "1 de 6"). Se filtra por departamento, formato y modalidad.
-- **Calendario**: los carteles mes por mes, para ver qué queda libre a futuro.
+- **Calendario**: los carteles mes por mes, para ver qué queda libre a futuro. Cada celda es una
+  barra que se llena según lo ocupado ("1/6"), y queda en ámbar cuando el cartel está lleno.
+  Tocá una celda ocupada para ver la campaña.
+
+Las dos vistas se eligen arriba a la derecha.
 
 La ocupación cuenta también las reservas Pendientes, para que se vean. Por eso un cartel puede
 mostrar "2 de 1" si tiene una Confirmada y una Pendiente que se pisan: la Pendiente no va a poder

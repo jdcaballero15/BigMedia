@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { apiGet } from '../../shared/api'
 import { formatearFecha } from '../../shared/fechas'
 import type { Catalogo, Formato } from '../inventario/types'
@@ -14,7 +15,12 @@ type Reserva = {
 
 type CeldaElegida = { cartel: FilaCalendario; periodo: string } | null
 
-export default function CalendarioDisponibilidad() {
+/** Ocupados sobre capacidad, de 0 a 100, para el largo de la barra de la celda. */
+function porcentaje(ocupados: number, capacidad: number): number {
+  return capacidad === 0 ? 0 : Math.min(100, Math.round((ocupados * 100) / capacidad))
+}
+
+export default function CalendarioDisponibilidad({ pestanias }: { pestanias?: ReactNode }) {
   const [calendario, setCalendario] = useState<Calendario>({ periodos: [], carteles: [] })
   const [zonas, setZonas] = useState<Catalogo[]>([])
   const [formatos, setFormatos] = useState<Formato[]>([])
@@ -99,6 +105,7 @@ export default function CalendarioDisponibilidad() {
             Qué carteles están libres por mes. Tocá una celda ocupada para ver la campaña.
           </p>
         </div>
+        {pestanias}
       </div>
       <div className="filters card">
         <label>
@@ -168,12 +175,18 @@ export default function CalendarioDisponibilidad() {
                     return (
                       <td key={celda.periodo}>
                         <button
-                          className={`celda-${estado}`}
+                          className={`celda celda-${estado}`}
                           disabled={celda.ocupados === 0}
                           aria-label={`${cartel.nombre_visible} ${celda.periodo}: ${celda.ocupados} de ${cartel.capacidad}`}
                           onClick={() => verCelda(cartel, celda.periodo, celda.ocupados)}
                         >
-                          {celda.ocupados}/{cartel.capacidad}
+                          <span
+                            className="celda-barra"
+                            style={{ width: `${porcentaje(celda.ocupados, cartel.capacidad)}%` }}
+                          />
+                          <span className="celda-texto">
+                            {celda.ocupados}/{cartel.capacidad}
+                          </span>
                         </button>
                       </td>
                     )

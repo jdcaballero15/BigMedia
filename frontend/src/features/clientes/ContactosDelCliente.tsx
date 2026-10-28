@@ -69,7 +69,7 @@ export default function ContactosDelCliente({
   return (
     <section className="card edit-form section-gap contactos" aria-label={titulo}>
       <div className="form-heading">
-        <h3>{titulo}</h3>
+        <h3>Contactos</h3>
         {puedeEditar && (
           <button type="button" className="button-primary" onClick={() => setEditing('new')}>
             Nuevo contacto
