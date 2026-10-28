@@ -970,12 +970,14 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** M
 - **Precondición:** HU-007 y HU-066 completas.
-- **Regla de negocio:** Un ítem Enviado a facturar no se edita sin una acción explícita de reabrir, que pide motivo y queda auditada (HU-007). Si algo cambia después del envío, Administración recibe un aviso con lo que cambió; el canal de aviso (por ejemplo correo) se define con ellos. Para ítems ya Facturados el comportamiento queda por definir.
+- **Regla de negocio:** Un ítem Enviado a facturar no se edita sin una acción explícita de reabrir, que pide motivo y queda auditada (HU-007). Si algo cambia después del envío, Administración recibe un aviso con lo que cambió; el canal de aviso (por ejemplo correo) se define con ellos. Un ítem ya Facturado no se reabre: si hay que corregirlo, se anula con un motivo (por ejemplo, cuando Administración emite la nota de crédito), queda auditado con su número de factura, Administración recibe el aviso, y la corrección se carga como un ítem nuevo (RN-026).
 - **Criterios de aceptación:**
   1. Dado un ítem Enviado a facturar, cuando se intenta editar sin reabrirlo, entonces el sistema lo impide.
   2. Dado un ítem Enviado, cuando se reabre, entonces se pide un motivo y queda registrado quién, cuándo y por qué.
   3. Dado un ítem reabierto, cuando se guardan cambios, entonces Administración recibe un aviso con los valores anteriores y nuevos.
   4. Dado un ítem reabierto y corregido, cuando se vuelve a enviar, entonces regresa a Enviado a facturar y queda marcado como reenviado.
+  5. Dado un ítem Facturado, cuando se anula, entonces se pide un motivo, queda registrado quién, cuándo y por qué, conserva su número de factura, sale del resumen del mes y Administración recibe un aviso (RN-026).
+  6. Dado un ítem Facturado, cuando se intenta reabrir o editar, entonces el sistema lo impide (RN-026).
 
 # Supuestos y preguntas abiertas
 

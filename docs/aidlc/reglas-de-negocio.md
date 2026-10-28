@@ -53,7 +53,7 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | RN-023 | Alícuotas de IVA y listas Gob/Priv y F/V | `provisoria` | 21% por defecto, editable; listas administrables | Documento de historias (bloque Administración del 15/10/2026) | HU-060, HU-061 | `apps/facturacion/models.py` (`alicuota_iva` con 21 % por defecto, `iva_y_total`; catálogos `Sector` y `TipoVenta` administrables en el admin), `backend/tests/test_importes_facturacion.py` |
 | RN-024 | Columnas de la planilla de facturación | `provisoria` | Se reproducen tal cual; las nuevas van al final | Documento de historias (bloque Administración del 15/10/2026) | HU-066 | `apps/facturacion/services.py::COLUMNAS_PLANILLA` (columnas propuestas hasta tener la planilla real; al final, Orden de compra, Fecha OC, Grupo de factura, Costos, Neto final y Reenviado), `backend/tests/test_planilla_facturacion.py` |
 | RN-025 | Envío de ítems completos con incompletos en el mes | `provisoria` | Sí; los incompletos se listan con lo que les falta | Documento de historias (bloque Administración del 15/10/2026) | HU-066 | `apps/facturacion/services.py::enviar_a_facturar` y `faltantes_para_enviar`, `backend/tests/test_cierre_de_mes.py` |
-| RN-026 | Corrección de ítems ya facturados | `pendiente` | Sin definir | Documento de historias (bloque Administración del 15/10/2026) | HU-067 | Sin implementar |
+| RN-026 | Corrección de ítems ya facturados | `provisoria` | Se anula con motivo, auditado y con aviso; la corrección va en un ítem nuevo | Gonza (2026-10-28), sobre el bloque Administración del 15/10/2026 | HU-067 | Sin implementar |
 
 Las reglas de Administración (facturación) están al final, en un bloque aparte.
 
@@ -442,7 +442,13 @@ Estas preguntas las responden Seba y Administración. Se listan para no perderla
 
 **Default.** Sin definir.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** provisoriamente, hasta que Seba y Administración la confirmen, un ítem Facturado no
+se reabre ni se edita. Si hay que corregirlo (por ejemplo, porque Administración emitió la nota de
+crédito), se pasa a Anulado con un motivo obligatorio: queda auditado (HU-007), conserva su número
+de factura y Administración recibe un aviso, como en la reapertura. Al estar anulado, sale del
+resumen del mes y de la planilla. La corrección se carga como un ítem nuevo. Los reportes de
+ingresos no cambian, porque se calculan con las reservas y no con los ítems. · **Fecha:**
+2026-10-28 · **Quién respondió:** Gonza
 
 ---
 
