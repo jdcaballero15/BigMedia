@@ -1,6 +1,6 @@
 # Unidad: pantallas-rediseno
 
-- **Estado:** en revisión · **Épica:** E12 Rediseño visual · **App dueña:** frontend
+- **Estado:** mergeada (PR #93) · **Épica:** E12 Rediseño visual · **App dueña:** frontend
 - **Origen:** pedido de Gonza del 2026-10-28 · **Rama:** `feature/frontend-pantallas-rediseno`
 - **Depende de:** [`estilo-base`](estilo-base.md) (usa sus tokens, tablas y menú de fila).
 
