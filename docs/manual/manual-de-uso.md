@@ -5,7 +5,11 @@ y seguí los pasos. Los ejemplos usan los datos inventados de prueba, nunca dato
 
 ## Cómo está organizada la pantalla
 
-A la izquierda está el menú, agrupado así:
+A la izquierda está el menú, con un icono por pantalla. Pasá el mouse por un icono para ver su
+nombre; una línea separa cada grupo. Abajo están tu usuario (la inicial) y **Salir**. En el celular,
+el botón de arriba a la izquierda abre el menú con los nombres a la vista.
+
+Los grupos son estos:
 
 | Grupo | Pantallas |
 | --- | --- |
@@ -16,6 +20,15 @@ A la izquierda está el menú, agrupado así:
 | Operación | **Proveedores**, **Costos**, **Formatos** |
 | Configuración | **Catálogos**, **Parámetros** |
 | Administración | **Auditoría**, **Usuarios** |
+
+Arriba, la barra muestra dónde estás (por ejemplo, «Big Media / Comercial / Clientes») y la
+fecha de hoy.
+
+En las tablas, la primera columna (en celeste) es lo que la pantalla lista: el cliente, el cartel,
+la campaña. Al final de cada fila queda a la vista la acción principal (**Ver ficha**, **Ver** o
+**Editar**, según la pantalla) y el botón de tres puntos (**⋯**) abre el resto: **Inactivar**,
+**Dar de baja** y similares. Si el manual nombra una acción que no ves en la fila, está en los tres
+puntos. El menú se cierra con Escape o tocando afuera.
 
 Lo que podés hacer depende de tu rol: **Operativo** carga y edita; **Lectura** solo consulta;
 **Ingresos** y **Auditoría** necesitan además el permiso de Gerencia; **Usuarios** y

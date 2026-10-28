@@ -109,6 +109,12 @@ Ninguna.
 
 ## Registro de gates
 
-- Gate 1 (plan):
-- Gate 2 (verificación):
+- Gate 1 (plan): aprobado por Gonza el 2026-10-28.
+- Gate 2 (verificación): aprobado por Gonza el 2026-10-28, tras revisar en el navegador. Salida
+  real: ruff y mypy sin errores, `makemigrations --check` sin cambios, pytest 769 pasados (96,89 %),
+  frontend 345 tests (líneas 93,84 %, sentencias 91,45 %), lint, typecheck y build en verde,
+  pre-commit (gitleaks incluido) sin hallazgos. Notas: Ingresos y Ocupación conservan scroll
+  horizontal a 1280 px (una columna por mes; lo resuelve el selector de período de
+  `pantallas-rediseno`), con la primera columna fija; Ítems a facturar y Posiciones por formato
+  mantienen sus acciones en la fila porque abren campos en línea.
 - Gate 3 (PR):
