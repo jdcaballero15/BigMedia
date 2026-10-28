@@ -80,5 +80,5 @@ mover datos.
 ## Registro de gates
 
 - Gate 1 (plan): aprobado por Gonza el 2026-10-28, con la propuesta de anular de a un ítem aunque esté en un grupo.
-- Gate 2 (verificación):
+- Gate 2 (verificación): 2026-10-28, ruff, mypy, makemigrations y pre-commit (gitleaks) limpios; pytest 812 passed, 96,95 %; frontend format, lint, typecheck, 372 tests (92,42 % sentencias, 94,45 % líneas) y build en verde. Revisión visual aprobada por Gonza el 2026-10-28. Rebaseada sobre develop con el PR #99 y columna «Dónde vive» de RN-026 completada.
 - Gate 3 (PR):
