@@ -1,6 +1,6 @@
 # Unidad: estilo-base
 
-- **Estado:** en revisión (PR #91) · **Épica:** E12 Rediseño visual · **App dueña:** frontend
+- **Estado:** mergeada (PR #91) · **Épica:** E12 Rediseño visual · **App dueña:** frontend
 - **Origen:** pedido de Gonza del 2026-10-28 (probando la app de punta a punta) · **Rama:** `feature/frontend-estilo-base`
 
 ## Objetivo

@@ -1,6 +1,6 @@
 # Unidad: pantallas-rediseno
 
-- **Estado:** pendiente · **Épica:** E12 Rediseño visual · **App dueña:** frontend
+- **Estado:** en curso · **Épica:** E12 Rediseño visual · **App dueña:** frontend
 - **Origen:** pedido de Gonza del 2026-10-28 · **Rama:** `feature/frontend-pantallas-rediseno`
 - **Depende de:** [`estilo-base`](estilo-base.md) (usa sus tokens, tablas y menú de fila).
 
@@ -74,6 +74,6 @@ Ninguna nueva; se muestran las que ya se aplican (RN-001 y RN-002 en Parámetros
 
 ## Registro de gates
 
-- Gate 1 (plan):
+- Gate 1 (plan): aprobado por Gonza el 2026-10-28.
 - Gate 2 (verificación):
 - Gate 3 (PR):
