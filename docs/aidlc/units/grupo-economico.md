@@ -46,7 +46,9 @@ rubro.
 - `features/clientes/CatalogoAdmin.tsx` (nuevo): el ABM de un catálogo de nombres (crear, renombrar,
   inactivar), parametrizado por ruta y etiquetas. `RubrosAdmin` pasa a usarlo sin cambiar lo que
   muestra; `GruposAdmin` es el otro uso. Va debajo de los rubros en **Comercial › Marcas**.
-- `MarcaForm.tsx`: selector opcional «Grupo económico» con los grupos activos.
+- `MarcaForm.tsx`: selector opcional «Grupo económico» con los grupos activos. El alta rápida de
+  marca desde una campaña no lo ofrece (el grupo se asigna después desde Marcas), para no cargar el
+  catálogo en Campañas.
 - `MarcasPage.tsx`: columna «Grupo» en la tabla y filtro por grupo. La ficha de la marca suma
   «Otras marcas del grupo <nombre>» (solo si tiene grupo), con nombre, cliente y estado de cada una.
 - `features/facturacion/PorRubro.tsx`: un selector «Cortar por: Rubro / Grupo económico» que cambia
@@ -98,5 +100,11 @@ Ninguna abierta: RN-016 se respondió el 2026-10-28 (ver `reglas-de-negocio.md`)
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-28 — aprobado por Gonza
-- Gate 2 (verificación):
+- Gate 2 (verificación): 2026-10-28 — `ruff format --check`: 137 files already formatted;
+  `ruff check`: All checks passed!; `mypy backend`: Success: no issues found in 137 source files;
+  `makemigrations --check --dry-run`: No changes detected; `pytest --cov`: 787 passed, coverage
+  96.90 % (requerido 80 %); `pre-commit run --all-files`: todos Passed (incluido gitleaks).
+  Frontend: `format:check` OK, `lint` sin hallazgos, `typecheck` OK, `test:coverage` 344 passed
+  (sentencias 91.6 %, ramas 81.83 %, líneas 93.92 %), `build` OK (aviso de bloque mayor a 500 kB,
+  previo a esta unidad). Esperando revisión de Gonza.
 - Gate 3 (PR):
