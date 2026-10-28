@@ -159,7 +159,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Must
 - **Complejidad:** S
 - **Precondición:** Sesión iniciada con rol Operativo o superior.
-- **Regla de negocio:** Hay 7 formatos: PPL o Gran Formato, Banderolas, Séxtuples, LED, Mediano Formato, Monocolumnas y Carteleras. La modalidad es fija o digital y vive solo en el formato, no se repite en el cartel. "Fija" no implica capacidad 1: los séxtuples son fijos pero multi-marca, con cantidad de slots variable por ubicación. Ancho y alto son opcionales hasta que Seba confirme si guardan dimensiones estándar.
+- **Regla de negocio:** Hay 7 formatos: PPL o Gran Formato, Banderolas, Séxtuples, LED, Mediano Formato, Monocolumnas y Carteleras. La modalidad es fija o digital y vive solo en el formato, no se repite en el cartel. "Fija" no implica capacidad 1: los séxtuples son fijos pero multi-marca, con cantidad de slots variable por ubicación. Un formato no tiene un tamaño fijo: ancho y alto son opcionales, como medida de referencia, y el tamaño real se carga en cada cartel (RN-019).
 - **Criterios de aceptación:**
   1. Dado un formato nuevo, cuando se guarda con nombre, modalidad y capacidad por defecto mayor o igual a 1, entonces queda disponible para crear carteles.
   2. Dada una capacidad por defecto menor a 1, cuando se guarda, entonces se rechaza.
