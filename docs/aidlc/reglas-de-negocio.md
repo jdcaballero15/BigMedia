@@ -46,7 +46,7 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | RN-016 | Grupo económico | `provisoria` | Catálogo editable; cada marca, a lo sumo en un grupo (opcional) | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-017, HU-022, HU-050 | Modelo `clientes.GrupoEconomico` y `Marca.grupo`, `apps/facturacion/services.py::reporte_por_grupo`, `frontend/src/features/clientes/MarcasDelGrupo.tsx`, `backend/tests/test_grupos_economicos.py`, `backend/tests/test_reporte_por_grupo.py` |
 | RN-017 | Cambio de razón social de un cliente directo | `provisoria` | La marca homónima no se actualiza sola; se renombra a mano | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-018 | Servicio `apps/clientes/services.py` (`crear_cliente`: la marca se crea solo en el alta), `backend/tests/test_clientes_marca_homonima.py` |
 | RN-018 | Interacciones antes de la campaña | `provisoria` | Marca opcional en la interacción, del mismo cliente y coherente con la campaña | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-020 | Servicio `apps/campanias/services.py` (`validar_marca_de_interaccion`), modelo `Interaccion.marca`, filtro `?marca=` en `InteraccionViewSet`, `backend/tests/test_interacciones.py` |
-| RN-019 | Dimensiones estándar por formato | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-009 | Sin implementar |
+| RN-019 | Dimensiones estándar por formato | `provisoria` | Sin tamaño fijo: ancho y alto del formato opcionales, tamaño real en cada cartel | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-009 | Modelos `Formato.ancho` y `Formato.alto` (opcionales) y `Cartel.tamano` en `apps/inventario/models.py`; sin test propio |
 | RN-020 | Formatos sin relevamiento | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-015 | Sin implementar |
 | RN-021 | Usuarios | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-004, HU-005 | Sin implementar |
 | RN-022 | Administración usa el sistema o recibe planilla | `provisoria` | Recibe planilla y avisos por correo; Seba carga el número de factura | Documento de historias (bloque Administración del 15/10/2026) | HU-065, HU-066, HU-067 | El operativo pasa el ítem a Facturado con su número (`apps/facturacion/services.py::validar_cambio_de_item`, `backend/tests/test_estados_facturacion.py`) y envía el mes descargando la planilla (`enviar_a_facturar`, `backend/tests/test_cierre_de_mes.py`); al reabrir y al reenviar un ítem, Administración recibe un correo en `FACTURACION_CORREO_ADMINISTRACION` (`apps/facturacion/services.py::avisar_a_administracion`, `backend/tests/test_reabrir_item.py`) |
@@ -367,7 +367,10 @@ Pregunta menor del bloque «Otras preguntas menores» de D-16.
 
 **Dimensiones estándar por formato:** ¿cada formato tiene un tamaño fijo? Afecta HU-009.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** no, provisoriamente, hasta que Seba la confirme. El tamaño real es de cada cartel
+(campo Tamaño), porque dentro de un mismo formato las medidas cambian según la ubicación. Ancho y
+alto del formato quedan opcionales, como medida de referencia, y no se copian al cartel. ·
+**Fecha:** 2026-10-28 · **Quién respondió:** Gonza
 
 ### RN-020 Formatos sin relevamiento (D-16)
 
