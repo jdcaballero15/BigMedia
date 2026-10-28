@@ -1,6 +1,6 @@
 # Unidad: grupo-economico
 
-- **Estado:** en curso · **Épica:** E3 Clientes, marcas y CRM (y el resto de E8) · **App dueña:** clientes
+- **Estado:** en revisión (PR #92) · **Épica:** E3 Clientes, marcas y CRM (y el resto de E8) · **App dueña:** clientes
 - **Origen:** RN-016, HU-017 (grupo), HU-022 criterio 2, HU-050 criterio 2 · **Rama:** `feature/clientes-grupo-economico`
 
 ## Objetivo
@@ -112,4 +112,4 @@ Ninguna abierta: RN-016 se respondió el 2026-10-28 (ver `reglas-de-negocio.md`)
   repetida: ruff y mypy sin errores (137 archivos), `makemigrations --check` sin cambios, pytest
   787 passed (96,90 %), frontend 353 tests (sentencias 91,79 %, líneas 94,06 %), lint,
   typecheck y build en verde, pre-commit todo Passed.
-- Gate 3 (PR):
+- Gate 3 (PR): pedido por Gonza el 2026-10-28; PR #92.
