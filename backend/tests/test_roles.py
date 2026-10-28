@@ -18,6 +18,7 @@ ENDPOINTS_DE_NEGOCIO = [
     "/api/clientes/clientes/",
     "/api/clientes/marcas/",
     "/api/clientes/rubros/",
+    "/api/clientes/grupos/",
     "/api/campanias/campanias/",
     "/api/reservas/reservas/",
     "/api/costos/costos/",

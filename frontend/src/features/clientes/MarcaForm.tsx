@@ -4,12 +4,13 @@ import { ApiError } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import { vigentes } from '../../shared/opciones'
 import AvisoDuplicados from './AvisoDuplicados'
-import type { Cliente, Marca, Rubro } from './types'
+import type { Cliente, GrupoEconomico, Marca, Rubro } from './types'
 
 export type MarcaInput = {
   nombre: string
   cliente: number | null
   rubro: number | null
+  grupo: number | null
   activo: boolean
   confirmar_distinta?: boolean
 }
@@ -18,14 +19,17 @@ type Props = {
   marca?: Marca | null
   clientes: Cliente[]
   rubros: Rubro[]
+  /** Sin la lista no se ofrece el grupo (el alta rápida desde una campaña). */
+  grupos?: GrupoEconomico[]
   onSave: (input: MarcaInput) => Promise<void>
   onCancel: () => void
 }
 
-export default function MarcaForm({ marca, clientes, rubros, onSave, onCancel }: Props) {
+export default function MarcaForm({ marca, clientes, rubros, grupos, onSave, onCancel }: Props) {
   const [nombre, setNombre] = useState(marca?.nombre ?? '')
   const [cliente, setCliente] = useState(String(marca?.cliente ?? ''))
   const [rubro, setRubro] = useState(String(marca?.rubro ?? ''))
+  const [grupo, setGrupo] = useState(String(marca?.grupo ?? ''))
   const [activo, setActivo] = useState(marca?.activo ?? true)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
@@ -42,6 +46,7 @@ export default function MarcaForm({ marca, clientes, rubros, onSave, onCancel }:
         nombre: nombre.trim(),
         cliente: cliente ? Number(cliente) : null,
         rubro: rubro ? Number(rubro) : null,
+        grupo: grupo ? Number(grupo) : null,
         activo,
         ...(confirmarDistinta && { confirmar_distinta: true }),
       })
@@ -109,6 +114,21 @@ export default function MarcaForm({ marca, clientes, rubros, onSave, onCancel }:
           </select>
           <FieldErrors messages={errors.rubro} />
         </label>
+        {grupos && (
+          <label>
+            Grupo económico
+            <select value={grupo} onChange={(event) => setGrupo(event.target.value)}>
+              <option value="">Sin grupo</option>
+              {vigentes(grupos, marca?.grupo).map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.nombre}
+                  {item.activo ? '' : ' (inactivo)'}
+                </option>
+              ))}
+            </select>
+            <FieldErrors messages={errors.grupo} />
+          </label>
+        )}
         <label className="checkline">
           <input
             type="checkbox"

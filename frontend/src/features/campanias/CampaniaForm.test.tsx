@@ -26,6 +26,8 @@ const marcas: Marca[] = [
     cliente_nombre: 'Unilever',
     rubro: null,
     rubro_nombre: null,
+    grupo: null,
+    grupo_nombre: null,
     activo: true,
   },
 ]
@@ -93,6 +95,8 @@ test('permite crear una marca al vuelo y la deja seleccionada', async () => {
     cliente_nombre: 'Unilever',
     rubro: null,
     rubro_nombre: null,
+    grupo: null,
+    grupo_nombre: null,
     activo: true,
   })
   render(<CampaniaForm {...base} marcas={[]} onSave={vi.fn()} onCrearMarca={onCrearMarca} />)

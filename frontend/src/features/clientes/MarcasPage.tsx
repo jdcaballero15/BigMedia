@@ -3,14 +3,17 @@ import { apiGet, apiWrite } from '../../shared/api'
 import CampaniasLista from '../campanias/CampaniasLista'
 import MarcaForm from './MarcaForm'
 import type { MarcaInput } from './MarcaForm'
+import GruposAdmin from './GruposAdmin'
+import MarcasDelGrupo from './MarcasDelGrupo'
 import RubrosAdmin from './RubrosAdmin'
-import type { Cliente, Marca, Rubro } from './types'
+import type { Cliente, GrupoEconomico, Marca, Rubro } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
 import MenuFila from '../../shared/MenuFila'
 
 const ERROR_RUBROS = 'No se pudieron cargar los rubros.'
+const ERROR_GRUPOS = 'No se pudieron cargar los grupos económicos.'
 
-/** Ficha de una marca: todas sus campañas, sin importar quién las pagó (HU-022 criterio 1). */
+/** Ficha de una marca: sus campañas, sin importar quién las pagó, y su grupo (HU-022). */
 function FichaMarca({ marca, onClose }: { marca: Marca; onClose: () => void }) {
   const titulo = `Ficha de ${marca.nombre}`
   return (
@@ -20,7 +23,7 @@ function FichaMarca({ marca, onClose }: { marca: Marca; onClose: () => void }) {
           <h3>{titulo}</h3>
           <p className="muted">
             {marca.cliente_nombre} · {marca.rubro_nombre ?? 'Sin rubro'} ·{' '}
-            {marca.activo ? 'Activa' : 'Inactiva'}
+            {marca.grupo_nombre ?? 'Sin grupo'} · {marca.activo ? 'Activa' : 'Inactiva'}
           </p>
         </div>
         <button type="button" className="button-ghost" onClick={onClose}>
@@ -32,6 +35,7 @@ function FichaMarca({ marca, onClose }: { marca: Marca; onClose: () => void }) {
         titulo={`Campañas de ${marca.nombre}`}
         ocultar="marca"
       />
+      {marca.grupo !== null && <MarcasDelGrupo marca={marca} grupo={marca.grupo} />}
     </section>
   )
 }
@@ -40,9 +44,11 @@ export default function MarcasPage() {
   const puedeEditar = usePuedeEditar()
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [rubros, setRubros] = useState<Rubro[]>([])
+  const [grupos, setGrupos] = useState<GrupoEconomico[]>([])
   const [marcas, setMarcas] = useState<Marca[]>([])
   const [cliente, setCliente] = useState('')
   const [rubro, setRubro] = useState('')
+  const [grupo, setGrupo] = useState('')
   const [q, setQ] = useState('')
   const [incluirInactivas, setIncluirInactivas] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -52,6 +58,7 @@ export default function MarcasPage() {
   const [ficha, setFicha] = useState<Marca | null>(null)
   const [revision, setRevision] = useState(0)
   const [revisionRubros, setRevisionRubros] = useState(0)
+  const [revisionGrupos, setRevisionGrupos] = useState(0)
 
   useEffect(() => {
     let active = true
@@ -87,9 +94,26 @@ export default function MarcasPage() {
 
   useEffect(() => {
     let active = true
+    void apiGet<GrupoEconomico[]>('/api/clientes/grupos/?incluir_inactivos=1')
+      .then((rows) => {
+        if (!active) return
+        setGrupos(rows)
+        setErrorCatalogos((actual) => (actual === ERROR_GRUPOS ? '' : actual))
+      })
+      .catch(() => {
+        if (active) setErrorCatalogos(ERROR_GRUPOS)
+      })
+    return () => {
+      active = false
+    }
+  }, [revisionGrupos])
+
+  useEffect(() => {
+    let active = true
     const params = new URLSearchParams()
     if (cliente) params.set('cliente', cliente)
     if (rubro) params.set('rubro', rubro)
+    if (grupo) params.set('grupo', grupo)
     if (q.trim()) params.set('q', q.trim())
     if (incluirInactivas) params.set('incluir_inactivos', '1')
     const suffix = params.toString() ? `?${params}` : ''
@@ -109,7 +133,7 @@ export default function MarcasPage() {
     return () => {
       active = false
     }
-  }, [cliente, rubro, q, incluirInactivas, revision, revisionRubros])
+  }, [cliente, rubro, grupo, q, incluirInactivas, revision, revisionRubros, revisionGrupos])
 
   async function saveMarca(input: MarcaInput) {
     if (editing === null) return
@@ -154,6 +178,7 @@ export default function MarcasPage() {
           marca={editing === 'new' ? null : editing}
           clientes={clientes}
           rubros={rubros}
+          grupos={grupos}
           onSave={saveMarca}
           onCancel={() => setEditing(null)}
         />
@@ -183,6 +208,21 @@ export default function MarcasPage() {
           >
             <option value="">Todos</option>
             {rubros.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.nombre}
+                {item.activo ? '' : ' (inactivo)'}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Grupo
+          <select
+            value={grupo}
+            onChange={(event) => cambiarFiltro(() => setGrupo(event.target.value))}
+          >
+            <option value="">Todos</option>
+            {grupos.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.nombre}
                 {item.activo ? '' : ' (inactivo)'}
@@ -229,6 +269,7 @@ export default function MarcasPage() {
                 <th>Marca</th>
                 <th>Cliente</th>
                 <th>Rubro</th>
+                <th>Grupo</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -239,6 +280,7 @@ export default function MarcasPage() {
                   <td className="primary-cell">{item.nombre}</td>
                   <td>{item.cliente_nombre}</td>
                   <td>{item.rubro_nombre ?? 'Sin rubro'}</td>
+                  <td>{item.grupo_nombre ?? 'Sin grupo'}</td>
                   <td>{item.activo ? 'Activa' : 'Inactiva'}</td>
                   <td className="row-actions">
                     <button className="button-ghost" onClick={() => setFicha(item)}>
@@ -262,6 +304,7 @@ export default function MarcasPage() {
         )}
       </div>
       <RubrosAdmin rubros={rubros} onChanged={() => setRevisionRubros((current) => current + 1)} />
+      <GruposAdmin grupos={grupos} onChanged={() => setRevisionGrupos((current) => current + 1)} />
     </section>
   )
 }

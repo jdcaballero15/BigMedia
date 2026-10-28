@@ -367,7 +367,7 @@ test('muestra Ingresos a gerencia', async () => {
   expect(within(nav).getByRole('button', { name: 'Ingresos' })).toBeDefined()
 })
 
-test('oculta Por rubro a quien no es gerencia', async () => {
+test('oculta Por rubro o grupo a quien no es gerencia', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string) => {
@@ -379,10 +379,10 @@ test('oculta Por rubro a quien no es gerencia', async () => {
   render(<App />)
   const nav = await screen.findByRole('navigation', { name: 'Navegación' })
   expect(within(nav).getByRole('button', { name: 'Ocupación' })).toBeDefined()
-  expect(within(nav).queryByRole('button', { name: 'Por rubro' })).toBeNull()
+  expect(within(nav).queryByRole('button', { name: 'Por rubro o grupo' })).toBeNull()
 })
 
-test('muestra Por rubro a gerencia', async () => {
+test('muestra Por rubro o grupo a gerencia', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string) => {
@@ -393,7 +393,7 @@ test('muestra Por rubro a gerencia', async () => {
   )
   render(<App />)
   const nav = await screen.findByRole('navigation', { name: 'Navegación' })
-  expect(within(nav).getByRole('button', { name: 'Por rubro' })).toBeDefined()
+  expect(within(nav).getByRole('button', { name: 'Por rubro o grupo' })).toBeDefined()
 })
 
 test('oculta Auditoría a quien no es gerencia', async () => {
