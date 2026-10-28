@@ -106,5 +106,10 @@ Ninguna abierta: RN-016 se respondió el 2026-10-28 (ver `reglas-de-negocio.md`)
   96.90 % (requerido 80 %); `pre-commit run --all-files`: todos Passed (incluido gitleaks).
   Frontend: `format:check` OK, `lint` sin hallazgos, `typecheck` OK, `test:coverage` 344 passed
   (sentencias 91.6 %, ramas 81.83 %, líneas 93.92 %), `build` OK (aviso de bloque mayor a 500 kB,
-  previo a esta unidad). Esperando revisión de Gonza.
+  previo a esta unidad).
+  Después del rebase sobre `develop` con `estilo-base` (2026-10-28): `CatalogoAdmin` pasa
+  «Inactivar» al menú de tres puntos (`MenuFila`), como el resto de las tablas. Verificación
+  repetida: ruff y mypy sin errores (137 archivos), `makemigrations --check` sin cambios, pytest
+  787 passed (96,90 %), frontend 353 tests (sentencias 91,79 %, líneas 94,06 %), lint,
+  typecheck y build en verde, pre-commit todo Passed.
 - Gate 3 (PR):
