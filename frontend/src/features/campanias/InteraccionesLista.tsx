@@ -3,20 +3,21 @@ import { apiGet } from '../../shared/api'
 import type { Interaccion } from './types'
 import { etiquetaTipoInteraccion } from './types'
 
-type Filtro = { cliente: number } | { campania: number }
+type Filtro = { cliente: number } | { campania: number } | { marca: number }
+type Columna = 'cliente' | 'campania' | 'marca'
 
 type Props = {
   filtro: Filtro
   titulo: string
   /** Oculta la columna que ya se sabe por el contexto (el cliente en su ficha, por ejemplo). */
-  ocultar?: 'cliente' | 'campania'
+  ocultar?: Columna
   /** Avisa cuántas interacciones trajo, para el contador de la ficha. */
   onCargadas?: (cantidad: number) => void
 }
 
 type Carga = { estado: 'cargando' | 'error' | 'listo'; filas: Interaccion[] }
 
-/** Interacciones de un cliente o de una campaña, de solo lectura (HU-020 criterio 2). */
+/** Interacciones de un cliente, una campaña o una marca, de solo lectura (HU-020, RN-018). */
 export default function InteraccionesLista({ filtro, titulo, ocultar, onCargadas }: Props) {
   const [carga, setCarga] = useState<Carga>({ estado: 'cargando', filas: [] })
   const params = new URLSearchParams(
@@ -59,7 +60,7 @@ export default function InteraccionesLista({ filtro, titulo, ocultar, onCargadas
 
 type TablaProps = {
   filas: Interaccion[]
-  ocultar?: 'cliente' | 'campania'
+  ocultar?: Columna
   onEditar?: (interaccion: Interaccion) => void
 }
 
@@ -74,6 +75,7 @@ export function TablaInteracciones({ filas, ocultar, onEditar }: TablaProps) {
           {ocultar !== 'cliente' && <th>Cliente</th>}
           <th>Contacto</th>
           {ocultar !== 'campania' && <th>Campaña</th>}
+          {ocultar !== 'marca' && <th>Marca</th>}
           <th>Notas</th>
           {onEditar && <th>Acciones</th>}
         </tr>
@@ -87,6 +89,7 @@ export function TablaInteracciones({ filas, ocultar, onEditar }: TablaProps) {
             {ocultar !== 'cliente' && <td>{fila.cliente_nombre}</td>}
             <td>{fila.contacto_nombre ?? '—'}</td>
             {ocultar !== 'campania' && <td>{fila.campania_nombre ?? '—'}</td>}
+            {ocultar !== 'marca' && <td>{fila.marca_nombre ?? '—'}</td>}
             <td>{fila.notas || '—'}</td>
             {onEditar && (
               <td className="row-actions">

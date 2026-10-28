@@ -35,6 +35,8 @@ const llamada: Interaccion = {
   contacto_nombre: null,
   campania: 21,
   campania_nombre: 'Verano 2027',
+  marca: 31,
+  marca_nombre: 'Marca Sol',
   registrada_por_nombre: 'operativo',
 }
 
@@ -168,6 +170,8 @@ test('la lista de la ficha filtra por cliente y oculta esa columna', async () =>
   const tabla = await screen.findByRole('table', { name: 'Interacciones' })
   expect(within(tabla).queryByRole('columnheader', { name: 'Cliente' })).toBeNull()
   expect(within(tabla).getByRole('columnheader', { name: 'Campaña' })).toBeDefined()
+  expect(within(tabla).getByRole('columnheader', { name: 'Marca' })).toBeDefined()
+  expect(within(tabla).getByText('Marca Sol')).toBeDefined()
   expect(within(tabla).getByText('Pidió cotizar noviembre.')).toBeDefined()
   expect(fetchMock).toHaveBeenCalledTimes(1)
 })

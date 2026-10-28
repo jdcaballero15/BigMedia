@@ -54,6 +54,7 @@ function mockFetch(route: Route) {
     if (input === '/api/clientes/rubros/?incluir_inactivos=1') return ok(rubros)
     if (input === '/api/clientes/grupos/?incluir_inactivos=1') return ok(grupos)
     if (input.startsWith('/api/clientes/marcas/')) return ok([marca])
+    if (input.startsWith('/api/campanias/interacciones/')) return ok([])
     throw new Error(`URL inesperada: ${input}`)
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -337,6 +338,44 @@ test('la ficha de una marca muestra todas sus campañas con su estado', async ()
   fireEvent.click(within(ficha).getByRole('button', { name: 'Volver a marcas' }))
   expect(screen.queryByRole('region', { name: 'Ficha de Agua Cumbre' })).toBeNull()
   expect(await screen.findByRole('table', { name: 'Marcas' })).toBeDefined()
+})
+
+test('la ficha de una marca muestra sus interacciones, sin repetir la marca (RN-018)', async () => {
+  mockFetch((url) =>
+    url === '/api/campanias/interacciones/?marca=7'
+      ? ok([
+          {
+            id: 15,
+            tipo: 'llamada',
+            asunto: 'Pauta de verano',
+            fecha: '2026-10-20',
+            notas: '',
+            cliente: 1,
+            cliente_nombre: 'Agencia Andes',
+            contacto: null,
+            contacto_nombre: null,
+            campania: null,
+            campania_nombre: null,
+            marca: 7,
+            marca_nombre: 'Agua Cumbre',
+            registrada_por_nombre: 'operativo',
+          },
+        ])
+      : url.startsWith('/api/campanias/campanias/')
+        ? ok([])
+        : undefined,
+  )
+  render(<MarcasPage />)
+
+  const tabla = await screen.findByRole('table', { name: 'Marcas' })
+  await within(tabla).findByText('Agua Cumbre')
+  fireEvent.click(within(tabla).getByRole('button', { name: 'Ver ficha' }))
+  const ficha = screen.getByRole('region', { name: 'Ficha de Agua Cumbre' })
+  const seccion = within(ficha).getByRole('region', { name: 'Interacciones con Agua Cumbre' })
+  expect(await within(seccion).findByText('Pauta de verano')).toBeDefined()
+  const interacciones = within(seccion).getByRole('table', { name: 'Interacciones' })
+  expect(within(interacciones).queryByRole('columnheader', { name: 'Marca' })).toBeNull()
+  expect(within(interacciones).getByRole('columnheader', { name: 'Cliente' })).toBeDefined()
 })
 
 test('la ficha de una marca con grupo lista las otras marcas del grupo (RN-016)', async () => {

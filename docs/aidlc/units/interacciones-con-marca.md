@@ -75,6 +75,6 @@ marca que todavía no tiene campaña, y que esas interacciones se vean en la fic
 
 ## Registro de gates
 
-- Gate 1 (plan):
+- Gate 1 (plan): aprobado por Gonza el 2026-10-28, con el filtro de la ficha de marca propuesto.
 - Gate 2 (verificación):
 - Gate 3 (PR):

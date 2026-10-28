@@ -118,6 +118,7 @@ class InteraccionSerializer(serializers.ModelSerializer[Interaccion]):
     cliente_nombre = serializers.CharField(source="cliente.nombre_visible", read_only=True)
     contacto_nombre = serializers.CharField(source="contacto.nombre", read_only=True, default=None)
     campania_nombre = serializers.SerializerMethodField()
+    marca_nombre = serializers.CharField(source="marca.nombre", read_only=True, default=None)
     registrada_por_nombre = serializers.CharField(
         source="registrada_por.username", read_only=True, default=None
     )
@@ -136,6 +137,8 @@ class InteraccionSerializer(serializers.ModelSerializer[Interaccion]):
             "contacto_nombre",
             "campania",
             "campania_nombre",
+            "marca",
+            "marca_nombre",
             "registrada_por_nombre",
             "creado_en",
             "actualizado_en",
@@ -153,6 +156,7 @@ class InteraccionSerializer(serializers.ModelSerializer[Interaccion]):
         )
         contacto = attrs.get("contacto", getattr(actual, "contacto", None))
         campania = attrs.get("campania", getattr(actual, "campania", None))
+        marca = attrs.get("marca", getattr(actual, "marca", None))
         if (actual is None or actual.cliente_id != cliente.pk) and not cliente.activo:
             raise serializers.ValidationError({"cliente": "Seleccioná un cliente activo."})
         contacto_sin_cambios = (
@@ -163,6 +167,9 @@ class InteraccionSerializer(serializers.ModelSerializer[Interaccion]):
         try:
             services.validar_contacto_de_interaccion(cliente, contacto, contacto_sin_cambios)
             services.validar_campania_de_interaccion(cliente, campania)
+            services.validar_marca_de_interaccion(
+                cliente, marca, campania, actual is not None and actual.marca == marca
+            )
         except DjangoValidationError as error:
             raise serializers.ValidationError(error.message_dict) from error
         return attrs

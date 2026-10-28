@@ -48,6 +48,8 @@ export type Interaccion = {
   contacto_nombre: string | null
   campania: number | null
   campania_nombre: string | null
+  marca: number | null
+  marca_nombre: string | null
   registrada_por_nombre: string | null
 }
 

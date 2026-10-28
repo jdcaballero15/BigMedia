@@ -90,7 +90,7 @@ class InteraccionViewSet(viewsets.ModelViewSet[Interaccion]):
     permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
     http_method_names = ["get", "post", "patch", "head", "options"]
     queryset = Interaccion.objects.select_related(
-        "cliente", "contacto", "campania", "registrada_por"
+        "cliente", "contacto", "campania", "marca", "registrada_por"
     )
     serializer_class = InteraccionSerializer
 
@@ -105,4 +105,8 @@ class InteraccionViewSet(viewsets.ModelViewSet[Interaccion]):
         for campo in ("cliente", "campania"):
             if params.get(campo):
                 queryset = queryset.filter(**{f"{campo}_id": _id_positivo(params[campo], campo)})
+        if params.get("marca"):
+            # Las que llevan la marca y las de sus campañas, aunque no la tengan cargada (RN-018).
+            marca = _id_positivo(params["marca"], "marca")
+            queryset = queryset.filter(Q(marca_id=marca) | Q(campania__marca_id=marca))
         return queryset

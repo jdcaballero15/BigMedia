@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiWrite } from '../../shared/api'
 import CampaniasLista from '../campanias/CampaniasLista'
+import InteraccionesLista from '../campanias/InteraccionesLista'
 import MarcaForm from './MarcaForm'
 import type { MarcaInput } from './MarcaForm'
 import GruposAdmin from './GruposAdmin'
@@ -15,7 +16,10 @@ import { iniciales } from './iniciales'
 const ERROR_RUBROS = 'No se pudieron cargar los rubros.'
 const ERROR_GRUPOS = 'No se pudieron cargar los grupos económicos.'
 
-/** Ficha de una marca como página: sus campañas, sin importar quién las pagó, y su grupo (HU-022). */
+/**
+ * Ficha de una marca como página: sus campañas, sin importar quién las pagó, sus interacciones
+ * (RN-018) y su grupo (HU-022).
+ */
 function FichaMarca({ marca, onVolver }: { marca: Marca; onVolver: () => void }) {
   useDetalleRuta(marca.nombre, onVolver)
   const datos = [
@@ -42,6 +46,11 @@ function FichaMarca({ marca, onVolver }: { marca: Marca; onVolver: () => void })
       <CampaniasLista
         filtro={{ marca: marca.id }}
         titulo={`Campañas de ${marca.nombre}`}
+        ocultar="marca"
+      />
+      <InteraccionesLista
+        filtro={{ marca: marca.id }}
+        titulo={`Interacciones con ${marca.nombre}`}
         ocultar="marca"
       />
       {marca.grupo !== null && <MarcasDelGrupo marca={marca} grupo={marca.grupo} />}
