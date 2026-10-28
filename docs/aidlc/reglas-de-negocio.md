@@ -44,7 +44,7 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | RN-014 | Cambio de pagador de una marca | `provisoria` | La campaña puede llevar un cliente que factura propio que reemplaza la deducción desde la marca; HU-027 sigue viva | Seba (2026-10-19), sobre la decisión D-14 del 15/10/2026 | HU-027 | Modelo `Campania.cliente_facturacion` y propiedad `cliente_factura` (unidad campanias) |
 | RN-015 | Intermediario formal y sus contactos | `provisoria` | Tipo aparte con contactos múltiples | Documento de historias (decisión D-15 del 15/10/2026) | HU-016, HU-068 | Servicio `apps/clientes/services.py` (`acepta_contactos`, `guardar_contacto`), modelo `Contacto`, `backend/tests/test_contactos.py` |
 | RN-016 | Grupo económico | `provisoria` | Catálogo editable; cada marca, a lo sumo en un grupo (opcional) | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-017, HU-022, HU-050 | Modelo `clientes.GrupoEconomico` y `Marca.grupo`, `apps/facturacion/services.py::reporte_por_grupo`, `frontend/src/features/clientes/MarcasDelGrupo.tsx`, `backend/tests/test_grupos_economicos.py`, `backend/tests/test_reporte_por_grupo.py` |
-| RN-017 | Cambio de razón social de un cliente directo | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-018 | Sin implementar |
+| RN-017 | Cambio de razón social de un cliente directo | `provisoria` | La marca homónima no se actualiza sola; se renombra a mano | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-018 | Servicio `apps/clientes/services.py` (`crear_cliente`: la marca se crea solo en el alta), `backend/tests/test_clientes_marca_homonima.py` |
 | RN-018 | Interacciones antes de la campaña | `provisoria` | Marca opcional en la interacción, del mismo cliente y coherente con la campaña | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-020 | Servicio `apps/campanias/services.py` (`validar_marca_de_interaccion`), modelo `Interaccion.marca`, filtro `?marca=` en `InteraccionViewSet`, `backend/tests/test_interacciones.py` |
 | RN-019 | Dimensiones estándar por formato | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-009 | Sin implementar |
 | RN-020 | Formatos sin relevamiento | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-015 | Sin implementar |
@@ -342,7 +342,11 @@ Pregunta menor del bloque «Otras preguntas menores» de D-16.
 
 **Cambio de razón social de un cliente directo (pregunta 19):** ¿la marca homónima debe actualizarse sola? Afecta HU-018.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** no, provisoriamente, hasta que Seba la confirme. La marca homónima se crea con el
+nombre del cliente directo solo en el alta, y después queda independiente: si el cliente cambia de
+razón social (el dato legal para facturar) o de nombre, la marca no se toca, porque es lo que va en
+el cartel y en las campañas ya cargadas. Si hace falta, se renombra a mano en Marcas. ·
+**Fecha:** 2026-10-28 · **Quién respondió:** Gonza
 
 ### RN-018 Interacciones antes de la campaña (D-16)
 

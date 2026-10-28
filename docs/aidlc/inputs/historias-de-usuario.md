@@ -280,7 +280,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** HU-016 y HU-017 completas.
-- **Regla de negocio:** Un cliente directo existe dos veces: como entidad legal a la que se factura y como marca impresa en el cartel, con la marca apuntando al mismo cliente. Si el cliente cambia de razón social después, la marca no se actualiza sola hasta que Seba responda la pregunta 19. Un cliente directo sin nombre no genera marca, porque no hay con qué nombrarla.
+- **Regla de negocio:** Un cliente directo existe dos veces: como entidad legal a la que se factura y como marca impresa en el cartel, con la marca apuntando al mismo cliente. Si después el cliente cambia de razón social o de nombre, la marca no se toca: es lo que va en el cartel, y si hace falta se renombra a mano en Marcas (RN-017). Un cliente directo sin nombre no genera marca, porque no hay con qué nombrarla.
 - **Criterios de aceptación:**
   1. Dado un cliente directo nuevo, cuando se guarda, entonces se crea en la misma operación una marca con su nombre asociada a él.
   2. Dado un cliente intermediario o intermediario formal, cuando se guarda, entonces no se crea ninguna marca.
