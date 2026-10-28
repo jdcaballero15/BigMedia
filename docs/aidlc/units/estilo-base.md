@@ -1,6 +1,6 @@
 # Unidad: estilo-base
 
-- **Estado:** en curso · **Épica:** E12 Rediseño visual · **App dueña:** frontend
+- **Estado:** en revisión (PR #91) · **Épica:** E12 Rediseño visual · **App dueña:** frontend
 - **Origen:** pedido de Gonza del 2026-10-28 (probando la app de punta a punta) · **Rama:** `feature/frontend-estilo-base`
 
 ## Objetivo
@@ -117,4 +117,4 @@ Ninguna.
   horizontal a 1280 px (una columna por mes; lo resuelve el selector de período de
   `pantallas-rediseno`), con la primera columna fija; Ítems a facturar y Posiciones por formato
   mantienen sus acciones en la fila porque abren campos en línea.
-- Gate 3 (PR):
+- Gate 3 (PR): pedido por Gonza el 2026-10-28; PR #91.
