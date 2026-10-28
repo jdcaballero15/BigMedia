@@ -2,7 +2,7 @@
 
 from django.core.exceptions import ValidationError
 
-from apps.clientes.models import Cliente, Contacto
+from apps.clientes.models import Cliente, Contacto, Marca
 from apps.inventario.models import Formato
 
 from .models import Campania, LineaFormato
@@ -45,6 +45,23 @@ def validar_campania_de_interaccion(cliente: Cliente, campania: Campania | None)
     duenio_marca = campania.marca.cliente_id if campania.marca is not None else None
     if cliente.pk not in {getattr(facturador, "pk", None), duenio_marca}:
         raise ValidationError({"campania": "La campaña no es de ese cliente."})
+
+
+def validar_marca_de_interaccion(
+    cliente: Cliente, marca: Marca | None, campania: Campania | None, sin_cambios: bool
+) -> None:
+    """La marca es activa y del cliente, y la campaña, si hay, es de esa marca (RN-018).
+
+    Una marca que ya tenía la interacción se conserva aunque después se haya inactivado.
+    """
+    if marca is None:
+        return
+    if marca.cliente_id != cliente.pk:
+        raise ValidationError({"marca": "La marca no es de ese cliente."})
+    if not marca.activo and not sin_cambios:
+        raise ValidationError({"marca": "Seleccioná una marca activa."})
+    if campania is not None and campania.marca_id != marca.pk:
+        raise ValidationError({"campania": "La campaña no es de esa marca."})
 
 
 def validar_linea_formato(

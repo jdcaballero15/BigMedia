@@ -110,6 +110,10 @@ class Interaccion(models.Model):
     campania = models.ForeignKey(
         Campania, on_delete=models.PROTECT, related_name="interacciones", null=True, blank=True
     )
+    # Para las conversaciones sobre una marca que todavía no tiene campaña (RN-018).
+    marca = models.ForeignKey(
+        Marca, on_delete=models.PROTECT, related_name="interacciones", null=True, blank=True
+    )
     registrada_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

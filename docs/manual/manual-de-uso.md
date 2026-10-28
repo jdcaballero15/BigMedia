@@ -97,8 +97,11 @@ marca puede estar en un solo grupo.
   estado), **Marcas** o **Interacciones**; debajo, los contactos del Intermediario formal. Sirve
   para tener el contexto antes de llamarlo.
 - En **Comercial › Marcas**, **Ver ficha** abre la ficha de la marca: todas sus campañas con su
-  estado, aunque las haya pagado otro cliente, y, si la marca tiene grupo económico, las otras
-  marcas del grupo.
+  estado, aunque las haya pagado otro cliente; sus interacciones (las que tienen la marca cargada y
+  las de sus campañas), y, si la marca tiene grupo económico, las otras marcas del grupo.
+- Al registrar una interacción en **Comercial › Interacciones** podés elegir una **Marca** del
+  cliente aunque todavía no haya campaña, por ejemplo para una primera llamada sobre una marca
+  nueva. Si elegís marca, la lista de campañas muestra solo las de esa marca.
 - Para volver a la lista, tocá **← Volver** o el nombre de la pantalla en la ruta de arriba (por
   ejemplo, «Clientes» en «Big Media / Comercial / Clientes / Agencia Cordillera»).
 

@@ -255,3 +255,112 @@ def test_campanias_filtradas_por_cliente_incluyen_las_que_factura_y_las_de_sus_m
 def test_campanias_filtro_cliente_invalido_se_rechaza(operativo_client):
     respuesta = operativo_client.get("/api/campanias/campanias/", {"cliente": "0"})
     assert respuesta.status_code == 400
+
+
+# --- RN-018: marca opcional, del cliente y coherente con la campaña ---
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-018")
+def test_crear_interaccion_con_marca_sin_campania_se_guarda(operativo_client):
+    cliente = _cliente()
+    marca = Marca.objects.create(nombre="Marca Prueba", cliente=cliente)
+    respuesta = _post(operativo_client, _datos(cliente, marca=marca.pk))
+    assert respuesta.status_code == 201
+    assert respuesta.json()["marca"] == marca.pk
+    assert respuesta.json()["marca_nombre"] == "Marca Prueba"
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-018")
+def test_crear_interaccion_sin_marca_devuelve_marca_vacia(operativo_client):
+    cuerpo = _post(operativo_client, _datos(_cliente())).json()
+    assert cuerpo["marca"] is None
+    assert cuerpo["marca_nombre"] is None
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-018")
+def test_crear_interaccion_con_marca_de_otro_cliente_se_rechaza(operativo_client):
+    cliente = _cliente()
+    ajena = Marca.objects.create(nombre="Marca Ajena", cliente=_cliente("Otro Cliente"))
+    respuesta = _post(operativo_client, _datos(cliente, marca=ajena.pk))
+    assert respuesta.status_code == 400
+    assert "marca" in respuesta.json()
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-018")
+def test_crear_interaccion_con_campania_de_otra_marca_se_rechaza(operativo_client):
+    cliente = _cliente()
+    campania = _campania_de(cliente)
+    otra = Marca.objects.create(nombre="Otra Marca", cliente=cliente)
+    respuesta = _post(operativo_client, _datos(cliente, marca=otra.pk, campania=campania.pk))
+    assert respuesta.status_code == 400
+    assert "campania" in respuesta.json()
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-018")
+def test_crear_interaccion_con_marca_y_su_campania_se_guarda(operativo_client):
+    cliente = _cliente()
+    campania = _campania_de(cliente)
+    datos = _datos(cliente, marca=campania.marca_id, campania=campania.pk)
+    assert _post(operativo_client, datos).status_code == 201
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-018")
+def test_crear_interaccion_con_marca_inactiva_se_rechaza(operativo_client):
+    cliente = _cliente()
+    marca = Marca.objects.create(nombre="Marca Prueba", cliente=cliente, activo=False)
+    respuesta = _post(operativo_client, _datos(cliente, marca=marca.pk))
+    assert respuesta.status_code == 400
+    assert "marca" in respuesta.json()
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-018")
+def test_editar_interaccion_con_marca_inactivada_la_conserva(operativo_client):
+    cliente = _cliente()
+    marca = Marca.objects.create(nombre="Marca Prueba", cliente=cliente)
+    creada = _post(operativo_client, _datos(cliente, marca=marca.pk)).json()
+    marca.activo = False
+    marca.save()
+    editada = _patch(operativo_client, creada["id"], {"notas": "Se volvió a llamar."})
+    assert editada.status_code == 200
+    assert editada.json()["marca"] == marca.pk
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-018")
+def test_cambiar_de_cliente_con_marca_del_anterior_se_rechaza(operativo_client):
+    cliente = _cliente()
+    marca = Marca.objects.create(nombre="Marca Prueba", cliente=cliente)
+    creada = _post(operativo_client, _datos(cliente, marca=marca.pk)).json()
+    respuesta = _patch(operativo_client, creada["id"], {"cliente": _cliente("Otro Cliente").pk})
+    assert respuesta.status_code == 400
+    assert "marca" in respuesta.json()
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-018")
+def test_listar_interacciones_por_marca_incluye_las_de_sus_campanias(operativo_client):
+    cliente = _cliente()
+    campania = _campania_de(cliente)
+    marca = campania.marca
+    assert marca is not None
+    con_marca = _post(operativo_client, _datos(cliente, marca=marca.pk)).json()
+    con_campania = _post(operativo_client, _datos(cliente, campania=campania.pk)).json()
+    _post(operativo_client, _datos(cliente, asunto="Sin marca"))
+    otra = Marca.objects.create(nombre="Otra Marca", cliente=cliente)
+    _post(operativo_client, _datos(cliente, marca=otra.pk, asunto="De otra marca"))
+
+    filas = operativo_client.get(URL, {"marca": marca.pk}).json()
+    assert sorted(f["id"] for f in filas) == sorted([con_marca["id"], con_campania["id"]])
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-018")
+def test_listar_interacciones_con_marca_invalida_se_rechaza(operativo_client):
+    assert operativo_client.get(URL, {"marca": "abc"}).status_code == 400
