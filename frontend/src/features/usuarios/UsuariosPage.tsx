@@ -4,6 +4,7 @@ import UsuarioForm from './UsuarioForm'
 import type { UsuarioInput } from './UsuarioForm'
 import { ETIQUETAS_ROL } from './types'
 import type { Usuario } from './types'
+import MenuFila from '../../shared/MenuFila'
 
 const URL = '/api/usuarios/usuarios/'
 
@@ -149,9 +150,9 @@ export default function UsuariosPage() {
               <tr>
                 <th>Usuario</th>
                 <th>Nombre</th>
-                <th>Correo</th>
+                <th className="col-secundaria">Correo</th>
                 <th>Rol</th>
-                <th>Gerencia</th>
+                <th className="col-secundaria">Gerencia</th>
                 <th>Contraseña</th>
                 <th>Estado</th>
                 <th>Acciones</th>
@@ -162,24 +163,29 @@ export default function UsuariosPage() {
                 <tr key={item.id}>
                   <td className="primary-cell">{item.username}</td>
                   <td>{nombreCompleto(item)}</td>
-                  <td>{item.email || '—'}</td>
+                  <td className="col-secundaria">{item.email || '—'}</td>
                   <td>{ETIQUETAS_ROL[item.rol]}</td>
-                  <td>{item.es_gerencia ? 'Sí' : 'No'}</td>
+                  <td className="col-secundaria">{item.es_gerencia ? 'Sí' : 'No'}</td>
                   <td>{item.tiene_clave ? 'Definida' : 'Pendiente'}</td>
                   <td>{item.activo ? 'Activo' : 'Inactivo'}</td>
                   <td className="row-actions">
                     <button className="button-ghost" onClick={() => setEditing(item)}>
                       Editar
                     </button>
-                    <button className="button-ghost" onClick={() => void generarLink(item)}>
-                      {item.tiene_clave ? 'Restablecer contraseña' : 'Link de contraseña'}
-                    </button>
-                    <button
-                      className="button-ghost"
-                      onClick={() => void cambiarActivo(item, !item.activo)}
-                    >
-                      {item.activo ? 'Inactivar' : 'Reactivar'}
-                    </button>
+                    <MenuFila
+                      acciones={[
+                        {
+                          etiqueta: item.tiene_clave
+                            ? 'Restablecer contraseña'
+                            : 'Link de contraseña',
+                          onClick: () => void generarLink(item),
+                        },
+                        {
+                          etiqueta: item.activo ? 'Inactivar' : 'Reactivar',
+                          onClick: () => void cambiarActivo(item, !item.activo),
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

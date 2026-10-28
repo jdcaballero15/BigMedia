@@ -8,6 +8,7 @@ import type { ClienteInput } from './ClienteForm'
 import { TIPOS_CLIENTE } from './types'
 import type { Cliente, Marca } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
+import MenuFila from '../../shared/MenuFila'
 
 type Ficha = { cliente: Cliente; recienCreado: boolean }
 type MarcasCargadas = { estado: 'cargando' | 'error' | 'listo'; marcas: Marca[] }
@@ -251,8 +252,8 @@ export default function ClientesPage() {
                 <th>Cliente</th>
                 <th>CUIT</th>
                 <th>Tipo</th>
-                <th>Teléfono</th>
-                <th>Correo</th>
+                <th className="col-secundaria">Teléfono</th>
+                <th className="col-secundaria">Correo</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -268,8 +269,8 @@ export default function ClientesPage() {
                   </td>
                   <td>{item.cuit || '—'}</td>
                   <td>{item.tipo_nombre || 'Sin tipo'}</td>
-                  <td>{item.telefono || '—'}</td>
-                  <td>{item.correo || '—'}</td>
+                  <td className="col-secundaria">{item.telefono || '—'}</td>
+                  <td className="col-secundaria">{item.correo || '—'}</td>
                   <td>{item.activo ? 'Activo' : 'Inactivo'}</td>
                   <td className="row-actions">
                     <button
@@ -278,16 +279,16 @@ export default function ClientesPage() {
                     >
                       Ver ficha
                     </button>
-                    {puedeEditar && (
-                      <button className="button-ghost" onClick={() => abrirEdicion(item)}>
-                        Editar
-                      </button>
-                    )}
-                    {puedeEditar && item.activo && (
-                      <button className="button-ghost" onClick={() => void inactivar(item)}>
-                        Inactivar
-                      </button>
-                    )}
+                    <MenuFila
+                      acciones={[
+                        { etiqueta: 'Editar', onClick: () => abrirEdicion(item), edicion: true },
+                        item.activo && {
+                          etiqueta: 'Inactivar',
+                          onClick: () => void inactivar(item),
+                          edicion: true,
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

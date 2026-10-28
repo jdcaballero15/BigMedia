@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import ContactosDelCliente from './ContactosDelCliente'
 import { PuedeEditarContext } from '../../shared/sesion'
 import type { Cliente, Contacto } from './types'
+import { abrirAcciones } from '../../shared/pruebas'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 const fail = (status: number, data: unknown) => ({ ok: false, status, json: async () => data })
@@ -66,6 +67,7 @@ test('lista los contactos con su estado', async () => {
   expect(within(filas[2]).getByText('Activo')).toBeDefined()
   expect(within(filas[3]).getByText('Inactivo')).toBeDefined()
   // Solo un activo que no es principal ofrece marcarse como principal.
+  filas.slice(1).forEach(abrirAcciones)
   expect(screen.getAllByRole('button', { name: 'Marcar como principal' })).toHaveLength(1)
   expect(screen.getByRole('button', { name: 'Reactivar' })).toBeDefined()
 })
@@ -130,8 +132,11 @@ test('marca como principal e inactiva con PATCH', async () => {
     options?.method === 'PATCH' ? ok(beto) : undefined,
   )
   render(<ContactosDelCliente cliente={central} />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Marcar como principal' }))
+  const filaBeto = (await screen.findByText('Beto')).closest('tr') as HTMLElement
+  abrirAcciones(filaBeto)
+  fireEvent.click(within(filaBeto).getByRole('button', { name: 'Marcar como principal' }))
   const fila = screen.getByText('Ana').closest('tr') as HTMLElement
+  abrirAcciones(fila)
   fireEvent.click(within(fila).getByRole('button', { name: 'Inactivar' }))
 
   await waitFor(() => expect(escrituras(fetchMock)).toHaveLength(2))
@@ -148,7 +153,9 @@ test('informa el error al cambiar un contacto', async () => {
       : undefined,
   )
   render(<ContactosDelCliente cliente={central} />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Marcar como principal' }))
+  const fila = (await screen.findByText('Beto')).closest('tr') as HTMLElement
+  abrirAcciones(fila)
+  fireEvent.click(within(fila).getByRole('button', { name: 'Marcar como principal' }))
   expect((await screen.findByRole('alert')).textContent).toBe('No se pudo completar la operación.')
 })
 

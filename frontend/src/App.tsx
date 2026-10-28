@@ -42,6 +42,7 @@ import ReporteOcupacionPage from './features/reservas/ReporteOcupacion'
 import DefinirClave from './features/usuarios/DefinirClave'
 import UsuariosPage from './features/usuarios/UsuariosPage'
 import { ApiError, apiGet, apiWrite } from './shared/api'
+import { fechaLarga } from './shared/fechas'
 import { PuedeEditarContext } from './shared/sesion'
 import type { Rol } from './shared/sesion'
 import './App.css'
@@ -227,6 +228,8 @@ function App() {
   })
   const [page, setPage] = useState<Page>('clientes')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [hoy] = useState(() => fechaLarga(new Date()))
+  const [etiqueta, setEtiqueta] = useState<{ texto: string; top: number } | null>(null)
   const [expirada, setExpirada] = useState(false)
   const [codigoClave, setCodigoClave] = useState(codigoDelLink)
   const [claveDefinida, setClaveDefinida] = useState(false)
@@ -327,6 +330,33 @@ function App() {
     }))
     .filter((section) => section.items.length > 0)
 
+  const seccionActiva = sections.find((section) => section.items.some((item) => item.id === page))
+  const paginaActiva = pages.find((item) => item.id === page)
+
+  function mostrarEtiqueta(texto: string, elemento: HTMLElement) {
+    const caja = elemento.getBoundingClientRect()
+    setEtiqueta({ texto, top: caja.top + caja.height / 2 })
+  }
+
+  function botonDelMenu(id: string, texto: string, contenido: ReactNode, onClick: () => void) {
+    return (
+      <button
+        key={id}
+        className={page === id ? 'active' : ''}
+        aria-label={texto}
+        aria-current={page === id ? 'page' : undefined}
+        onClick={onClick}
+        onMouseEnter={(event) => mostrarEtiqueta(texto, event.currentTarget)}
+        onFocus={(event) => mostrarEtiqueta(texto, event.currentTarget)}
+        onMouseLeave={() => setEtiqueta(null)}
+        onBlur={() => setEtiqueta(null)}
+      >
+        {contenido}
+        <span className="nav-label">{texto}</span>
+      </button>
+    )
+  }
+
   return (
     <div className={menuOpen ? 'app-shell menu-open' : 'app-shell'}>
       <header className="mobile-bar">
@@ -338,57 +368,68 @@ function App() {
         >
           {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
         </button>
-        <div className="brand-mark">
-          BM<span>.</span>
-        </div>
+        <div className="brand-mark">BM</div>
       </header>
       <aside className="sidebar">
-        <div className="sidebar-brand">
-          <div className="brand-mark">
-            BM<span>.</span>
-          </div>
-          <div className="topbar-title">
-            <strong>Big Media</strong>
-            <small>Sistema de carteles</small>
-          </div>
+        <div className="brand-mark" title="Big Media">
+          BM
         </div>
         <nav className="sidenav" aria-label="Navegación">
           {visibles.map((section) => (
-            <div key={section.title} className="nav-section">
-              <p className="nav-section-title">{section.title}</p>
+            <div
+              key={section.title}
+              className="nav-section"
+              role="group"
+              aria-label={section.title}
+            >
               {section.items.map((item) => {
                 const Icon = item.icon
-                return (
-                  <button
-                    key={item.id}
-                    className={page === item.id ? 'active' : ''}
-                    aria-current={page === item.id ? 'page' : undefined}
-                    onClick={() => {
-                      setPage(item.id)
-                      setMenuOpen(false)
-                    }}
-                  >
-                    <Icon aria-hidden="true" size={18} />
-                    {item.label}
-                  </button>
+                return botonDelMenu(
+                  item.id,
+                  item.label,
+                  <Icon aria-hidden="true" size={20} />,
+                  () => {
+                    setPage(item.id)
+                    setMenuOpen(false)
+                  },
                 )
               })}
             </div>
           ))}
         </nav>
         <div className="sidebar-user">
-          <span>{session.username}</span>
-          <button className="button-ghost" onClick={() => void signOut()}>
-            <LogOut aria-hidden="true" size={16} />
-            Salir
-          </button>
+          <span
+            className="avatar"
+            title={session.username}
+            onMouseEnter={(event) => mostrarEtiqueta(session.username, event.currentTarget)}
+            onMouseLeave={() => setEtiqueta(null)}
+          >
+            {session.username.slice(0, 1).toUpperCase()}
+          </span>
+          {botonDelMenu('salir', 'Salir', <LogOut aria-hidden="true" size={20} />, () => {
+            void signOut()
+          })}
         </div>
       </aside>
-      <main className="app-main" key={page}>
-        <PuedeEditarContext value={session.rol !== 'lectura'}>
-          {pages.find((item) => item.id === page)?.render()}
-        </PuedeEditarContext>
-      </main>
+      {etiqueta !== null && (
+        <span className="nav-tooltip" role="tooltip" style={{ top: etiqueta.top }}>
+          {etiqueta.texto}
+        </span>
+      )}
+      <div className="app-content">
+        <header className="topbar" aria-label="Ubicación">
+          <p className="ruta">
+            Big Media <span aria-hidden="true">/</span> {seccionActiva?.title}{' '}
+            <span aria-hidden="true">/</span> <strong>{paginaActiva?.label}</strong>
+          </p>
+          <p className="fecha-hoy">{hoy}</p>
+        </header>
+        <main className="app-main" key={page}>
+          <PuedeEditarContext value={session.rol !== 'lectura'}>
+            {paginaActiva?.render()}
+          </PuedeEditarContext>
+        </main>
+      </div>
     </div>
   )
 }

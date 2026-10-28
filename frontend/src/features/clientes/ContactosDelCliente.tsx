@@ -4,6 +4,7 @@ import { usePuedeEditar } from '../../shared/sesion'
 import ContactoForm from './ContactoForm'
 import type { ContactoInput } from './ContactoForm'
 import type { Cliente, Contacto } from './types'
+import MenuFila from '../../shared/MenuFila'
 
 const URL = '/api/clientes/contactos/'
 
@@ -111,20 +112,19 @@ export default function ContactosDelCliente({ cliente }: { cliente: Cliente }) {
                     <button className="button-ghost" onClick={() => setEditing(contacto)}>
                       Editar
                     </button>
-                    {contacto.activo && !contacto.principal && (
-                      <button
-                        className="button-ghost"
-                        onClick={() => void cambiar(contacto, { principal: true })}
-                      >
-                        Marcar como principal
-                      </button>
-                    )}
-                    <button
-                      className="button-ghost"
-                      onClick={() => void cambiar(contacto, { activo: !contacto.activo })}
-                    >
-                      {contacto.activo ? 'Inactivar' : 'Reactivar'}
-                    </button>
+                    <MenuFila
+                      acciones={[
+                        contacto.activo &&
+                          !contacto.principal && {
+                            etiqueta: 'Marcar como principal',
+                            onClick: () => void cambiar(contacto, { principal: true }),
+                          },
+                        {
+                          etiqueta: contacto.activo ? 'Inactivar' : 'Reactivar',
+                          onClick: () => void cambiar(contacto, { activo: !contacto.activo }),
+                        },
+                      ]}
+                    />
                   </td>
                 )}
               </tr>

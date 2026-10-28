@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import UsuariosPage from './UsuariosPage'
 import type { Usuario } from './types'
+import { abrirAcciones } from '../../shared/pruebas'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 const fail = (status: number, data: unknown) => ({ ok: false, status, json: async () => data })
@@ -167,6 +168,7 @@ test('inactivar al último administrador muestra el rechazo del servidor', async
   )
   render(<UsuariosPage />)
   const fila = (await screen.findByRole('cell', { name: 'admin' })).closest('tr') as HTMLElement
+  abrirAcciones(fila)
   fireEvent.click(within(fila).getByRole('button', { name: 'Inactivar' }))
   expect(await screen.findByRole('alert')).toHaveProperty(
     'textContent',
@@ -181,7 +183,8 @@ test('reactiva un usuario inactivo', async () => {
     return undefined
   })
   render(<UsuariosPage />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Reactivar' }))
+  abrirAcciones(await screen.findByRole('table'))
+  fireEvent.click(screen.getByRole('button', { name: 'Reactivar' }))
   await waitFor(() => expect(cuerpos(fetchMock, 'PATCH')).toEqual([[`${URL}2/`, { activo: true }]]))
 })
 
@@ -190,7 +193,9 @@ test('no inactiva si se cancela la confirmación', async () => {
   const fetchMock = mockFetch()
   render(<UsuariosPage />)
   const fila = (await screen.findByRole('cell', { name: 'ale' })).closest('tr') as HTMLElement
+  abrirAcciones(fila)
   fireEvent.click(within(fila).getByRole('button', { name: 'Inactivar' }))
+  abrirAcciones(fila)
   fireEvent.click(within(fila).getByRole('button', { name: 'Restablecer contraseña' }))
   expect(cuerpos(fetchMock, 'PATCH')).toHaveLength(0)
   expect(cuerpos(fetchMock, 'POST')).toHaveLength(0)
@@ -204,6 +209,7 @@ test('restablece la contraseña, copia el link y lo cierra', async () => {
   )
   render(<UsuariosPage />)
   const fila = (await screen.findByRole('cell', { name: 'ale' })).closest('tr') as HTMLElement
+  abrirAcciones(fila)
   fireEvent.click(within(fila).getByRole('button', { name: 'Restablecer contraseña' }))
   expect(window.confirm).toHaveBeenCalled()
   fireEvent.click(await screen.findByRole('button', { name: 'Copiar' }))
@@ -219,6 +225,7 @@ test('si no se puede generar el link, avisa', async () => {
   const filaAdmin = (await screen.findByRole('cell', { name: 'admin' })).closest(
     'tr',
   ) as HTMLElement
+  abrirAcciones(filaAdmin)
   fireEvent.click(within(filaAdmin).getByRole('button', { name: 'Restablecer contraseña' }))
   expect(await screen.findByRole('alert')).toHaveProperty(
     'textContent',
@@ -233,6 +240,7 @@ test('si no se puede copiar, pide copiarlo a mano', async () => {
   )
   render(<UsuariosPage />)
   const fila = (await screen.findByRole('cell', { name: 'ale' })).closest('tr') as HTMLElement
+  abrirAcciones(fila)
   fireEvent.click(within(fila).getByRole('button', { name: 'Restablecer contraseña' }))
   fireEvent.click(await screen.findByRole('button', { name: 'Copiar' }))
   expect(await screen.findByRole('alert')).toHaveProperty(

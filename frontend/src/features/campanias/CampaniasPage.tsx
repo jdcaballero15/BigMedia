@@ -9,6 +9,7 @@ import MoverPendientes from '../reservas/MoverPendientes'
 import type { Campania } from './types'
 import { ESTADOS_CAMPANIA, etiquetaEstado } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
+import MenuFila from '../../shared/MenuFila'
 
 type CambioDeFechas = {
   campaniaId: number
@@ -217,11 +218,11 @@ export default function CampaniasPage() {
                     <button className="button-ghost" onClick={() => setViendo(item)}>
                       Ver
                     </button>
-                    {puedeEditar && (
-                      <button className="button-ghost" onClick={() => setEditing(item)}>
-                        Editar
-                      </button>
-                    )}
+                    <MenuFila
+                      acciones={[
+                        { etiqueta: 'Editar', onClick: () => setEditing(item), edicion: true },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

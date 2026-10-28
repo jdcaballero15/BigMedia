@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import MarcasPage from './MarcasPage'
 import type { Cliente, Marca, Rubro } from './types'
+import { abrirAcciones } from '../../shared/pruebas'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 const fail = (status: number, data: unknown) => ({ ok: false, status, json: async () => data })
@@ -169,6 +170,7 @@ test('edita e inactiva una marca con PATCH', async () => {
 
   const tabla = await screen.findByRole('table', { name: 'Marcas' })
   await within(tabla).findByText('Agua Cumbre')
+  abrirAcciones(tabla)
   fireEvent.click(within(tabla).getByRole('button', { name: 'Editar' }))
   const form = screen.getByRole('form', { name: 'Formulario de marca' })
   fireEvent.change(within(form).getByLabelText('Nombre'), { target: { value: 'Agua Cumbre Sur' } })
@@ -176,6 +178,7 @@ test('edita e inactiva una marca con PATCH', async () => {
   await waitFor(() =>
     expect(screen.queryByRole('form', { name: 'Formulario de marca' })).toBeNull(),
   )
+  abrirAcciones(tabla)
   fireEvent.click(within(tabla).getByRole('button', { name: 'Inactivar' }))
 
   await waitFor(() =>
@@ -198,6 +201,7 @@ test('informa el error de la API al inactivar una marca', async () => {
 
   const tabla = await screen.findByRole('table', { name: 'Marcas' })
   await within(tabla).findByText('Agua Cumbre')
+  abrirAcciones(tabla)
   fireEvent.click(within(tabla).getByRole('button', { name: 'Inactivar' }))
   expect((await screen.findByRole('alert')).textContent).toBe('No tenés permiso.')
 })
@@ -237,6 +241,7 @@ test('administra rubros: alta, cambio de nombre e inactivación', async () => {
   await waitFor(() =>
     expect(within(seccion).queryByRole('form', { name: 'Formulario de rubro' })).toBeNull(),
   )
+  abrirAcciones(within(seccion).getByRole('row', { name: /Bebidas/ }))
   fireEvent.click(within(seccion).getByRole('button', { name: 'Inactivar' }))
 
   await waitFor(() =>

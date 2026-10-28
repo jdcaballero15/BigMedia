@@ -1,6 +1,6 @@
 # Unidad: fichas-cliente-y-marca
 
-- **Estado:** en revisión · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** frontend
+- **Estado:** mergeada · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** frontend
 - **Origen:** HU-021, HU-022 (criterio 1) · **Rama:** `feature/frontend-fichas-cliente-y-marca`
 
 ## Objetivo
@@ -59,4 +59,4 @@ desde una marca se vean todas sus campañas con su estado, sin importar quién l
   Frontend: `format:check` OK, `lint` sin hallazgos, `typecheck` OK, `test:coverage` 336 passed
   (sentencias 91.25 %, ramas 81.63 %, líneas 93.69 %), `build` OK (aviso de bloque mayor a 500 kB,
   previo a esta unidad).
-- Gate 3 (PR): #89
+- Gate 3 (PR): #89 (mergeado el 2026-10-28)

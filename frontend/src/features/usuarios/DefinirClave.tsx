@@ -47,9 +47,7 @@ export default function DefinirClave({ codigo, onListo }: Props) {
 
   return (
     <div className="auth-shell">
-      <div className="brand-mark">
-        BM<span>.</span>
-      </div>
+      <div className="brand-mark">BM</div>
       <p className="eyebrow">Big Media Argentina</p>
       <h1>Definí tu contraseña</h1>
       <form className="card auth-form" onSubmit={(event) => void submit(event)}>

@@ -8,6 +8,7 @@ import type { Reserva, ResultadoConfirmacion } from './types'
 import { etiquetaEstadoReserva } from './types'
 import CostosReserva from '../costos/CostosReserva'
 import { usePuedeEditar } from '../../shared/sesion'
+import MenuFila from '../../shared/MenuFila'
 
 type Props = {
   campaniaId: number
@@ -160,17 +161,17 @@ export default function ReservasCampania(props: Props) {
                 <td>{etiquetaEstadoReserva(item.estado)}</td>
                 <td>{item.total}</td>
                 <td className="row-actions">
-                  {puedeEditar && (
-                    <button className="button-ghost" onClick={() => setEditing(item)}>
-                      Editar
-                    </button>
-                  )}
                   <button
                     className="button-ghost"
                     onClick={() => setCostosDe(costosDe === item.id ? null : item.id)}
                   >
                     Costos
                   </button>
+                  <MenuFila
+                    acciones={[
+                      { etiqueta: 'Editar', onClick: () => setEditing(item), edicion: true },
+                    ]}
+                  />
                 </td>
               </tr>
             ))}
