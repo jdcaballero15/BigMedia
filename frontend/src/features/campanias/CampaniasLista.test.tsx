@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import CampaniasLista from './CampaniasLista'
 import type { Campania } from './types'
 
@@ -52,13 +52,39 @@ test('pide las campañas del cliente y las muestra con su estado y quién factur
   expect(within(seccion).getByText('Cargando campañas…')).toBeDefined()
   expect(await within(seccion).findByText('Verano 2027')).toBeDefined()
   expect(String(fetchMock.mock.calls[0][0])).toBe('/api/campanias/campanias/?cliente=1')
-  expect(within(seccion).getByText('Confirmada')).toBeDefined()
-  expect(within(seccion).getByText('Cancelada')).toBeDefined()
+  const lista = within(seccion).getByRole('list', { name: 'Campañas' })
+  expect(within(lista).getByText('Confirmada')).toBeDefined()
+  expect(within(lista).getByText('Cancelada')).toBeDefined()
   expect(within(seccion).getByText('Medios del Sur')).toBeDefined()
   expect(within(seccion).getByText('Campaña #12')).toBeDefined()
   expect(within(seccion).getByText('01/01/2027 → 31/01/2027')).toBeDefined()
   expect(within(seccion).getByText('Sin fechas')).toBeDefined()
   expect(within(seccion).getAllByText('Agua Cumbre')).toHaveLength(2)
+})
+
+test('campaniasLista_filtroPorEstado_muestraSoloEseEstadoYAvisaLaCantidad', async () => {
+  mockFetch(ok(campanias))
+  const onCargadas = vi.fn()
+  render(
+    <CampaniasLista
+      filtro={{ cliente: 1 }}
+      titulo="Campañas de Agencia Andes"
+      onCargadas={onCargadas}
+    />,
+  )
+
+  await screen.findByText('Verano 2027')
+  expect(onCargadas).toHaveBeenCalledWith(campanias.length)
+  const filtros = screen.getByRole('group', { name: 'Filtrar por estado' })
+  fireEvent.click(within(filtros).getByRole('button', { name: 'Cancelada' }))
+  expect(
+    within(filtros).getByRole('button', { name: 'Cancelada' }).getAttribute('aria-pressed'),
+  ).toBe('true')
+  expect(screen.queryByText('Verano 2027')).toBeNull()
+  fireEvent.click(within(filtros).getByRole('button', { name: 'Perdida' }))
+  expect(screen.getByText('No hay campañas en ese estado.')).toBeDefined()
+  fireEvent.click(within(filtros).getByRole('button', { name: 'Todas' }))
+  expect(screen.getByText('Verano 2027')).toBeDefined()
 })
 
 test('en la ficha de una marca filtra por marca y oculta la columna de marca', async () => {

@@ -58,6 +58,12 @@ function mockFetch(route: Route) {
   return fetchMock
 }
 
+/** Muestra una sección de la ficha (Campañas, Marcas o Interacciones). */
+function verSeccion(nombre: string) {
+  const secciones = screen.getByRole('navigation', { name: 'Secciones de la ficha' })
+  fireEvent.click(within(secciones).getByRole('button', { name: new RegExp(`^${nombre}`) }))
+}
+
 const called = (fetchMock: ReturnType<typeof mockFetch>, check: (url: string) => boolean) =>
   fetchMock.mock.calls.some(([url]) => check(String(url)))
 
@@ -126,6 +132,8 @@ test('muestra el nombre visible de un cliente sin nombre ni tipo', async () => {
   expect(await screen.findByText('Cliente sin nombre #3')).toBeDefined()
   expect(screen.getByText('Sin tipo')).toBeDefined()
   fireEvent.click(screen.getByRole('button', { name: 'Ver ficha' }))
+  expect(screen.getByRole('heading', { name: 'Cliente sin nombre #3' })).toBeDefined()
+  verSeccion('Marcas')
   expect(screen.getByRole('heading', { name: 'Marcas de Cliente sin nombre #3' })).toBeDefined()
 })
 
@@ -214,6 +222,7 @@ test('la ficha de un intermediario lista todas sus marcas', async () => {
   render(<ClientesPage />)
 
   fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
+  verSeccion('Marcas')
   const ficha = screen.getByRole('region', { name: 'Marcas de Agencia Andes' })
   expect(await within(ficha).findByText('Agua Cumbre')).toBeDefined()
   expect(within(ficha).getByText('Vino Alto')).toBeDefined()
@@ -222,8 +231,9 @@ test('la ficha de un intermediario lista todas sus marcas', async () => {
   expect(screen.queryByText(/Se creó la marca/)).toBeNull()
   // Un intermediario común no tiene contactos múltiples (HU-068, criterio 2).
   expect(screen.queryByRole('region', { name: /Contactos de/ })).toBeNull()
-  fireEvent.click(within(ficha).getByRole('button', { name: 'Cerrar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Volver a clientes' }))
   expect(screen.queryByRole('region', { name: 'Marcas de Agencia Andes' })).toBeNull()
+  expect(screen.getByRole('heading', { name: 'Clientes' })).toBeDefined()
 })
 
 test.each([
@@ -250,6 +260,7 @@ test('el error al cargar las marcas de la ficha se anuncia como alerta', async (
   render(<ClientesPage />)
 
   fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
+  verSeccion('Marcas')
   expect((await screen.findByRole('alert')).textContent).toBe('No se pudieron cargar las marcas.')
 })
 
@@ -376,11 +387,17 @@ test('la ficha del cliente reúne sus marcas, sus campañas y sus interacciones'
   render(<ClientesPage />)
 
   fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
-  const marcas = screen.getByRole('region', { name: 'Marcas de Agencia Andes' })
-  expect(await within(marcas).findByText('Vino Alto')).toBeDefined()
   const campanias = screen.getByRole('region', { name: 'Campañas de Agencia Andes' })
   expect(await within(campanias).findByText('Verano 2027')).toBeDefined()
-  expect(within(campanias).getByText('Cotizada')).toBeDefined()
+  expect(within(within(campanias).getByRole('list')).getByText('Cotizada')).toBeDefined()
+  const cantidades = screen.getByLabelText('Cantidades')
+  await waitFor(() => expect(within(cantidades).getAllByText('1')).toHaveLength(2))
+  expect(within(cantidades).getByText('2')).toBeDefined()
+  verSeccion('Marcas')
+  expect(screen.queryByRole('region', { name: 'Campañas de Agencia Andes' })).toBeNull()
+  const marcas = screen.getByRole('region', { name: 'Marcas de Agencia Andes' })
+  expect(await within(marcas).findByText('Vino Alto')).toBeDefined()
+  verSeccion('Interacciones')
   const interacciones = screen.getByRole('region', { name: 'Interacciones con Agencia Andes' })
   expect(await within(interacciones).findByText('Propuesta de verano')).toBeDefined()
 })

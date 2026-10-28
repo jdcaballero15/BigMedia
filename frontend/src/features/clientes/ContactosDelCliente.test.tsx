@@ -60,14 +60,15 @@ afterEach(() => {
 test('lista los contactos con su estado', async () => {
   mockFetch()
   render(<ContactosDelCliente cliente={central} />)
-  const tabla = await screen.findByRole('table', { name: 'Contactos' })
-  const filas = within(tabla).getAllByRole('row')
-  expect(within(filas[1]).getByText('Principal')).toBeDefined()
-  expect(within(filas[1]).getByText('Medios')).toBeDefined()
-  expect(within(filas[2]).getByText('Activo')).toBeDefined()
-  expect(within(filas[3]).getByText('Inactivo')).toBeDefined()
+  const lista = await screen.findByRole('list', { name: 'Contactos' })
+  const filas = within(lista).getAllByRole('listitem')
+  expect(within(filas[0]).getByText('Principal')).toBeDefined()
+  expect(within(filas[0]).getByText('Medios')).toBeDefined()
+  expect(within(filas[0]).getByText('A')).toBeDefined()
+  expect(within(filas[1]).getByText('Activo')).toBeDefined()
+  expect(within(filas[2]).getByText('Inactivo')).toBeDefined()
   // Solo un activo que no es principal ofrece marcarse como principal.
-  filas.slice(1).forEach(abrirAcciones)
+  filas.forEach(abrirAcciones)
   expect(screen.getAllByRole('button', { name: 'Marcar como principal' })).toHaveLength(1)
   expect(screen.getByRole('button', { name: 'Reactivar' })).toBeDefined()
 })
@@ -109,7 +110,7 @@ test('edita un contacto con PATCH y muestra los errores del servidor', async () 
       : undefined,
   )
   render(<ContactosDelCliente cliente={central} />)
-  const fila = (await screen.findByText('Beto')).closest('tr') as HTMLElement
+  const fila = (await screen.findByText('Beto')).closest('li') as HTMLElement
   fireEvent.click(within(fila).getByRole('button', { name: 'Editar' }))
   expect((screen.getByLabelText('Nombre') as HTMLInputElement).value).toBe('Beto')
   fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'beto' } })
@@ -122,7 +123,7 @@ test('edita un contacto con PATCH y muestra los errores del servidor', async () 
 test('un contacto inactivo no ofrece marcarse como principal al editarlo', async () => {
   mockFetch()
   render(<ContactosDelCliente cliente={central} />)
-  const fila = (await screen.findByText('Caro')).closest('tr') as HTMLElement
+  const fila = (await screen.findByText('Caro')).closest('li') as HTMLElement
   fireEvent.click(within(fila).getByRole('button', { name: 'Editar' }))
   expect(screen.queryByLabelText('Contacto principal')).toBeNull()
 })
@@ -132,10 +133,10 @@ test('marca como principal e inactiva con PATCH', async () => {
     options?.method === 'PATCH' ? ok(beto) : undefined,
   )
   render(<ContactosDelCliente cliente={central} />)
-  const filaBeto = (await screen.findByText('Beto')).closest('tr') as HTMLElement
+  const filaBeto = (await screen.findByText('Beto')).closest('li') as HTMLElement
   abrirAcciones(filaBeto)
   fireEvent.click(within(filaBeto).getByRole('button', { name: 'Marcar como principal' }))
-  const fila = screen.getByText('Ana').closest('tr') as HTMLElement
+  const fila = screen.getByText('Ana').closest('li') as HTMLElement
   abrirAcciones(fila)
   fireEvent.click(within(fila).getByRole('button', { name: 'Inactivar' }))
 
@@ -153,7 +154,7 @@ test('informa el error al cambiar un contacto', async () => {
       : undefined,
   )
   render(<ContactosDelCliente cliente={central} />)
-  const fila = (await screen.findByText('Beto')).closest('tr') as HTMLElement
+  const fila = (await screen.findByText('Beto')).closest('li') as HTMLElement
   abrirAcciones(fila)
   fireEvent.click(within(fila).getByRole('button', { name: 'Marcar como principal' }))
   expect((await screen.findByRole('alert')).textContent).toBe('No se pudo completar la operación.')

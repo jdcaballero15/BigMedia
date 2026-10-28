@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
-import { formatearFecha } from '../../shared/fechas'
+import Cifras from '../../shared/Cifras'
+import { dateAIso, formatearFecha } from '../../shared/fechas'
 
 type PorVencer = {
   id: number
@@ -18,7 +19,14 @@ type Panel = {
   por_vencer: PorVencer[]
 }
 
+/** Parte de los carteles ocupados sobre el total, redondeada; 0 si no hay carteles. */
+function porcentajeOcupado(panel: Panel): number {
+  const total = panel.carteles_libres + panel.carteles_ocupados
+  return total === 0 ? 0 : Math.round((panel.carteles_ocupados * 100) / total)
+}
+
 export default function PanelPrincipal() {
+  const [hoy] = useState(() => dateAIso(new Date()))
   const [datos, setDatos] = useState<Panel | null>(null)
   const [error, setError] = useState('')
 
@@ -52,40 +60,47 @@ export default function PanelPrincipal() {
       )}
       {datos && (
         <>
-          <div className="filters card">
-            <div>
-              <strong>{datos.carteles_libres}</strong> carteles libres
+          <Cifras
+            titulo="Estado de hoy"
+            cifras={[
+              { etiqueta: 'Carteles libres', valor: datos.carteles_libres, tono: 'principal' },
+              {
+                etiqueta: 'Carteles ocupados',
+                valor: datos.carteles_ocupados,
+                detalle: `${porcentajeOcupado(datos)} % de ocupación`,
+              },
+              { etiqueta: 'Campañas activas', valor: datos.campanias_activas },
+              {
+                etiqueta: 'Por vencer',
+                valor: datos.por_vencer.length,
+                detalle: 'reservas en la lista',
+                tono: 'alerta',
+              },
+            ]}
+          />
+          <div className="card">
+            <div className="card-heading">
+              <h3>Reservas por vencer</h3>
             </div>
-            <div>
-              <strong>{datos.carteles_ocupados}</strong> ocupados
-            </div>
-            <div>
-              <strong>{datos.campanias_activas}</strong> campañas activas
-            </div>
-          </div>
-          <div className="card table-wrap">
-            <h3>Reservas por vencer</h3>
             {datos.por_vencer.length === 0 ? (
               <p className="empty">Nada por vencer.</p>
             ) : (
-              <table aria-label="Reservas por vencer">
-                <thead>
-                  <tr>
-                    <th>Reserva</th>
-                    <th>Cartel</th>
-                    <th>Vence</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {datos.por_vencer.map((reserva) => (
-                    <tr key={reserva.id}>
-                      <td className="primary-cell">{reserva.nombre}</td>
-                      <td>{reserva.cartel_nombre}</td>
-                      <td>{formatearFecha(reserva.fecha_fin)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ul className="lista-filas" aria-label="Reservas por vencer">
+                {datos.por_vencer.map((reserva) => (
+                  <li key={reserva.id}>
+                    <div>
+                      <strong>{reserva.nombre}</strong>
+                      <small>{reserva.cartel_nombre}</small>
+                    </div>
+                    <span className="lista-filas-extremo">
+                      {reserva.fecha_fin === hoy && (
+                        <span className="etiqueta-alerta">Vence hoy</span>
+                      )}
+                      {formatearFecha(reserva.fecha_fin)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </>

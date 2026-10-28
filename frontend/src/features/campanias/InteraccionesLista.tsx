@@ -10,12 +10,14 @@ type Props = {
   titulo: string
   /** Oculta la columna que ya se sabe por el contexto (el cliente en su ficha, por ejemplo). */
   ocultar?: 'cliente' | 'campania'
+  /** Avisa cuántas interacciones trajo, para el contador de la ficha. */
+  onCargadas?: (cantidad: number) => void
 }
 
 type Carga = { estado: 'cargando' | 'error' | 'listo'; filas: Interaccion[] }
 
 /** Interacciones de un cliente o de una campaña, de solo lectura (HU-020 criterio 2). */
-export default function InteraccionesLista({ filtro, titulo, ocultar }: Props) {
+export default function InteraccionesLista({ filtro, titulo, ocultar, onCargadas }: Props) {
   const [carga, setCarga] = useState<Carga>({ estado: 'cargando', filas: [] })
   const params = new URLSearchParams(
     Object.entries(filtro).map(([clave, valor]) => [clave, String(valor)]),
@@ -25,7 +27,9 @@ export default function InteraccionesLista({ filtro, titulo, ocultar }: Props) {
     let active = true
     void apiGet<Interaccion[]>(`/api/campanias/interacciones/?${params}`)
       .then((filas) => {
-        if (active) setCarga({ estado: 'listo', filas })
+        if (!active) return
+        setCarga({ estado: 'listo', filas })
+        onCargadas?.(filas.length)
       })
       .catch(() => {
         if (active) setCarga({ estado: 'error', filas: [] })
@@ -33,7 +37,7 @@ export default function InteraccionesLista({ filtro, titulo, ocultar }: Props) {
     return () => {
       active = false
     }
-  }, [params])
+  }, [params, onCargadas])
 
   return (
     <section className="card table-wrap section-gap" aria-label={titulo}>

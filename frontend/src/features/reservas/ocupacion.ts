@@ -48,6 +48,7 @@ export function formatearPorcentaje(valor: number): string {
 
 // Fondo del mapa de calor: opacidad proporcional a la ocupación sobre el color de acento.
 export function colorOcupacion(valor: number): string {
-  const opacidad = (Math.min(Math.max(valor, 0), 100) / 100) * 0.85
-  return `rgba(224, 138, 44, ${opacidad.toFixed(3)})`
+  // Azul de la paleta (`--azul-2`), con tope bajo para que el texto se siga leyendo.
+  const opacidad = (Math.min(Math.max(valor, 0), 100) / 100) * 0.4
+  return `rgba(29, 65, 137, ${opacidad.toFixed(3)})`
 }

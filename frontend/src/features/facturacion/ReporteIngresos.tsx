@@ -3,6 +3,8 @@ import { apiGet } from '../../shared/api'
 import { descargarCsv } from '../../shared/csv'
 import { formatearPeriodo } from '../../shared/fechas'
 import { descargarPdf } from '../../shared/pdf'
+import Cifras from '../../shared/Cifras'
+import SelectorPeriodo from '../../shared/SelectorPeriodo'
 import { formatearMonto, sumarMontos } from './montos'
 import type { ClienteFila, Periodo, ReporteIngresos } from './types'
 
@@ -119,23 +121,30 @@ export default function ReporteIngresosPage() {
         </div>
       </div>
       <div className="filters card">
-        <label>
-          Desde
-          <input
-            type="month"
-            value={desde}
-            onChange={(event) => cambiar(() => setDesde(event.target.value))}
-          />
-        </label>
-        <label>
-          Hasta
-          <input
-            type="month"
-            value={hasta}
-            onChange={(event) => cambiar(() => setHasta(event.target.value))}
-          />
-        </label>
+        <SelectorPeriodo
+          desde={desde}
+          hasta={hasta}
+          onCambiar={(nuevoDesde, nuevoHasta) =>
+            cambiar(() => {
+              setDesde(nuevoDesde)
+              setHasta(nuevoHasta)
+            })
+          }
+        />
       </div>
+      {!loading && (
+        <Cifras
+          titulo="Resumen del período"
+          cifras={[
+            {
+              etiqueta: 'Total del período',
+              valor: formatearMonto(datos.total),
+              tono: 'principal',
+            },
+            { etiqueta: 'Clientes con ingresos', valor: datos.clientes.length },
+          ]}
+        />
+      )}
       {error && (
         <p className="error" role="alert">
           {error}
