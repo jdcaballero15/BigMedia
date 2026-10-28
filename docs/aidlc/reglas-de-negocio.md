@@ -45,7 +45,7 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | RN-015 | Intermediario formal y sus contactos | `provisoria` | Tipo aparte con contactos múltiples | Documento de historias (decisión D-15 del 15/10/2026) | HU-016, HU-068 | Servicio `apps/clientes/services.py` (`acepta_contactos`, `guardar_contacto`), modelo `Contacto`, `backend/tests/test_contactos.py` |
 | RN-016 | Grupo económico | `provisoria` | Catálogo editable; cada marca, a lo sumo en un grupo (opcional) | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-017, HU-022, HU-050 | Modelo `clientes.GrupoEconomico` y `Marca.grupo`, `apps/facturacion/services.py::reporte_por_grupo`, `frontend/src/features/clientes/MarcasDelGrupo.tsx`, `backend/tests/test_grupos_economicos.py`, `backend/tests/test_reporte_por_grupo.py` |
 | RN-017 | Cambio de razón social de un cliente directo | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-018 | Sin implementar |
-| RN-018 | Interacciones antes de la campaña | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-020 | Sin implementar |
+| RN-018 | Interacciones antes de la campaña | `provisoria` | Marca opcional en la interacción, del mismo cliente y coherente con la campaña | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-020 | Sin implementar |
 | RN-019 | Dimensiones estándar por formato | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-009 | Sin implementar |
 | RN-020 | Formatos sin relevamiento | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-015 | Sin implementar |
 | RN-021 | Usuarios | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-004, HU-005 | Sin implementar |
@@ -350,7 +350,12 @@ Pregunta menor del bloque «Otras preguntas menores» de D-16.
 
 **Interacciones antes de la campaña (pregunta 12):** ¿registran llamadas con una marca antes de que exista una campaña? Afecta HU-020.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** sí, provisoriamente, hasta que Seba la confirme. La interacción puede llevar una
+marca opcional, para las conversaciones sobre una marca que todavía no tiene campaña. La marca
+tiene que ser del cliente de la interacción y, si además se indica una campaña, la campaña tiene
+que ser de esa marca. La interacción con marca aparece en la ficha del cliente y en la de la marca
+(HU-022). Las interacciones previas no se pasan solas a la campaña cuando se crea. · **Fecha:**
+2026-10-28 · **Quién respondió:** Gonza
 
 ### RN-019 Dimensiones estándar por formato (D-16)
 

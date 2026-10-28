@@ -308,11 +308,13 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** HU-016 completa.
-- **Regla de negocio:** El asunto, la fecha y el cliente son obligatorios. La campaña es opcional. Si el cliente es un intermediario formal, se puede indicar opcionalmente con cuál de sus contactos fue (HU-068). Un vínculo opcional a una marca solo se agrega si Seba confirma que registran interacciones antes de que exista campaña (pregunta 12).
+- **Regla de negocio:** El asunto, la fecha y el cliente son obligatorios. La campaña es opcional. Si el cliente es un intermediario formal, se puede indicar opcionalmente con cuál de sus contactos fue (HU-068). También se puede indicar opcionalmente la marca, para las conversaciones que ocurren antes de que exista una campaña: tiene que ser una marca del cliente y, si además hay campaña, la campaña tiene que ser de esa marca (RN-018).
 - **Criterios de aceptación:**
   1. Dada una interacción sin asunto, cuando se guarda, entonces se rechaza.
   2. Dada una interacción con cliente y campaña, cuando se guarda, entonces aparece en la ficha de ambos.
   3. Dada la lista de interacciones, cuando se abre, entonces se ordena por fecha descendente.
+  4. Dada una interacción con marca y sin campaña, cuando se guarda, entonces aparece en la ficha del cliente y en la de la marca (RN-018).
+  5. Dada una interacción con una marca de otro cliente, o con una campaña de otra marca, cuando se guarda, entonces se rechaza (RN-018).
 
 ### HU-021 Ficha de cliente
 
