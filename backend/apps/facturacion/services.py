@@ -245,7 +245,7 @@ def reporte_ingresos(desde: date, hasta: date) -> dict[str, Any]:
 
 
 # Transiciones de estado del ítem (HU-065). Borrador pasa a Enviado solo con "Enviar a facturar"
-# (HU-066); corregir un Facturado espera RN-026.
+# (HU-066); un Facturado se anula solo con `anular_facturado`, que pide motivo (RN-026).
 TRANSICIONES_ITEM: dict[str, set[str]] = {
     ItemFacturacion.Estado.BORRADOR: {ItemFacturacion.Estado.ANULADO},
     ItemFacturacion.Estado.ENVIADO: {
@@ -857,5 +857,53 @@ def reabrir(item_id: int, motivo: str, usuario: AbstractBaseUser) -> ItemFactura
             usuario,
         )
         asunto, cuerpo = _aviso_de_reapertura(item)
+        transaction.on_commit(partial(avisar_a_administracion, asunto, cuerpo))
+    return item
+
+
+def _aviso_de_anulacion(item: ItemFacturacion) -> tuple[str, str]:
+    mes = item.mes.strftime("%Y-%m") if item.mes else "sin mes"
+    cuando = timezone.localtime(item.anulado_en).strftime("%d/%m/%Y %H:%M")
+    quien = item.anulado_por.get_username() if item.anulado_por else "—"
+    grupo = (
+        f"\nEstaba en el grupo de factura {item.grupo.codigo}: revisen la factura completa."
+        if item.grupo
+        else ""
+    )
+    cuerpo = (
+        f"{_titulo(item)} (mes {mes}, factura {item.numero_factura}) se anuló.\n"
+        f"Anulado por {quien} el {cuando}.\nMotivo: {item.motivo_anulacion}{grupo}\n\n"
+        "Si corresponde, la corrección les llega como un ítem nuevo."
+    )
+    return f"Ítem #{item.pk} facturado anulado", cuerpo
+
+
+def anular_facturado(item_id: int, motivo: str, usuario: AbstractBaseUser) -> ItemFacturacion:
+    """Anula un ítem ya Facturado para corregirlo, con motivo y auditado (RN-026).
+
+    Conserva el número de factura. El aviso a Administración sale al confirmarse la transacción;
+    la corrección se carga como un ítem nuevo.
+    """
+    motivo = motivo.strip()[:200]
+    if not motivo:
+        raise ValidationError({"motivo": "Indicá el motivo de la anulación."})
+    with transaction.atomic():
+        item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
+        if item.estado != ItemFacturacion.Estado.FACTURADO:
+            raise ValidationError({"estado": "Solo se anula así un ítem Facturado."})
+        anteriores = {"estado": item.estado, "motivo_anulacion": item.motivo_anulacion}
+        item.estado = ItemFacturacion.Estado.ANULADO
+        item.anulado_en = timezone.now()
+        item.anulado_por_id = usuario.pk
+        item.motivo_anulacion = motivo
+        item.save()
+        auditoria_services.registrar_cambios(
+            "item_facturacion",
+            item.pk,
+            anteriores,
+            {"estado": item.estado, "motivo_anulacion": motivo},
+            usuario,
+        )
+        asunto, cuerpo = _aviso_de_anulacion(item)
         transaction.on_commit(partial(avisar_a_administracion, asunto, cuerpo))
     return item

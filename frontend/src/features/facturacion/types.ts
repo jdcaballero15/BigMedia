@@ -77,6 +77,9 @@ export type ItemFacturacion = {
   reabierto_por_nombre: string | null
   motivo_reapertura: string
   reenviado: boolean
+  anulado_en: string | null
+  anulado_por_nombre: string | null
+  motivo_anulacion: string
   orden_compra_numero: string
   orden_compra_fecha: string | null
   orden_compra_pdf: PdfOrdenCompra | null

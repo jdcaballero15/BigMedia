@@ -79,6 +79,6 @@ mover datos.
 
 ## Registro de gates
 
-- Gate 1 (plan):
+- Gate 1 (plan): aprobado por Gonza el 2026-10-28, con la propuesta de anular de a un ítem aunque esté en un grupo.
 - Gate 2 (verificación):
 - Gate 3 (PR):
