@@ -5,6 +5,21 @@ import type { ParametrosDisponibilidad } from './types'
 
 const URL = '/api/reservas/parametros/'
 
+// RN-001 (día de borde) y RN-002 (la pendiente bloquea), con su explicación.
+const OPCIONES: { campo: keyof ParametrosDisponibilidad; titulo: string; ayuda: string }[] = [
+  {
+    campo: 'borde_inclusivo',
+    titulo: 'El día de borde se pisa',
+    ayuda: 'Si una reserva termina el 15 y otra empieza el 15, ocupan el cartel el mismo día.',
+  },
+  {
+    campo: 'tentativa_bloquea',
+    titulo: 'La reserva pendiente bloquea el cupo',
+    ayuda:
+      'Si está marcada, no se puede confirmar una reserva donde una pendiente ya ocupa el cupo.',
+  },
+]
+
 export default function ParametrosPage() {
   const [parametros, setParametros] = useState<ParametrosDisponibilidad | null>(null)
   const [error, setError] = useState('')
@@ -63,36 +78,35 @@ export default function ParametrosPage() {
       {parametros === null ? (
         !error && <p className="empty">Cargando parámetros…</p>
       ) : (
-        <form className="card section-gap" onSubmit={(event) => void guardar(event)}>
-          <label className="checkline">
-            <input
-              type="checkbox"
-              checked={parametros.borde_inclusivo}
-              onChange={(event) => cambiar('borde_inclusivo', event.target.checked)}
-            />
-            El día de borde se pisa
-          </label>
-          <p className="muted">
-            Si una reserva termina el 15 y otra empieza el 15, ocupan el cartel el mismo día.
-          </p>
-          <label className="checkline">
-            <input
-              type="checkbox"
-              checked={parametros.tentativa_bloquea}
-              onChange={(event) => cambiar('tentativa_bloquea', event.target.checked)}
-            />
-            La reserva pendiente bloquea el cupo
-          </label>
-          <p className="muted">
-            Si está marcada, no se puede confirmar una reserva donde una pendiente ya ocupa el cupo.
-          </p>
+        <form className="parametros" onSubmit={(event) => void guardar(event)}>
+          {OPCIONES.map((opcion) => (
+            <div key={opcion.campo} className="card parametro">
+              <div>
+                <label htmlFor={`parametro-${opcion.campo}`}>{opcion.titulo}</label>
+                <p className="muted" id={`ayuda-${opcion.campo}`}>
+                  {opcion.ayuda}
+                </p>
+              </div>
+              <input
+                id={`parametro-${opcion.campo}`}
+                className="interruptor"
+                type="checkbox"
+                role="switch"
+                aria-describedby={`ayuda-${opcion.campo}`}
+                checked={parametros[opcion.campo]}
+                onChange={(event) => cambiar(opcion.campo, event.target.checked)}
+              />
+            </div>
+          ))}
           <p className="muted">
             El cambio rige desde la próxima confirmación: no recalcula las reservas que ya existen.
           </p>
-          {guardado && <p role="status">Parámetros guardados.</p>}
-          <button type="submit" className="button-primary" disabled={saving}>
-            Guardar
-          </button>
+          <div className="parametros-pie">
+            {guardado && <p role="status">Parámetros guardados.</p>}
+            <button type="submit" className="button-primary" disabled={saving}>
+              Guardar
+            </button>
+          </div>
         </form>
       )}
     </section>

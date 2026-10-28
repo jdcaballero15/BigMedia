@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import ReporteIngresosPage from './ReporteIngresos'
 import { formatearMonto } from './montos'
 import { descargarPdf } from '../../shared/pdf'
@@ -66,7 +66,11 @@ test('muestra el ranking de clientes con las columnas de meses y el total global
   expect(screen.getByText('Directo SA')).toBeDefined()
   expect(screen.getByText('Oct 2026')).toBeDefined()
   expect(screen.getByText('Nov 2026')).toBeDefined()
-  expect(screen.getByText(formatearMonto('4000.00'))).toBeDefined()
+  const tabla = screen.getByRole('table', { name: 'Ingresos por cliente y marca' })
+  expect(within(tabla).getByText(formatearMonto('4000.00'))).toBeDefined()
+  const resumen = screen.getByLabelText('Resumen del período')
+  expect(within(resumen).getByText(formatearMonto('4000.00'))).toBeDefined()
+  expect(within(resumen).getByText('2')).toBeDefined()
 })
 
 test('desplegar un cliente muestra sus marcas', async () => {
@@ -83,7 +87,8 @@ test('cambiar el período vuelve a pedir el reporte con el nuevo rango', async (
   const fetchMock = stubFetch()
   render(<ReporteIngresosPage />)
   await screen.findByText('Agencia Centro')
-  fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-06' } })
+  fireEvent.change(screen.getByLabelText('Año desde'), { target: { value: '2026' } })
+  fireEvent.change(screen.getByLabelText('Mes desde'), { target: { value: '6' } })
   await waitFor(() =>
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('desde=2026-06'))).toBe(true),
   )

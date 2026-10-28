@@ -74,3 +74,25 @@ test('avisa si no se pudieron cargar', async () => {
   )
   expect(screen.queryByRole('button', { name: 'Guardar' })).toBeNull()
 })
+
+test('parametros_cadaOpcion_esUnInterruptorConSuExplicacion', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ borde_inclusivo: true, tentativa_bloquea: false }),
+    }),
+  )
+  render(<ParametrosPage />)
+
+  const interruptores = await screen.findAllByRole('switch')
+  expect(interruptores).toHaveLength(2)
+  expect(
+    screen.getByRole('switch', {
+      name: 'El día de borde se pisa',
+      description: /terminan? el 15 y otra empieza el 15/,
+    }),
+  ).toBeDefined()
+  expect((interruptores[1] as HTMLInputElement).checked).toBe(false)
+})

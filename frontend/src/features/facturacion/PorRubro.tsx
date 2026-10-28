@@ -3,6 +3,8 @@ import { apiGet } from '../../shared/api'
 import { descargarCsv } from '../../shared/csv'
 import { formatearPeriodo } from '../../shared/fechas'
 import { descargarPdf } from '../../shared/pdf'
+import Cifras from '../../shared/Cifras'
+import SelectorPeriodo from '../../shared/SelectorPeriodo'
 import { formatearMonto } from './montos'
 
 type Fila = {
@@ -145,23 +147,30 @@ export default function PorRubroPage() {
             <option value="grupo">Grupo económico</option>
           </select>
         </label>
-        <label>
-          Desde
-          <input
-            type="month"
-            value={desde}
-            onChange={(event) => cambiar(() => setDesde(event.target.value))}
-          />
-        </label>
-        <label>
-          Hasta
-          <input
-            type="month"
-            value={hasta}
-            onChange={(event) => cambiar(() => setHasta(event.target.value))}
-          />
-        </label>
+        <SelectorPeriodo
+          desde={desde}
+          hasta={hasta}
+          onCambiar={(nuevoDesde, nuevoHasta) =>
+            cambiar(() => {
+              setDesde(nuevoDesde)
+              setHasta(nuevoHasta)
+            })
+          }
+        />
       </div>
+      {!loading && (
+        <Cifras
+          titulo="Resumen del período"
+          cifras={[
+            {
+              etiqueta: 'Total de ingresos',
+              valor: formatearMonto(datos.total_ingresos),
+              tono: 'principal',
+            },
+            { etiqueta: 'Total de días-cupo', valor: datos.total_dias_cupo },
+          ]}
+        />
+      )}
       {error && (
         <p className="error" role="alert">
           {error}

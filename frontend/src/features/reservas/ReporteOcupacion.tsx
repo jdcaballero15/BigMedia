@@ -3,6 +3,8 @@ import { apiGet } from '../../shared/api'
 import { descargarCsv } from '../../shared/csv'
 import { formatearPeriodo } from '../../shared/fechas'
 import { descargarPdf } from '../../shared/pdf'
+import Cifras from '../../shared/Cifras'
+import SelectorPeriodo from '../../shared/SelectorPeriodo'
 import type { Catalogo } from '../inventario/types'
 import {
   colorOcupacion,
@@ -157,22 +159,16 @@ export default function ReporteOcupacionPage() {
         </div>
       </div>
       <div className="filters card">
-        <label>
-          Desde
-          <input
-            type="month"
-            value={desde}
-            onChange={(event) => cambiar(() => setDesde(event.target.value))}
-          />
-        </label>
-        <label>
-          Hasta
-          <input
-            type="month"
-            value={hasta}
-            onChange={(event) => cambiar(() => setHasta(event.target.value))}
-          />
-        </label>
+        <SelectorPeriodo
+          desde={desde}
+          hasta={hasta}
+          onCambiar={(nuevoDesde, nuevoHasta) =>
+            cambiar(() => {
+              setDesde(nuevoDesde)
+              setHasta(nuevoHasta)
+            })
+          }
+        />
         <label>
           Departamento
           <select value={zona} onChange={(event) => cambiar(() => setZona(event.target.value))}>
@@ -196,14 +192,32 @@ export default function ReporteOcupacionPage() {
           </select>
         </label>
       </div>
+      {!loading && datos.carteles.length > 0 && (
+        <Cifras
+          titulo="Resumen del período"
+          cifras={[
+            ...datos.modalidades.map((item, indice) => ({
+              etiqueta: `Ocupación ${item.etiqueta.toLowerCase()}`,
+              valor: formatearPorcentaje(item.ocupacion),
+              tono: indice === 0 ? ('principal' as const) : undefined,
+            })),
+            { etiqueta: 'Carteles en el reporte', valor: datos.carteles.length },
+          ]}
+        />
+      )}
       {error && (
         <p className="error" role="alert">
           {error}
         </p>
       )}
       {!loading && datos.modalidades.length > 0 && (
-        <div className="card table-wrap">
-          <h3>Evolución por modalidad</h3>
+        <div className="card table-wrap section-gap">
+          <div className="card-heading">
+            <div>
+              <h3>Evolución por modalidad</h3>
+              <p className="muted">Ocupación de cada modalidad, mes a mes.</p>
+            </div>
+          </div>
           <table aria-label="Ocupación por modalidad">
             <thead>
               <tr>
@@ -223,7 +237,14 @@ export default function ReporteOcupacionPage() {
         </div>
       )}
       <div className="card table-wrap">
-        <h3>Mapa de calor por cartel</h3>
+        <div className="card-heading">
+          <div>
+            <h3>Mapa de calor por cartel</h3>
+            <p className="muted">
+              Cada celda es la ocupación del cartel en el mes: cuanto más azul, más ocupado.
+            </p>
+          </div>
+        </div>
         {loading ? (
           <p className="empty">Cargando ocupación…</p>
         ) : datos.carteles.length === 0 ? (

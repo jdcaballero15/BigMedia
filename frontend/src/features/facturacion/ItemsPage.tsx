@@ -16,6 +16,7 @@ import type {
   TotalesMes,
 } from './types'
 import { ESTADOS_ITEM, etiquetaEstadoItem, mesActual, urlPdfOrdenCompra } from './types'
+import Cifras from '../../shared/Cifras'
 
 const ITEMS = '/api/facturacion/items/'
 const GRUPOS = '/api/facturacion/grupos/'
@@ -171,13 +172,17 @@ export default function ItemsPage() {
         </label>
       </div>
       {totales && (
-        <p className="costos-total" aria-label="Totales del mes">
-          {totales.cantidad} ítems · Neto <strong>{formatearMonto(totales.neto)}</strong> · IVA{' '}
-          {formatearMonto(totales.iva)} · Total <strong>{formatearMonto(totales.total)}</strong> ·
-          Costos {formatearMonto(totales.costos)} · Neto final{' '}
-          <strong>{formatearMonto(totales.neto_final)}</strong>{' '}
-          <small className="muted">(sin anulados)</small>
-        </p>
+        <Cifras
+          titulo="Totales del mes"
+          cifras={[
+            { etiqueta: 'Ítems', valor: totales.cantidad, detalle: 'sin anulados' },
+            { etiqueta: 'Neto', valor: formatearMonto(totales.neto) },
+            { etiqueta: 'IVA', valor: formatearMonto(totales.iva) },
+            { etiqueta: 'Total', valor: formatearMonto(totales.total), tono: 'principal' },
+            { etiqueta: 'Costos', valor: formatearMonto(totales.costos) },
+            { etiqueta: 'Neto final', valor: formatearMonto(totales.neto_final) },
+          ]}
+        />
       )}
       {error && (
         <p className="error" role="alert">

@@ -324,17 +324,19 @@ test('la ficha de una marca muestra todas sus campañas con su estado', async ()
   expect(within(ficha).getByText(/Agencia Andes · Bebidas/)).toBeDefined()
   const campanias = within(ficha).getByRole('region', { name: 'Campañas de Agua Cumbre' })
   expect(await within(campanias).findByText('Verano 2027')).toBeDefined()
-  expect(within(campanias).getByText('Confirmada')).toBeDefined()
+  const tarjetas = within(campanias).getByRole('list', { name: 'Campañas' })
+  expect(within(tarjetas).getByText('Confirmada')).toBeDefined()
   // Aunque la haya pagado otro cliente o esté cancelada, la campaña es de la marca.
   expect(within(campanias).getByText('Invierno 2026')).toBeDefined()
-  expect(within(campanias).getByText('Cancelada')).toBeDefined()
+  expect(within(tarjetas).getByText('Cancelada')).toBeDefined()
   expect(within(campanias).getByText('Medios del Sur')).toBeDefined()
   expect(fetchMock.mock.calls.some(([url]) => url === '/api/campanias/campanias/?marca=7')).toBe(
     true,
   )
 
-  fireEvent.click(within(ficha).getByRole('button', { name: 'Cerrar' }))
+  fireEvent.click(within(ficha).getByRole('button', { name: 'Volver a marcas' }))
   expect(screen.queryByRole('region', { name: 'Ficha de Agua Cumbre' })).toBeNull()
+  expect(await screen.findByRole('table', { name: 'Marcas' })).toBeDefined()
 })
 
 test('la ficha de una marca con grupo lista las otras marcas del grupo (RN-016)', async () => {
@@ -403,9 +405,10 @@ test('avisa si no hay otras marcas en el grupo o si falla su carga', async () =>
   await within(tabla).findByText('Agua Cumbre')
   fireEvent.click(within(tabla).getByRole('button', { name: 'Ver ficha' }))
   expect(await screen.findByText('No hay otras marcas en el grupo.')).toBeDefined()
-  fireEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Volver a marcas' }))
   fallar = true
-  fireEvent.click(within(tabla).getByRole('button', { name: 'Ver ficha' }))
+  const deNuevo = await screen.findByRole('table', { name: 'Marcas' })
+  fireEvent.click(await within(deNuevo).findByRole('button', { name: 'Ver ficha' }))
   expect(await screen.findByText('No se pudieron cargar las marcas del grupo.')).toBeDefined()
 })
 

@@ -105,9 +105,9 @@ test('muestra el costo total y el neto final de cada ítem y del mes (HU-063)', 
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
   expect(within(fila).getByText('$1.500,00')).toBeDefined()
   expect(within(fila).getByText('$8.500,00')).toBeDefined()
-  const suma = screen.getByLabelText('Totales del mes').textContent
-  expect(suma).toContain('Costos $1.500,00')
-  expect(suma).toContain('Neto final $8.500,00')
+  const suma = screen.getByLabelText('Totales del mes')
+  expect(within(suma).getByText('Costos').nextElementSibling?.textContent).toBe('$1.500,00')
+  expect(within(suma).getByText('Neto final').nextElementSibling?.textContent).toBe('$8.500,00')
 })
 
 test('lista los ítems del mes actual con sus importes y los totales sin anulados', async () => {
@@ -116,8 +116,9 @@ test('lista los ítems del mes actual con sus importes y los totales sin anulado
   expect(await screen.findByText('Ítem 1')).toBeDefined()
   // Dos filas más el total del mes.
   expect(screen.getAllByText('$12.100,00')).toHaveLength(3)
-  expect(screen.getByLabelText('Totales del mes').textContent).toContain('2 ítems')
-  expect(screen.getByLabelText('Totales del mes').textContent).toContain('(sin anulados)')
+  const suma = screen.getByLabelText('Totales del mes')
+  expect(within(suma).getByText('Ítems').nextElementSibling?.textContent).toBe('2sin anulados')
+  expect(within(suma).getByText('Total').parentElement?.className).toBe('cifra cifra-principal')
   const mes = mesActual()
   expect(fetchMock.mock.calls.some(([url]) => String(url).includes(`items/?mes=${mes}`))).toBe(true)
   expect(fetchMock.mock.calls.some(([url]) => String(url).includes(`totales/?mes=${mes}`))).toBe(

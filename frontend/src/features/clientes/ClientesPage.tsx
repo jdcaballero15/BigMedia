@@ -1,90 +1,13 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiWrite } from '../../shared/api'
 import ClienteForm from './ClienteForm'
-import ContactosDelCliente from './ContactosDelCliente'
-import CampaniasLista from '../campanias/CampaniasLista'
-import InteraccionesLista from '../campanias/InteraccionesLista'
+import FichaCliente from './FichaCliente'
+import type { Ficha } from './FichaCliente'
 import type { ClienteInput } from './ClienteForm'
 import { TIPOS_CLIENTE } from './types'
-import type { Cliente, Marca } from './types'
+import type { Cliente } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
 import MenuFila from '../../shared/MenuFila'
-
-type Ficha = { cliente: Cliente; recienCreado: boolean }
-type MarcasCargadas = { estado: 'cargando' | 'error' | 'listo'; marcas: Marca[] }
-
-function MarcasDelCliente({
-  ficha,
-  revision,
-  onClose,
-}: {
-  ficha: Ficha
-  revision: number
-  onClose: () => void
-}) {
-  const { cliente, recienCreado } = ficha
-  const [carga, setCarga] = useState<MarcasCargadas>({ estado: 'cargando', marcas: [] })
-
-  useEffect(() => {
-    let active = true
-    void apiGet<Marca[]>(`/api/clientes/marcas/?cliente=${cliente.id}&incluir_inactivos=1`)
-      .then((marcas) => {
-        if (active) setCarga({ estado: 'listo', marcas })
-      })
-      .catch(() => {
-        if (active) setCarga({ estado: 'error', marcas: [] })
-      })
-    return () => {
-      active = false
-    }
-  }, [cliente.id, revision])
-
-  const titulo = `Marcas de ${cliente.nombre_visible}`
-  return (
-    <section className="card edit-form" aria-label={titulo}>
-      <div className="form-heading">
-        <h3>{titulo}</h3>
-        <button type="button" className="button-ghost" onClick={onClose}>
-          Cerrar
-        </button>
-      </div>
-      {/* Un cliente recién creado solo tiene marcas si la API creó su homónima. */}
-      {recienCreado && carga.marcas.length > 0 && (
-        <p className="notice" role="status">
-          Se creó la marca «{carga.marcas[0].nombre}» para este cliente directo.
-        </p>
-      )}
-      {carga.estado === 'cargando' ? (
-        <p className="empty">Cargando marcas…</p>
-      ) : carga.estado === 'error' ? (
-        <p className="error" role="alert">
-          No se pudieron cargar las marcas.
-        </p>
-      ) : carga.marcas.length === 0 ? (
-        <p className="empty">Este cliente todavía no tiene marcas.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Marca</th>
-              <th>Rubro</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {carga.marcas.map((marca) => (
-              <tr key={marca.id}>
-                <td className="primary-cell">{marca.nombre}</td>
-                <td>{marca.rubro_nombre ?? 'Sin rubro'}</td>
-                <td>{marca.activo ? 'Activa' : 'Inactiva'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </section>
-  )
-}
 
 export default function ClientesPage() {
   const puedeEditar = usePuedeEditar()
@@ -154,6 +77,32 @@ export default function ClientesPage() {
     apply()
   }
 
+  const formulario = editing !== null && (
+    <ClienteForm
+      key={editing === 'new' ? 'nuevo' : `formulario-${editing.id}`}
+      cliente={editing === 'new' ? null : editing}
+      onSave={saveCliente}
+      onCancel={() => setEditing(null)}
+    />
+  )
+
+  if (ficha !== null)
+    return (
+      <>
+        {formulario}
+        <FichaCliente
+          key={ficha.cliente.id}
+          ficha={ficha}
+          revision={revision}
+          onVolver={() => {
+            setEditing(null)
+            setFicha(null)
+          }}
+          onEditar={puedeEditar ? () => abrirEdicion(ficha.cliente) : undefined}
+        />
+      </>
+    )
+
   return (
     <section>
       <div className="section-heading">
@@ -168,41 +117,7 @@ export default function ClientesPage() {
           </button>
         )}
       </div>
-      {editing !== null && (
-        <ClienteForm
-          key={editing === 'new' ? 'nuevo' : `formulario-${editing.id}`}
-          cliente={editing === 'new' ? null : editing}
-          onSave={saveCliente}
-          onCancel={() => setEditing(null)}
-        />
-      )}
-      {ficha !== null && (
-        <MarcasDelCliente
-          key={`ficha-${ficha.cliente.id}`}
-          ficha={ficha}
-          revision={revision}
-          onClose={() => setFicha(null)}
-        />
-      )}
-      {ficha !== null && (
-        <CampaniasLista
-          key={`campanias-${ficha.cliente.id}`}
-          filtro={{ cliente: ficha.cliente.id }}
-          titulo={`Campañas de ${ficha.cliente.nombre_visible}`}
-        />
-      )}
-      {/* Solo el intermediario formal tiene contactos múltiples (HU-068, RN-015). */}
-      {ficha !== null && ficha.cliente.tipo === 'intermediario_formal' && (
-        <ContactosDelCliente key={`contactos-${ficha.cliente.id}`} cliente={ficha.cliente} />
-      )}
-      {ficha !== null && (
-        <InteraccionesLista
-          key={`interacciones-${ficha.cliente.id}`}
-          filtro={{ cliente: ficha.cliente.id }}
-          titulo={`Interacciones con ${ficha.cliente.nombre_visible}`}
-          ocultar="cliente"
-        />
-      )}
+      {formulario}
       <div className="filters card" role="search" aria-label="Filtros de clientes">
         <label>
           Buscar

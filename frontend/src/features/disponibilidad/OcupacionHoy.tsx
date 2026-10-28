@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { apiGet } from '../../shared/api'
 import type { Catalogo, Formato } from '../inventario/types'
 import type { OcupacionCartel } from './types'
 
 type Ocupacion = '' | 'libres' | 'ocupados'
 
-export default function OcupacionHoy() {
+const OCUPACIONES: { value: Ocupacion; label: string }[] = [
+  { value: '', label: 'Todos' },
+  { value: 'libres', label: 'Libres' },
+  { value: 'ocupados', label: 'Ocupados' },
+]
+
+export default function OcupacionHoy({ pestanias }: { pestanias?: ReactNode }) {
   const [filas, setFilas] = useState<OcupacionCartel[]>([])
   const [zonas, setZonas] = useState<Catalogo[]>([])
   const [formatos, setFormatos] = useState<Formato[]>([])
@@ -75,26 +82,7 @@ export default function OcupacionHoy() {
           <h2>Ocupación de hoy</h2>
           <p className="muted">Qué carteles están libres u ocupados en este momento.</p>
         </div>
-        <div className="row-actions" role="group" aria-label="Accesos rápidos">
-          <button
-            className={ocupacion === '' ? 'active' : 'button-ghost'}
-            onClick={() => cambiar(() => setOcupacion(''))}
-          >
-            Todos
-          </button>
-          <button
-            className={ocupacion === 'libres' ? 'active' : 'button-ghost'}
-            onClick={() => cambiar(() => setOcupacion('libres'))}
-          >
-            Libres
-          </button>
-          <button
-            className={ocupacion === 'ocupados' ? 'active' : 'button-ghost'}
-            onClick={() => cambiar(() => setOcupacion('ocupados'))}
-          >
-            Ocupados
-          </button>
-        </div>
+        {pestanias}
       </div>
       <div className="filters card">
         <label>
@@ -133,6 +121,18 @@ export default function OcupacionHoy() {
             <option value="digital">Digital</option>
           </select>
         </label>
+        <div className="pildoras" role="group" aria-label="Accesos rápidos">
+          {OCUPACIONES.map((item) => (
+            <button
+              key={item.value}
+              className={ocupacion === item.value ? 'active' : ''}
+              aria-pressed={ocupacion === item.value}
+              onClick={() => cambiar(() => setOcupacion(item.value))}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
       {error && (
         <p className="error" role="alert">

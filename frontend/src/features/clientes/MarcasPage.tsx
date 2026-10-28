@@ -9,27 +9,36 @@ import RubrosAdmin from './RubrosAdmin'
 import type { Cliente, GrupoEconomico, Marca, Rubro } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
 import MenuFila from '../../shared/MenuFila'
+import { useDetalleRuta } from '../../shared/ruta'
+import { iniciales } from './iniciales'
 
 const ERROR_RUBROS = 'No se pudieron cargar los rubros.'
 const ERROR_GRUPOS = 'No se pudieron cargar los grupos económicos.'
 
-/** Ficha de una marca: sus campañas, sin importar quién las pagó, y su grupo (HU-022). */
-function FichaMarca({ marca, onClose }: { marca: Marca; onClose: () => void }) {
-  const titulo = `Ficha de ${marca.nombre}`
+/** Ficha de una marca como página: sus campañas, sin importar quién las pagó, y su grupo (HU-022). */
+function FichaMarca({ marca, onVolver }: { marca: Marca; onVolver: () => void }) {
+  useDetalleRuta(marca.nombre, onVolver)
+  const datos = [
+    marca.cliente_nombre,
+    marca.rubro_nombre ?? 'Sin rubro',
+    marca.grupo_nombre ?? 'Sin grupo',
+    marca.activo ? 'Activa' : 'Inactiva',
+  ]
   return (
-    <section className="card edit-form" aria-label={titulo}>
-      <div className="form-heading">
-        <div>
-          <h3>{titulo}</h3>
-          <p className="muted">
-            {marca.cliente_nombre} · {marca.rubro_nombre ?? 'Sin rubro'} ·{' '}
-            {marca.grupo_nombre ?? 'Sin grupo'} · {marca.activo ? 'Activa' : 'Inactiva'}
-          </p>
+    <section className="ficha" aria-label={`Ficha de ${marca.nombre}`}>
+      <button className="button-ghost ficha-volver" onClick={onVolver}>
+        <span aria-hidden="true">←</span> Volver a marcas
+      </button>
+      <header className="ficha-encabezado ficha-chica">
+        <span className="ficha-iniciales" aria-hidden="true">
+          {iniciales(marca.nombre)}
+        </span>
+        <div className="ficha-titulo">
+          <p className="ficha-tipo">Marca</p>
+          <h2>{marca.nombre}</h2>
+          <p>{datos.join(' · ')}</p>
         </div>
-        <button type="button" className="button-ghost" onClick={onClose}>
-          Cerrar
-        </button>
-      </div>
+      </header>
       <CampaniasLista
         filtro={{ marca: marca.id }}
         titulo={`Campañas de ${marca.nombre}`}
@@ -158,6 +167,9 @@ export default function MarcasPage() {
     apply()
   }
 
+  if (ficha !== null)
+    return <FichaMarca key={ficha.id} marca={ficha} onVolver={() => setFicha(null)} />
+
   return (
     <section>
       <div className="section-heading">
@@ -183,7 +195,6 @@ export default function MarcasPage() {
           onCancel={() => setEditing(null)}
         />
       )}
-      {ficha !== null && <FichaMarca key={ficha.id} marca={ficha} onClose={() => setFicha(null)} />}
       <div className="filters card" role="search" aria-label="Filtros de marcas">
         <label>
           Cliente

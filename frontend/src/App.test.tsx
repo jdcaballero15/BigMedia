@@ -626,3 +626,40 @@ test('el menú de iconos muestra el nombre de cada pantalla al pasar el mouse', 
   fireEvent.mouseLeave(screen.getByTitle('ale'))
   expect(screen.queryByRole('tooltip')).toBeNull()
 })
+
+test('con una ficha abierta, la ruta suma el cliente y «Clientes» vuelve a la lista', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'ale', rol: 'operativo' })
+      if (input.startsWith('/api/clientes/clientes/'))
+        return ok([
+          {
+            id: 1,
+            nombre: 'Agencia Andes',
+            nombre_visible: 'Agencia Andes',
+            razon_social: '',
+            cuit: '',
+            tipo: 'intermediario',
+            tipo_nombre: 'Intermediario',
+            telefono: '',
+            correo: '',
+            activo: true,
+          },
+        ])
+      if (input.startsWith('/api/clientes/') || input.startsWith('/api/campanias/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
+  const barra = screen.getByRole('banner', { name: 'Ubicación' })
+  expect(barra.textContent).toContain('Big Media / Comercial / Clientes / Agencia Andes')
+  expect(screen.getByRole('heading', { name: 'Agencia Andes' })).toBeDefined()
+
+  fireEvent.click(within(barra).getByRole('button', { name: 'Clientes' }))
+  expect(await screen.findByRole('heading', { name: 'Clientes' })).toBeDefined()
+  expect(barra.textContent).not.toContain('Agencia Andes')
+  expect(within(barra).queryByRole('button')).toBeNull()
+})

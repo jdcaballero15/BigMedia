@@ -43,6 +43,8 @@ import DefinirClave from './features/usuarios/DefinirClave'
 import UsuariosPage from './features/usuarios/UsuariosPage'
 import { ApiError, apiGet, apiWrite } from './shared/api'
 import { fechaLarga } from './shared/fechas'
+import { DetalleRutaContext } from './shared/ruta'
+import type { DetalleRuta } from './shared/ruta'
 import { PuedeEditarContext } from './shared/sesion'
 import type { Rol } from './shared/sesion'
 import './App.css'
@@ -229,6 +231,7 @@ function App() {
   const [page, setPage] = useState<Page>('clientes')
   const [menuOpen, setMenuOpen] = useState(false)
   const [hoy] = useState(() => fechaLarga(new Date()))
+  const [detalle, setDetalle] = useState<DetalleRuta | null>(null)
   const [etiqueta, setEtiqueta] = useState<{ texto: string; top: number } | null>(null)
   const [expirada, setExpirada] = useState(false)
   const [codigoClave, setCodigoClave] = useState(codigoDelLink)
@@ -420,13 +423,23 @@ function App() {
         <header className="topbar" aria-label="Ubicación">
           <p className="ruta">
             Big Media <span aria-hidden="true">/</span> {seccionActiva?.title}{' '}
-            <span aria-hidden="true">/</span> <strong>{paginaActiva?.label}</strong>
+            <span aria-hidden="true">/</span>{' '}
+            {detalle === null ? (
+              <strong>{paginaActiva?.label}</strong>
+            ) : (
+              <>
+                <button className="ruta-volver" onClick={detalle.onVolver}>
+                  {paginaActiva?.label}
+                </button>{' '}
+                <span aria-hidden="true">/</span> <strong>{detalle.texto}</strong>
+              </>
+            )}
           </p>
           <p className="fecha-hoy">{hoy}</p>
         </header>
         <main className="app-main" key={page}>
           <PuedeEditarContext value={session.rol !== 'lectura'}>
-            {paginaActiva?.render()}
+            <DetalleRutaContext value={setDetalle}>{paginaActiva?.render()}</DetalleRutaContext>
           </PuedeEditarContext>
         </main>
       </div>

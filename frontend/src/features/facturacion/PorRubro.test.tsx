@@ -64,8 +64,11 @@ test('muestra el ranking de rubros con ingresos, días-cupo y % ocupación', asy
   render(<PorRubroPage />)
   expect(await screen.findByText('Gastronomía')).toBeDefined()
   expect(screen.getByText('Retail')).toBeDefined()
-  expect(screen.getByText(formatearMonto('8000.00'))).toBeDefined()
-  expect(screen.getByText('50')).toBeDefined()
+  const tabla = screen.getByRole('table')
+  expect(within(tabla).getByText(formatearMonto('8000.00'))).toBeDefined()
+  expect(within(tabla).getByText('50')).toBeDefined()
+  const resumen = screen.getByLabelText('Resumen del período')
+  expect(within(resumen).getByText(formatearMonto('8000.00'))).toBeDefined()
 })
 
 test('sin datos muestra el estado vacío', async () => {
