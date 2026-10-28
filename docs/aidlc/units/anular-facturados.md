@@ -1,6 +1,6 @@
 # Unidad: anular-facturados
 
-- **Estado:** en curso · **Épica:** E11 Facturación mensual · **App dueña:** facturacion
+- **Estado:** en revisión · **Épica:** E11 Facturación mensual · **App dueña:** facturacion
 - **Origen:** RN-026, HU-067 (criterios 5 y 6) · **Rama:** `feature/facturacion-anular-facturados`
 - **Depende de:** [`reabrir-item`](reabrir-item.md) (aviso a Administración y auditoría) y el PR #99
   (RN-026 en `provisoria`), que tiene que estar mergeado antes del PR de código.
@@ -81,4 +81,4 @@ mover datos.
 
 - Gate 1 (plan): aprobado por Gonza el 2026-10-28, con la propuesta de anular de a un ítem aunque esté en un grupo.
 - Gate 2 (verificación): 2026-10-28, ruff, mypy, makemigrations y pre-commit (gitleaks) limpios; pytest 812 passed, 96,95 %; frontend format, lint, typecheck, 372 tests (92,42 % sentencias, 94,45 % líneas) y build en verde. Revisión visual aprobada por Gonza el 2026-10-28. Rebaseada sobre develop con el PR #99 y columna «Dónde vive» de RN-026 completada.
-- Gate 3 (PR):
+- Gate 3 (PR): #100, abierto el 2026-10-28 a pedido de Gonza.
