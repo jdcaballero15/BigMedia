@@ -59,7 +59,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E3 Clientes, marcas y CRM | [fichas-cliente-y-marca](units/fichas-cliente-y-marca.md) | frontend | HU-021, HU-022 (criterio 1) | interacciones, campanias | Juan Diego | feature/frontend-fichas-cliente-y-marca | mergeada |
 | E12 Rediseño visual | [estilo-base](units/estilo-base.md) | frontend | pedido de Gonza (2026-10-28) | — | Gonza | feature/frontend-estilo-base | mergeada |
 | E12 Rediseño visual | [pantallas-rediseno](units/pantallas-rediseno.md) | frontend | pedido de Gonza (2026-10-28) | estilo-base | Gonza | feature/frontend-pantallas-rediseno | mergeada |
-| E3 Clientes, marcas y CRM | [interacciones-con-marca](units/interacciones-con-marca.md) | campanias | RN-018, HU-020 (criterios 4 y 5) | interacciones, fichas-cliente-y-marca | Gonza | feature/campanias-interacciones-con-marca | en curso |
+| E3 Clientes, marcas y CRM | [interacciones-con-marca](units/interacciones-con-marca.md) | campanias | RN-018, HU-020 (criterios 4 y 5) | interacciones, fichas-cliente-y-marca | Gonza | feature/campanias-interacciones-con-marca | en revisión (#96) |
 | E3 Clientes, marcas y CRM | [grupo-economico](units/grupo-economico.md) | clientes | RN-016, HU-017, HU-022 (criterio 2), HU-050 (criterio 2) | clientes-y-marcas, fichas-cliente-y-marca, reporte-por-rubro | Gonza | feature/clientes-grupo-economico | mergeada |
 
 ## Notas

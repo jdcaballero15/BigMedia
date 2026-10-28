@@ -1,6 +1,6 @@
 # Unidad: interacciones-con-marca
 
-- **Estado:** en curso · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** campanias
+- **Estado:** en revisión · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** campanias
 - **Origen:** RN-018, HU-020 (criterios 4 y 5) · **Rama:** `feature/campanias-interacciones-con-marca`
 - **Depende de:** el PR #95 (RN-018 en `provisoria`), que tiene que estar mergeado antes del PR de
   código.
@@ -77,4 +77,4 @@ marca que todavía no tiene campaña, y que esas interacciones se vean en la fic
 
 - Gate 1 (plan): aprobado por Gonza el 2026-10-28, con el filtro de la ficha de marca propuesto.
 - Gate 2 (verificación): 2026-10-28, ruff, mypy, makemigrations y pre-commit (gitleaks) limpios; pytest 797 passed, 96,92 %; frontend format, lint, typecheck, 369 tests (92,44 % sentencias, 94,43 % líneas) y build en verde. Revisión visual aprobada por Gonza el 2026-10-28. Rebaseada sobre develop con el PR #95 y columna «Dónde vive» de RN-018 completada.
-- Gate 3 (PR):
+- Gate 3 (PR): #96, abierto el 2026-10-28 a pedido de Gonza.
