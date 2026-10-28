@@ -76,5 +76,5 @@ marca que todavía no tiene campaña, y que esas interacciones se vean en la fic
 ## Registro de gates
 
 - Gate 1 (plan): aprobado por Gonza el 2026-10-28, con el filtro de la ficha de marca propuesto.
-- Gate 2 (verificación):
+- Gate 2 (verificación): 2026-10-28, ruff, mypy, makemigrations y pre-commit (gitleaks) limpios; pytest 797 passed, 96,92 %; frontend format, lint, typecheck, 369 tests (92,44 % sentencias, 94,43 % líneas) y build en verde. Revisión visual aprobada por Gonza el 2026-10-28. Rebaseada sobre develop con el PR #95 y columna «Dónde vive» de RN-018 completada.
 - Gate 3 (PR):
