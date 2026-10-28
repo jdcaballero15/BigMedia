@@ -31,6 +31,8 @@ const marcas: Marca[] = [
     cliente_nombre: 'Cliente 2',
     rubro: null,
     rubro_nombre: null,
+    grupo: null,
+    grupo_nombre: null,
     activo: true,
   },
 ]

@@ -21,6 +21,7 @@ RUTAS_CON_DETALLE = [
     "/api/inventario/estados/1/",
     "/api/inventario/carteles/1/",
     "/api/clientes/rubros/1/",
+    "/api/clientes/grupos/1/",
     "/api/clientes/clientes/1/",
     "/api/clientes/marcas/1/",
     "/api/campanias/campanias/1/",

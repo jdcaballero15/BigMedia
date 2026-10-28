@@ -97,6 +97,6 @@ Ninguna abierta: RN-016 se respondió el 2026-10-28 (ver `reglas-de-negocio.md`)
 
 ## Registro de gates
 
-- Gate 1 (plan):
+- Gate 1 (plan): 2026-10-28 — aprobado por Gonza
 - Gate 2 (verificación):
 - Gate 3 (PR):

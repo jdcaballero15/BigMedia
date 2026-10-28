@@ -101,7 +101,7 @@ const sections: { title: string; items: Item[] }[] = [
       },
       {
         id: 'rubro',
-        label: 'Por rubro',
+        label: 'Por rubro o grupo',
         icon: Tags,
         render: () => <PorRubroPage />,
         soloGerencia: true,

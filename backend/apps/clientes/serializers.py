@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from . import services
-from .models import Cliente, Contacto, Marca, Rubro
+from .models import Cliente, Contacto, GrupoEconomico, Marca, Rubro
 from .validators import normalizar_cuit, validar_cuit
 
 NOMBRE_OBLIGATORIO = "Ingresá un nombre."
@@ -45,6 +45,22 @@ class RubroSerializer(serializers.ModelSerializer[Rubro]):
             coincidencias = coincidencias.exclude(pk=self.instance.pk)
         if coincidencias.exists():
             raise serializers.ValidationError("Ya existe un rubro con ese nombre.")
+        return nombre
+
+
+class GrupoEconomicoSerializer(serializers.ModelSerializer[GrupoEconomico]):
+    class Meta:
+        model = GrupoEconomico
+        fields = ["id", "nombre", "activo"]
+        extra_kwargs = {"nombre": {"error_messages": _errores_de_nombre()}}
+
+    def validate_nombre(self, value: str) -> str:
+        nombre = value.strip()
+        coincidencias = GrupoEconomico.objects.filter(nombre__iexact=nombre)
+        if self.instance is not None:
+            coincidencias = coincidencias.exclude(pk=self.instance.pk)
+        if coincidencias.exists():
+            raise serializers.ValidationError("Ya existe un grupo económico con ese nombre.")
         return nombre
 
 
@@ -120,6 +136,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
 class MarcaSerializer(serializers.ModelSerializer[Marca]):
     cliente_nombre = serializers.CharField(source="cliente.nombre_visible", read_only=True)
     rubro_nombre = serializers.CharField(source="rubro.nombre", read_only=True, default=None)
+    grupo_nombre = serializers.CharField(source="grupo.nombre", read_only=True, default=None)
     confirmar_distinta = _campo_confirmar_distinta()
 
     class Meta:
@@ -131,6 +148,8 @@ class MarcaSerializer(serializers.ModelSerializer[Marca]):
             "cliente_nombre",
             "rubro",
             "rubro_nombre",
+            "grupo",
+            "grupo_nombre",
             "activo",
             "creado_en",
             "actualizado_en",
@@ -154,12 +173,20 @@ class MarcaSerializer(serializers.ModelSerializer[Marca]):
                     "incorrect_type": "Seleccioná un rubro.",
                 },
             },
+            "grupo": {
+                "required": False,
+                "error_messages": {
+                    "does_not_exist": "El grupo económico elegido no existe.",
+                    "incorrect_type": "Seleccioná un grupo económico.",
+                },
+            },
         }
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         mensajes = {
             "cliente": "Seleccioná un cliente activo.",
             "rubro": "Seleccioná un rubro activo.",
+            "grupo": "Seleccioná un grupo económico activo.",
         }
         for campo, mensaje in mensajes.items():
             valor = attrs.get(campo)

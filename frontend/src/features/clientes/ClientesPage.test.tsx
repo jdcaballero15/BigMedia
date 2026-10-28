@@ -27,6 +27,8 @@ const marcasAgencia: Marca[] = [
     cliente_nombre: 'Agencia Andes',
     rubro: 3,
     rubro_nombre: 'Bebidas',
+    grupo: null,
+    grupo_nombre: null,
     activo: true,
   },
   {
@@ -36,6 +38,8 @@ const marcasAgencia: Marca[] = [
     cliente_nombre: 'Agencia Andes',
     rubro: null,
     rubro_nombre: null,
+    grupo: null,
+    grupo_nombre: null,
     activo: false,
   },
 ]

@@ -14,7 +14,7 @@ Los grupos son estos:
 | Grupo | Pantallas |
 | --- | --- |
 | Inicio | **Panel**: ocupación de hoy, campañas activas y por vencer |
-| Reportes | **Ingresos**, **Por rubro**, **Ocupación** |
+| Reportes | **Ingresos**, **Por rubro o grupo**, **Ocupación** |
 | Comercial | **Clientes**, **Marcas**, **Campañas**, **Interacciones**, **Ítems a facturar** |
 | Inventario | **Carteles**, **Disponibilidad** |
 | Operación | **Proveedores**, **Costos**, **Formatos** |
@@ -67,17 +67,31 @@ las reservas se **cancelan** y los ítems a facturar se **anulan**. Así queda l
 
 ### Marca nueva
 
-1. **Comercial › Marcas** y creá la marca, eligiendo su cliente y, si querés, su rubro.
+1. **Comercial › Marcas** y creá la marca, eligiendo su cliente y, si querés, su rubro y su grupo
+   económico.
 2. Si ya existe una marca con un nombre igual o muy parecido, el sistema te avisa ("Ya hay una
    marca con un nombre igual o muy parecido") para que no la cargues dos veces. Revisá la lista y
    decidí.
+
+### Grupos económicos
+
+Un **grupo económico** junta las marcas de un mismo dueño, aunque las facturen clientes distintos
+(por ejemplo, dos marcas de la misma empresa que entran por agencias diferentes). Es opcional y cada
+marca puede estar en un solo grupo.
+
+- Los grupos se cargan en **Comercial › Marcas**, en la sección **Grupos económicos**, debajo de los
+  rubros: **Nuevo grupo económico**, **Renombrar** e **Inactivar**.
+- Para asignar una marca a un grupo, editala y elegí el **Grupo económico**.
+- En **Reportes › Por rubro o grupo**, **Cortar por: Grupo económico** suma los ingresos y la
+  ocupación de todas las marcas de cada grupo.
 
 ### Ver la ficha de un cliente o de una marca
 
 - En **Comercial › Clientes**, **Ver ficha** muestra sus marcas, sus campañas y sus interacciones
   (y sus contactos, si es Intermediario formal). Sirve para tener el contexto antes de llamarlo.
 - En **Comercial › Marcas**, **Ver ficha** muestra todas las campañas de la marca con su estado,
-  aunque las haya pagado otro cliente.
+  aunque las haya pagado otro cliente, y, si la marca tiene grupo económico, las otras marcas del
+  grupo.
 
 ## 3. Crear una campaña
 

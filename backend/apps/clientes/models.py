@@ -35,6 +35,28 @@ class Rubro(models.Model):
         return self.nombre
 
 
+class GrupoEconomico(models.Model):
+    """Grupo de marcas de un mismo dueño, sin importar quién las factura (RN-016)."""
+
+    nombre = models.CharField(max_length=120)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "grupo económico"
+        verbose_name_plural = "grupos económicos"
+        constraints = [
+            models.UniqueConstraint(
+                Lower("nombre"),
+                name="grupo_economico_nombre_ci",
+                violation_error_message="Ya existe un grupo económico con ese nombre.",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.nombre
+
+
 class Cliente(models.Model):
     class Tipo(models.TextChoices):
         DIRECTO = "directo", "Directo"
@@ -89,6 +111,9 @@ class Marca(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name="marcas")
     rubro = models.ForeignKey(
         Rubro, on_delete=models.PROTECT, related_name="marcas", null=True, blank=True
+    )
+    grupo = models.ForeignKey(
+        GrupoEconomico, on_delete=models.PROTECT, related_name="marcas", null=True, blank=True
     )
     activo = models.BooleanField(default=True)
     nombre_busqueda = models.CharField(max_length=160, editable=False, db_index=True)

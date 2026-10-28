@@ -62,6 +62,7 @@ class PorRubroView(APIView):
     """Reporte de ingresos y días-cupo por rubro de la marca (HU-050, criterio 1)."""
 
     permission_classes = [permissions.IsAuthenticated, LecturaSoloGerencia]
+    reporte = staticmethod(services.reporte_por_rubro)
 
     def get(self, request: Request) -> Response:
         hoy = timezone.localdate()
@@ -72,7 +73,13 @@ class PorRubroView(APIView):
             raise ValidationError(
                 {"hasta": "El período de fin no puede ser anterior al de inicio."}
             )
-        return Response(services.reporte_por_rubro(desde, hasta))
+        return Response(self.reporte(desde, hasta))
+
+
+class PorGrupoView(PorRubroView):
+    """Reporte de ingresos y días-cupo por grupo económico de la marca (HU-050 criterio 2)."""
+
+    reporte = staticmethod(services.reporte_por_grupo)
 
 
 class IngresosView(APIView):

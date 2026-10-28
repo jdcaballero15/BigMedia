@@ -7,10 +7,11 @@ from rest_framework.exceptions import ValidationError
 from config.permisos import LecturaConSesionEdicionOperativo
 from config.texto import normalizar_busqueda
 
-from .models import Cliente, Contacto, Marca, Rubro
+from .models import Cliente, Contacto, GrupoEconomico, Marca, Rubro
 from .serializers import (
     ClienteSerializer,
     ContactoSerializer,
+    GrupoEconomicoSerializer,
     MarcaSerializer,
     RubroSerializer,
 )
@@ -48,6 +49,13 @@ class RubroViewSet(ClientesBaseViewSet):
     serializer_class = RubroSerializer
 
 
+class GrupoEconomicoViewSet(ClientesBaseViewSet):
+    """Catálogo de grupos económicos (RN-016); edita Operativo, como los rubros."""
+
+    queryset = GrupoEconomico.objects.all()
+    serializer_class = GrupoEconomicoSerializer
+
+
 class ClienteViewSet(ClientesBaseViewSet):
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
@@ -67,12 +75,12 @@ class ClienteViewSet(ClientesBaseViewSet):
 
 
 class MarcaViewSet(ClientesBaseViewSet):
-    queryset = Marca.objects.select_related("cliente", "rubro")
+    queryset = Marca.objects.select_related("cliente", "rubro", "grupo")
     serializer_class = MarcaSerializer
 
     def filtrar_lista(self, queryset: QuerySet[Any]) -> QuerySet[Any]:
         params = self.request.query_params
-        for campo in ("cliente", "rubro"):
+        for campo in ("cliente", "rubro", "grupo"):
             if params.get(campo):
                 queryset = queryset.filter(**{f"{campo}_id": _id_positivo(params[campo], campo)})
         texto = self.texto_buscado()

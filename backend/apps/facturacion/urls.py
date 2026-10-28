@@ -8,6 +8,7 @@ from .views import (
     IngresosView,
     ItemFacturacionViewSet,
     OrdenCompraPdfView,
+    PorGrupoView,
     PorRubroView,
 )
 
@@ -19,6 +20,7 @@ router.register("grupos", GrupoFacturaViewSet, basename="grupo-factura")
 urlpatterns = [
     path("ingresos/", IngresosView.as_view(), name="ingresos"),
     path("por-rubro/", PorRubroView.as_view(), name="por-rubro"),
+    path("por-grupo/", PorGrupoView.as_view(), name="por-grupo"),
     path(
         "items/<int:pk>/orden-compra-pdf/",
         OrdenCompraPdfView.as_view(),
