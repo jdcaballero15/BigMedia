@@ -1,6 +1,6 @@
 # Unidad: interacciones-con-marca
 
-- **Estado:** en revisión · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** campanias
+- **Estado:** mergeada (PR #96) · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** campanias
 - **Origen:** RN-018, HU-020 (criterios 4 y 5) · **Rama:** `feature/campanias-interacciones-con-marca`
 - **Depende de:** el PR #95 (RN-018 en `provisoria`), que tiene que estar mergeado antes del PR de
   código.
