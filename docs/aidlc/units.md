@@ -56,7 +56,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E11 Facturación mensual | [orden-de-compra-y-grupos](units/orden-de-compra-y-grupos.md) | facturacion | HU-062, HU-064 (RN-024) | cierre-de-mes | Gonza | feature/facturacion-orden-de-compra-y-grupos | mergeada |
 | E11 Facturación mensual | [costos-del-item](units/costos-del-item.md) | facturacion | HU-063, HU-066 criterio 1 (RN-024) | cierre-de-mes, costos-y-margen | Gonza | feature/facturacion-costos-del-item | mergeada |
 | E11 Facturación mensual | [reabrir-item](units/reabrir-item.md) | facturacion | HU-067 (RN-022) | cierre-de-mes, auditoria-base | Gonza | feature/facturacion-reabrir-item | mergeada |
-| E3 Clientes, marcas y CRM | [fichas-cliente-y-marca](units/fichas-cliente-y-marca.md) | frontend | HU-021, HU-022 (criterio 1) | interacciones, campanias | Juan Diego | feature/frontend-fichas-cliente-y-marca | en revisión |
+| E3 Clientes, marcas y CRM | [fichas-cliente-y-marca](units/fichas-cliente-y-marca.md) | frontend | HU-021, HU-022 (criterio 1) | interacciones, campanias | Juan Diego | feature/frontend-fichas-cliente-y-marca | mergeada |
 | E12 Rediseño visual | [estilo-base](units/estilo-base.md) | frontend | pedido de Gonza (2026-10-28) | — | Gonza | feature/frontend-estilo-base | en curso |
 | E12 Rediseño visual | [pantallas-rediseno](units/pantallas-rediseno.md) | frontend | pedido de Gonza (2026-10-28) | estilo-base | Gonza | feature/frontend-pantallas-rediseno | pendiente |
 
