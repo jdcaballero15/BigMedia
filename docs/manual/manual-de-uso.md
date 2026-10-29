@@ -336,7 +336,11 @@ Si no hay ningún ítem completo, dice "No hay ítems completos para enviar." y 
 - Corregí el ítem y volvé a tocar **Enviar a facturar** del mes. Sale de nuevo como Enviado, con la
   marca **Reenviado** en la lista y en la planilla, y Administración recibe otro correo con los
   valores anteriores y nuevos de lo que cambió.
-- Corregir un ítem ya facturado todavía no está definido (RN-026): avisá al equipo.
+- Un ítem ya facturado no se reabre. Si hay que corregirlo (por ejemplo, porque Administración
+  emitió la nota de crédito), tocá **Anular**, escribí el **Motivo de la anulación** y tocá
+  **Confirmar anulación**. Pasa a Anulado conservando su número de factura, sale del resumen del
+  mes, queda registrado quién, cuándo y por qué, y Administración recibe un correo. Después cargá
+  la corrección como un ítem nuevo.
 
 ## Preguntas frecuentes
 

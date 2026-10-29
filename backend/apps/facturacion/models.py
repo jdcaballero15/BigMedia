@@ -180,6 +180,17 @@ class ItemFacturacion(models.Model):
     motivo_reapertura = models.CharField(max_length=200, blank=True, editable=False)
     valores_al_reabrir = models.JSONField(default=dict, blank=True, editable=False)
     reenviado = models.BooleanField(default=False, editable=False)
+    # Anulación de un ítem ya Facturado (RN-026): quién, cuándo y por qué.
+    anulado_en = models.DateTimeField(null=True, blank=True, editable=False)
+    anulado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="items_facturacion_anulados",
+        null=True,
+        blank=True,
+        editable=False,
+    )
+    motivo_anulacion = models.CharField(max_length=200, blank=True, editable=False)
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
