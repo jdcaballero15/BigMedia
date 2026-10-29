@@ -49,6 +49,33 @@ def validar_estado_inicial(estado: str) -> None:
         )
 
 
+def validar_cartel_reservable(cartel: Cartel) -> None:
+    """Un cartel de baja o fuera de servicio no admite reservas nuevas (RN-010, HU-039)."""
+    if cartel.estado.es_baja:
+        raise ValidationError({"cartel": "El cartel está de baja: no se puede reservar."})
+    if not cartel.estado.operativo:
+        raise ValidationError(
+            {
+                "cartel": f"El cartel está fuera de servicio ({cartel.estado.nombre}): no se "
+                "puede reservar hasta que vuelva a un estado operativo."
+            }
+        )
+
+
+def reservas_vigentes_del_cartel(cartel: Cartel, dia: date | None = None) -> QuerySet[Reserva]:
+    """Reservas activas del cartel: Pendientes y Confirmadas que no terminaron (HU-039)."""
+    dia = dia or timezone.localdate()
+    return (
+        Reserva.objects.filter(
+            cartel=cartel,
+            estado__in=(Reserva.Estado.PENDIENTE, Reserva.Estado.CONFIRMADA),
+            fecha_fin__gte=dia,
+        )
+        .select_related("campania__marca", "cartel")
+        .order_by("fecha_inicio", "id")
+    )
+
+
 def necesita_validar_cupo(anterior: str | None, nuevo: str, cambia_ocupacion: bool) -> bool:
     """Si guardar la reserva exige validar el cupo. `anterior` es None en un alta.
 
@@ -606,7 +633,7 @@ def carteles_para_tanda(
     filtros = filtros or {}
     parametros = parametros_disponibilidad()
     fin = _fin_efectivo(hasta, parametros.borde_inclusivo)
-    carteles = Cartel.objects.filter(formato=formato, estado__es_baja=False)
+    carteles = Cartel.objects.filter(formato=formato, estado__operativo=True, estado__es_baja=False)
     for campo in ("zona", "proveedor"):
         if filtros.get(campo) is not None:
             carteles = carteles.filter(**{f"{campo}_id": filtros[campo]})
@@ -644,9 +671,10 @@ def _crear_en_tanda(
         )
         if cartel is None:
             return "fallidas", {"cartel": cartel_id, "motivo": "No existe el cartel."}
-        if cartel.estado.es_baja:
-            motivo = "El cartel está de baja: no se puede reservar."
-            return "fallidas", {"cartel": cartel_id, "motivo": motivo}
+        try:
+            validar_cartel_reservable(cartel)
+        except ValidationError as error:
+            return "fallidas", {"cartel": cartel_id, "motivo": error.message_dict["cartel"][0]}
         existente = (
             Reserva.objects.filter(
                 campania=campania, cartel=cartel, fecha_inicio=desde, fecha_fin=hasta

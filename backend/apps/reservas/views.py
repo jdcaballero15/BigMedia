@@ -140,6 +140,9 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
         if self.action != "list":
             return queryset
         params = self.request.query_params
+        if params.get("vigentes") == "1":
+            cartel = get_object_or_404(Cartel, pk=_id_positivo(params.get("cartel", ""), "cartel"))
+            queryset = services.reservas_vigentes_del_cartel(cartel)
         for campo in ("campania", "cartel"):
             if params.get(campo):
                 queryset = queryset.filter(**{f"{campo}_id": _id_positivo(params[campo], campo)})

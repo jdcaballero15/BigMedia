@@ -64,6 +64,7 @@ class CartelSerializer(serializers.ModelSerializer[Cartel]):
     proveedor_nombre = serializers.CharField(source="proveedor.nombre", read_only=True)
     estado_nombre = serializers.CharField(source="estado.nombre", read_only=True)
     es_baja = serializers.BooleanField(source="estado.es_baja", read_only=True)
+    operativo = serializers.BooleanField(source="estado.operativo", read_only=True)
 
     class Meta:
         model = Cartel
@@ -77,6 +78,7 @@ class CartelSerializer(serializers.ModelSerializer[Cartel]):
             "proveedor_nombre",
             "estado",
             "estado_nombre",
+            "operativo",
             "es_baja",
             "direccion",
             "tamano",

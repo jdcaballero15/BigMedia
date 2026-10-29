@@ -19,6 +19,7 @@ export type Cartel = {
   estado: number
   estado_nombre: string
   es_baja: boolean
+  operativo: boolean
   direccion: string
   tamano: string
   capacidad: number

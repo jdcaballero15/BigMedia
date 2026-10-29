@@ -154,7 +154,8 @@ Es la forma rápida de reservar varios carteles del mismo formato para una campa
 1. En **Posiciones por formato**, tocá **Agregar carteles** en la línea del formato.
 2. Revisá **Desde** y **Hasta** (vienen con las fechas de la campaña). Si querés, filtrá por
    **Zona**, **Proveedor** o **Dirección**.
-3. La lista muestra **solo los carteles con lugar libre** en esas fechas, con su **Cupo** (cuántos
+3. La lista muestra **solo los carteles con lugar libre** en esas fechas (los que están fuera de
+   servicio no aparecen), con su **Cupo** (cuántos
    lugares ocupados sobre el total) y su **Tarifa de lista**. Al lado del cartel puede decir:
    - "· ya en la campaña": esa campaña ya lo tiene en esas fechas.
    - "· 1 tentativas": hay otra reserva Pendiente en ese cartel; todavía no bloquea, pero puede
@@ -215,7 +216,8 @@ Los más comunes:
 | "1 quedó Pendiente por falta de cupo: Acceso Este 2500, 25/10/2026 → 10/11/2026: ocupado por Campaña #2" | Al confirmar la campaña, esa reserva no entró porque otra campaña ocupa el cartel | Lo mismo que el anterior; las demás reservas sí se confirmaron |
 | "Primero confirmá la campaña." | Tocaste **Confirmar reservas** con la campaña Cotizada | Confirmá la campaña y volvé a intentar |
 | "Para confirmar falta cargar las fechas." | La campaña no tiene todo lo necesario para confirmarse | Cargá lo que dice (marca, cliente que factura o fechas) |
-| "El cartel está de baja: no se puede reservar." | El cartel está fuera de servicio | Elegí otro cartel |
+| "El cartel está de baja: no se puede reservar." | El cartel se dio de baja | Elegí otro cartel |
+| "El cartel está fuera de servicio (Apagado): no se puede reservar hasta que vuelva a un estado operativo." | El cartel está roto, apagado o en mantenimiento | Elegí otro cartel, o esperá a que vuelva a **Activo** |
 | "La fecha de fin no puede ser anterior a la de inicio." | Las fechas están al revés | Corregilas |
 | "No se puede pasar de finalizada a confirmada." | Ese cambio de estado no está permitido | Una Finalizada no cambia; para otra venta, creá una reserva nueva |
 
@@ -240,6 +242,18 @@ Las dos vistas se eligen arriba a la derecha.
 La ocupación cuenta también las reservas Pendientes, para que se vean. Por eso un cartel puede
 mostrar "2 de 1" si tiene una Confirmada y una Pendiente que se pisan: la Pendiente no va a poder
 confirmarse hasta que se libere el lugar.
+
+### Un cartel que se rompe o se apaga
+
+En **Inventario › Carteles**, tocá **Editar** en el cartel y cambiá su **Estado** (por ejemplo a
+**Apagado**, **En mantenimiento** o **Vidrio destruido**). Al guardar:
+
+- Si el cartel tiene reservas activas (Pendientes o Confirmadas que todavía no terminaron), aparece
+  un aviso con la lista: reserva, campaña, fechas y estado. Esas reservas **no se tocan**: decidí
+  si las pasás a otro cartel o si avisás al cliente.
+- Mientras el cartel no vuelva a **Activo**, no se le pueden cargar reservas nuevas: no aparece al
+  elegir cartel ni en **Agregar carteles**.
+- Las reservas que ya tenía se pueden seguir editando y confirmando.
 
 ## 9. Cargar los ítems a facturar y enviar el mes
 
