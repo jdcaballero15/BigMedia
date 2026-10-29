@@ -164,9 +164,9 @@ def test_reenviar_avisa_con_los_valores_anteriores_y_nuevos(
     assert len(mail.outbox) == 2
     aviso = mail.outbox[1]
     assert "reenviado" in aviso.subject.lower()
-    assert "Importe neto: 10000.00 → 12000.00" in aviso.body
+    assert "IMPORTE NETO TOTAL: 10000.00 → 12000.00" in aviso.body
     assert "Descripción: Alquiler noviembre → Alquiler y lona" in aviso.body
-    assert "Costos: 0.00 → 500.00" in aviso.body
+    assert "COSTOS INCLUIDOS EN FC: 0.00 → 500.00" in aviso.body
     assert "Neto final: 10000.00 → 11500.00" in aviso.body
     assert "Cliente" not in aviso.body
 
@@ -258,8 +258,9 @@ def test_la_planilla_marca_los_reenviados(operativo_client):
     hoja = load_workbook(io.BytesIO(respuesta.content)).active
     assert hoja is not None
     filas = [list(fila) for fila in hoja.iter_rows(values_only=True)]
-    assert filas[0][-1] == "Reenviado"
-    assert [(fila[1], fila[-1]) for fila in filas[1:]] == [("Alfa SA", "Sí"), ("Beta SA", None)]
+    # Período, título y columnas arriba; dos ítems; totales, una vacía y el neto abajo.
+    assert filas[2][-1] == "Reenviado"
+    assert [(fila[0], fila[-1]) for fila in filas[3:5]] == [("Alfa SA", "Sí"), ("Beta SA", None)]
 
 
 @pytest.mark.django_db
@@ -272,3 +273,24 @@ def test_reabrir_otra_vez_un_reenviado_le_saca_la_marca_hasta_el_proximo_envio(o
         False,
         "Otro ajuste",
     )
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-024")
+@pytest.mark.usefixtures("con_correo")
+def test_reenviar_con_valores_guardados_con_titulos_anteriores_compara_los_que_hay(
+    operativo_client, django_capture_on_commit_callbacks
+):
+    """Un ítem reabierto antes del cambio de columnas guardó los títulos viejos."""
+    item = _enviado()
+    _reabrir(operativo_client, item)
+    item.refresh_from_db()
+    item.valores_al_reabrir = {"Importe neto": "10000.00", "Descripción": "Alquiler noviembre"}
+    item.save()
+    with django_capture_on_commit_callbacks(execute=True):
+        _patch(operativo_client, item, {"neto": "12000.00"})
+        _enviar_mes(operativo_client)
+    aviso = mail.outbox[-1]
+    assert "IMPORTE NETO TOTAL: 10000.00 → 12000.00" in aviso.body
+    assert "Descripción" not in aviso.body
+    assert "DETALLE COSTO" not in aviso.body
