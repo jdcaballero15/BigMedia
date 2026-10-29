@@ -36,7 +36,7 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | RN-006 | Reglas de cancelación | `provisoria` | Cancelar siempre se permite y libera el cupo | Documento de historias (decisión D-06 del 15/10/2026) | HU-024, HU-035, HU-037, HU-045, HU-051, HU-058, HU-060 | Sin implementar |
 | RN-007 | Propiedad de los carteles | `provisoria` | Costos solo de impresión y fijación | Documento de historias (decisión D-07 del 15/10/2026) | HU-010, HU-015, HU-043, HU-044, HU-046 | Modelo `Costo` y margen en `apps/costos/` (default informativo; HU-046 terceros pendiente) |
 | RN-008 | Lista de zonas (departamentos) | `confirmada` | Los nueve departamentos (Ciudad, Godoy Cruz, Maipú, Luján de Cuyo, Guaymallén, Las Heras, San Martín, Rivadavia, San Carlos) | Juan Diego, 15/10/2026, diseño de inventario | HU-010, HU-013, HU-014, HU-015, HU-048 | Migración `inventario/0002_catalogos_iniciales`, catálogo editable |
-| RN-009 | Contenido real de los relevamientos | `pendiente` | Sin carga hasta tener los archivos | Documento de historias (decisión D-09 del 15/10/2026) | HU-015 | Sin implementar |
+| RN-009 | Contenido real de los relevamientos | `pendiente` | Llegó el de Séxtuples (56 direcciones, 226 slots; marca por slot; sin tarifa, proveedor ni foto); falta Gran Formato. Sin carga hasta aclarar sus inconsistencias | Documento de historias (decisión D-09 del 15/10/2026); planilla de Séxtuples (Gonza, 2026-10-29) | HU-015 | Sin implementar |
 | RN-010 | Estados físicos y carteles fuera de servicio | `provisoria` | Alertar y bloquear reservas nuevas | Documento de historias (decisión D-10 del 15/10/2026) | HU-012, HU-039 | Modelo `EstadoCartel`, migración `0002_catalogos_iniciales` (los cinco estados); `validar_cartel_reservable` y `filtrar_vigentes` en `apps/reservas/services.py`, revalidado con el cartel bloqueado en `ReservaViewSet._guardar_con_disponibilidad`; aviso `ReservasAfectadas` en el frontend. Tests en `backend/tests/test_cartel_fuera_de_servicio.py` |
 | RN-011 | ¿Se puede confirmar una campaña incompleta? | `provisoria` | Se exigen cliente, marca y fechas | Documento de historias (decisión D-11 del 15/10/2026) | HU-024, HU-030, HU-049, HU-059 | `apps/campanias/services.py::validar_confirmacion` y su test `test_confirmar_exige_marca_cliente_y_fechas`; la confirmación en bloque de reservas exige la campaña Confirmada: `apps/reservas/services.py::confirmar_reservas_de_campania`, `backend/tests/test_confirmacion_en_bloque.py` |
 | RN-012 | Reservas con fechas pasadas | `provisoria` | No se permite a mano; histórico solo por importación | Documento de historias (decisión D-12 del 15/10/2026) | HU-038, HU-048, HU-049 | Sin implementar |
@@ -51,9 +51,10 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | RN-021 | Usuarios | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-004, HU-005 | Sin implementar |
 | RN-022 | Administración usa el sistema o recibe planilla | `provisoria` | Recibe planilla y avisos por correo; Seba carga el número de factura | Documento de historias (bloque Administración del 15/10/2026) | HU-065, HU-066, HU-067 | El operativo pasa el ítem a Facturado con su número (`apps/facturacion/services.py::validar_cambio_de_item`, `backend/tests/test_estados_facturacion.py`) y envía el mes descargando la planilla (`enviar_a_facturar`, `backend/tests/test_cierre_de_mes.py`); al reabrir y al reenviar un ítem, Administración recibe un correo en `FACTURACION_CORREO_ADMINISTRACION` (`apps/facturacion/services.py::avisar_a_administracion`, `backend/tests/test_reabrir_item.py`) |
 | RN-023 | Alícuotas de IVA y listas Gob/Priv y F/V | `provisoria` | 21% por defecto, editable; listas administrables | Documento de historias (bloque Administración del 15/10/2026) | HU-060, HU-061 | `apps/facturacion/models.py` (`alicuota_iva` con 21 % por defecto, `iva_y_total`; catálogos `Sector` y `TipoVenta` administrables en el admin), `backend/tests/test_importes_facturacion.py` |
-| RN-024 | Columnas de la planilla de facturación | `provisoria` | Se reproducen tal cual; las nuevas van al final | Documento de historias (bloque Administración del 15/10/2026) | HU-066 | `apps/facturacion/services.py::COLUMNAS_PLANILLA` (columnas propuestas hasta tener la planilla real; al final, Orden de compra, Fecha OC, Grupo de factura, Costos, Neto final y Reenviado), `backend/tests/test_planilla_facturacion.py` |
+| RN-024 | Columnas de la planilla de facturación | `provisoria` | Las siete de la planilla real, en su orden (Cliente (razón social), Importe neto total, Costos incluidos en FC, Detalle costo, Tipo de venta (F/V), Gob/Priv, Tipo); período arriba y totales y neto abajo; las nuevas van al final | Documento de historias (bloque Administración del 15/10/2026); planilla de septiembre 2026 (Gonza, 2026-10-29) | HU-066 | `apps/facturacion/services.py::COLUMNAS_PLANILLA` (columnas propuestas hasta tener la planilla real; al final, Orden de compra, Fecha OC, Grupo de factura, Costos, Neto final y Reenviado), `backend/tests/test_planilla_facturacion.py` |
 | RN-025 | Envío de ítems completos con incompletos en el mes | `provisoria` | Sí; los incompletos se listan con lo que les falta | Documento de historias (bloque Administración del 15/10/2026) | HU-066 | `apps/facturacion/services.py::enviar_a_facturar` y `faltantes_para_enviar`, `backend/tests/test_cierre_de_mes.py` |
 | RN-026 | Corrección de ítems ya facturados | `provisoria` | Se anula con motivo, auditado y con aviso; la corrección va en un ítem nuevo | Gonza (2026-10-28), sobre el bloque Administración del 15/10/2026 | HU-067 | Servicio `apps/facturacion/services.py` (`anular_facturado`), acción `anular-facturado` en `ItemFacturacionViewSet`, `backend/tests/test_anular_facturados.py` |
+| RN-027 | Orden de compra con un período que cruza meses | `pendiente` | Sin definir; hoy se carga un ítem en el mes que se factura, con el período de la OC | Orden de compra de una agencia (Gonza, 2026-10-29) | HU-062, HU-066 | Sin implementar |
 
 Las reglas de Administración (facturación) están al final, en un bloque aparte.
 
@@ -260,6 +261,30 @@ Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pue
 
 **Default.** No se carga nada hasta tener los archivos. No se inventan datos.
 
+**Respuesta (parcial, solo Séxtuples):** llegó la planilla de Séxtuples (hoja «Sextuples»). No
+se guarda en el repositorio porque tiene datos reales.
+
+1. Séxtuples, sí; Gran Formato todavía no.
+2. No aplica a Séxtuples (sin tamaño).
+3. Cada fila es una dirección: Dirección, Departamento, Cantidad (slots) y una celda por slot,
+   de dos columnas combinadas, con la marca que lo ocupa hoy. El color de la celda es el de la
+   marca (cada marca lleva siempre el mismo color); no indica estado ni proveedor. Hay colores compartidos por marcas distintas.
+4. No tiene tarifa de lista, proveedor, foto ni estado: se completan después.
+5. No hay direcciones repetidas. Suman 56 direcciones y 226 slots, lo que dicen las historias.
+
+**Preguntas nuevas (antes de importar).**
+
+6. Los departamentos están escritos de varias formas («Maipu», «Lujan» y «Luján de Cuyo», « Las
+   Heras») y dos filas no tienen: ¿cuál es el de cada una?
+7. Dos filas no tienen cantidad de slots y en 27 la cantidad de marcas no coincide con la de
+   slots (por ejemplo, 4 slots y 5 marcas): ¿cuál es la cantidad correcta?
+8. Debajo de la tabla, hasta la fila 197, hay bloques sin dirección (listas de marcas, «buena
+   visual», «mala visual», «esquina»): ¿qué son y se cargan?
+9. Las marcas por slot, ¿son la ocupación de agosto a octubre («8-10»)? ¿Se cargan como reservas
+   históricas (RN-012)?
+
+**Fecha:** 2026-10-29 · **Quién respondió:** Big Media, por la planilla que le pasó a Gonza
+
 **Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 
 ### RN-010 Estados físicos y carteles fuera de servicio (preguntas 9 y 18) (D-10)
@@ -421,6 +446,35 @@ Estas preguntas las responden Seba y Administración. Se listan para no perderla
 **Historias.** HU-066.
 
 **Default.** Se reproducen tal cual; las nuevas van al final.
+
+**Respuesta:** llegó la planilla real de septiembre 2026 (hoja «Cartelería»; no se guarda en el
+repositorio porque tiene datos reales). Arriba, «PERIODO: 2026/9» y el título «CARTELERIA».
+Las columnas, en este orden:
+
+1. CLIENTE (RAZON SOCIAL)
+2. IMPORTE NETO TOTAL
+3. COSTOS INCLUIDOS EN FC (a veces una fórmula, por ejemplo el 15 % del importe)
+4. DETALLE COSTO (a quién se paga el costo, o una nota)
+5. TIPO DE VENTA (F/V)
+6. GOB/PRIV
+7. TIPO (cartel/led/ppl/sextuples): en la práctica, texto libre con lo vendido y notas para
+   Administración («facturar todo en una FC con lo anterior»)
+
+Abajo, la suma de importes, la suma de costos y «Neto» = importes − costos. Se reproducen esas
+columnas primero y en ese orden; las del sistema (CUIT, marca, orden de compra, grupo de factura,
+etc.) van después. Sigue provisoria hasta que Seba confirme que las columnas nuevas al final no
+le molestan a Administración. · **Fecha:** 2026-10-29 · **Quién respondió:** Big Media, por la
+planilla que le pasó a Gonza
+
+### RN-027 Orden de compra con un período que cruza meses
+
+**Tema.** Una orden de compra puede cubrir un período que cruza dos meses (por ejemplo, del 14/09
+al 13/10). ¿Se factura entera en un mes, se divide por días entre los dos meses o de otra forma?
+
+**Historias.** HU-062, HU-066.
+
+**Default.** Sin definir. Hoy se carga un ítem en el mes que se factura, con el período de la orden
+de compra.
 
 **Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
 

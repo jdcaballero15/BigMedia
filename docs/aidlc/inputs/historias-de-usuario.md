@@ -995,7 +995,7 @@ Hay 12 decisiones del negocio que condicionan historias concretas. Hasta que se 
 | ¿Alcanza la vista de estado actual o hace falta ver a futuro? | HU-042 | Seba | Se construye como Should |
 | ¿Administración usa el sistema o solo recibe la planilla? ¿Quién pasa un ítem a Facturado? | HU-065, HU-066, HU-067 | Seba y Administración | Administración recibe la planilla y los avisos por correo; Seba carga el número de factura |
 | Alícuotas de IVA y valores de Gob/Priv y F/V | HU-060, HU-061 | Administración | Alícuota editable por ítem con 21% por defecto; Gob/Priv y F/V como listas administrables |
-| Columnas exactas de la planilla actual de facturación | HU-066 | Seba | Se reproducen tal como están hoy; las nuevas van al final |
+| Columnas exactas de la planilla actual de facturación | HU-066 | Seba | Respondida con la planilla real (RN-024): Cliente (razón social), Importe neto total, Costos incluidos en FC, Detalle costo, Tipo de venta (F/V), Gob/Priv y Tipo, en ese orden; las nuevas van al final |
 | ¿Qué distingue a un intermediario formal de uno común y qué datos lleva cada contacto? | HU-016, HU-068 | Seba | Tipo aparte; contacto con nombre, cargo, correo, teléfono y notas, y un contacto principal |
 
 ## Supuestos asumidos al escribir las historias
