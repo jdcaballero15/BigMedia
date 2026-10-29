@@ -94,3 +94,16 @@ Backend (pytest contra PostgreSQL, `@pytest.mark.regla("RN-024")`), en
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-29 — aprobado por Gonza (TIPO: opción C)
+- Ajustes durante la implementación: los valores que se guardan al reabrir un ítem (HU-067) usan
+  los títulos de columna. Para un ítem reabierto antes de este cambio, `TITULOS_ANTERIORES`
+  traduce los cuatro títulos que cambiaron de nombre y el aviso de reenvío solo compara las
+  columnas que ya existían al reabrir. Test:
+  `test_reenviar_con_valores_guardados_con_titulos_anteriores_compara_los_que_hay`.
+- Gate 2 (verificación): 2026-10-29 — todo en verde:
+  - `ruff format --check .`: 139 files already formatted; `ruff check .`: All checks passed!
+  - `mypy backend`: Success: no issues found in 139 source files
+  - `makemigrations --check --dry-run`: No changes detected
+  - `pytest --cov`: 835 passed, ninguno salteado; Total coverage: 96.94%
+  - Frontend (sin cambios): `format:check`, `lint` y `typecheck` sin errores; `test:coverage`:
+    48 archivos, 385 tests, 92,48 % de sentencias y 94,47 % de líneas; `build` OK
+  - `pre-commit run --all-files` (incluye gitleaks): todos Passed
