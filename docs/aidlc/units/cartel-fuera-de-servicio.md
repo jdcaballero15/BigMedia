@@ -29,7 +29,7 @@ afectadas, para reubicarlas o avisar a los clientes.
     `cartel`. Mensaje: «El cartel está de baja: no se puede reservar.» si `es_baja` (el de hoy), y si
     no «El cartel está fuera de servicio (<estado>): no se puede reservar hasta que vuelva a un
     estado operativo.».
-  - `reservas_vigentes_del_cartel(cartel, dia=None)`: Pendientes y Confirmadas con
+  - `reservas_vigentes_del_cartel(cartel, dia=None)` (después `filtrar_vigentes`, ver ajustes): Pendientes y Confirmadas con
     `fecha_fin >= hoy` (hora de Argentina), ordenadas por fecha de inicio. Es la lista de
     «reservas activas» del criterio 1.
 - **Alta y edición individual (`ReservaSerializer.validate`):** la validación `es_baja` actual pasa
@@ -89,6 +89,36 @@ Frontend (Vitest):
   aviso con la tabla; sin reservas, no se muestra; a un estado operativo, no se consulta.
 - `ReservaForm`: el selector no ofrece carteles no operativos.
 
+## Ajustes por revisión (PR #101)
+
+Surgen de la revisión del PR (comentario del 2026-10-29). Los hace Gonza sobre la misma rama.
+
+- **Bloqueo y control en la misma transacción (RN-010, regla 7):** `_guardar_con_disponibilidad`
+  vuelve a llamar a `validar_cartel_reservable` con el cartel releído bajo `select_for_update`
+  (con su estado), al crear y al cambiar de cartel. Así, si otro pedido pasó el cartel a un estado
+  no operativo entre la validación del serializer y el guardado, la reserva se rechaza. El control
+  del serializer queda para devolver el error antes. Test que lo reproduce primero:
+  `test_crear_reserva_cartel_pasa_a_no_operativo_antes_de_guardar_rechaza` (simula el cambio de
+  estado después de `validate()`).
+- **`?vigentes=1` filtra el queryset de la vista en vez de reemplazarlo:** el servicio pasa a
+  `filtrar_vigentes(queryset, dia=None)` y la vista lo aplica sobre `super().get_queryset()`; el
+  filtro `?cartel=` de siempre hace el resto. Sin `cartel` sigue respondiendo 400; un cartel
+  inexistente devuelve lista vacía, como `?cartel=` (antes 404). Se ajustan los tests del servicio y
+  del 404.
+- **El aviso se vuelve a consultar cada vez:** `CartelesPage` guarda en `afectado` un contador de
+  aviso y lo usa como `key`, así `ReservasAfectadas` se remonta y consulta en cada cambio. Test:
+  pasar el cartel dos veces a un estado no operativo consulta dos veces.
+- **El aviso sale solo si el estado cambió:** `avisarSiQuedaFueraDeServicio` no avisa si el estado
+  guardado es el mismo que tenía el cartel (editar la dirección de un cartel en mantenimiento no
+  reabre el aviso). Test en `CartelesPage`.
+- **Selector de cartel alineado con el servidor:** `ReservaForm` ofrece los carteles con
+  `operativo && !es_baja`. Test en `ReservaForm`.
+- **Estado visible del aviso:** `ReservasAfectadas` muestra «Consultando reservas activas…»
+  mientras carga y, si no hay, «<cartel> quedó en «<estado>» y no tiene reservas activas.» con
+  «Entendido». Tests en `ReservasAfectadas`.
+- **Se deja como está:** que `features/inventario` importe `features/reservas/ReservasAfectadas`.
+  La tabla de dependencias habla de modelos del backend y el plan ya eligió ese lugar.
+
 ## Registro de gates
 
 - Gate 1 (plan): 2026-10-29 — aprobado por Juan Diego
@@ -104,3 +134,12 @@ Frontend (Vitest):
     378 tests, 92,56 % de sentencias y 94,53 % de líneas; `build` OK
   - `pre-commit run --all-files` (incluye gitleaks): todos Passed
 - Gate 3 (PR): #101
+- Ajustes por revisión — plan: 2026-10-29, aprobado por Gonza.
+- Ajustes por revisión — verificación: 2026-10-29, con `develop` mergeado en la rama:
+  - `ruff format --check .`: 139 files already formatted; `ruff check .`: All checks passed!
+  - `mypy backend`: Success: no issues found in 139 source files
+  - `makemigrations --check --dry-run`: No changes detected
+  - `pytest --cov`: 828 passed, ninguno salteado; Total coverage: 96.97%
+  - Frontend: `format:check`, `lint` y `typecheck` sin errores; `test:coverage`: 48 archivos,
+    385 tests, 92,48 % de sentencias y 94,47 % de líneas; `build` OK
+  - `pre-commit run --all-files` (incluye gitleaks): todos Passed

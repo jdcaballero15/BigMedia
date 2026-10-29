@@ -250,7 +250,9 @@ En **Inventario › Carteles**, tocá **Editar** en el cartel y cambiá su **Est
 
 - Si el cartel tiene reservas activas (Pendientes o Confirmadas que todavía no terminaron), aparece
   un aviso con la lista: reserva, campaña, fechas y estado. Esas reservas **no se tocan**: decidí
-  si las pasás a otro cartel o si avisás al cliente.
+  si las pasás a otro cartel o si avisás al cliente. Si no tiene ninguna, el aviso lo dice.
+- El aviso sale solo cuando cambia el estado: si editás otro dato de un cartel que ya estaba
+  apagado, no vuelve a aparecer.
 - Mientras el cartel no vuelva a **Activo**, no se le pueden cargar reservas nuevas: no aparece al
   elegir cartel ni en **Agregar carteles**.
 - Las reservas que ya tenía se pueden seguir editando y confirmando.
