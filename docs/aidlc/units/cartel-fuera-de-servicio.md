@@ -95,5 +95,12 @@ Frontend (Vitest):
 - Ajustes durante la implementación: el mensaje dice «fuera de servicio (<estado>)» porque «está
   Vidrio destruido» no se lee bien; la campaña del aviso va como texto, sin enlace, porque la app no
   tiene una URL por campaña. El aviso queda en `features/reservas/ReservasAfectadas.tsx`.
-- Gate 2 (verificación): pendiente
+- Gate 2 (verificación): 2026-10-29 — todo en verde:
+  - `ruff format --check .`: 138 files already formatted; `ruff check .`: All checks passed!
+  - `mypy backend`: Success: no issues found in 138 source files
+  - `makemigrations --check --dry-run`: No changes detected
+  - `pytest --cov`: 810 passed, ninguno salteado; Total coverage: 96.93%
+  - Frontend: `format:check`, `lint` y `typecheck` sin errores; `test:coverage`: 48 archivos,
+    378 tests, 92,56 % de sentencias y 94,53 % de líneas; `build` OK
+  - `pre-commit run --all-files` (incluye gitleaks): todos Passed
 - Gate 3 (PR): pendiente
