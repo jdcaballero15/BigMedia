@@ -1,6 +1,6 @@
 # Unidad: cartel-fuera-de-servicio
 
-- **Estado:** en curso · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** reservas
+- **Estado:** en revisión (PR #101) · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** reservas
 - **Origen:** HU-039 (RN-010) · **Rama:** `feature/reservas-cartel-fuera-de-servicio`
 
 ## Objetivo
@@ -103,4 +103,4 @@ Frontend (Vitest):
   - Frontend: `format:check`, `lint` y `typecheck` sin errores; `test:coverage`: 48 archivos,
     378 tests, 92,56 % de sentencias y 94,53 % de líneas; `build` OK
   - `pre-commit run --all-files` (incluye gitleaks): todos Passed
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #101
