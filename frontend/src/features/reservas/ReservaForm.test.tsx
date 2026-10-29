@@ -17,6 +17,8 @@ const carteles = [
     proveedor_nombre: null,
     estado: 1,
     estado_nombre: 'Activo',
+    es_baja: false,
+    operativo: true,
     direccion: 'Av. San Martín 1234',
     tamano: '6x3',
     capacidad: 1,
@@ -78,7 +80,60 @@ test('muestra el error de campo de la API', async () => {
   )
 })
 
-const deBaja = { ...carteles[0], id: 8, nombre_visible: 'Ruta 40 km 10', es_baja: true } as Cartel
+const deBaja = {
+  ...carteles[0],
+  id: 8,
+  nombre_visible: 'Ruta 40 km 10',
+  es_baja: true,
+  operativo: false,
+} as Cartel
+const apagado = {
+  ...carteles[0],
+  id: 9,
+  nombre_visible: 'Costanera 500',
+  estado_nombre: 'Apagado',
+  operativo: false,
+} as Cartel
+
+test('no ofrece un cartel fuera de servicio en una reserva nueva', () => {
+  render(
+    <ReservaForm
+      campaniaId={5}
+      carteles={[...carteles, apagado]}
+      onSave={vi.fn()}
+      onCancel={vi.fn()}
+    />,
+  )
+  expect(screen.queryByRole('option', { name: /Costanera 500/ })).toBeNull()
+  expect(screen.getByRole('option', { name: /Av. San Martín 1234/ })).toBeDefined()
+})
+
+test('no ofrece un cartel de baja aunque su estado figure como operativo', () => {
+  const bajaOperativo = { ...deBaja, operativo: true } as Cartel
+  render(
+    <ReservaForm
+      campaniaId={5}
+      carteles={[...carteles, bajaOperativo]}
+      onSave={vi.fn()}
+      onCancel={vi.fn()}
+    />,
+  )
+  expect(screen.queryByRole('option', { name: /Ruta 40 km 10/ })).toBeNull()
+})
+
+test('muestra el cartel fuera de servicio ya asignado al editar una reserva', () => {
+  const reserva = { id: 4, cartel: 9, fecha_inicio: '2026-08-01', fecha_fin: '2026-08-31' }
+  render(
+    <ReservaForm
+      campaniaId={5}
+      reserva={reserva as never}
+      carteles={[...carteles, apagado]}
+      onSave={vi.fn()}
+      onCancel={vi.fn()}
+    />,
+  )
+  expect(screen.getByRole('option', { name: 'Costanera 500 (fuera de servicio)' })).toBeDefined()
+})
 
 test('no ofrece un cartel de baja en una reserva nueva', () => {
   render(

@@ -5,6 +5,9 @@ import CartelForm from './CartelForm'
 import type { CartelInput } from './CartelForm'
 import { usePuedeEditar } from '../../shared/sesion'
 import MenuFila from '../../shared/MenuFila'
+import ReservasAfectadas from '../reservas/ReservasAfectadas'
+
+type Afectado = { id: number; nombre: string; estadoNombre: string; aviso: number }
 
 type Catalogos = {
   formatos: Formato[]
@@ -32,6 +35,7 @@ export default function CartelesPage() {
   const [error, setError] = useState('')
   const [editing, setEditing] = useState<Cartel | 'new' | null>(null)
   const [revision, setRevision] = useState(0)
+  const [afectado, setAfectado] = useState<Afectado | null>(null)
 
   useEffect(() => {
     let active = true
@@ -85,8 +89,26 @@ export default function CartelesPage() {
     const path =
       editing === 'new' ? '/api/inventario/carteles/' : `/api/inventario/carteles/${editing.id}/`
     await apiWrite(path, editing === 'new' ? 'POST' : 'PATCH', input)
+    if (editing !== 'new') avisarSiQuedaFueraDeServicio(editing, input.estado)
     setEditing(null)
     setRevision((current) => current + 1)
+  }
+
+  /** Un cartel que deja de ser operativo muestra sus reservas activas (HU-039). */
+  function avisarSiQuedaFueraDeServicio(cartel: Cartel, estadoId: number) {
+    const estadoNuevo = catalogos.estados.find((item) => item.id === estadoId)
+    if (!estadoNuevo || estadoId === cartel.estado) return
+    if (estadoNuevo.operativo) {
+      setAfectado((actual) => (actual?.id === cartel.id ? null : actual))
+      return
+    }
+    // `aviso` cambia la key: el aviso se remonta y vuelve a consultar en cada cambio.
+    setAfectado((actual) => ({
+      id: cartel.id,
+      nombre: cartel.nombre_visible,
+      estadoNombre: estadoNuevo.nombre,
+      aviso: (actual?.aviso ?? 0) + 1,
+    }))
   }
 
   async function darDeBaja(cartel: Cartel) {
@@ -101,6 +123,7 @@ export default function CartelesPage() {
       return
     try {
       await apiWrite(`/api/inventario/carteles/${cartel.id}/`, 'PATCH', { estado: baja.id })
+      avisarSiQuedaFueraDeServicio(cartel, baja.id)
       setRevision((current) => current + 1)
     } catch {
       setError('No se pudo dar de baja el cartel.')
@@ -131,6 +154,15 @@ export default function CartelesPage() {
           estados={catalogos.estados}
           onSave={saveCartel}
           onCancel={() => setEditing(null)}
+        />
+      )}
+      {afectado && (
+        <ReservasAfectadas
+          key={afectado.aviso}
+          cartelId={afectado.id}
+          cartelNombre={afectado.nombre}
+          estadoNombre={afectado.estadoNombre}
+          onCerrar={() => setAfectado(null)}
         />
       )}
       <div className="filters card">

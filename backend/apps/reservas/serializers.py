@@ -59,13 +59,10 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
             and cartel is not None
             and self.instance.cartel_id == cartel.pk
         )
-        if cartel is not None and cartel.estado.es_baja and not sin_cambios:
-            raise serializers.ValidationError(
-                {"cartel": "El cartel está de baja: no se puede reservar."}
-            )
-
         nuevo_estado = attrs.get("estado")
         try:
+            if cartel is not None and not sin_cambios:
+                services.validar_cartel_reservable(cartel)
             if self.instance is None:
                 services.validar_estado_inicial(nuevo_estado or Reserva.Estado.PENDIENTE)
             elif nuevo_estado is not None:

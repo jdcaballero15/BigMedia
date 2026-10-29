@@ -103,11 +103,11 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
           <select value={cartel} onChange={(event) => elegirCartel(event.target.value)}>
             <option value="">Seleccionar</option>
             {carteles
-              .filter((item) => !item.es_baja || item.id === reserva?.cartel)
+              .filter((item) => (item.operativo && !item.es_baja) || item.id === reserva?.cartel)
               .map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.nombre_visible}
-                  {item.es_baja ? ' (de baja)' : ''}
+                  {item.es_baja ? ' (de baja)' : !item.operativo ? ' (fuera de servicio)' : ''}
                 </option>
               ))}
           </select>

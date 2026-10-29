@@ -127,7 +127,18 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
             else:
                 cartel = cast(Reserva, serializer.instance).cartel
             # Bloquea el cartel: serializa confirmaciones del mismo cartel (HU-034).
-            Cartel.objects.select_for_update().get(pk=cartel.pk)
+            bloqueado = (
+                Cartel.objects.select_for_update(of=("self",))
+                .select_related("estado")
+                .get(pk=cartel.pk)
+            )
+            instancia = serializer.instance
+            if instancia is None or instancia.cartel_id != cartel.pk:
+                # Se revalida con el cartel bloqueado: otro pedido pudo sacarlo de servicio (RN-010).
+                try:
+                    services.validar_cartel_reservable(bloqueado)
+                except DjangoValidationError as error:
+                    raise ValidationError(error.message_dict) from error
             reserva = serializer.save()
             if necesita:
                 try:
@@ -140,6 +151,9 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
         if self.action != "list":
             return queryset
         params = self.request.query_params
+        if params.get("vigentes") == "1":
+            _id_positivo(params.get("cartel", ""), "cartel")
+            queryset = services.filtrar_vigentes(queryset)
         for campo in ("campania", "cartel"):
             if params.get(campo):
                 queryset = queryset.filter(**{f"{campo}_id": _id_positivo(params[campo], campo)})
