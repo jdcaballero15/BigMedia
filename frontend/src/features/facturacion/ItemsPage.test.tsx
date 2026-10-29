@@ -43,6 +43,9 @@ function item(id: number, extra: Partial<ItemFacturacion> = {}): ItemFacturacion
     reabierto_por_nombre: null,
     motivo_reapertura: '',
     reenviado: false,
+    anulado_en: null,
+    anulado_por_nombre: null,
+    motivo_anulacion: '',
     orden_compra_numero: '',
     orden_compra_fecha: null,
     orden_compra_pdf: null,
@@ -460,4 +463,58 @@ test('marca los reenviados y los reabiertos con su motivo', async () => {
   expect(reenviado.textContent).toContain('Reenviado')
   const reabierto = screen.getByText('Ítem 2').closest('tr') as HTMLElement
   expect(reabierto.textContent).toContain('Reabierto: Cambió el neto')
+})
+
+// --- RN-026: anular un ítem facturado ---
+
+test('anula un ítem facturado con motivo y no le ofrece reabrir (RN-026)', async () => {
+  const fetchMock = stubFetch(
+    [item(1, { estado: 'facturado', numero_factura: 'A-1' })],
+    (_input, options) => (options?.method === 'POST' ? ok(item(1)) : undefined),
+  )
+  render(<ItemsPage />)
+  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  expect(within(fila).queryByRole('button', { name: 'Reabrir' })).toBeNull()
+  fireEvent.click(within(fila).getByRole('button', { name: 'Anular' }))
+  fireEvent.change(within(fila).getByLabelText('Motivo de la anulación'), {
+    target: { value: 'Nota de crédito NC-7' },
+  })
+  fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar anulación' }))
+  await waitFor(() =>
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, options]) =>
+          url === '/api/facturacion/items/1/anular-facturado/' &&
+          JSON.parse(String(options?.body)).motivo === 'Nota de crédito NC-7',
+      ),
+    ).toBe(true),
+  )
+})
+
+test('una anulación rechazada muestra el motivo del servidor (RN-026)', async () => {
+  stubFetch([item(1, { estado: 'facturado', numero_factura: 'A-1' })], (_input, options) =>
+    options?.method === 'POST'
+      ? rechazo({ motivo: ['Indicá el motivo de la anulación.'] })
+      : undefined,
+  )
+  render(<ItemsPage />)
+  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  fireEvent.click(within(fila).getByRole('button', { name: 'Anular' }))
+  fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar anulación' }))
+  expect(await within(fila).findByText('Indicá el motivo de la anulación.')).toBeDefined()
+})
+
+test('un facturado anulado muestra su motivo (RN-026)', async () => {
+  stubFetch([
+    item(1, {
+      estado: 'anulado',
+      numero_factura: 'A-1',
+      anulado_en: '2026-11-20T10:00:00Z',
+      motivo_anulacion: 'Nota de crédito NC-7',
+    }),
+  ])
+  render(<ItemsPage />)
+  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  expect(fila.textContent).toContain('A-1')
+  expect(fila.textContent).toContain('Anulado: Nota de crédito NC-7')
 })

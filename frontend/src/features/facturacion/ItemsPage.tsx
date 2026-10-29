@@ -301,6 +301,8 @@ function FilaItem(props: FilaProps) {
   const [numero, setNumero] = useState('')
   const [reabriendo, setReabriendo] = useState(false)
   const [motivo, setMotivo] = useState('')
+  const [anulando, setAnulando] = useState(false)
+  const [motivoAnulacion, setMotivoAnulacion] = useState('')
   const [errores, setErrores] = useState<Record<string, string[]>>({})
 
   async function escribir(url: string, method: 'POST' | 'PATCH', datos?: Record<string, string>) {
@@ -308,6 +310,7 @@ function FilaItem(props: FilaProps) {
       await apiWrite(url, method, datos)
       setFacturando(false)
       setReabriendo(false)
+      setAnulando(false)
       onCambio()
     } catch (cause) {
       const campos = cause instanceof ApiError ? cause.fields : {}
@@ -377,6 +380,9 @@ function FilaItem(props: FilaProps) {
         {borrador && item.reabierto_en && (
           <small className="muted"> · Reabierto: {item.motivo_reapertura}</small>
         )}
+        {anulado && item.anulado_en && (
+          <small className="muted"> · Anulado: {item.motivo_anulacion}</small>
+        )}
         <FieldErrors messages={errores.estado ?? errores.numero_factura ?? errores.motivo} />
       </td>
       {puedeEditar && (
@@ -436,6 +442,30 @@ function FilaItem(props: FilaProps) {
               Anular
             </button>
           )}
+          {item.estado === 'facturado' &&
+            (anulando ? (
+              <>
+                <input
+                  aria-label="Motivo de la anulación"
+                  value={motivoAnulacion}
+                  onChange={(event) => setMotivoAnulacion(event.target.value)}
+                />
+                <button
+                  className="button-primary"
+                  onClick={() =>
+                    void escribir(`${ITEMS}${item.id}/anular-facturado/`, 'POST', {
+                      motivo: motivoAnulacion,
+                    })
+                  }
+                >
+                  Confirmar anulación
+                </button>
+              </>
+            ) : (
+              <button className="button-ghost" onClick={() => setAnulando(true)}>
+                Anular
+              </button>
+            ))}
         </td>
       )}
     </tr>

@@ -37,6 +37,9 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
     reabierto_por_nombre = serializers.CharField(
         source="reabierto_por.username", read_only=True, default=None
     )
+    anulado_por_nombre = serializers.CharField(
+        source="anulado_por.username", read_only=True, default=None
+    )
     costo_total = serializers.SerializerMethodField()
     neto_final = serializers.SerializerMethodField()
     # Se acepta con o sin guiones y se guardan los 11 dígitos (como en clientes).
@@ -83,6 +86,9 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
             "reabierto_por_nombre",
             "motivo_reapertura",
             "reenviado",
+            "anulado_en",
+            "anulado_por_nombre",
+            "motivo_anulacion",
             "creado_por_nombre",
             "creado_en",
             "actualizado_en",
