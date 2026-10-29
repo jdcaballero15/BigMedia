@@ -62,18 +62,13 @@ def validar_cartel_reservable(cartel: Cartel) -> None:
         )
 
 
-def reservas_vigentes_del_cartel(cartel: Cartel, dia: date | None = None) -> QuerySet[Reserva]:
-    """Reservas activas del cartel: Pendientes y Confirmadas que no terminaron (HU-039)."""
+def filtrar_vigentes(reservas: QuerySet[Reserva], dia: date | None = None) -> QuerySet[Reserva]:
+    """Reservas activas: Pendientes y Confirmadas que no terminaron (HU-039)."""
     dia = dia or timezone.localdate()
-    return (
-        Reserva.objects.filter(
-            cartel=cartel,
-            estado__in=(Reserva.Estado.PENDIENTE, Reserva.Estado.CONFIRMADA),
-            fecha_fin__gte=dia,
-        )
-        .select_related("campania__marca", "cartel")
-        .order_by("fecha_inicio", "id")
-    )
+    return reservas.filter(
+        estado__in=(Reserva.Estado.PENDIENTE, Reserva.Estado.CONFIRMADA),
+        fecha_fin__gte=dia,
+    ).order_by("fecha_inicio", "id")
 
 
 def necesita_validar_cupo(anterior: str | None, nuevo: str, cambia_ocupacion: bool) -> bool:

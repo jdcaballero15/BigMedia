@@ -14,6 +14,7 @@ from apps.clientes.models import Cliente, Marca
 from apps.inventario.models import Cartel, EstadoCartel, Formato, Zona
 from apps.reservas import services
 from apps.reservas.models import Reserva
+from apps.reservas.serializers import ReservaSerializer
 
 RESERVAS = "/api/reservas/reservas/"
 
@@ -195,7 +196,7 @@ def test_reservas_vigentes_del_cartel_devuelve_activas(formato):
     _reserva(cartel, hoy, hoy + timedelta(days=3), "cancelada")
     _reserva(_cartel(formato, "Av. Otra 9"), hoy, hoy + timedelta(days=3))
 
-    vigentes = services.reservas_vigentes_del_cartel(cartel, dia=hoy)
+    vigentes = services.filtrar_vigentes(Reserva.objects.filter(cartel=cartel), dia=hoy)
     assert [reserva.pk for reserva in vigentes] == [termina_hoy.pk, futura.pk]
 
 
@@ -218,6 +219,57 @@ def test_listar_reservas_vigentes_sin_cartel_rechaza(operativo_client):
     respuesta = operativo_client.get(RESERVAS, {"vigentes": "1"})
     assert respuesta.status_code == 400
     assert "cartel" in respuesta.json()
+
+
+@pytest.mark.django_db
+def test_listar_reservas_vigentes_cartel_inexistente_devuelve_vacio(operativo_client):
+    respuesta = operativo_client.get(RESERVAS, {"cartel": 999999, "vigentes": "1"})
+    assert respuesta.status_code == 200
+    assert respuesta.json() == []
+
+
+# --- Otro pedido pasa el cartel a no operativo entre la validación y el guardado ---
+
+
+def _apagar_despues_de_validar(monkeypatch: pytest.MonkeyPatch, cartel: Cartel) -> None:
+    validar = ReservaSerializer.validate
+
+    def validar_y_apagar(self: ReservaSerializer, attrs: dict[str, Any]) -> dict[str, Any]:
+        resultado = validar(self, attrs)
+        _apagar(Cartel.objects.get(pk=cartel.pk))
+        return resultado
+
+    monkeypatch.setattr(ReservaSerializer, "validate", validar_y_apagar)
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-010")
+def test_crear_reserva_cartel_pasa_a_no_operativo_antes_de_guardar_rechaza(
+    operativo_client, formato, monkeypatch
+):
+    cartel = _cartel(formato)
+    _apagar_despues_de_validar(monkeypatch, cartel)
+
+    respuesta = _alta(operativo_client, cartel, _campania())
+    assert respuesta.status_code == 400
+    assert "fuera de servicio" in respuesta.json()["cartel"][0]
+    assert not Reserva.objects.filter(cartel=cartel).exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-010")
+def test_mover_reserva_cartel_pasa_a_no_operativo_antes_de_guardar_rechaza(
+    operativo_client, formato, monkeypatch
+):
+    origen = _cartel(formato, "Av. Origen 1")
+    destino = _cartel(formato, "Av. Destino 2")
+    reserva = _reserva(origen, date(2026, 12, 1), date(2026, 12, 31), "pendiente")
+    _apagar_despues_de_validar(monkeypatch, destino)
+
+    respuesta = _json(operativo_client, "patch", f"{RESERVAS}{reserva.pk}/", {"cartel": destino.pk})
+    assert respuesta.status_code == 400
+    reserva.refresh_from_db()
+    assert reserva.cartel_id == origen.pk
 
 
 # --- El cartel informa si es operativo ---
