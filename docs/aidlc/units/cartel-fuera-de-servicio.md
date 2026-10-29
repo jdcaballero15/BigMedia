@@ -1,6 +1,6 @@
 # Unidad: cartel-fuera-de-servicio
 
-- **Estado:** en revisión (PR #101) · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** reservas
+- **Estado:** mergeada (PR #101) · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** reservas
 - **Origen:** HU-039 (RN-010) · **Rama:** `feature/reservas-cartel-fuera-de-servicio`
 
 ## Objetivo
