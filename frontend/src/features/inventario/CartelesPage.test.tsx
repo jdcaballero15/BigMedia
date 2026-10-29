@@ -45,14 +45,14 @@ const vigente = {
   estado: 'confirmada',
 }
 
-function stubFetch(vigentes: unknown[]) {
+function stubFetch(vigentes: unknown[], guardado: typeof cartel = cartel) {
   const fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
-    if (options?.method === 'PATCH') return ok(cartel)
+    if (options?.method === 'PATCH') return ok(guardado)
     if (input.includes('/inventario/estados/')) return ok(estados)
     if (input.includes('/inventario/formatos/')) return ok(formatos)
     if (input.includes('/inventario/zonas/')) return ok(zonas)
     if (input.includes('/inventario/proveedores/')) return ok([])
-    if (input.includes('/inventario/carteles/')) return ok([cartel])
+    if (input.includes('/inventario/carteles/')) return ok([guardado])
     if (input.includes('vigentes=1')) return ok(vigentes)
     throw new Error(`URL inesperada: ${input}`)
   })
@@ -68,6 +68,10 @@ async function guardarConEstado(estadoId: string) {
   )
   await screen.findByText('Costanera 500 · 8x3')
   await waitFor(() => expect(screen.getAllByRole('option', { name: 'Apagado' })).toHaveLength(1))
+  await editarConEstado(estadoId)
+}
+
+async function editarConEstado(estadoId: string) {
   fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
   const formulario = screen.getByRole('form', { name: 'Formulario de cartel' })
   fireEvent.change(within(formulario).getByLabelText('Estado'), { target: { value: estadoId } })
@@ -92,10 +96,27 @@ test('al pasar un cartel a fuera de servicio muestra sus reservas activas', asyn
   expect(String(consultasVigentes(fetchMock)[0]?.[0])).toContain('cartel=9&vigentes=1')
 })
 
-test('sin reservas activas no muestra el aviso', async () => {
+test('sin reservas activas avisa que no hay ninguna', async () => {
   const fetchMock = stubFetch([])
   await guardarConEstado('2')
   await waitFor(() => expect(consultasVigentes(fetchMock)).toHaveLength(1))
+  expect(screen.queryByRole('alertdialog')).toBeNull()
+  expect((await screen.findByText(/no tiene reservas activas/)).textContent).toContain('Apagado')
+})
+
+test('cada cambio a fuera de servicio vuelve a consultar las reservas', async () => {
+  const fetchMock = stubFetch([])
+  await guardarConEstado('2')
+  await screen.findByText(/no tiene reservas activas/)
+  await editarConEstado('2')
+  await waitFor(() => expect(consultasVigentes(fetchMock)).toHaveLength(2))
+})
+
+test('si el estado no cambió no consulta las reservas', async () => {
+  const apagado = { ...cartel, estado: 2, estado_nombre: 'Apagado', operativo: false }
+  const fetchMock = stubFetch([vigente], apagado)
+  await guardarConEstado('2')
+  expect(consultasVigentes(fetchMock)).toHaveLength(0)
   expect(screen.queryByRole('alertdialog')).toBeNull()
 })
 

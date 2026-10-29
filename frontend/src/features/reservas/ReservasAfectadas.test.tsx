@@ -66,11 +66,24 @@ test('usa el singular con una sola reserva', async () => {
   expect(aviso.textContent).toContain('tiene 1 reserva activa.')
 })
 
-test('no muestra nada si el cartel no tiene reservas activas', async () => {
-  const fetchMock = stubFetch(ok([]))
+test('muestra que está consultando mientras carga', () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => new Promise(() => undefined)),
+  )
   renderizar()
+  expect(screen.getByRole('status').textContent).toContain('Consultando reservas activas')
+})
+
+test('avisa que el cartel no tiene reservas activas', async () => {
+  const fetchMock = stubFetch(ok([]))
+  const onCerrar = renderizar()
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+  const estado = await screen.findByText(/no tiene reservas activas/)
+  expect(estado.textContent).toContain('Costanera 500 quedó en «Apagado»')
   expect(screen.queryByRole('alertdialog')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Entendido' }))
+  expect(onCerrar).toHaveBeenCalledTimes(1)
 })
 
 test('avisa si no se pudieron consultar las reservas', async () => {

@@ -108,6 +108,19 @@ test('no ofrece un cartel fuera de servicio en una reserva nueva', () => {
   expect(screen.getByRole('option', { name: /Av. San Martín 1234/ })).toBeDefined()
 })
 
+test('no ofrece un cartel de baja aunque su estado figure como operativo', () => {
+  const bajaOperativo = { ...deBaja, operativo: true } as Cartel
+  render(
+    <ReservaForm
+      campaniaId={5}
+      carteles={[...carteles, bajaOperativo]}
+      onSave={vi.fn()}
+      onCancel={vi.fn()}
+    />,
+  )
+  expect(screen.queryByRole('option', { name: /Ruta 40 km 10/ })).toBeNull()
+})
+
 test('muestra el cartel fuera de servicio ya asignado al editar una reserva', () => {
   const reserva = { id: 4, cartel: 9, fecha_inicio: '2026-08-01', fecha_fin: '2026-08-31' }
   render(

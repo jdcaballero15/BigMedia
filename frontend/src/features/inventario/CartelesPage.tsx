@@ -7,7 +7,7 @@ import { usePuedeEditar } from '../../shared/sesion'
 import MenuFila from '../../shared/MenuFila'
 import ReservasAfectadas from '../reservas/ReservasAfectadas'
 
-type Afectado = { id: number; nombre: string; estadoNombre: string }
+type Afectado = { id: number; nombre: string; estadoNombre: string; aviso: number }
 
 type Catalogos = {
   formatos: Formato[]
@@ -97,8 +97,18 @@ export default function CartelesPage() {
   /** Un cartel que deja de ser operativo muestra sus reservas activas (HU-039). */
   function avisarSiQuedaFueraDeServicio(cartel: Cartel, estadoId: number) {
     const estadoNuevo = catalogos.estados.find((item) => item.id === estadoId)
-    if (!estadoNuevo || estadoNuevo.operativo) return
-    setAfectado({ id: cartel.id, nombre: cartel.nombre_visible, estadoNombre: estadoNuevo.nombre })
+    if (!estadoNuevo || estadoId === cartel.estado) return
+    if (estadoNuevo.operativo) {
+      setAfectado((actual) => (actual?.id === cartel.id ? null : actual))
+      return
+    }
+    // `aviso` cambia la key: el aviso se remonta y vuelve a consultar en cada cambio.
+    setAfectado((actual) => ({
+      id: cartel.id,
+      nombre: cartel.nombre_visible,
+      estadoNombre: estadoNuevo.nombre,
+      aviso: (actual?.aviso ?? 0) + 1,
+    }))
   }
 
   async function darDeBaja(cartel: Cartel) {
@@ -148,7 +158,7 @@ export default function CartelesPage() {
       )}
       {afectado && (
         <ReservasAfectadas
-          key={afectado.id}
+          key={afectado.aviso}
           cartelId={afectado.id}
           cartelNombre={afectado.nombre}
           estadoNombre={afectado.estadoNombre}

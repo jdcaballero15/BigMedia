@@ -45,7 +45,28 @@ export default function ReservasAfectadas({
       </div>
     )
   }
-  if (reservas === null || reservas.length === 0) return null
+  if (reservas === null) {
+    return (
+      <div className="card section-gap" role="status">
+        <p>Consultando reservas activas de {cartelNombre}…</p>
+      </div>
+    )
+  }
+  if (reservas.length === 0) {
+    return (
+      <div className="card section-gap" role="status">
+        <p>
+          {cartelNombre} quedó en «{estadoNombre}» y no tiene reservas activas. Mientras no vuelva a
+          un estado operativo, no admite reservas nuevas.
+        </p>
+        <div className="row-actions">
+          <button className="button-primary" onClick={onCerrar}>
+            Entendido
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
