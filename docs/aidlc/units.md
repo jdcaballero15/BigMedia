@@ -62,7 +62,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E3 Clientes, marcas y CRM | [interacciones-con-marca](units/interacciones-con-marca.md) | campanias | RN-018, HU-020 (criterios 4 y 5) | interacciones, fichas-cliente-y-marca | Gonza | feature/campanias-interacciones-con-marca | mergeada |
 | E11 Facturación mensual | [anular-facturados](units/anular-facturados.md) | facturacion | RN-026, HU-067 (criterios 5 y 6) | reabrir-item | Gonza | feature/facturacion-anular-facturados | mergeada |
 | E3 Clientes, marcas y CRM | [grupo-economico](units/grupo-economico.md) | clientes | RN-016, HU-017, HU-022 (criterio 2), HU-050 (criterio 2) | clientes-y-marcas, fichas-cliente-y-marca, reporte-por-rubro | Gonza | feature/clientes-grupo-economico | mergeada |
-| E5 Reservas y motor de disponibilidad | [cartel-fuera-de-servicio](units/cartel-fuera-de-servicio.md) | reservas | HU-039 (RN-010) | reservas-base, inventario | Juan Diego | feature/reservas-cartel-fuera-de-servicio | en revisión |
+| E5 Reservas y motor de disponibilidad | [cartel-fuera-de-servicio](units/cartel-fuera-de-servicio.md) | reservas | HU-039 (RN-010) | reservas-base, inventario | Juan Diego | feature/reservas-cartel-fuera-de-servicio | mergeada |
 
 ## Notas
 
