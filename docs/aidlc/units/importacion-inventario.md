@@ -139,3 +139,4 @@ cada test y `@pytest.mark.regla` donde corresponda:
     `test:coverage`: 49 archivos, 393 tests, 92,55 % de sentencias y 94,54 % de líneas; `build` OK
     (con el aviso de bundle de más de 500 kB que ya tenía `develop`)
   - `pre-commit run --all-files` (incluye gitleaks): todos Passed
+- Gate 2 aprobado por Gonza el 2026-11-02, con la revisión visual de la pantalla en el navegador.
