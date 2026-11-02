@@ -4,6 +4,7 @@ export type Formato = Catalogo & {
   capacidad_predeterminada: number
   ancho: string | null
   alto: string | null
+  por_cantidad: boolean
 }
 export type Estado = Catalogo & { codigo: string; operativo: boolean; es_baja: boolean }
 export type Proveedor = Catalogo & { servicio: string }
