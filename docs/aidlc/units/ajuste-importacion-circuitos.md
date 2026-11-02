@@ -103,3 +103,4 @@ datos de esa tabla. Probadas en la base local en los dos sentidos.
   - Frontend: `format:check`, `lint` y `typecheck` sin errores; `test:coverage`: 50 archivos,
     395 tests, 92,75 % de sentencias y 94,77 % de líneas; `build` OK
   - `pre-commit run --all-files` (incluye gitleaks): todos Passed
+- Gate 2 aprobado por Gonza el 2026-11-02, con la revisión visual (casilla en Formatos y simulación de Banderolas o PPL).
