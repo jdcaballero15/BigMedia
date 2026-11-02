@@ -257,6 +257,34 @@ En **Inventario › Carteles**, tocá **Editar** en el cartel y cambiá su **Est
   elegir cartel ni en **Agregar carteles**.
 - Las reservas que ya tenía se pueden seguir editando y confirmando.
 
+### Importar carteles desde una planilla
+
+Solo el administrador ve **Inventario › Importar carteles**. Sirve para cargar de una vez el
+relevamiento de un formato (por ejemplo, Séxtuples o Gran Formato).
+
+1. Prepará el CSV con la plantilla del formato: Séxtuples lleva la columna `slots`; los demás,
+   `tamano` (por ejemplo `6x3`). Una fila por cartel, guardado como «CSV UTF-8 (delimitado por
+   comas)».
+2. Elegí el **Formato** y el **Archivo CSV**, y tocá **Simular**. No se guarda nada: ves cuántas
+   filas se crearían, cuáles ya existen, cuáles se rechazan y cuáles quedan en revisión, con el
+   motivo de cada una.
+3. Corregí el archivo hasta que el reporte te cierre y tocá **Importar**.
+
+Qué pasa con cada fila:
+
+- **Creada:** se cargó. Si le falta proveedor, tarifa o foto, dice «Incompleto»: completalo después
+  desde la ficha del cartel.
+- **Omitida:** el cartel ya existía igual. Por eso importar dos veces el mismo archivo no duplica.
+- **Rechazada:** falta un dato obligatorio, hay un valor que no sirve (una zona que no está en la
+  lista, una tarifa negativa) o choca con un cartel que ya existe con otros datos o dado de baja.
+  Los cambios de un cartel existente se hacen desde su ficha, no desde el archivo.
+- **En revisión:** se parece a otro cartel (abreviaturas, una letra cambiada, misma dirección con
+  otros slots o tamaño). Si es otro cartel, poné `si` en la columna `confirmar_distinto` de esa
+  fila y volvé a importar.
+
+**Descargar reporte** baja el resultado en CSV. Cada cartel importado queda en la auditoría con el
+nombre del archivo y la fila de origen.
+
 ## 9. Cargar los ítems a facturar y enviar el mes
 
 Cada vez que llega una orden de compra, cargás lo que hay que facturar. A fin de mes, lo enviás a
