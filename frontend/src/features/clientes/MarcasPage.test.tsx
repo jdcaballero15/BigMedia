@@ -1,7 +1,8 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import MarcasPage from './MarcasPage'
-import type { Cliente, Marca, Rubro } from './types'
+import type { Cliente, GrupoEconomico, Marca, Rubro } from './types'
+import { abrirAcciones } from '../../shared/pruebas'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 const fail = (status: number, data: unknown) => ({ ok: false, status, json: async () => data })
@@ -30,6 +31,7 @@ const rubros: Rubro[] = [
   { id: 3, nombre: 'Bebidas', activo: true },
   { id: 4, nombre: 'Viejo rubro', activo: false },
 ]
+const grupos: GrupoEconomico[] = [{ id: 5, nombre: 'Grupo Cuyo', activo: true }]
 const marca: Marca = {
   id: 7,
   nombre: 'Agua Cumbre',
@@ -37,6 +39,8 @@ const marca: Marca = {
   cliente_nombre: 'Agencia Andes',
   rubro: 3,
   rubro_nombre: 'Bebidas',
+  grupo: null,
+  grupo_nombre: null,
   activo: true,
 }
 
@@ -48,7 +52,9 @@ function mockFetch(route: Route) {
     if (response !== undefined) return response
     if (input === '/api/clientes/clientes/?incluir_inactivos=1') return ok(clientes)
     if (input === '/api/clientes/rubros/?incluir_inactivos=1') return ok(rubros)
+    if (input === '/api/clientes/grupos/?incluir_inactivos=1') return ok(grupos)
     if (input.startsWith('/api/clientes/marcas/')) return ok([marca])
+    if (input.startsWith('/api/campanias/interacciones/')) return ok([])
     throw new Error(`URL inesperada: ${input}`)
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -65,7 +71,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-test('lista las marcas y filtra por cliente, rubro y nombre', async () => {
+test('lista las marcas y filtra por cliente, rubro, grupo y nombre', async () => {
   const fetchMock = mockFetch(() => undefined)
   render(<MarcasPage />)
 
@@ -77,13 +83,16 @@ test('lista las marcas y filtra por cliente, rubro y nombre', async () => {
   expect(within(filtros).getByRole('option', { name: 'Cliente sin nombre #6' })).toBeDefined()
   fireEvent.change(within(filtros).getByLabelText('Cliente'), { target: { value: '1' } })
   fireEvent.change(within(filtros).getByLabelText('Rubro'), { target: { value: '3' } })
+  await within(filtros).findByRole('option', { name: 'Grupo Cuyo' })
+  fireEvent.change(within(filtros).getByLabelText('Grupo'), { target: { value: '5' } })
   fireEvent.change(within(filtros).getByLabelText('Buscar'), { target: { value: 'agua' } })
   fireEvent.click(within(filtros).getByLabelText('Incluir inactivas'))
   await waitFor(() =>
     expect(
       fetchMock.mock.calls.some(
         ([url]) =>
-          String(url) === '/api/clientes/marcas/?cliente=1&rubro=3&q=agua&incluir_inactivos=1',
+          String(url) ===
+          '/api/clientes/marcas/?cliente=1&rubro=3&grupo=5&q=agua&incluir_inactivos=1',
       ),
     ).toBe(true),
   )
@@ -156,7 +165,10 @@ test('crea una marca ofreciendo solo clientes activos', async () => {
     expect(screen.queryByRole('form', { name: 'Formulario de marca' })).toBeNull(),
   )
   expect(writes(fetchMock, 'POST')).toEqual([
-    ['/api/clientes/marcas/', { nombre: 'Vino Alto', cliente: 1, rubro: null, activo: true }],
+    [
+      '/api/clientes/marcas/',
+      { nombre: 'Vino Alto', cliente: 1, rubro: null, grupo: null, activo: true },
+    ],
   ])
 })
 
@@ -169,6 +181,7 @@ test('edita e inactiva una marca con PATCH', async () => {
 
   const tabla = await screen.findByRole('table', { name: 'Marcas' })
   await within(tabla).findByText('Agua Cumbre')
+  abrirAcciones(tabla)
   fireEvent.click(within(tabla).getByRole('button', { name: 'Editar' }))
   const form = screen.getByRole('form', { name: 'Formulario de marca' })
   fireEvent.change(within(form).getByLabelText('Nombre'), { target: { value: 'Agua Cumbre Sur' } })
@@ -176,13 +189,14 @@ test('edita e inactiva una marca con PATCH', async () => {
   await waitFor(() =>
     expect(screen.queryByRole('form', { name: 'Formulario de marca' })).toBeNull(),
   )
+  abrirAcciones(tabla)
   fireEvent.click(within(tabla).getByRole('button', { name: 'Inactivar' }))
 
   await waitFor(() =>
     expect(writes(fetchMock, 'PATCH')).toEqual([
       [
         '/api/clientes/marcas/7/',
-        { nombre: 'Agua Cumbre Sur', cliente: 1, rubro: 3, activo: true },
+        { nombre: 'Agua Cumbre Sur', cliente: 1, rubro: 3, grupo: null, activo: true },
       ],
       ['/api/clientes/marcas/7/', { activo: false }],
     ]),
@@ -198,6 +212,7 @@ test('informa el error de la API al inactivar una marca', async () => {
 
   const tabla = await screen.findByRole('table', { name: 'Marcas' })
   await within(tabla).findByText('Agua Cumbre')
+  abrirAcciones(tabla)
   fireEvent.click(within(tabla).getByRole('button', { name: 'Inactivar' }))
   expect((await screen.findByRole('alert')).textContent).toBe('No tenés permiso.')
 })
@@ -237,6 +252,7 @@ test('administra rubros: alta, cambio de nombre e inactivación', async () => {
   await waitFor(() =>
     expect(within(seccion).queryByRole('form', { name: 'Formulario de rubro' })).toBeNull(),
   )
+  abrirAcciones(within(seccion).getByRole('row', { name: /Bebidas/ }))
   fireEvent.click(within(seccion).getByRole('button', { name: 'Inactivar' }))
 
   await waitFor(() =>
@@ -267,4 +283,209 @@ test('muestra el error de la API al guardar un rubro repetido', async () => {
   expect(await within(form).findByText('Ya existe un rubro con ese nombre.')).toBeDefined()
   fireEvent.click(within(form).getByRole('button', { name: 'Cancelar' }))
   expect(within(seccion).queryByRole('form', { name: 'Formulario de rubro' })).toBeNull()
+})
+
+test('la ficha de una marca muestra todas sus campañas con su estado', async () => {
+  const fetchMock = mockFetch((url) =>
+    url === '/api/campanias/campanias/?marca=7'
+      ? ok([
+          {
+            id: 11,
+            nombre: 'Verano 2027',
+            marca: 7,
+            marca_nombre: 'Agua Cumbre',
+            cliente_facturacion: null,
+            cliente_factura: 1,
+            cliente_factura_nombre: 'Agencia Andes',
+            fecha_inicio: '2027-01-01',
+            fecha_fin: '2027-01-31',
+            estado: 'confirmada',
+          },
+          {
+            id: 9,
+            nombre: 'Invierno 2026',
+            marca: 7,
+            marca_nombre: 'Agua Cumbre',
+            cliente_facturacion: 2,
+            cliente_factura: 2,
+            cliente_factura_nombre: 'Medios del Sur',
+            fecha_inicio: '2026-06-01',
+            fecha_fin: '2026-06-30',
+            estado: 'cancelada',
+          },
+        ])
+      : undefined,
+  )
+  render(<MarcasPage />)
+
+  const tabla = await screen.findByRole('table', { name: 'Marcas' })
+  await within(tabla).findByText('Agua Cumbre')
+  fireEvent.click(within(tabla).getByRole('button', { name: 'Ver ficha' }))
+  const ficha = screen.getByRole('region', { name: 'Ficha de Agua Cumbre' })
+  expect(within(ficha).getByText(/Agencia Andes · Bebidas/)).toBeDefined()
+  const campanias = within(ficha).getByRole('region', { name: 'Campañas de Agua Cumbre' })
+  expect(await within(campanias).findByText('Verano 2027')).toBeDefined()
+  const tarjetas = within(campanias).getByRole('list', { name: 'Campañas' })
+  expect(within(tarjetas).getByText('Confirmada')).toBeDefined()
+  // Aunque la haya pagado otro cliente o esté cancelada, la campaña es de la marca.
+  expect(within(campanias).getByText('Invierno 2026')).toBeDefined()
+  expect(within(tarjetas).getByText('Cancelada')).toBeDefined()
+  expect(within(campanias).getByText('Medios del Sur')).toBeDefined()
+  expect(fetchMock.mock.calls.some(([url]) => url === '/api/campanias/campanias/?marca=7')).toBe(
+    true,
+  )
+
+  fireEvent.click(within(ficha).getByRole('button', { name: 'Volver a marcas' }))
+  expect(screen.queryByRole('region', { name: 'Ficha de Agua Cumbre' })).toBeNull()
+  expect(await screen.findByRole('table', { name: 'Marcas' })).toBeDefined()
+})
+
+test('la ficha de una marca muestra sus interacciones, sin repetir la marca (RN-018)', async () => {
+  mockFetch((url) =>
+    url === '/api/campanias/interacciones/?marca=7'
+      ? ok([
+          {
+            id: 15,
+            tipo: 'llamada',
+            asunto: 'Pauta de verano',
+            fecha: '2026-10-20',
+            notas: '',
+            cliente: 1,
+            cliente_nombre: 'Agencia Andes',
+            contacto: null,
+            contacto_nombre: null,
+            campania: null,
+            campania_nombre: null,
+            marca: 7,
+            marca_nombre: 'Agua Cumbre',
+            registrada_por_nombre: 'operativo',
+          },
+        ])
+      : url.startsWith('/api/campanias/campanias/')
+        ? ok([])
+        : undefined,
+  )
+  render(<MarcasPage />)
+
+  const tabla = await screen.findByRole('table', { name: 'Marcas' })
+  await within(tabla).findByText('Agua Cumbre')
+  fireEvent.click(within(tabla).getByRole('button', { name: 'Ver ficha' }))
+  const ficha = screen.getByRole('region', { name: 'Ficha de Agua Cumbre' })
+  const seccion = within(ficha).getByRole('region', { name: 'Interacciones con Agua Cumbre' })
+  expect(await within(seccion).findByText('Pauta de verano')).toBeDefined()
+  const interacciones = within(seccion).getByRole('table', { name: 'Interacciones' })
+  expect(within(interacciones).queryByRole('columnheader', { name: 'Marca' })).toBeNull()
+  expect(within(interacciones).getByRole('columnheader', { name: 'Cliente' })).toBeDefined()
+})
+
+test('la ficha de una marca con grupo lista las otras marcas del grupo (RN-016)', async () => {
+  const delGrupo: Marca = { ...marca, grupo: 5, grupo_nombre: 'Grupo Cuyo' }
+  const hermana: Marca = {
+    ...delGrupo,
+    id: 8,
+    nombre: 'Soda Cumbre',
+    cliente: 2,
+    cliente_nombre: 'Agencia Cerrada',
+    activo: false,
+  }
+  const fetchMock = mockFetch((url) => {
+    if (url === '/api/clientes/marcas/?grupo=5&incluir_inactivos=1') return ok([delGrupo, hermana])
+    if (url.startsWith('/api/clientes/marcas/')) return ok([delGrupo])
+    if (url.startsWith('/api/campanias/campanias/')) return ok([])
+    return undefined
+  })
+  render(<MarcasPage />)
+
+  const tabla = await screen.findByRole('table', { name: 'Marcas' })
+  expect(await within(tabla).findByText('Grupo Cuyo')).toBeDefined()
+  fireEvent.click(within(tabla).getByRole('button', { name: 'Ver ficha' }))
+  const ficha = screen.getByRole('region', { name: 'Ficha de Agua Cumbre' })
+  expect(within(ficha).getByText(/Bebidas · Grupo Cuyo · Activa/)).toBeDefined()
+  const delGrupoSeccion = within(ficha).getByRole('region', {
+    name: 'Otras marcas del grupo Grupo Cuyo',
+  })
+  expect(await within(delGrupoSeccion).findByText('Soda Cumbre')).toBeDefined()
+  expect(within(delGrupoSeccion).getByText('Agencia Cerrada')).toBeDefined()
+  expect(within(delGrupoSeccion).getByText('Inactiva')).toBeDefined()
+  // La marca de la ficha no se repite en la lista de su grupo.
+  expect(within(delGrupoSeccion).queryByText('Agua Cumbre')).toBeNull()
+  expect(
+    fetchMock.mock.calls.some(
+      ([url]) => url === '/api/clientes/marcas/?grupo=5&incluir_inactivos=1',
+    ),
+  ).toBe(true)
+})
+
+test('la ficha de una marca sin grupo no muestra la sección del grupo', async () => {
+  mockFetch((url) => (url.startsWith('/api/campanias/campanias/') ? ok([]) : undefined))
+  render(<MarcasPage />)
+
+  const tabla = await screen.findByRole('table', { name: 'Marcas' })
+  await within(tabla).findByText('Agua Cumbre')
+  fireEvent.click(within(tabla).getByRole('button', { name: 'Ver ficha' }))
+  const ficha = screen.getByRole('region', { name: 'Ficha de Agua Cumbre' })
+  expect(within(ficha).getByText(/Sin grupo/)).toBeDefined()
+  expect(within(ficha).queryByRole('region', { name: /Otras marcas del grupo/ })).toBeNull()
+})
+
+test('avisa si no hay otras marcas en el grupo o si falla su carga', async () => {
+  const delGrupo: Marca = { ...marca, grupo: 5, grupo_nombre: 'Grupo Cuyo' }
+  let fallar = false
+  mockFetch((url) => {
+    if (url === '/api/clientes/marcas/?grupo=5&incluir_inactivos=1')
+      return fallar ? fail(500, {}) : ok([delGrupo])
+    if (url.startsWith('/api/clientes/marcas/')) return ok([delGrupo])
+    if (url.startsWith('/api/campanias/campanias/')) return ok([])
+    return undefined
+  })
+  render(<MarcasPage />)
+
+  const tabla = await screen.findByRole('table', { name: 'Marcas' })
+  await within(tabla).findByText('Agua Cumbre')
+  fireEvent.click(within(tabla).getByRole('button', { name: 'Ver ficha' }))
+  expect(await screen.findByText('No hay otras marcas en el grupo.')).toBeDefined()
+  fireEvent.click(screen.getByRole('button', { name: 'Volver a marcas' }))
+  fallar = true
+  const deNuevo = await screen.findByRole('table', { name: 'Marcas' })
+  fireEvent.click(await within(deNuevo).findByRole('button', { name: 'Ver ficha' }))
+  expect(await screen.findByText('No se pudieron cargar las marcas del grupo.')).toBeDefined()
+})
+
+test('administra grupos económicos con el mismo ABM que los rubros', async () => {
+  const fetchMock = mockFetch((url, options) => {
+    if (url === '/api/clientes/grupos/' && options?.method === 'POST') return ok({ id: 6 })
+    if (url === '/api/clientes/grupos/5/' && options?.method === 'PATCH') return ok({ id: 5 })
+    return undefined
+  })
+  vi.stubGlobal('confirm', () => true)
+  render(<MarcasPage />)
+
+  const seccion = screen.getByRole('region', { name: 'Grupos económicos' })
+  expect(await within(seccion).findByText('Grupo Cuyo')).toBeDefined()
+  fireEvent.click(within(seccion).getByRole('button', { name: 'Nuevo grupo económico' }))
+  const form = within(seccion).getByRole('form', { name: 'Formulario de grupo económico' })
+  fireEvent.change(within(form).getByLabelText('Nombre del grupo económico'), {
+    target: { value: ' Grupo Andes ' },
+  })
+  fireEvent.click(within(form).getByRole('button', { name: 'Guardar grupo económico' }))
+  await waitFor(() =>
+    expect(within(seccion).queryByRole('form', { name: /grupo económico/ })).toBeNull(),
+  )
+  abrirAcciones(within(seccion).getByRole('row', { name: /Grupo Cuyo/ }))
+  fireEvent.click(within(seccion).getByRole('button', { name: 'Inactivar' }))
+
+  await waitFor(() =>
+    expect(writes(fetchMock, 'PATCH')).toEqual([['/api/clientes/grupos/5/', { activo: false }]]),
+  )
+  expect(writes(fetchMock, 'POST')).toEqual([['/api/clientes/grupos/', { nombre: 'Grupo Andes' }]])
+})
+
+test('informa si no se pudieron cargar los grupos económicos', async () => {
+  mockFetch((url) =>
+    url === '/api/clientes/grupos/?incluir_inactivos=1' ? fail(500, {}) : undefined,
+  )
+  render(<MarcasPage />)
+
+  expect(await screen.findByText('No se pudieron cargar los grupos económicos.')).toBeDefined()
+  expect(screen.getByText('Todavía no hay grupos económicos.')).toBeDefined()
 })

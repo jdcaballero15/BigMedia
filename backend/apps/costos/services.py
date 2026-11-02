@@ -2,8 +2,10 @@
 
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
 from django.db.models import Sum
 
+from apps.inventario.models import Proveedor
 from apps.reservas.models import Reserva
 
 from .models import Costo
@@ -43,3 +45,9 @@ def margen_de_campania(campania_id: int) -> dict[str, object]:
         "margen": f"{margen:.2f}",
         "porcentaje": porcentaje,
     }
+
+
+def validar_proveedor_activo(proveedor_id: int) -> None:
+    """Un costo nuevo se carga con un proveedor existente y activo."""
+    if not Proveedor.objects.filter(pk=proveedor_id, activo=True).exists():
+        raise ValidationError({"proveedor": "Seleccioná un proveedor activo."})

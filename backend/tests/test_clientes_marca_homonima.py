@@ -55,6 +55,25 @@ def test_editar_cliente_directo_no_duplica_su_marca(operativo_client):
 
 
 @pytest.mark.django_db
+@pytest.mark.regla("RN-017")
+def test_cambio_de_razon_social_de_cliente_directo_no_renombra_su_marca(operativo_client):
+    cliente_id = _post(
+        operativo_client, {"nombre": "Bodega", "razon_social": "Bodega SA", "tipo": "directo"}
+    ).json()["id"]
+
+    response = operativo_client.patch(
+        f"{URL}{cliente_id}/",
+        data=json.dumps({"nombre": "Bodega Andes", "razon_social": "Andes SRL"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert Cliente.objects.get().razon_social == "Andes SRL"
+    marca = Marca.objects.get()
+    assert (marca.nombre, marca.cliente_id) == ("Bodega", cliente_id)
+
+
+@pytest.mark.django_db
 def test_crear_cliente_directo_si_falla_la_marca_no_crea_el_cliente():
     with (
         patch.object(services, "crear_marca_homonima", side_effect=DatabaseError("falla")),

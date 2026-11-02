@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
 import { descargarCsv } from '../../shared/csv'
+import { formatearPeriodo } from '../../shared/fechas'
+import { descargarPdf } from '../../shared/pdf'
+import Cifras from '../../shared/Cifras'
+import SelectorPeriodo from '../../shared/SelectorPeriodo'
 import { formatearMonto, sumarMontos } from './montos'
 import type { ClienteFila, Periodo, ReporteIngresos } from './types'
 
@@ -70,6 +74,25 @@ export default function ReporteIngresosPage() {
     descargarCsv(`ingresos-${desde}-${hasta}.csv`, columnas, filas)
   }
 
+  function exportarPdf() {
+    const columnas = ['Cliente', 'Marca', ...datos.periodos.map((p) => p.etiqueta), 'Total']
+    const filas = datos.clientes.flatMap((cliente) =>
+      cliente.marcas.map((marca) => [
+        cliente.nombre,
+        marca.nombre,
+        ...datos.periodos.map((p) => formatearMonto(marca.por_mes[p.mes] ?? '0.00')),
+        formatearMonto(marca.total),
+      ]),
+    )
+    descargarPdf(
+      `ingresos-${desde}-${hasta}.pdf`,
+      'Ingresos por cliente y marca',
+      `Período: ${formatearPeriodo(desde)} a ${formatearPeriodo(hasta)}`,
+      columnas,
+      filas,
+    )
+  }
+
   return (
     <>
       <div className="section-heading">
@@ -80,32 +103,48 @@ export default function ReporteIngresosPage() {
             Facturación por período, con el desglose de cada agencia a sus marcas.
           </p>
         </div>
-        <button
-          className="button-primary"
-          onClick={exportar}
-          disabled={datos.clientes.length === 0}
-        >
-          Exportar CSV
-        </button>
+        <div className="section-actions">
+          <button
+            className="button-ghost"
+            onClick={exportarPdf}
+            disabled={datos.clientes.length === 0}
+          >
+            Exportar PDF
+          </button>
+          <button
+            className="button-primary"
+            onClick={exportar}
+            disabled={datos.clientes.length === 0}
+          >
+            Exportar CSV
+          </button>
+        </div>
       </div>
       <div className="filters card">
-        <label>
-          Desde
-          <input
-            type="month"
-            value={desde}
-            onChange={(event) => cambiar(() => setDesde(event.target.value))}
-          />
-        </label>
-        <label>
-          Hasta
-          <input
-            type="month"
-            value={hasta}
-            onChange={(event) => cambiar(() => setHasta(event.target.value))}
-          />
-        </label>
+        <SelectorPeriodo
+          desde={desde}
+          hasta={hasta}
+          onCambiar={(nuevoDesde, nuevoHasta) =>
+            cambiar(() => {
+              setDesde(nuevoDesde)
+              setHasta(nuevoHasta)
+            })
+          }
+        />
       </div>
+      {!loading && (
+        <Cifras
+          titulo="Resumen del período"
+          cifras={[
+            {
+              etiqueta: 'Total del período',
+              valor: formatearMonto(datos.total),
+              tono: 'principal',
+            },
+            { etiqueta: 'Clientes con ingresos', valor: datos.clientes.length },
+          ]}
+        />
+      )}
       {error && (
         <p className="error" role="alert">
           {error}

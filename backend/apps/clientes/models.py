@@ -35,6 +35,28 @@ class Rubro(models.Model):
         return self.nombre
 
 
+class GrupoEconomico(models.Model):
+    """Grupo de marcas de un mismo dueño, sin importar quién las factura (RN-016)."""
+
+    nombre = models.CharField(max_length=120)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "grupo económico"
+        verbose_name_plural = "grupos económicos"
+        constraints = [
+            models.UniqueConstraint(
+                Lower("nombre"),
+                name="grupo_economico_nombre_ci",
+                violation_error_message="Ya existe un grupo económico con ese nombre.",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.nombre
+
+
 class Cliente(models.Model):
     class Tipo(models.TextChoices):
         DIRECTO = "directo", "Directo"
@@ -90,6 +112,9 @@ class Marca(models.Model):
     rubro = models.ForeignKey(
         Rubro, on_delete=models.PROTECT, related_name="marcas", null=True, blank=True
     )
+    grupo = models.ForeignKey(
+        GrupoEconomico, on_delete=models.PROTECT, related_name="marcas", null=True, blank=True
+    )
     activo = models.BooleanField(default=True)
     nombre_busqueda = models.CharField(max_length=160, editable=False, db_index=True)
     creado_en = models.DateTimeField(auto_now_add=True)
@@ -104,3 +129,40 @@ class Marca(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.nombre_busqueda = normalizar_busqueda(self.nombre)
         super().save(*args, **_con_campos_de_busqueda(kwargs, ("nombre_busqueda",)))
+
+
+class Contacto(models.Model):
+    """Persona con quien se habla en un cliente intermediario formal (HU-068, RN-015).
+
+    No lleva datos de facturación, que siguen en el cliente. No se borra: se inactiva (HU-006).
+    """
+
+    cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name="contactos")
+    nombre = models.CharField(max_length=160)
+    cargo = models.CharField("cargo o área", max_length=120, blank=True)
+    correo = models.EmailField(blank=True)
+    telefono = models.CharField("teléfono", max_length=60, blank=True)
+    notas = models.TextField(blank=True)
+    principal = models.BooleanField(default=False)
+    activo = models.BooleanField(default=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-principal", "nombre", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cliente"],
+                condition=models.Q(principal=True),
+                name="contacto_un_principal_por_cliente",
+                violation_error_message="El cliente ya tiene un contacto principal.",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(principal=True, activo=False),
+                name="contacto_principal_activo",
+                violation_error_message="Un contacto inactivo no puede ser el principal.",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.nombre

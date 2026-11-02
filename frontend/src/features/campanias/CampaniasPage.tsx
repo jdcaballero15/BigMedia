@@ -1,14 +1,35 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { apiGet, apiWrite } from '../../shared/api'
 import type { Cliente, Marca, Rubro } from '../clientes/types'
 import type { MarcaInput } from '../clientes/MarcaForm'
 import CampaniaForm from './CampaniaForm'
 import type { CampaniaInput } from './CampaniaForm'
 import CampaniaDetalle from './CampaniaDetalle'
+import MoverPendientes from '../reservas/MoverPendientes'
 import type { Campania } from './types'
 import { ESTADOS_CAMPANIA, etiquetaEstado } from './types'
+import { usePuedeEditar } from '../../shared/sesion'
+import MenuFila from '../../shared/MenuFila'
+
+type CambioDeFechas = {
+  campaniaId: number
+  inicioAnterior: string
+  finAnterior: string
+  inicioNuevo: string
+  finNuevo: string
+}
+
+/** Cambio de fechas que puede arrastrar Pendientes (HU-058): ambas fechas, antes y después. */
+function detectarCambioDeFechas(anterior: Campania, guardada: Campania): CambioDeFechas | null {
+  const { fecha_inicio: inicioAnterior, fecha_fin: finAnterior } = anterior
+  const { fecha_inicio: inicioNuevo, fecha_fin: finNuevo } = guardada
+  if (!inicioAnterior || !finAnterior || !inicioNuevo || !finNuevo) return null
+  if (inicioAnterior === inicioNuevo && finAnterior === finNuevo) return null
+  return { campaniaId: guardada.id, inicioAnterior, finAnterior, inicioNuevo, finNuevo }
+}
 
 export default function CampaniasPage() {
+  const puedeEditar = usePuedeEditar()
   const [campanias, setCampanias] = useState<Campania[]>([])
   const [marcas, setMarcas] = useState<Marca[]>([])
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -21,6 +42,8 @@ export default function CampaniasPage() {
   const [editing, setEditing] = useState<Campania | 'new' | null>(null)
   const [viendo, setViendo] = useState<Campania | null>(null)
   const [revision, setRevision] = useState(0)
+  const [cambioDeFechas, setCambioDeFechas] = useState<CambioDeFechas | null>(null)
+  const terminarCambioDeFechas = useCallback(() => setCambioDeFechas(null), [])
 
   useEffect(() => {
     let active = true
@@ -71,7 +94,8 @@ export default function CampaniasPage() {
     if (editing === null) return
     const path =
       editing === 'new' ? '/api/campanias/campanias/' : `/api/campanias/campanias/${editing.id}/`
-    await apiWrite(path, editing === 'new' ? 'POST' : 'PATCH', input)
+    const guardada = await apiWrite<Campania>(path, editing === 'new' ? 'POST' : 'PATCH', input)
+    if (editing !== 'new') setCambioDeFechas(detectarCambioDeFechas(editing, guardada))
     setEditing(null)
     setRevision((current) => current + 1)
   }
@@ -108,9 +132,11 @@ export default function CampaniasPage() {
           <h2>Campañas</h2>
           <p className="muted">Agrupá las ventas de un cliente y marca; cargá reservas después.</p>
         </div>
-        <button className="button-primary" onClick={() => setEditing('new')}>
-          Nueva campaña
-        </button>
+        {puedeEditar && (
+          <button className="button-primary" onClick={() => setEditing('new')}>
+            Nueva campaña
+          </button>
+        )}
       </div>
       {editing !== null && (
         <CampaniaForm
@@ -122,6 +148,13 @@ export default function CampaniasPage() {
           onSave={saveCampania}
           onCrearMarca={crearMarca}
           onCancel={() => setEditing(null)}
+        />
+      )}
+      {cambioDeFechas && (
+        <MoverPendientes
+          key={`${cambioDeFechas.campaniaId}-${cambioDeFechas.inicioNuevo}-${cambioDeFechas.finNuevo}`}
+          {...cambioDeFechas}
+          onListo={terminarCambioDeFechas}
         />
       )}
       <div className="filters card" role="search" aria-label="Filtros de campañas">
@@ -185,9 +218,11 @@ export default function CampaniasPage() {
                     <button className="button-ghost" onClick={() => setViendo(item)}>
                       Ver
                     </button>
-                    <button className="button-ghost" onClick={() => setEditing(item)}>
-                      Editar
-                    </button>
+                    <MenuFila
+                      acciones={[
+                        { etiqueta: 'Editar', onClick: () => setEditing(item), edicion: true },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError } from '../../shared/api'
+import CampoFecha from '../../shared/CampoFecha'
+import { erroresDeFechas } from '../../shared/fechas'
 import { FieldErrors } from '../../shared/FieldErrors'
-import { vigentes } from '../../shared/opciones'
 import type { Cartel } from '../inventario/types'
 import type { EstadoReserva, Reserva } from './types'
-import { ESTADOS_RESERVA } from './types'
+import { ESTADOS_INICIALES, ESTADOS_RESERVA } from './types'
 
 export type ReservaInput = {
   campania: number
@@ -37,6 +38,10 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
   const [saving, setSaving] = useState(false)
+  // Una reserva nueva nace Pendiente o Confirmada; al editar, el servidor valida la transición.
+  const estadosOfrecidos = reserva
+    ? ESTADOS_RESERVA
+    : ESTADOS_RESERVA.filter((item) => ESTADOS_INICIALES.includes(item.value))
 
   function elegirCartel(value: string) {
     setCartel(value)
@@ -49,8 +54,10 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setErrors({})
     setGeneralError('')
+    const fechasInvalidas = erroresDeFechas({ fecha_inicio: fechaInicio, fecha_fin: fechaFin })
+    setErrors(fechasInvalidas)
+    if (Object.keys(fechasInvalidas).length > 0) return
     setSaving(true)
     try {
       await onSave({
@@ -95,11 +102,14 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
           Cartel
           <select value={cartel} onChange={(event) => elegirCartel(event.target.value)}>
             <option value="">Seleccionar</option>
-            {vigentes(carteles, reserva?.cartel).map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.nombre_visible}
-              </option>
-            ))}
+            {carteles
+              .filter((item) => (item.operativo && !item.es_baja) || item.id === reserva?.cartel)
+              .map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.nombre_visible}
+                  {item.es_baja ? ' (de baja)' : !item.operativo ? ' (fuera de servicio)' : ''}
+                </option>
+              ))}
           </select>
           <FieldErrors messages={errors.cartel} />
         </label>
@@ -109,7 +119,7 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
             value={estado}
             onChange={(event) => setEstado(event.target.value as EstadoReserva)}
           >
-            {ESTADOS_RESERVA.map((item) => (
+            {estadosOfrecidos.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
               </option>
@@ -117,24 +127,18 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
           </select>
           <FieldErrors messages={errors.estado} />
         </label>
-        <label>
-          Fecha de inicio
-          <input
-            type="date"
-            value={fechaInicio}
-            onChange={(event) => setFechaInicio(event.target.value)}
-          />
-          <FieldErrors messages={errors.fecha_inicio} />
-        </label>
-        <label>
-          Fecha de fin
-          <input
-            type="date"
-            value={fechaFin}
-            onChange={(event) => setFechaFin(event.target.value)}
-          />
-          <FieldErrors messages={errors.fecha_fin} />
-        </label>
+        <CampoFecha
+          label="Fecha de inicio"
+          value={fechaInicio}
+          onChange={setFechaInicio}
+          errores={errors.fecha_inicio}
+        />
+        <CampoFecha
+          label="Fecha de fin"
+          value={fechaFin}
+          onChange={setFechaFin}
+          errores={errors.fecha_fin}
+        />
         <label>
           Precio de alquiler
           <input

@@ -58,6 +58,20 @@ test('muestra la grilla de carteles por mes', async () => {
   expect(screen.getByText('1/1')).toBeDefined()
 })
 
+test('calendario_celda_muestraLaBarraDeOcupacionYAmbarSiEstaLlena', async () => {
+  stubFetch()
+  render(<CalendarioDisponibilidad />)
+  await screen.findByText('Av. San Martín 1234 · 6x3')
+
+  const llena = screen.getByRole('button', { name: /2026-11: 1 de 1/ })
+  expect(llena.className).toBe('celda celda-lleno')
+  expect((llena.querySelector('.celda-barra') as HTMLElement).style.width).toBe('100%')
+  const libre = screen.getByRole('button', { name: /2026-10: 0 de 1/ }) as HTMLButtonElement
+  expect(libre.className).toBe('celda celda-libre')
+  expect(libre.disabled).toBe(true)
+  expect((libre.querySelector('.celda-barra') as HTMLElement).style.width).toBe('0%')
+})
+
 test('tocar una celda ocupada muestra la campaña que la ocupa', async () => {
   const fetchMock = stubFetch()
   render(<CalendarioDisponibilidad />)

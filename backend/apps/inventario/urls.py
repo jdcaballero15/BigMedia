@@ -1,7 +1,14 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import CartelViewSet, EstadoCartelViewSet, FormatoViewSet, ProveedorViewSet, ZonaViewSet
+from .views import (
+    CartelViewSet,
+    EstadoCartelViewSet,
+    FormatoViewSet,
+    ImportacionCartelesView,
+    ProveedorViewSet,
+    ZonaViewSet,
+)
 
 router = DefaultRouter()
 router.register("proveedores", ProveedorViewSet, basename="proveedor")
@@ -10,4 +17,7 @@ router.register("zonas", ZonaViewSet, basename="zona")
 router.register("estados", EstadoCartelViewSet, basename="estado-cartel")
 router.register("carteles", CartelViewSet, basename="cartel")
 
-urlpatterns = [path("", include(router.urls))]
+urlpatterns = [
+    path("importaciones/", ImportacionCartelesView.as_view(), name="importacion-carteles"),
+    path("", include(router.urls)),
+]

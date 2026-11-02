@@ -3,6 +3,11 @@ import { apiGet, apiWrite } from '../../shared/api'
 import type { Cartel, Catalogo, Estado, Formato, Proveedor } from './types'
 import CartelForm from './CartelForm'
 import type { CartelInput } from './CartelForm'
+import { usePuedeEditar } from '../../shared/sesion'
+import MenuFila from '../../shared/MenuFila'
+import ReservasAfectadas from '../reservas/ReservasAfectadas'
+
+type Afectado = { id: number; nombre: string; estadoNombre: string; aviso: number }
 
 type Catalogos = {
   formatos: Formato[]
@@ -12,6 +17,7 @@ type Catalogos = {
 }
 
 export default function CartelesPage() {
+  const puedeEditar = usePuedeEditar()
   const [catalogos, setCatalogos] = useState<Catalogos>({
     formatos: [],
     zonas: [],
@@ -29,6 +35,7 @@ export default function CartelesPage() {
   const [error, setError] = useState('')
   const [editing, setEditing] = useState<Cartel | 'new' | null>(null)
   const [revision, setRevision] = useState(0)
+  const [afectado, setAfectado] = useState<Afectado | null>(null)
 
   useEffect(() => {
     let active = true
@@ -82,8 +89,26 @@ export default function CartelesPage() {
     const path =
       editing === 'new' ? '/api/inventario/carteles/' : `/api/inventario/carteles/${editing.id}/`
     await apiWrite(path, editing === 'new' ? 'POST' : 'PATCH', input)
+    if (editing !== 'new') avisarSiQuedaFueraDeServicio(editing, input.estado)
     setEditing(null)
     setRevision((current) => current + 1)
+  }
+
+  /** Un cartel que deja de ser operativo muestra sus reservas activas (HU-039). */
+  function avisarSiQuedaFueraDeServicio(cartel: Cartel, estadoId: number) {
+    const estadoNuevo = catalogos.estados.find((item) => item.id === estadoId)
+    if (!estadoNuevo || estadoId === cartel.estado) return
+    if (estadoNuevo.operativo) {
+      setAfectado((actual) => (actual?.id === cartel.id ? null : actual))
+      return
+    }
+    // `aviso` cambia la key: el aviso se remonta y vuelve a consultar en cada cambio.
+    setAfectado((actual) => ({
+      id: cartel.id,
+      nombre: cartel.nombre_visible,
+      estadoNombre: estadoNuevo.nombre,
+      aviso: (actual?.aviso ?? 0) + 1,
+    }))
   }
 
   async function darDeBaja(cartel: Cartel) {
@@ -98,6 +123,7 @@ export default function CartelesPage() {
       return
     try {
       await apiWrite(`/api/inventario/carteles/${cartel.id}/`, 'PATCH', { estado: baja.id })
+      avisarSiQuedaFueraDeServicio(cartel, baja.id)
       setRevision((current) => current + 1)
     } catch {
       setError('No se pudo dar de baja el cartel.')
@@ -112,9 +138,11 @@ export default function CartelesPage() {
           <h2>Carteles</h2>
           <p className="muted">Consultá y filtrá los espacios disponibles para vender.</p>
         </div>
-        <button className="button-primary" onClick={() => setEditing('new')}>
-          Nuevo cartel
-        </button>
+        {puedeEditar && (
+          <button className="button-primary" onClick={() => setEditing('new')}>
+            Nuevo cartel
+          </button>
+        )}
       </div>
       {editing !== null && (
         <CartelForm
@@ -126,6 +154,15 @@ export default function CartelesPage() {
           estados={catalogos.estados}
           onSave={saveCartel}
           onCancel={() => setEditing(null)}
+        />
+      )}
+      {afectado && (
+        <ReservasAfectadas
+          key={afectado.aviso}
+          cartelId={afectado.id}
+          cartelNombre={afectado.nombre}
+          estadoNombre={afectado.estadoNombre}
+          onCerrar={() => setAfectado(null)}
         />
       )}
       <div className="filters card">
@@ -235,9 +272,9 @@ export default function CartelesPage() {
                 <th>Cartel</th>
                 <th>Formato</th>
                 <th>Zona</th>
-                <th>Proveedor</th>
+                <th className="col-secundaria">Proveedor</th>
                 <th>Estado</th>
-                <th>Capacidad</th>
+                <th className="col-secundaria">Capacidad</th>
                 <th>Tarifa de lista</th>
                 <th>Acciones</th>
               </tr>
@@ -248,19 +285,25 @@ export default function CartelesPage() {
                   <td className="primary-cell">{item.nombre_visible}</td>
                   <td>{item.formato_nombre}</td>
                   <td>{item.zona_nombre}</td>
-                  <td>{item.proveedor_nombre ?? '—'}</td>
+                  <td className="col-secundaria">{item.proveedor_nombre ?? '—'}</td>
                   <td>{item.estado_nombre}</td>
-                  <td>{item.capacidad}</td>
+                  <td className="col-secundaria">{item.capacidad}</td>
                   <td>{item.tarifa_lista ?? 'Sin tarifa'}</td>
                   <td className="row-actions">
-                    <button className="button-ghost" onClick={() => setEditing(item)}>
-                      Editar
-                    </button>
-                    {!catalogos.estados.find((state) => state.id === item.estado)?.es_baja && (
-                      <button className="button-ghost" onClick={() => void darDeBaja(item)}>
-                        Dar de baja
+                    {puedeEditar && (
+                      <button className="button-ghost" onClick={() => setEditing(item)}>
+                        Editar
                       </button>
                     )}
+                    <MenuFila
+                      acciones={[
+                        !catalogos.estados.find((state) => state.id === item.estado)?.es_baja && {
+                          etiqueta: 'Dar de baja',
+                          onClick: () => void darDeBaja(item),
+                          edicion: true,
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

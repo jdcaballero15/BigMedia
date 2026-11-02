@@ -4,23 +4,36 @@ import CalendarioDisponibilidad from './CalendarioDisponibilidad'
 
 type Vista = 'hoy' | 'calendario'
 
+const VISTAS: { id: Vista; label: string }[] = [
+  { id: 'hoy', label: 'Hoy' },
+  { id: 'calendario', label: 'Calendario' },
+]
+
 export default function DisponibilidadPage() {
   const [vista, setVista] = useState<Vista>('hoy')
 
-  return (
-    <section className="inventory-page">
-      <nav className="topnav" aria-label="Vistas de disponibilidad">
-        <button className={vista === 'hoy' ? 'active' : ''} onClick={() => setVista('hoy')}>
-          Hoy
-        </button>
+  const pestanias = (
+    <div className="pildoras" role="group" aria-label="Vistas de disponibilidad">
+      {VISTAS.map((item) => (
         <button
-          className={vista === 'calendario' ? 'active' : ''}
-          onClick={() => setVista('calendario')}
+          key={item.id}
+          className={vista === item.id ? 'active' : ''}
+          aria-pressed={vista === item.id}
+          onClick={() => setVista(item.id)}
         >
-          Calendario
+          {item.label}
         </button>
-      </nav>
-      {vista === 'hoy' ? <OcupacionHoy /> : <CalendarioDisponibilidad />}
+      ))}
+    </div>
+  )
+
+  return (
+    <section>
+      {vista === 'hoy' ? (
+        <OcupacionHoy pestanias={pestanias} />
+      ) : (
+        <CalendarioDisponibilidad pestanias={pestanias} />
+      )}
     </section>
   )
 }

@@ -29,8 +29,44 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E8 Reportes y paneles | [reporte-ocupacion-frontend](units/reporte-ocupacion-frontend.md) | frontend | HU-048 (pantalla) | reporte-ocupacion | Juan Diego | feature/frontend-reporte-ocupacion | mergeada |
 | E8 Reportes y paneles | [exportar-reportes-csv](units/exportar-reportes-csv.md) | frontend | HU-052 (CSV) | reporte-ingresos-frontend, reporte-ocupacion-frontend | Juan Diego | feature/frontend-exportar-reportes | mergeada |
 | E1 Seguridad y acceso | [permiso-ingresos](units/permiso-ingresos.md) | usuarios | HU-052 (criterio 2) | reporte-ingresos | Juan Diego | feature/usuarios-permiso-ingresos | mergeada |
-| — (unidad técnica) | [ajuste-entornos-neon](units/ajuste-entornos-neon.md) | infra | decisión 21/10/2026 (ADR-0005) | entornos | Juan Diego | chore/infra-entornos-neon | en revisión |
+| — (unidad técnica) | [ajuste-entornos-neon](units/ajuste-entornos-neon.md) | infra | decisión 21/10/2026 (ADR-0005) | entornos | Juan Diego | chore/infra-entornos-neon | mergeada |
+| E8 Reportes y paneles | [exportar-reportes-pdf](units/exportar-reportes-pdf.md) | frontend | HU-052 (PDF) | exportar-reportes-csv | Juan Diego | feature/frontend-exportar-pdf | mergeada |
+| E8 Reportes y paneles | [reporte-por-rubro](units/reporte-por-rubro.md) | facturacion | HU-050 (rubro, RN-004) | reporte-ingresos, reporte-ocupacion | Juan Diego | feature/facturacion-reporte-por-rubro | mergeada |
+| E1 Seguridad y acceso | [auditoria-base](units/auditoria-base.md) | auditoria | HU-007 (base + reservas) | permiso-ingresos | Juan Diego | feature/auditoria-base | mergeada |
+| E1 Seguridad y acceso | [auditoria-pantalla](units/auditoria-pantalla.md) | frontend | HU-007 (pantalla) | auditoria-base | Juan Diego | feature/frontend-auditoria | mergeada |
+| E1 Seguridad y acceso | [auditoria-campania-cartel](units/auditoria-campania-cartel.md) | campanias, inventario | HU-007 (campaña y tarifa) | auditoria-base | Juan Diego | feature/auditoria-campania-cartel | mergeada |
+| E1 Seguridad y acceso | [sesion-inactividad](units/sesion-inactividad.md) | usuarios, frontend | HU-003 (criterio 4) | — | Juan Diego | feature/usuarios-sesion-inactividad | mergeada |
+| E1 Seguridad y acceso | [bloqueo-intentos-fallidos](units/bloqueo-intentos-fallidos.md) | usuarios | HU-003 (criterio 3) | sesion-inactividad | Gonza | feature/usuarios-bloqueo-intentos-fallidos | mergeada |
+| E1 Seguridad y acceso | [roles-y-permisos](units/roles-y-permisos.md) | usuarios | HU-004 | bloqueo-intentos-fallidos | Gonza | feature/usuarios-roles-y-permisos | mergeada |
+| — (unidad técnica) | [ajuste-datos-ejemplo](units/ajuste-datos-ejemplo.md) | usuarios, infra | pedido 23/10/2026 (demo en staging) | entornos | Gonza | chore/infra-datos-ejemplo-demo | mergeada |
+| E1 Seguridad y acceso | [gestion-de-usuarios](units/gestion-de-usuarios.md) | usuarios | HU-005 (RN-021) | roles-y-permisos | Gonza | feature/usuarios-gestion-de-usuarios | mergeada |
+| E1 Seguridad y acceso | [baja-logica](units/baja-logica.md) | reservas | HU-006 | gestion-de-usuarios | Gonza | feature/reservas-baja-logica | mergeada |
+| E0 Plataforma base | [parametros-configurables](units/parametros-configurables.md) | reservas | HU-001 (RN-001, RN-002) | reservas-motor-disponibilidad, gestion-de-usuarios | Gonza | feature/reservas-parametros-configurables | mergeada |
+| E3 Clientes, marcas y CRM | [marcas-duplicadas](units/marcas-duplicadas.md) | clientes | HU-019 | clientes-y-marcas | Gonza | feature/clientes-marcas-duplicadas | mergeada |
+| E3 Clientes, marcas y CRM | [contactos-intermediario](units/contactos-intermediario.md) | clientes | HU-068 (RN-015) | clientes-y-marcas | Gonza | feature/clientes-contactos-intermediario | mergeada |
+| E5 Reservas y motor de disponibilidad | [sobreventa-finalizada](units/sobreventa-finalizada.md) | reservas | HU-031, HU-035 (RN-002) | reservas-motor-disponibilidad | Juan Diego | fix/reservas-sobreventa-finalizada | mergeada |
+| E3 Clientes, marcas y CRM | [interacciones](units/interacciones.md) | campanias | HU-020, HU-068 (criterios 5 y 7) | contactos-intermediario, campanias | Juan Diego | feature/campanias-interacciones | mergeada |
+| — (unidad técnica) | [ajuste-selector-de-fechas](units/ajuste-selector-de-fechas.md) | frontend | prueba manual 24/10/2026 | — | Juan Diego | fix/frontend-selector-de-fechas | mergeada |
+| E10 Armado de campañas y reserva masiva | [posiciones-por-formato](units/posiciones-por-formato.md) | campanias | HU-055, HU-058 (criterios 1 y 2) | campanias, reservas-base | Gonza | feature/campanias-posiciones-por-formato | mergeada |
+| E10 Armado de campañas y reserva masiva | [reserva-masiva](units/reserva-masiva.md) | reservas | HU-056, HU-057 (RN-001, RN-002, RN-003, RN-004, RN-005) | posiciones-por-formato | Gonza | feature/reservas-reserva-masiva | mergeada |
+| E10 Armado de campañas y reserva masiva | [confirmacion-en-bloque](units/confirmacion-en-bloque.md) | reservas | HU-059, HU-058 (criterios 3 y 4) (RN-001, RN-002, RN-003, RN-011) | reserva-masiva | Gonza | feature/reservas-confirmacion-en-bloque | mergeada |
+| E11 Facturación mensual | [items-a-facturar](units/items-a-facturar.md) | facturacion | HU-060, HU-061, HU-065 (RN-022, RN-023) | clientes-y-marcas, campanias | Gonza | feature/facturacion-items-a-facturar | mergeada |
+| E11 Facturación mensual | [cierre-de-mes](units/cierre-de-mes.md) | facturacion | HU-066 (RN-022, RN-024, RN-025) | items-a-facturar | Gonza | feature/facturacion-cierre-de-mes | mergeada |
+| E9 Entrega y traspaso | [entrega-y-traspaso](units/entrega-y-traspaso.md) | docs | HU-053, HU-054 | — | Gonza | docs/entrega-y-traspaso | mergeada |
+| E11 Facturación mensual | [orden-de-compra-y-grupos](units/orden-de-compra-y-grupos.md) | facturacion | HU-062, HU-064 (RN-024) | cierre-de-mes | Gonza | feature/facturacion-orden-de-compra-y-grupos | mergeada |
+| E11 Facturación mensual | [costos-del-item](units/costos-del-item.md) | facturacion | HU-063, HU-066 criterio 1 (RN-024) | cierre-de-mes, costos-y-margen | Gonza | feature/facturacion-costos-del-item | mergeada |
+| E11 Facturación mensual | [reabrir-item](units/reabrir-item.md) | facturacion | HU-067 (RN-022) | cierre-de-mes, auditoria-base | Gonza | feature/facturacion-reabrir-item | mergeada |
+| E3 Clientes, marcas y CRM | [fichas-cliente-y-marca](units/fichas-cliente-y-marca.md) | frontend | HU-021, HU-022 (criterio 1) | interacciones, campanias | Juan Diego | feature/frontend-fichas-cliente-y-marca | mergeada |
+| E12 Rediseño visual | [estilo-base](units/estilo-base.md) | frontend | pedido de Gonza (2026-10-28) | — | Gonza | feature/frontend-estilo-base | mergeada |
+| E12 Rediseño visual | [pantallas-rediseno](units/pantallas-rediseno.md) | frontend | pedido de Gonza (2026-10-28) | estilo-base | Gonza | feature/frontend-pantallas-rediseno | mergeada |
+| E3 Clientes, marcas y CRM | [interacciones-con-marca](units/interacciones-con-marca.md) | campanias | RN-018, HU-020 (criterios 4 y 5) | interacciones, fichas-cliente-y-marca | Gonza | feature/campanias-interacciones-con-marca | mergeada |
+| E11 Facturación mensual | [anular-facturados](units/anular-facturados.md) | facturacion | RN-026, HU-067 (criterios 5 y 6) | reabrir-item | Gonza | feature/facturacion-anular-facturados | mergeada |
+| E11 Facturación mensual | [ajuste-planilla-facturacion](units/ajuste-planilla-facturacion.md) | facturacion | RN-024, HU-066 (criterio 3) | cierre-de-mes, costos-del-item | Gonza | feature/facturacion-ajuste-planilla | mergeada |
+| E3 Clientes, marcas y CRM | [grupo-economico](units/grupo-economico.md) | clientes | RN-016, HU-017, HU-022 (criterio 2), HU-050 (criterio 2) | clientes-y-marcas, fichas-cliente-y-marca, reporte-por-rubro | Gonza | feature/clientes-grupo-economico | mergeada |
+| E5 Reservas y motor de disponibilidad | [cartel-fuera-de-servicio](units/cartel-fuera-de-servicio.md) | reservas | HU-039 (RN-010) | reservas-base, inventario | Juan Diego | feature/reservas-cartel-fuera-de-servicio | mergeada |
+| E2 Inventario de soportes | [importacion-inventario](units/importacion-inventario.md) | inventario | HU-015 (RN-009, RN-005, RN-008) | inventario | Gonza | feature/inventario-importacion | mergeada |
+| E2 Inventario de soportes | [ajuste-importacion-circuitos](units/ajuste-importacion-circuitos.md) | inventario | RN-005, HU-009, HU-015 | importacion-inventario | Gonza | feature/inventario-importacion-circuitos | mergeada |
 
 ## Notas
 
-- HU-015 (importación de inventario) queda fuera de la unidad `inventario` hasta tener los relevamientos (RN-009).
+- HU-015 (importación de inventario) quedó fuera de la unidad `inventario` hasta tener los relevamientos (RN-009); la implementa `importacion-inventario`. La carga de los datos reales no es una unidad: se hace con la pantalla de importación.

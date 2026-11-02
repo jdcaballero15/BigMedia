@@ -8,6 +8,9 @@ export const TIPOS_CLIENTE: { value: TipoCliente; label: string }[] = [
 
 export type Rubro = { id: number; nombre: string; activo: boolean }
 
+/** Grupo económico de marcas (RN-016). */
+export type GrupoEconomico = { id: number; nombre: string; activo: boolean }
+
 export type Cliente = {
   id: number
   nombre: string
@@ -30,5 +33,19 @@ export type Marca = {
   cliente_nombre: string
   rubro: number | null
   rubro_nombre: string | null
+  grupo: number | null
+  grupo_nombre: string | null
+  activo: boolean
+}
+
+export type Contacto = {
+  id: number
+  cliente: number
+  nombre: string
+  cargo: string
+  correo: string
+  telefono: string
+  notas: string
+  principal: boolean
   activo: boolean
 }

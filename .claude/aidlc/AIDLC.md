@@ -13,7 +13,7 @@ Detalle de pasos y plantillas: `.claude/aidlc/workflow.md`.
 | Gate | Qué es | Regla |
 | --- | --- | --- |
 | 1. Plan de unidad | Plan en `docs/aidlc/units/<unidad>.md` | No se escribe nada en `backend/` ni `frontend/` sin aprobación. |
-| 2. Verificación | Correr los comandos de CI | Reportar la salida real y esperar a Juan Diego. |
+| 2. Verificación | Correr los comandos de CI | Reportar la salida real y esperar a Gonza o Juan Diego. |
 | 3. Pull Request | Push y PR | Solo cuando se pidan. |
 
 Entre gates no se inventan aprobaciones extra.

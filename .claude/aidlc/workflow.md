@@ -60,7 +60,7 @@ Agregá la fila a `docs/aidlc/units.md` si no existe, y creá `docs/aidlc/units/
 - Gate 3 (PR): <número de PR>
 ```
 
-Parate acá hasta que Juan Diego apruebe.
+Parate acá hasta que Gonza o Juan Diego apruebe.
 
 ## 5. Paso 3: Implementación
 
@@ -71,7 +71,7 @@ Parate acá hasta que Juan Diego apruebe.
 
 ## 6. Paso 4: Gate 2, verificación
 
-Corré los mismos comandos de la Definition of Done de `CLAUDE.md` §7 y pegá la salida real en el registro de gates del plan. Esperá a Juan Diego.
+Corré los mismos comandos de la Definition of Done de `CLAUDE.md` §7 y pegá la salida real en el registro de gates del plan. Esperá a Gonza o Juan Diego.
 
 ## 7. Paso 5: Gate 3, PR
 

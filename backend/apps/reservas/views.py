@@ -1,29 +1,52 @@
 from datetime import date, timedelta
-from typing import cast
+from typing import Any, cast
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import QuerySet
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
-from apps.inventario.models import Cartel
-from config.permisos import LecturaConSesionEdicionOperativo
+from apps.auditoria import services as auditoria_services
+from apps.campanias.models import Campania
+from apps.inventario.models import Cartel, Formato
+from config.permisos import LecturaConSesionEdicionOperativo, SoloAdministrador
 
 from . import services
-from .models import Reserva
-from .serializers import ReservaSerializer
+from .models import ParametrosDisponibilidad, Reserva
+from .serializers import (
+    CampaniaDeReservasSerializer,
+    MoverPendientesSerializer,
+    ParametrosDisponibilidadSerializer,
+    ReservasEnBloqueSerializer,
+    ReservaSerializer,
+)
 
 
 def _id_positivo(valor: str, campo: str) -> int:
     if not valor.isdecimal() or int(valor) < 1:
         raise ValidationError({campo: "Debe ser un ID numérico positivo."})
     return int(valor)
+
+
+def _campos_auditados(reserva: Reserva) -> dict[str, str]:
+    """Devuelve los campos auditables de una reserva como texto, para comparar cambios."""
+    return {
+        "fecha_inicio": reserva.fecha_inicio.isoformat(),
+        "fecha_fin": reserva.fecha_fin.isoformat(),
+        "estado": reserva.estado,
+        "cartel": str(reserva.cartel_id),
+        "precio_alquiler": str(reserva.precio_alquiler),
+        "precio_impresion": str(reserva.precio_impresion),
+        "precio_fijacion": str(reserva.precio_fijacion),
+    }
 
 
 class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
@@ -33,22 +56,67 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
     serializer_class = ReservaSerializer
 
     def perform_create(self, serializer: BaseSerializer[Reserva]) -> None:
-        necesita = serializer.validated_data.get("estado") == Reserva.Estado.CONFIRMADA
+        estado = serializer.validated_data.get("estado", Reserva.Estado.PENDIENTE)
+        necesita = services.necesita_validar_cupo(None, estado, cambia_ocupacion=True)
         self._guardar_con_disponibilidad(serializer, necesita)
+
+    @action(detail=False, methods=["post"], url_path="en-bloque")
+    def en_bloque(self, request: Request) -> Response:
+        """Una reserva Pendiente por cartel de la tanda (HU-057)."""
+        entrada = ReservasEnBloqueSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        datos = entrada.validated_data
+        return Response(
+            services.crear_reservas_en_bloque(
+                datos["campania"], datos["carteles"], datos["fecha_inicio"], datos["fecha_fin"]
+            )
+        )
+
+    @action(detail=False, methods=["post"], url_path="confirmar-en-bloque")
+    def confirmar_en_bloque(self, request: Request) -> Response:
+        """Confirma las Pendientes de la campaña que entran y lista los conflictos (HU-059)."""
+        entrada = CampaniaDeReservasSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        try:
+            resultado = services.confirmar_reservas_de_campania(
+                entrada.validated_data["campania"], request.user
+            )
+        except DjangoValidationError as error:
+            raise ValidationError(error.message_dict) from error
+        return Response(resultado)
+
+    @action(detail=False, methods=["post"], url_path="mover-pendientes")
+    def mover_pendientes(self, request: Request) -> Response:
+        """Lleva las Pendientes a las fechas nuevas de la campaña (HU-058, criterio 3)."""
+        entrada = MoverPendientesSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        datos = entrada.validated_data
+        try:
+            movidas = services.mover_pendientes(
+                datos["campania"],
+                datos["fecha_inicio_anterior"],
+                datos["fecha_fin_anterior"],
+                request.user,
+            )
+        except DjangoValidationError as error:
+            raise ValidationError(error.message_dict) from error
+        return Response({"movidas": movidas})
 
     def perform_update(self, serializer: BaseSerializer[Reserva]) -> None:
         datos = serializer.validated_data
         instancia = cast(Reserva, serializer.instance)
         nuevo_estado = datos.get("estado", instancia.estado)
-        va_a_confirmada = datos.get("estado") == Reserva.Estado.CONFIRMADA
-        sigue_confirmada = (
-            instancia.estado == Reserva.Estado.CONFIRMADA
-            and nuevo_estado == Reserva.Estado.CONFIRMADA
-        )
         cambia_ocupacion = any(c in datos for c in ("fecha_inicio", "fecha_fin", "cartel"))
-        # No se revalida si solo cambia un precio de una confirmada (matriz caso 13).
-        necesita = va_a_confirmada or (sigue_confirmada and cambia_ocupacion)
-        self._guardar_con_disponibilidad(serializer, necesita)
+        # No se revalida si solo cambia un precio (matriz caso 13).
+        necesita = services.necesita_validar_cupo(instancia.estado, nuevo_estado, cambia_ocupacion)
+        # El cambio y su auditoría en la misma transacción: nunca un cambio sin su registro.
+        anteriores = _campos_auditados(instancia)
+        with transaction.atomic():
+            self._guardar_con_disponibilidad(serializer, necesita)
+            nuevos = _campos_auditados(cast(Reserva, serializer.instance))
+            auditoria_services.registrar_cambios(
+                "reserva", instancia.pk, anteriores, nuevos, self.request.user
+            )
 
     def _guardar_con_disponibilidad(
         self, serializer: BaseSerializer[Reserva], necesita: bool
@@ -59,7 +127,18 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
             else:
                 cartel = cast(Reserva, serializer.instance).cartel
             # Bloquea el cartel: serializa confirmaciones del mismo cartel (HU-034).
-            Cartel.objects.select_for_update().get(pk=cartel.pk)
+            bloqueado = (
+                Cartel.objects.select_for_update(of=("self",))
+                .select_related("estado")
+                .get(pk=cartel.pk)
+            )
+            instancia = serializer.instance
+            if instancia is None or instancia.cartel_id != cartel.pk:
+                # Se revalida con el cartel bloqueado: otro pedido pudo sacarlo de servicio (RN-010).
+                try:
+                    services.validar_cartel_reservable(bloqueado)
+                except DjangoValidationError as error:
+                    raise ValidationError(error.message_dict) from error
             reserva = serializer.save()
             if necesita:
                 try:
@@ -72,6 +151,9 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
         if self.action != "list":
             return queryset
         params = self.request.query_params
+        if params.get("vigentes") == "1":
+            _id_positivo(params.get("cartel", ""), "cartel")
+            queryset = services.filtrar_vigentes(queryset)
         for campo in ("campania", "cartel"):
             if params.get(campo):
                 queryset = queryset.filter(**{f"{campo}_id": _id_positivo(params[campo], campo)})
@@ -217,3 +299,88 @@ class RepartoView(APIView):
         if reserva is None:
             raise ValidationError({"reserva": "No existe la reserva."})
         return Response(services.reparto_por_mes(reserva))
+
+
+def _fecha_requerida(valor: str | None, campo: str) -> date:
+    if not valor:
+        raise ValidationError({campo: "Indicá la fecha (AAAA-MM-DD)."})
+    try:
+        return date.fromisoformat(valor)
+    except ValueError as error:
+        raise ValidationError({campo: "Formato de fecha inválido (AAAA-MM-DD)."}) from error
+
+
+class CartelesParaTandaView(APIView):
+    """Carteles de un formato con cupo libre en el rango, para "Agregar carteles" (HU-056)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, request: Request) -> Response:
+        params = request.query_params
+        campania = get_object_or_404(
+            Campania, pk=_id_positivo(params.get("campania", ""), "campania")
+        )
+        formato = get_object_or_404(Formato, pk=_id_positivo(params.get("formato", ""), "formato"))
+        desde = _fecha_requerida(params.get("desde"), "desde")
+        hasta = _fecha_requerida(params.get("hasta"), "hasta")
+        if hasta < desde:
+            raise ValidationError(
+                {"hasta": "La fecha de fin no puede ser anterior a la de inicio."}
+            )
+        filtros: dict[str, Any] = {
+            campo: _id_positivo(params[campo], campo)
+            for campo in ("zona", "proveedor")
+            if params.get(campo)
+        }
+        filtros["direccion"] = params.get("q", "")
+        return Response(services.carteles_para_tanda(campania, formato, desde, hasta, filtros))
+
+
+class SeguimientoView(APIView):
+    """Solicitado, reservado y faltante por formato de una campaña (HU-058)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, request: Request) -> Response:
+        valor = request.query_params.get("campania", "")
+        campania = get_object_or_404(Campania, pk=_id_positivo(valor, "campania"))
+        return Response(services.seguimiento_de_campania(campania))
+
+
+def _parametros_auditados(parametros: ParametrosDisponibilidad) -> dict[str, str]:
+    return {
+        "borde_inclusivo": str(parametros.borde_inclusivo),
+        "tentativa_bloquea": str(parametros.tentativa_bloquea),
+    }
+
+
+class ParametrosView(APIView):
+    """Parámetros del motor de disponibilidad (HU-001): solo el rol Administrador."""
+
+    permission_classes = [permissions.IsAuthenticated, SoloAdministrador]
+    http_method_names = ["get", "patch", "head", "options"]
+
+    def get(self, _request: Request) -> Response:
+        return Response(
+            ParametrosDisponibilidadSerializer(services.parametros_disponibilidad()).data
+        )
+
+    def patch(self, request: Request) -> Response:
+        # El cambio y su auditoría en la misma transacción, con la fila bloqueada.
+        with transaction.atomic():
+            services.parametros_disponibilidad()
+            parametros = ParametrosDisponibilidad.objects.select_for_update().get(pk=1)
+            anteriores = _parametros_auditados(parametros)
+            serializer = ParametrosDisponibilidadSerializer(
+                parametros, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            auditoria_services.registrar_cambios(
+                "parametros",
+                parametros.pk,
+                anteriores,
+                _parametros_auditados(parametros),
+                request.user,
+            )
+        return Response(serializer.data)

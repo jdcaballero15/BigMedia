@@ -17,7 +17,7 @@ test('envía las credenciales y avisa el usuario que ingresó', async () => {
   const fetchMock = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
-    json: async () => ({ username: 'seba', es_gerencia: true }),
+    json: async () => ({ username: 'seba', es_gerencia: true, rol: 'operativo' }),
   })
   vi.stubGlobal('fetch', fetchMock)
   const onLogin = vi.fn()
@@ -25,7 +25,7 @@ test('envía las credenciales y avisa el usuario que ingresó', async () => {
   render(<Login onLogin={onLogin} />)
   completarYEnviar('seba', 'clave-de-prueba')
 
-  await waitFor(() => expect(onLogin).toHaveBeenCalledWith('seba', true))
+  await waitFor(() => expect(onLogin).toHaveBeenCalledWith('seba', true, 'operativo'))
   const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
   expect(url).toBe('/api/auth/login/')
   expect(JSON.parse(init.body as string)).toEqual({ username: 'seba', password: 'clave-de-prueba' })
@@ -51,6 +51,41 @@ test('muestra el error de la API cuando las credenciales son incorrectas', async
   )
   expect(onLogin).not.toHaveBeenCalled()
   expect(screen.getByRole('button', { name: 'Ingresar' })).toHaveProperty('disabled', false)
+})
+
+test('muestra el aviso del servidor cuando el ingreso está bloqueado', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({
+        detail: 'Demasiados intentos fallidos. Probá de nuevo en unos minutos.',
+      }),
+    }),
+  )
+  const onLogin = vi.fn()
+
+  render(<Login onLogin={onLogin} />)
+  completarYEnviar('seba', 'mala')
+
+  expect(await screen.findByRole('alert')).toHaveProperty(
+    'textContent',
+    'Demasiados intentos fallidos. Probá de nuevo en unos minutos.',
+  )
+  expect(onLogin).not.toHaveBeenCalled()
+})
+
+test('muestra el mensaje de sesión expirada cuando se le pasa la prop', () => {
+  render(<Login onLogin={vi.fn()} mensaje="Tu sesión expiró por inactividad. Ingresá de nuevo." />)
+
+  expect(screen.getByText('Tu sesión expiró por inactividad. Ingresá de nuevo.')).toBeDefined()
+})
+
+test('no muestra mensaje de expiración cuando no se pasa la prop', () => {
+  render(<Login onLogin={vi.fn()} />)
+
+  expect(screen.queryByText('Tu sesión expiró por inactividad. Ingresá de nuevo.')).toBeNull()
 })
 
 test('deshabilita el botón mientras espera la respuesta', async () => {

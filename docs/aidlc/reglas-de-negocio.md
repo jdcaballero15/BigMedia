@@ -28,32 +28,33 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 
 | ID | Regla | Estado | Valor actual | Origen | HUs | Dónde vive |
 | --- | --- | --- | --- | --- | --- | --- |
-| RN-001 | Día límite entre reservas | `provisoria` | Inclusivo: el día compartido se pisa | Documento de historias (decisión D-01 del 15/10/2026) | HU-001, HU-031, HU-033, HU-040, HU-042, HU-051 | Servicio `apps/reservas/services.py` (fin efectivo), parámetro `DISPONIBILIDAD_BORDE_INCLUSIVO`, `backend/tests/test_disponibilidad.py` |
-| RN-002 | ¿Una reserva Pendiente bloquea a otras? | `provisoria` | Ocupa cupo solo visualmente; bloqueo duro al confirmar | Documento de historias (decisión D-02 del 15/10/2026) | HU-001, HU-031, HU-033, HU-041, HU-042, HU-056, HU-059 | Servicio `apps/reservas/services.py` (estados que bloquean), parámetro `DISPONIBILIDAD_TENTATIVA_BLOQUEA`, `backend/tests/test_disponibilidad.py` |
-| RN-003 | Cómo se cuentan los cupos dentro de un rango | `provisoria` | Pico diario: ocupación máxima por tramo del rango | Juan Diego (2026-10-19), sobre la decisión D-03 del 15/10/2026 | HU-031, HU-032, HU-034, HU-040, HU-042, HU-056 | Servicio `apps/reservas/services.py::validar_disponibilidad` (pico diario), `backend/tests/test_disponibilidad.py` |
+| RN-001 | Día límite entre reservas | `provisoria` | Inclusivo: el día compartido se pisa | Documento de historias (decisión D-01 del 15/10/2026) | HU-001, HU-031, HU-033, HU-040, HU-042, HU-051 | Servicio `apps/reservas/services.py` (fin efectivo), modelo `ParametrosDisponibilidad.borde_inclusivo` (pantalla Parámetros), `backend/tests/test_disponibilidad.py`, `backend/tests/test_parametros.py`; lista de "Agregar carteles" `apps/reservas/services.py::carteles_para_tanda`, `backend/tests/test_carteles_para_tanda.py` |
+| RN-002 | ¿Una reserva Pendiente bloquea a otras? | `provisoria` | Ocupa cupo solo visualmente; bloqueo duro al confirmar | Documento de historias (decisión D-02 del 15/10/2026) | HU-001, HU-031, HU-033, HU-041, HU-042, HU-056, HU-059 | Servicio `apps/reservas/services.py` (estados que bloquean), modelo `ParametrosDisponibilidad.tentativa_bloquea` (pantalla Parámetros), `backend/tests/test_disponibilidad.py`, `backend/tests/test_parametros.py`; lista de "Agregar carteles" `carteles_para_tanda` y creación en bloque `crear_reservas_en_bloque` (no valida cupo al crear Pendientes), `backend/tests/test_carteles_para_tanda.py`, `backend/tests/test_reservas_en_bloque.py` |
+| RN-003 | Cómo se cuentan los cupos dentro de un rango | `provisoria` | Pico diario: ocupación máxima por tramo del rango | Juan Diego (2026-10-19), sobre la decisión D-03 del 15/10/2026 | HU-031, HU-032, HU-034, HU-040, HU-042, HU-056 | Servicio `apps/reservas/services.py::conflictos_de` (pico diario, que usan `validar_disponibilidad` y `confirmar_reservas_de_campania`), `backend/tests/test_disponibilidad.py`, `backend/tests/test_confirmacion_en_bloque.py`; lista de "Agregar carteles" `carteles_para_tanda` (reusa `_pico_en_rango`), `backend/tests/test_carteles_para_tanda.py` |
 | RN-004 | Cupos de los LED | `provisoria` | Capacidad editable por cartel; una reserva = un cupo | Documento de historias (decisión D-04 del 15/10/2026) | HU-011, HU-028, HU-031, HU-034, HU-040, HU-048, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
-| RN-005 | Slots de los séxtuples | `provisoria` | Capacidad = slots relevados; una reserva = un slot genérico | Documento de historias (decisión D-05 del 15/10/2026) | HU-010, HU-011, HU-015, HU-030, HU-031, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
+| RN-005 | Slots de los séxtuples | `provisoria` | Capacidad = slots relevados; una reserva = un slot genérico. En la importación, Banderolas y PPL también toman la capacidad de la cantidad relevada | Documento de historias (decisión D-05 del 15/10/2026) | HU-010, HU-011, HU-015, HU-030, HU-031, HU-057 | `Formato.capacidad_predeterminada`, `Formato.por_cantidad` (circuitos), `Cartel.capacidad`, `apps/inventario/services.py::importar_carteles`, `backend/tests/test_carteles.py`, `backend/tests/test_importacion_circuitos.py` |
 | RN-006 | Reglas de cancelación | `provisoria` | Cancelar siempre se permite y libera el cupo | Documento de historias (decisión D-06 del 15/10/2026) | HU-024, HU-035, HU-037, HU-045, HU-051, HU-058, HU-060 | Sin implementar |
 | RN-007 | Propiedad de los carteles | `provisoria` | Costos solo de impresión y fijación | Documento de historias (decisión D-07 del 15/10/2026) | HU-010, HU-015, HU-043, HU-044, HU-046 | Modelo `Costo` y margen en `apps/costos/` (default informativo; HU-046 terceros pendiente) |
 | RN-008 | Lista de zonas (departamentos) | `confirmada` | Los nueve departamentos (Ciudad, Godoy Cruz, Maipú, Luján de Cuyo, Guaymallén, Las Heras, San Martín, Rivadavia, San Carlos) | Juan Diego, 15/10/2026, diseño de inventario | HU-010, HU-013, HU-014, HU-015, HU-048 | Migración `inventario/0002_catalogos_iniciales`, catálogo editable |
-| RN-009 | Contenido real de los relevamientos | `pendiente` | Sin carga hasta tener los archivos | Documento de historias (decisión D-09 del 15/10/2026) | HU-015 | Sin implementar |
-| RN-010 | Estados físicos y carteles fuera de servicio | `provisoria` | Alertar y bloquear reservas nuevas | Documento de historias (decisión D-10 del 15/10/2026) | HU-012, HU-039 | Modelo `EstadoCartel`, migración `0002_catalogos_iniciales` (los cinco estados) |
-| RN-011 | ¿Se puede confirmar una campaña incompleta? | `provisoria` | Se exigen cliente, marca y fechas | Documento de historias (decisión D-11 del 15/10/2026) | HU-024, HU-030, HU-049, HU-059 | Parcial: `apps/campanias/services.py::validar_confirmacion` y su test `test_confirmar_exige_marca_cliente_y_fechas`; la confirmación en bloque de reservas (HU-059) queda para E5 |
+| RN-009 | Contenido real de los relevamientos | `provisoria` | Listado del 2026-11-02: Séxtuples (54 direcciones, 226 slots, todas con departamento) y Gran Formato con los medianos mezclados (43 filas, 60 unidades), sin tarifa, proveedor ni foto. Departamentos normalizados; en Gran Formato cada fila es un cartel con capacidad = Unidades; todo se carga como Gran Formato hasta saber cuáles son medianos | Documento de historias (decisión D-09 del 15/10/2026); planilla de Séxtuples (Gonza, 2026-10-29); listado de carteles y decisiones de Gonza (2026-11-02) | HU-015 | Importador `apps/inventario/services.py::importar_carteles` (zona obligatoria y comparada sin tildes ni mayúsculas, capacidad = slots), `backend/tests/test_importacion_carteles.py`; la conversión de la planilla visual al CSV se hace fuera del repositorio |
+| RN-010 | Estados físicos y carteles fuera de servicio | `provisoria` | Alertar y bloquear reservas nuevas | Documento de historias (decisión D-10 del 15/10/2026) | HU-012, HU-039 | Modelo `EstadoCartel`, migración `0002_catalogos_iniciales` (los cinco estados); `validar_cartel_reservable` y `filtrar_vigentes` en `apps/reservas/services.py`, revalidado con el cartel bloqueado en `ReservaViewSet._guardar_con_disponibilidad`; aviso `ReservasAfectadas` en el frontend. Tests en `backend/tests/test_cartel_fuera_de_servicio.py` |
+| RN-011 | ¿Se puede confirmar una campaña incompleta? | `provisoria` | Se exigen cliente, marca y fechas | Documento de historias (decisión D-11 del 15/10/2026) | HU-024, HU-030, HU-049, HU-059 | `apps/campanias/services.py::validar_confirmacion` y su test `test_confirmar_exige_marca_cliente_y_fechas`; la confirmación en bloque de reservas exige la campaña Confirmada: `apps/reservas/services.py::confirmar_reservas_de_campania`, `backend/tests/test_confirmacion_en_bloque.py` |
 | RN-012 | Reservas con fechas pasadas | `provisoria` | No se permite a mano; histórico solo por importación | Documento de historias (decisión D-12 del 15/10/2026) | HU-038, HU-048, HU-049 | Sin implementar |
 | RN-013 | Vista de disponibilidad a futuro | `provisoria` | Se construye como Should | Documento de historias (decisión D-13 del 15/10/2026) | HU-041, HU-042 | Sin implementar |
 | RN-014 | Cambio de pagador de una marca | `provisoria` | La campaña puede llevar un cliente que factura propio que reemplaza la deducción desde la marca; HU-027 sigue viva | Seba (2026-10-19), sobre la decisión D-14 del 15/10/2026 | HU-027 | Modelo `Campania.cliente_facturacion` y propiedad `cliente_factura` (unidad campanias) |
-| RN-015 | Intermediario formal y sus contactos | `provisoria` | Tipo aparte con contactos múltiples | Documento de historias (decisión D-15 del 15/10/2026) | HU-016, HU-068 | Sin implementar |
-| RN-016 | Grupo económico | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-017, HU-022, HU-050 | Sin implementar |
-| RN-017 | Cambio de razón social de un cliente directo | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-018 | Sin implementar |
-| RN-018 | Interacciones antes de la campaña | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-020 | Sin implementar |
-| RN-019 | Dimensiones estándar por formato | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-009 | Sin implementar |
-| RN-020 | Formatos sin relevamiento | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-015 | Sin implementar |
-| RN-021 | Usuarios | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-004, HU-005 | Sin implementar |
-| RN-022 | Administración usa el sistema o recibe planilla | `provisoria` | Recibe planilla y avisos por correo; Seba carga el número de factura | Documento de historias (bloque Administración del 15/10/2026) | HU-065, HU-066, HU-067 | Sin implementar |
-| RN-023 | Alícuotas de IVA y listas Gob/Priv y F/V | `provisoria` | 21% por defecto, editable; listas administrables | Documento de historias (bloque Administración del 15/10/2026) | HU-060, HU-061 | Sin implementar |
-| RN-024 | Columnas de la planilla de facturación | `provisoria` | Se reproducen tal cual; las nuevas van al final | Documento de historias (bloque Administración del 15/10/2026) | HU-066 | Sin implementar |
-| RN-025 | Envío de ítems completos con incompletos en el mes | `provisoria` | Sí; los incompletos se listan con lo que les falta | Documento de historias (bloque Administración del 15/10/2026) | HU-066 | Sin implementar |
-| RN-026 | Corrección de ítems ya facturados | `pendiente` | Sin definir | Documento de historias (bloque Administración del 15/10/2026) | HU-067 | Sin implementar |
+| RN-015 | Intermediario formal y sus contactos | `provisoria` | Tipo aparte con contactos múltiples | Documento de historias (decisión D-15 del 15/10/2026) | HU-016, HU-068 | Servicio `apps/clientes/services.py` (`acepta_contactos`, `guardar_contacto`), modelo `Contacto`, `backend/tests/test_contactos.py` |
+| RN-016 | Grupo económico | `provisoria` | Catálogo editable; cada marca, a lo sumo en un grupo (opcional) | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-017, HU-022, HU-050 | Modelo `clientes.GrupoEconomico` y `Marca.grupo`, `apps/facturacion/services.py::reporte_por_grupo`, `frontend/src/features/clientes/MarcasDelGrupo.tsx`, `backend/tests/test_grupos_economicos.py`, `backend/tests/test_reporte_por_grupo.py` |
+| RN-017 | Cambio de razón social de un cliente directo | `provisoria` | La marca homónima no se actualiza sola; se renombra a mano | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-018 | Servicio `apps/clientes/services.py` (`crear_cliente`: la marca se crea solo en el alta), `backend/tests/test_clientes_marca_homonima.py` |
+| RN-018 | Interacciones antes de la campaña | `provisoria` | Marca opcional en la interacción, del mismo cliente y coherente con la campaña | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-020 | Servicio `apps/campanias/services.py` (`validar_marca_de_interaccion`), modelo `Interaccion.marca`, filtro `?marca=` en `InteraccionViewSet`, `backend/tests/test_interacciones.py` |
+| RN-019 | Dimensiones estándar por formato | `provisoria` | Sin tamaño fijo: ancho y alto del formato opcionales, tamaño real en cada cartel | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-009 | Modelos `Formato.ancho` y `Formato.alto` (opcionales) y `Cartel.tamano` en `apps/inventario/models.py`; sin test propio |
+| RN-020 | Formatos sin relevamiento | `pendiente` | Llegaron Banderolas (14 direcciones, 36 unidades), PPL (15 direcciones, 44 unidades) y Monocolumnas (3 carteles); Mediano Formato viene mezclado con Gran Formato; falta Carteleras | Documento de historias (decisión D-16 del 15/10/2026); listado de carteles y Gonza (2026-11-02) | HU-015 | Sin implementar |
+| RN-021 | Usuarios | `provisoria` | Seba y Ale; el resto se da de alta desde Gestión de usuarios cuando haga falta | Documento de historias (decisión D-16 del 15/10/2026); Gonza (2026-11-02) | HU-004, HU-005 | Sin implementar |
+| RN-022 | Administración usa el sistema o recibe planilla | `provisoria` | Recibe planilla y avisos por correo; Seba carga el número de factura | Documento de historias (bloque Administración del 15/10/2026) | HU-065, HU-066, HU-067 | El operativo pasa el ítem a Facturado con su número (`apps/facturacion/services.py::validar_cambio_de_item`, `backend/tests/test_estados_facturacion.py`) y envía el mes descargando la planilla (`enviar_a_facturar`, `backend/tests/test_cierre_de_mes.py`); al reabrir y al reenviar un ítem, Administración recibe un correo en `FACTURACION_CORREO_ADMINISTRACION` (`apps/facturacion/services.py::avisar_a_administracion`, `backend/tests/test_reabrir_item.py`) |
+| RN-023 | Alícuotas de IVA y listas Gob/Priv y F/V | `provisoria` | 21% por defecto, editable; listas administrables | Documento de historias (bloque Administración del 15/10/2026) | HU-060, HU-061 | `apps/facturacion/models.py` (`alicuota_iva` con 21 % por defecto, `iva_y_total`; catálogos `Sector` y `TipoVenta` administrables en el admin), `backend/tests/test_importes_facturacion.py` |
+| RN-024 | Columnas de la planilla de facturación | `provisoria` | Las siete de la planilla real, en su orden (Cliente (razón social), Importe neto total, Costos incluidos en FC, Detalle costo, Tipo de venta (F/V), Gob/Priv, Tipo); período arriba y totales y neto abajo; las nuevas van al final | Documento de historias (bloque Administración del 15/10/2026); planilla de septiembre 2026 (Gonza, 2026-10-29) | HU-066 | `apps/facturacion/services.py::COLUMNAS_PLANILLA` (las siete de la planilla real primero; al final, las del sistema) y `planilla_xlsx` (período y título arriba, totales y neto con fórmulas abajo), `backend/tests/test_planilla_facturacion.py` |
+| RN-025 | Envío de ítems completos con incompletos en el mes | `provisoria` | Sí; los incompletos se listan con lo que les falta | Documento de historias (bloque Administración del 15/10/2026) | HU-066 | `apps/facturacion/services.py::enviar_a_facturar` y `faltantes_para_enviar`, `backend/tests/test_cierre_de_mes.py` |
+| RN-026 | Corrección de ítems ya facturados | `provisoria` | Se anula con motivo, auditado y con aviso; la corrección va en un ítem nuevo | Gonza (2026-10-28), sobre el bloque Administración del 15/10/2026 | HU-067 | Servicio `apps/facturacion/services.py` (`anular_facturado`), acción `anular-facturado` en `ItemFacturacionViewSet`, `backend/tests/test_anular_facturados.py` |
+| RN-027 | Orden de compra con un período que cruza meses | `provisoria` | Un solo ítem, en el mes en que se factura, con el período de la OC; no se divide entre meses | Orden de compra de una agencia (Gonza, 2026-10-29); Gonza (2026-11-02) | HU-062, HU-066 | Sin implementar |
 
 Las reglas de Administración (facturación) están al final, en un bloque aparte.
 
@@ -185,6 +186,11 @@ realidad entran; coincide con el diseño de `units/base-del-repositorio.md`. · 
 
 **Respuesta:** slot genérico, sin posición exacta, para todos los circuitos grandes (input de Seba; ver arriba). · **Fecha:** 2026-10-19 · **Quién respondió:** Seba (relevado por el equipo)
 
+**Ampliación (importación):** el listado de carteles trae Banderolas y PPL igual que Séxtuples: una
+dirección con una cantidad y un tamaño general para todo el formato. Al importarlos, la capacidad
+del cartel es esa cantidad, como los slots de un séxtuple. · **Fecha:** 2026-11-02 · **Quién
+respondió:** Gonza
+
 ### RN-006 Reglas de cancelación (D-06)
 
 Hoy las historias dicen que cancelar siempre se permite, no borra y libera el cupo (HU-037). Faltan varias reglas que cambian datos y reportes.
@@ -260,7 +266,69 @@ Según las historias, esta pregunta la responden Gonzalo y Diego. Seba y Ale pue
 
 **Default.** No se carga nada hasta tener los archivos. No se inventan datos.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta (parcial, solo Séxtuples):** llegó la planilla de Séxtuples (hoja «Sextuples»). No
+se guarda en el repositorio porque tiene datos reales.
+
+1. Séxtuples, sí; Gran Formato todavía no.
+2. No aplica a Séxtuples (sin tamaño).
+3. Cada fila es una dirección: Dirección, Departamento, Cantidad (slots) y una celda por slot,
+   de dos columnas combinadas, con la marca que lo ocupa hoy. El color de la celda es el de la
+   marca (cada marca lleva siempre el mismo color); no indica estado ni proveedor. Hay colores compartidos por marcas distintas.
+4. No tiene tarifa de lista, proveedor, foto ni estado: se completan después.
+5. No hay direcciones repetidas. Suman 56 direcciones y 226 slots, lo que dicen las historias.
+
+**Preguntas nuevas (antes de importar).**
+
+6. Los departamentos están escritos de varias formas («Maipu», «Lujan» y «Luján de Cuyo», « Las
+   Heras») y dos filas no tienen: ¿cuál es el de cada una?
+7. Dos filas no tienen cantidad de slots y en 27 la cantidad de marcas no coincide con la de
+   slots (por ejemplo, 4 slots y 5 marcas): ¿cuál es la cantidad correcta?
+8. Debajo de la tabla, hasta la fila 197, hay bloques sin dirección (listas de marcas, «buena
+   visual», «mala visual», «esquina»): ¿qué son y se cargan?
+9. Las marcas por slot, ¿son la ocupación de agosto a octubre («8-10»)? ¿Se cargan como reservas
+   históricas (RN-012)?
+
+**Fecha:** 2026-10-29 · **Quién respondió:** Big Media, por la planilla que le pasó a Gonza
+
+**Respuesta a las preguntas nuevas:**
+
+6. Los departamentos se normalizan a los nueve de RN-008 («Maipu» es Maipú; «Lujan», Luján de
+   Cuyo; se sacan los espacios de más). Las dos filas sin departamento quedan afuera de la
+   importación y se listan como pendientes hasta que Seba diga cuál es (se le preguntó el
+   2026-11-02).
+7. La capacidad es la columna Cantidad; si está vacía, la cantidad de marcas de la fila. Las filas
+   donde no coinciden salen en el informe de la importación para revisarlas; la capacidad se
+   corrige después en cada cartel (RN-004).
+8. Los bloques sin dirección no se cargan: no son carteles.
+9. Las marcas por slot no se cargan como reservas: es ocupación de un período que ya pasó y no
+   cambia la disponibilidad.
+
+**Fecha:** 2026-11-02 · **Quién respondió:** Gonza
+
+**Respuesta (listado de carteles):** el 2026-11-02 llegó un listado nuevo con cuatro hojas
+(«Medianos y Gran Formato», «Séxtuples», «Banderolas» y «PPL»), cada una con Dirección,
+Departamento y Cantidad o Unidades. No se guarda en el repositorio porque tiene datos reales.
+
+- **Séxtuples:** 54 direcciones y 226 slots, todas con departamento y cantidad, sin repetidas ni
+  bloques sueltos. Reemplaza a la planilla del 2026-10-29 para la carga, así que las preguntas 6
+  (salvo la normalización de los nombres) y 7 dejan de aplicar. Tamaño general: 4,36 x 2,16.
+1. Gran Formato, sí: 43 filas y 60 unidades, con los medianos en la misma hoja.
+2. El tamaño viene como ancho x alto en metros, con coma decimal («8 x 4», «13,4 x 2,16»).
+3. El listado no tiene colores ni celdas combinadas.
+4. No trae tarifa, proveedor, foto ni estado.
+5. Tres direcciones figuran dos veces con distinto tamaño: son carteles distintos y se cargan con
+   `confirmar_distinto`.
+
+Decisiones para la carga:
+
+- En Gran Formato, una fila con varias Unidades es **un cartel con capacidad igual a las
+  Unidades**, como un circuito. La capacidad se carga en la ficha después de importar.
+- Toda la hoja se carga como **Gran Formato** hasta que Seba diga cuáles son medianos; después se
+  les cambia el formato en la ficha.
+- Los departamentos se normalizan a los de RN-008 («Lujan» es Luján de Cuyo).
+
+**Fecha:** 2026-11-02 · **Quién respondió:** Big Media, por el listado que le pasó a Gonza, y las
+decisiones de Gonza
 
 ### RN-010 Estados físicos y carteles fuera de servicio (preguntas 9 y 18) (D-10)
 
@@ -329,7 +397,12 @@ Pregunta menor del bloque «Otras preguntas menores» de D-16.
 
 **Grupo económico (pregunta 16):** ¿quieren agrupar marcas de un mismo grupo? Afecta HU-017, HU-022 y HU-050.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** sí, provisoriamente, hasta que Seba la confirme. Los grupos económicos son un
+catálogo editable, como los rubros. Cada marca pertenece a lo sumo a un grupo, y el grupo es
+opcional e independiente del cliente que factura: dos marcas del mismo grupo pueden entrar por
+agencias distintas. El grupo se usa en la ficha de la marca (las otras marcas del grupo, HU-022) y
+en el corte de ingresos y ocupación por grupo (HU-050). Crean grupos y los asignan Operativo y
+Administrador, igual que los rubros. · **Fecha:** 2026-10-28 · **Quién respondió:** Gonza
 
 ### RN-017 Cambio de razón social de un cliente directo (D-16)
 
@@ -337,7 +410,11 @@ Pregunta menor del bloque «Otras preguntas menores» de D-16.
 
 **Cambio de razón social de un cliente directo (pregunta 19):** ¿la marca homónima debe actualizarse sola? Afecta HU-018.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** no, provisoriamente, hasta que Seba la confirme. La marca homónima se crea con el
+nombre del cliente directo solo en el alta, y después queda independiente: si el cliente cambia de
+razón social (el dato legal para facturar) o de nombre, la marca no se toca, porque es lo que va en
+el cartel y en las campañas ya cargadas. Si hace falta, se renombra a mano en Marcas. ·
+**Fecha:** 2026-10-28 · **Quién respondió:** Gonza
 
 ### RN-018 Interacciones antes de la campaña (D-16)
 
@@ -345,7 +422,12 @@ Pregunta menor del bloque «Otras preguntas menores» de D-16.
 
 **Interacciones antes de la campaña (pregunta 12):** ¿registran llamadas con una marca antes de que exista una campaña? Afecta HU-020.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** sí, provisoriamente, hasta que Seba la confirme. La interacción puede llevar una
+marca opcional, para las conversaciones sobre una marca que todavía no tiene campaña. La marca
+tiene que ser del cliente de la interacción y, si además se indica una campaña, la campaña tiene
+que ser de esa marca. La interacción con marca aparece en la ficha del cliente y en la de la marca
+(HU-022). Las interacciones previas no se pasan solas a la campaña cuando se crea. · **Fecha:**
+2026-10-28 · **Quién respondió:** Gonza
 
 ### RN-019 Dimensiones estándar por formato (D-16)
 
@@ -353,7 +435,10 @@ Pregunta menor del bloque «Otras preguntas menores» de D-16.
 
 **Dimensiones estándar por formato:** ¿cada formato tiene un tamaño fijo? Afecta HU-009.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** no, provisoriamente, hasta que Seba la confirme. El tamaño real es de cada cartel
+(campo Tamaño), porque dentro de un mismo formato las medidas cambian según la ubicación. Ancho y
+alto del formato quedan opcionales, como medida de referencia, y no se copian al cartel. ·
+**Fecha:** 2026-10-28 · **Quién respondió:** Gonza
 
 ### RN-020 Formatos sin relevamiento (D-16)
 
@@ -361,7 +446,11 @@ Pregunta menor del bloque «Otras preguntas menores» de D-16.
 
 **Formatos sin relevamiento:** ¿cuándo habrá datos de Banderolas, Mediano Formato, Monocolumnas y Carteleras? Afecta HU-015.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta (parcial):** el listado de carteles del 2026-11-02 trae Banderolas (14 direcciones, 36
+unidades, tamaño general 0,72 x 1,62) y PPL (15 direcciones, 44 unidades, tamaño general 1,00 x
+1,50), y Gonza pasó las tres Monocolumnas, con su tamaño, todas en Godoy Cruz. Mediano Formato
+viene mezclado con Gran Formato (RN-009). Falta Carteleras. · **Fecha:** 2026-11-02 · **Quién
+respondió:** Big Media (listado) y Gonza
 
 ### RN-021 Usuarios (D-16)
 
@@ -369,7 +458,9 @@ Pregunta menor del bloque «Otras preguntas menores» de D-16.
 
 **Usuarios:** ¿quién más, además de Seba y Ale, va a usar el sistema? Afecta HU-004 y HU-005.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** provisoriamente, Seba y Ale. No hace falta saberlo de antemano: cualquier otra
+persona se da de alta desde Gestión de usuarios, con su rol y el permiso Gerencia si corresponde. ·
+**Fecha:** 2026-11-02 · **Quién respondió:** Gonza
 
 ---
 
@@ -405,7 +496,39 @@ Estas preguntas las responden Seba y Administración. Se listan para no perderla
 
 **Default.** Se reproducen tal cual; las nuevas van al final.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** llegó la planilla real de septiembre 2026 (hoja «Cartelería»; no se guarda en el
+repositorio porque tiene datos reales). Arriba, «PERIODO: 2026/9» y el título «CARTELERIA».
+Las columnas, en este orden:
+
+1. CLIENTE (RAZON SOCIAL)
+2. IMPORTE NETO TOTAL
+3. COSTOS INCLUIDOS EN FC (a veces una fórmula, por ejemplo el 15 % del importe)
+4. DETALLE COSTO (a quién se paga el costo, o una nota)
+5. TIPO DE VENTA (F/V)
+6. GOB/PRIV
+7. TIPO (cartel/led/ppl/sextuples): en la práctica, texto libre con lo vendido y notas para
+   Administración («facturar todo en una FC con lo anterior»)
+
+Abajo, la suma de importes, la suma de costos y «Neto» = importes − costos. Se reproducen esas
+columnas primero y en ese orden; las del sistema (CUIT, marca, orden de compra, grupo de factura,
+etc.) van después. Sigue provisoria hasta que Seba confirme que las columnas nuevas al final no
+le molestan a Administración. · **Fecha:** 2026-10-29 · **Quién respondió:** Big Media, por la
+planilla que le pasó a Gonza
+
+### RN-027 Orden de compra con un período que cruza meses
+
+**Tema.** Una orden de compra puede cubrir un período que cruza dos meses (por ejemplo, del 14/09
+al 13/10). ¿Se factura entera en un mes, se divide por días entre los dos meses o de otra forma?
+
+**Historias.** HU-062, HU-066.
+
+**Default.** Sin definir. Hoy se carga un ítem en el mes que se factura, con el período de la orden
+de compra.
+
+**Respuesta:** provisoriamente, hasta que Seba y Administración la confirmen, se factura entera:
+un solo ítem en el mes en que se factura, con el período de la orden de compra (por ejemplo, del
+14/09 al 13/10). No se divide por días entre los dos meses. Es lo que el sistema ya hace, así que
+no hay cambio de código. · **Fecha:** 2026-11-02 · **Quién respondió:** Gonza
 
 ### RN-025 Envío de ítems completos con incompletos en el mes
 
@@ -425,7 +548,13 @@ Estas preguntas las responden Seba y Administración. Se listan para no perderla
 
 **Default.** Sin definir.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** provisoriamente, hasta que Seba y Administración la confirmen, un ítem Facturado no
+se reabre ni se edita. Si hay que corregirlo (por ejemplo, porque Administración emitió la nota de
+crédito), se pasa a Anulado con un motivo obligatorio: queda auditado (HU-007), conserva su número
+de factura y Administración recibe un aviso, como en la reapertura. Al estar anulado, sale del
+resumen del mes y de la planilla. La corrección se carga como un ítem nuevo. Los reportes de
+ingresos no cambian, porque se calculan con las reservas y no con los ítems. · **Fecha:**
+2026-10-28 · **Quién respondió:** Gonza
 
 ---
 

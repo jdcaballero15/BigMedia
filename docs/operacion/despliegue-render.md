@@ -17,6 +17,12 @@ panel de Render.
   con datos de ejemplo** que crea `python manage.py cargar_datos_ejemplo` (idempotente; nunca datos
   reales; se niega a correr en producción). La base de Neon gratis no vence; si se recrea, el arranque
   vuelve a migrar y cargar los datos de ejemplo.
+- **Datos para demos en staging:** además del primer lote, el comando carga un lote demo
+  (`_datos_demo.py`) que llena todas las pantallas: 20 carteles en los 7 formatos, proveedores,
+  rubros, 8 clientes, 13 marcas, campañas y reservas en todos los estados (de 5 meses atrás a 3
+  adelante), costos y auditoría. Las fechas se calculan el día que corre; para refrescarlas hay que
+  recrear la base. Si `DJANGO_DEMO_PASSWORD` está cargada, crea `demo-operativo`, `demo-gerencia` y
+  `demo-lectura` (uno por rol de HU-004) con esa contraseña.
 
 Flujo: un cambio entra a `develop` → Render actualiza staging → se prueba → release a `main` →
 Render actualiza producción.
@@ -56,6 +62,9 @@ Orden recomendado:
    - `DATABASE_URL` de `bigmedia-web-staging`: la URL directa de Neon.
    - `DJANGO_SUPERUSER_USERNAME` y `DJANGO_SUPERUSER_PASSWORD`, para cada entorno (pueden ser
      distintos). Contraseñas largas y únicas; no las guardes en el repositorio ni las mandes por chat.
+   - `DJANGO_DEMO_PASSWORD`, solo en staging y opcional: la contraseña de los usuarios de demo. Tiene
+     que estar cargada antes del primer arranque con el lote demo, porque los usuarios se crean junto
+     con ese lote.
 5. Esperar el build. En **Logs** tienen que aparecer las migraciones, `Administrador <usuario> creado.`
    y `Listening at`. El chequeo `/api/health/` debe dar `{"status":"ok"}`. En staging, además, la carga
    de datos de ejemplo.

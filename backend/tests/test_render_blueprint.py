@@ -52,6 +52,32 @@ def test_blueprint_asks_admin_credentials_without_storing_them():
         assert env[clave] == {"key": clave, "sync": False}
 
 
+def test_blueprint_demo_password_only_in_staging_without_storing_it():
+    produccion, staging = blueprint()["services"][:2]
+    env_produccion = {item["key"] for item in produccion["envVars"]}
+    env_staging = {item["key"]: item for item in staging["envVars"]}
+
+    assert env_staging["DJANGO_DEMO_PASSWORD"] == {"key": "DJANGO_DEMO_PASSWORD", "sync": False}
+    assert "DJANGO_DEMO_PASSWORD" not in env_produccion
+
+
+def test_blueprint_asks_mail_settings_without_storing_them():
+    """HU-067: el correo de avisos se configura en el panel de Render, nunca en Git."""
+    claves = (
+        "EMAIL_HOST",
+        "EMAIL_PORT",
+        "EMAIL_HOST_USER",
+        "EMAIL_HOST_PASSWORD",
+        "EMAIL_USE_TLS",
+        "DEFAULT_FROM_EMAIL",
+        "FACTURACION_CORREO_ADMINISTRACION",
+    )
+    for servicio in blueprint()["services"][:2]:
+        env = {item["key"]: item for item in servicio["envVars"]}
+        for clave in claves:
+            assert env[clave] == {"key": clave, "sync": False}
+
+
 def test_blueprint_only_deploys_checked_main_commits():
     web = blueprint()["services"][0]
 

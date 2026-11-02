@@ -1,87 +1,16 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiWrite } from '../../shared/api'
 import ClienteForm from './ClienteForm'
+import FichaCliente from './FichaCliente'
+import type { Ficha } from './FichaCliente'
 import type { ClienteInput } from './ClienteForm'
 import { TIPOS_CLIENTE } from './types'
-import type { Cliente, Marca } from './types'
-
-type Ficha = { cliente: Cliente; recienCreado: boolean }
-type MarcasCargadas = { estado: 'cargando' | 'error' | 'listo'; marcas: Marca[] }
-
-function MarcasDelCliente({
-  ficha,
-  revision,
-  onClose,
-}: {
-  ficha: Ficha
-  revision: number
-  onClose: () => void
-}) {
-  const { cliente, recienCreado } = ficha
-  const [carga, setCarga] = useState<MarcasCargadas>({ estado: 'cargando', marcas: [] })
-
-  useEffect(() => {
-    let active = true
-    void apiGet<Marca[]>(`/api/clientes/marcas/?cliente=${cliente.id}&incluir_inactivos=1`)
-      .then((marcas) => {
-        if (active) setCarga({ estado: 'listo', marcas })
-      })
-      .catch(() => {
-        if (active) setCarga({ estado: 'error', marcas: [] })
-      })
-    return () => {
-      active = false
-    }
-  }, [cliente.id, revision])
-
-  const titulo = `Marcas de ${cliente.nombre_visible}`
-  return (
-    <section className="card edit-form" aria-label={titulo}>
-      <div className="form-heading">
-        <h3>{titulo}</h3>
-        <button type="button" className="button-ghost" onClick={onClose}>
-          Cerrar
-        </button>
-      </div>
-      {/* Un cliente recién creado solo tiene marcas si la API creó su homónima. */}
-      {recienCreado && carga.marcas.length > 0 && (
-        <p className="notice" role="status">
-          Se creó la marca «{carga.marcas[0].nombre}» para este cliente directo.
-        </p>
-      )}
-      {carga.estado === 'cargando' ? (
-        <p className="empty">Cargando marcas…</p>
-      ) : carga.estado === 'error' ? (
-        <p className="error" role="alert">
-          No se pudieron cargar las marcas.
-        </p>
-      ) : carga.marcas.length === 0 ? (
-        <p className="empty">Este cliente todavía no tiene marcas.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Marca</th>
-              <th>Rubro</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {carga.marcas.map((marca) => (
-              <tr key={marca.id}>
-                <td className="primary-cell">{marca.nombre}</td>
-                <td>{marca.rubro_nombre ?? 'Sin rubro'}</td>
-                <td>{marca.activo ? 'Activa' : 'Inactiva'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </section>
-  )
-}
+import type { Cliente } from './types'
+import { usePuedeEditar } from '../../shared/sesion'
+import MenuFila from '../../shared/MenuFila'
 
 export default function ClientesPage() {
+  const puedeEditar = usePuedeEditar()
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [q, setQ] = useState('')
   const [tipo, setTipo] = useState('')
@@ -148,6 +77,32 @@ export default function ClientesPage() {
     apply()
   }
 
+  const formulario = editing !== null && (
+    <ClienteForm
+      key={editing === 'new' ? 'nuevo' : `formulario-${editing.id}`}
+      cliente={editing === 'new' ? null : editing}
+      onSave={saveCliente}
+      onCancel={() => setEditing(null)}
+    />
+  )
+
+  if (ficha !== null)
+    return (
+      <>
+        {formulario}
+        <FichaCliente
+          key={ficha.cliente.id}
+          ficha={ficha}
+          revision={revision}
+          onVolver={() => {
+            setEditing(null)
+            setFicha(null)
+          }}
+          onEditar={puedeEditar ? () => abrirEdicion(ficha.cliente) : undefined}
+        />
+      </>
+    )
+
   return (
     <section>
       <div className="section-heading">
@@ -156,26 +111,13 @@ export default function ClientesPage() {
           <h2>Clientes</h2>
           <p className="muted">Cargá y buscá a quienes les facturás, y consultá sus marcas.</p>
         </div>
-        <button className="button-primary" onClick={() => setEditing('new')}>
-          Nuevo cliente
-        </button>
+        {puedeEditar && (
+          <button className="button-primary" onClick={() => setEditing('new')}>
+            Nuevo cliente
+          </button>
+        )}
       </div>
-      {editing !== null && (
-        <ClienteForm
-          key={editing === 'new' ? 'nuevo' : `formulario-${editing.id}`}
-          cliente={editing === 'new' ? null : editing}
-          onSave={saveCliente}
-          onCancel={() => setEditing(null)}
-        />
-      )}
-      {ficha !== null && (
-        <MarcasDelCliente
-          key={`ficha-${ficha.cliente.id}`}
-          ficha={ficha}
-          revision={revision}
-          onClose={() => setFicha(null)}
-        />
-      )}
+      {formulario}
       <div className="filters card" role="search" aria-label="Filtros de clientes">
         <label>
           Buscar
@@ -225,8 +167,8 @@ export default function ClientesPage() {
                 <th>Cliente</th>
                 <th>CUIT</th>
                 <th>Tipo</th>
-                <th>Teléfono</th>
-                <th>Correo</th>
+                <th className="col-secundaria">Teléfono</th>
+                <th className="col-secundaria">Correo</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -242,24 +184,26 @@ export default function ClientesPage() {
                   </td>
                   <td>{item.cuit || '—'}</td>
                   <td>{item.tipo_nombre || 'Sin tipo'}</td>
-                  <td>{item.telefono || '—'}</td>
-                  <td>{item.correo || '—'}</td>
+                  <td className="col-secundaria">{item.telefono || '—'}</td>
+                  <td className="col-secundaria">{item.correo || '—'}</td>
                   <td>{item.activo ? 'Activo' : 'Inactivo'}</td>
                   <td className="row-actions">
                     <button
                       className="button-ghost"
                       onClick={() => setFicha({ cliente: item, recienCreado: false })}
                     >
-                      Ver marcas
+                      Ver ficha
                     </button>
-                    <button className="button-ghost" onClick={() => abrirEdicion(item)}>
-                      Editar
-                    </button>
-                    {item.activo && (
-                      <button className="button-ghost" onClick={() => void inactivar(item)}>
-                        Inactivar
-                      </button>
-                    )}
+                    <MenuFila
+                      acciones={[
+                        { etiqueta: 'Editar', onClick: () => abrirEdicion(item), edicion: true },
+                        item.activo && {
+                          etiqueta: 'Inactivar',
+                          onClick: () => void inactivar(item),
+                          edicion: true,
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}

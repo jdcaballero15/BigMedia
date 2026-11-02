@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "apps.reservas",
     "apps.costos",
     "apps.facturacion",
+    "apps.auditoria",
     "apps.usuarios",
 ]
 
@@ -111,14 +112,36 @@ if DESPLEGADO:
     }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Motor de disponibilidad (HU-033). Día de borde (RN-001) y si la tentativa bloquea (RN-002).
-# Provisorios y configurables por entorno hasta que exista la configuración por pantalla (HU-001).
-DISPONIBILIDAD_BORDE_INCLUSIVO = (
-    os.environ.get("DISPONIBILIDAD_BORDE_INCLUSIVO", "true").lower() == "true"
-)
-DISPONIBILIDAD_TENTATIVA_BLOQUEA = (
-    os.environ.get("DISPONIBILIDAD_TENTATIVA_BLOQUEA", "false").lower() == "true"
-)
-
 # Panel principal (HU-047): ventana de "reservas por vencer" en días.
 PANEL_DIAS_POR_VENCER = int(os.environ.get("PANEL_DIAS_POR_VENCER", "30"))
+
+# Tamaño máximo del PDF de la orden de compra en MB (HU-062, ADR-0009).
+FACTURACION_OC_MAX_MB = int(os.environ.get("FACTURACION_OC_MAX_MB", "5"))
+
+# Correo saliente (HU-067): SMTP si hay EMAIL_HOST; si no, se escribe en la consola.
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_BACKEND = (
+    "django.core.mail.backends.smtp.EmailBackend"
+    if EMAIL_HOST
+    else "django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT") or "587")
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() == "true"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL") or "webmaster@localhost"
+# Dirección de Administración para los avisos de facturación (RN-022). Vacía: no se avisa.
+FACTURACION_CORREO_ADMINISTRACION = os.environ.get("FACTURACION_CORREO_ADMINISTRACION", "")
+
+# Sesión por inactividad (HU-003 criterio 4): timeout deslizante configurable.
+# SESSION_SAVE_EVERY_REQUEST renueva el vencimiento en cada request (sliding window).
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_AGE = int(os.environ.get("DJANGO_SESSION_IDLE_MINUTES", "30")) * 60
+
+# Bloqueo por intentos fallidos (HU-003 criterio 3): cubre la API y el admin.
+AUTHENTICATION_BACKENDS = ["apps.usuarios.backends.BackendConBloqueo"]
+LOGIN_MAX_INTENTOS = int(os.environ.get("DJANGO_LOGIN_MAX_INTENTOS", "5"))
+LOGIN_BLOQUEO_MINUTOS = int(os.environ.get("DJANGO_LOGIN_BLOQUEO_MINUTOS", "15"))
+
+# Link de un solo uso para definir o restablecer la contraseña (HU-005 criterio 1).
+PASSWORD_RESET_TIMEOUT = int(os.environ.get("DJANGO_LINK_CLAVE_HORAS", "72")) * 60 * 60

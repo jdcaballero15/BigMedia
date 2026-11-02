@@ -4,6 +4,7 @@ export type Formato = Catalogo & {
   capacidad_predeterminada: number
   ancho: string | null
   alto: string | null
+  por_cantidad: boolean
 }
 export type Estado = Catalogo & { codigo: string; operativo: boolean; es_baja: boolean }
 export type Proveedor = Catalogo & { servicio: string }
@@ -18,10 +19,34 @@ export type Cartel = {
   proveedor_nombre: string | null
   estado: number
   estado_nombre: string
+  es_baja: boolean
+  operativo: boolean
   direccion: string
   tamano: string
   capacidad: number
   tarifa_lista: string | null
   foto_url: string
   nombre_visible: string
+}
+
+export type ResultadoFila = 'creada' | 'omitida' | 'rechazada' | 'en_revision'
+export type FilaReporte = {
+  fila: number
+  ref_origen: string
+  resultado: ResultadoFila
+  campo: string
+  motivo: string
+  cartel_coincidente: string
+}
+export type Importacion = {
+  simulado: boolean
+  resumen: {
+    leidas: number
+    creadas: number
+    omitidas: number
+    rechazadas: number
+    en_revision: number
+    incompletas: number
+  }
+  filas: FilaReporte[]
 }

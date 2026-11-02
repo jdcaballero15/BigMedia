@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
 import { descargarCsv } from '../../shared/csv'
+import { formatearPeriodo } from '../../shared/fechas'
+import { descargarPdf } from '../../shared/pdf'
+import Cifras from '../../shared/Cifras'
+import SelectorPeriodo from '../../shared/SelectorPeriodo'
 import type { Catalogo } from '../inventario/types'
 import {
   colorOcupacion,
   formatearPorcentaje,
+  nombreCartel,
   type CartelOcupacion,
   type ModalidadOcupacion,
   type PeriodoOcupacion,
@@ -85,13 +90,45 @@ export default function ReporteOcupacionPage() {
       'Total',
     ]
     const filas = datos.carteles.map((cartel) => [
-      cartel.nombre_visible,
+      nombreCartel(cartel),
       cartel.modalidad,
       cartel.zona_nombre,
       ...datos.periodos.map((p) => valorCartel(cartel, p.clave) ?? 0),
       cartel.ocupacion,
     ])
     descargarCsv(`ocupacion-${desde}-${hasta}.csv`, columnas, filas)
+  }
+
+  function filtrosTexto(): string {
+    const partes = [`Período: ${formatearPeriodo(desde)} a ${formatearPeriodo(hasta)}`]
+    const depto = zonas.find((z) => String(z.id) === zona)
+    if (depto) partes.push(`Departamento: ${depto.nombre}`)
+    if (modalidad) partes.push(`Modalidad: ${modalidad === 'fija' ? 'Fija' : 'Digital'}`)
+    return partes.join(' · ')
+  }
+
+  function exportarPdf() {
+    const columnas = [
+      'Cartel',
+      'Modalidad',
+      'Departamento',
+      ...datos.periodos.map((p) => p.etiqueta),
+      'Total',
+    ]
+    const filas = datos.carteles.map((cartel) => {
+      const valor = (periodo: string) => {
+        const celda = valorCartel(cartel, periodo)
+        return celda === null ? '—' : formatearPorcentaje(celda)
+      }
+      return [
+        nombreCartel(cartel),
+        cartel.modalidad === 'fija' ? 'Fija' : 'Digital',
+        cartel.zona_nombre,
+        ...datos.periodos.map((p) => valor(p.clave)),
+        formatearPorcentaje(cartel.ocupacion),
+      ]
+    })
+    descargarPdf(`ocupacion-${desde}-${hasta}.pdf`, 'Ocupación', filtrosTexto(), columnas, filas)
   }
 
   return (
@@ -104,31 +141,34 @@ export default function ReporteOcupacionPage() {
             Ocupación en días-cupo por cartel y mes. El orden es el ranking de rendimiento.
           </p>
         </div>
-        <button
-          className="button-primary"
-          onClick={exportar}
-          disabled={datos.carteles.length === 0}
-        >
-          Exportar CSV
-        </button>
+        <div className="section-actions">
+          <button
+            className="button-ghost"
+            onClick={exportarPdf}
+            disabled={datos.carteles.length === 0}
+          >
+            Exportar PDF
+          </button>
+          <button
+            className="button-primary"
+            onClick={exportar}
+            disabled={datos.carteles.length === 0}
+          >
+            Exportar CSV
+          </button>
+        </div>
       </div>
       <div className="filters card">
-        <label>
-          Desde
-          <input
-            type="month"
-            value={desde}
-            onChange={(event) => cambiar(() => setDesde(event.target.value))}
-          />
-        </label>
-        <label>
-          Hasta
-          <input
-            type="month"
-            value={hasta}
-            onChange={(event) => cambiar(() => setHasta(event.target.value))}
-          />
-        </label>
+        <SelectorPeriodo
+          desde={desde}
+          hasta={hasta}
+          onCambiar={(nuevoDesde, nuevoHasta) =>
+            cambiar(() => {
+              setDesde(nuevoDesde)
+              setHasta(nuevoHasta)
+            })
+          }
+        />
         <label>
           Departamento
           <select value={zona} onChange={(event) => cambiar(() => setZona(event.target.value))}>
@@ -152,14 +192,32 @@ export default function ReporteOcupacionPage() {
           </select>
         </label>
       </div>
+      {!loading && datos.carteles.length > 0 && (
+        <Cifras
+          titulo="Resumen del período"
+          cifras={[
+            ...datos.modalidades.map((item, indice) => ({
+              etiqueta: `Ocupación ${item.etiqueta.toLowerCase()}`,
+              valor: formatearPorcentaje(item.ocupacion),
+              tono: indice === 0 ? ('principal' as const) : undefined,
+            })),
+            { etiqueta: 'Carteles en el reporte', valor: datos.carteles.length },
+          ]}
+        />
+      )}
       {error && (
         <p className="error" role="alert">
           {error}
         </p>
       )}
       {!loading && datos.modalidades.length > 0 && (
-        <div className="card table-wrap">
-          <h3>Evolución por modalidad</h3>
+        <div className="card table-wrap section-gap">
+          <div className="card-heading">
+            <div>
+              <h3>Evolución por modalidad</h3>
+              <p className="muted">Ocupación de cada modalidad, mes a mes.</p>
+            </div>
+          </div>
           <table aria-label="Ocupación por modalidad">
             <thead>
               <tr>
@@ -179,7 +237,14 @@ export default function ReporteOcupacionPage() {
         </div>
       )}
       <div className="card table-wrap">
-        <h3>Mapa de calor por cartel</h3>
+        <div className="card-heading">
+          <div>
+            <h3>Mapa de calor por cartel</h3>
+            <p className="muted">
+              Cada celda es la ocupación del cartel en el mes: cuanto más azul, más ocupado.
+            </p>
+          </div>
+        </div>
         {loading ? (
           <p className="empty">Cargando ocupación…</p>
         ) : datos.carteles.length === 0 ? (
@@ -235,7 +300,7 @@ function FilaCartel({
 }) {
   return (
     <tr>
-      <td className="primary-cell">{cartel.nombre_visible}</td>
+      <td className="primary-cell">{nombreCartel(cartel)}</td>
       {periodos.map((periodo) => {
         const valor = valorCartel(cartel, periodo.clave)
         return (

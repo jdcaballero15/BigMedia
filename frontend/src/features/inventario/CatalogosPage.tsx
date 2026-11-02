@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError, apiGet, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
+import { usePuedeEditar } from '../../shared/sesion'
+import MenuFila from '../../shared/MenuFila'
 
 export type Categoria = 'zonas' | 'proveedores' | 'formatos' | 'estados'
 type Registro = {
@@ -13,6 +15,7 @@ type Registro = {
   capacidad_predeterminada?: number
   ancho?: string | null
   alto?: string | null
+  por_cantidad?: boolean
   operativo?: boolean
   es_baja?: boolean
 }
@@ -43,6 +46,7 @@ export default function CatalogosPage({
   titulo = 'Catálogos',
   descripcion = 'Administrá departamentos y estados físicos.',
 }: Props) {
+  const puedeEditar = usePuedeEditar()
   const [categoria, setCategoria] = useState<Categoria>(categorias[0])
   const [rows, setRows] = useState<Registro[]>([])
   const [editing, setEditing] = useState<Registro | 'new' | null>(null)
@@ -54,6 +58,7 @@ export default function CatalogosPage({
   const [alto, setAlto] = useState('')
   const [operativo, setOperativo] = useState(false)
   const [esBaja, setEsBaja] = useState(false)
+  const [porCantidad, setPorCantidad] = useState(false)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
@@ -86,6 +91,7 @@ export default function CatalogosPage({
     setAlto(record === 'new' ? '' : (record.alto ?? ''))
     setOperativo(record === 'new' ? false : (record.operativo ?? false))
     setEsBaja(record === 'new' ? false : (record.es_baja ?? false))
+    setPorCantidad(record === 'new' ? false : (record.por_cantidad ?? false))
     setErrors({})
     setError('')
   }
@@ -100,6 +106,7 @@ export default function CatalogosPage({
       data.capacidad_predeterminada = Number(capacidad)
       data.ancho = ancho ? ancho : null
       data.alto = alto ? alto : null
+      data.por_cantidad = porCantidad
     }
     if (categoria === 'estados') {
       data.operativo = operativo
@@ -161,9 +168,11 @@ export default function CatalogosPage({
       )}
       <div className="section-heading">
         <h3>{categorias.length > 1 ? categoryLabels[categoria] : ''}</h3>
-        <button className="button-primary" onClick={() => openForm('new')}>
-          Nuevo {singularLabels[categoria]}
-        </button>
+        {puedeEditar && (
+          <button className="button-primary" onClick={() => openForm('new')}>
+            Nuevo {singularLabels[categoria]}
+          </button>
+        )}
       </div>
       {editing !== null && (
         <form
@@ -235,6 +244,19 @@ export default function CatalogosPage({
                     onChange={(event) => setAlto(event.target.value)}
                   />
                 </label>
+                <label className="checkline">
+                  <input
+                    type="checkbox"
+                    checked={porCantidad}
+                    aria-describedby="ayuda-por-cantidad"
+                    onChange={(event) => setPorCantidad(event.target.checked)}
+                  />
+                  Se carga por cantidad (circuito)
+                </label>
+                <p className="muted" id="ayuda-por-cantidad">
+                  Como Séxtuples, Banderolas o PPL: cada dirección tiene una cantidad y al importar
+                  esa cantidad es la capacidad del cartel.
+                </p>
               </>
             )}
             {categoria === 'estados' && (
@@ -288,14 +310,20 @@ export default function CatalogosPage({
                 <td className="primary-cell">{row.nombre}</td>
                 <td>{row.activo ? 'Activo' : 'Inactivo'}</td>
                 <td className="row-actions">
-                  <button className="button-ghost" onClick={() => openForm(row)}>
-                    Editar
-                  </button>
-                  {row.activo && (
-                    <button className="button-ghost" onClick={() => void inactivate(row)}>
-                      Inactivar
+                  {puedeEditar && (
+                    <button className="button-ghost" onClick={() => openForm(row)}>
+                      Editar
                     </button>
                   )}
+                  <MenuFila
+                    acciones={[
+                      row.activo && {
+                        etiqueta: 'Inactivar',
+                        onClick: () => void inactivate(row),
+                        edicion: true,
+                      },
+                    ]}
+                  />
                 </td>
               </tr>
             ))}

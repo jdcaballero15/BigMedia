@@ -1,6 +1,7 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import App from './App'
+import { abrirAcciones } from './shared/pruebas'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 
@@ -191,6 +192,7 @@ test('inactiva un proveedor conservando su registro', async () => {
 
   await irA('Proveedores')
   await screen.findByText('Norte')
+  abrirAcciones(screen.getByText('Norte').closest('tr') as HTMLElement)
   fireEvent.click(screen.getByRole('button', { name: 'Inactivar' }))
 
   await waitFor(() =>
@@ -242,6 +244,7 @@ test('da de baja un cartel y permite consultar las bajas', async () => {
 
   await screen.findByText('San Martín 1234')
   await screen.findByRole('option', { name: 'De baja' })
+  abrirAcciones(screen.getByText('San Martín 1234').closest('tr') as HTMLElement)
   fireEvent.click(screen.getByRole('button', { name: 'Dar de baja' }))
   await waitFor(() =>
     expect(
@@ -297,7 +300,12 @@ test('agrupa el menú lateral en secciones y abre en clientes', async () => {
 
   const nav = await screen.findByRole('navigation', { name: 'Navegación' })
   for (const titulo of ['Comercial', 'Inventario', 'Operación', 'Configuración'])
-    expect(within(nav).getByText(titulo)).toBeDefined()
+    expect(within(nav).getByRole('group', { name: titulo })).toBeDefined()
+  expect(
+    within(within(nav).getByRole('group', { name: 'Comercial' })).getByRole('button', {
+      name: 'Marcas',
+    }),
+  ).toBeDefined()
   expect(within(nav).getByRole('button', { name: 'Clientes' }).getAttribute('aria-current')).toBe(
     'page',
   )
@@ -359,6 +367,63 @@ test('muestra Ingresos a gerencia', async () => {
   expect(within(nav).getByRole('button', { name: 'Ingresos' })).toBeDefined()
 })
 
+test('oculta Por rubro o grupo a quien no es gerencia', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'trabajador', es_gerencia: false })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  expect(within(nav).getByRole('button', { name: 'Ocupación' })).toBeDefined()
+  expect(within(nav).queryByRole('button', { name: 'Por rubro o grupo' })).toBeNull()
+})
+
+test('muestra Por rubro o grupo a gerencia', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'seba', es_gerencia: true })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  expect(within(nav).getByRole('button', { name: 'Por rubro o grupo' })).toBeDefined()
+})
+
+test('oculta Auditoría a quien no es gerencia', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'trabajador', es_gerencia: false })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  expect(within(nav).queryByRole('button', { name: 'Auditoría' })).toBeNull()
+})
+
+test('muestra Auditoría a gerencia', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'seba', es_gerencia: true })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  expect(within(nav).getByRole('button', { name: 'Auditoría' })).toBeDefined()
+})
+
 test('abre y cierra el menú en pantallas chicas', async () => {
   vi.stubGlobal(
     'fetch',
@@ -378,4 +443,227 @@ test('abre y cierra el menú en pantallas chicas', async () => {
   expect(screen.getByRole('button', { name: 'Abrir menú' }).getAttribute('aria-expanded')).toBe(
     'false',
   )
+})
+
+test('un 401 en endpoint no-auth despacha sesion-expirada y muestra el mensaje en login', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'seba' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+
+  render(<App />)
+  // Esperar a que la sesión quede ready
+  await screen.findByRole('navigation', { name: 'Navegación' })
+
+  // Disparar el evento como si un fetch a un endpoint no-auth devolviera 401
+  window.dispatchEvent(new Event('sesion-expirada'))
+
+  expect(await screen.findByRole('heading', { name: 'Ingresar' })).toBeDefined()
+  expect(
+    await screen.findByText('Tu sesión expiró por inactividad. Ingresá de nuevo.'),
+  ).toBeDefined()
+})
+
+test('un 401 en /api/auth/me/ NO despacha sesion-expirada', async () => {
+  const listener = vi.fn()
+  window.addEventListener('sesion-expirada', listener)
+
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ detail: 'Iniciá sesión.' }),
+    }),
+  )
+
+  render(<App />)
+  await screen.findByRole('heading', { name: 'Ingresar' })
+
+  expect(listener).not.toHaveBeenCalled()
+  window.removeEventListener('sesion-expirada', listener)
+})
+
+test('el rol Lectura no ve acciones de edición', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'consulta', rol: 'lectura' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  expect(await screen.findByRole('heading', { name: 'Clientes' })).toBeDefined()
+  expect(screen.queryByRole('button', { name: 'Nuevo cliente' })).toBeNull()
+})
+
+test('el rol Operativo ve acciones de edición', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'trabajador', rol: 'operativo' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  expect(await screen.findByRole('button', { name: 'Nuevo cliente' })).toBeDefined()
+})
+
+test('muestra Usuarios, Parámetros e Importar carteles solo al administrador', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'seba', rol: 'operativo' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  expect(within(nav).queryByRole('button', { name: 'Usuarios' })).toBeNull()
+  expect(within(nav).queryByRole('button', { name: 'Parámetros' })).toBeNull()
+  expect(within(nav).queryByRole('button', { name: 'Importar carteles' })).toBeNull()
+  cleanup()
+
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'admin', rol: 'administrador' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      if (input === '/api/usuarios/usuarios/') return ok([])
+      if (input === '/api/reservas/parametros/')
+        return ok({ borde_inclusivo: true, tentativa_bloquea: false })
+      if (input === '/api/inventario/formatos/') return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+  await irA('Importar carteles')
+  expect(await screen.findByRole('heading', { name: 'Importar carteles' })).toBeDefined()
+  await irA('Usuarios')
+  expect(await screen.findByRole('heading', { name: 'Usuarios' })).toBeDefined()
+  await irA('Parámetros')
+  expect(await screen.findByRole('heading', { name: 'Parámetros' })).toBeDefined()
+})
+
+test('el link de contraseña muestra el formulario y después el login', async () => {
+  window.history.replaceState(null, '', '/?definir-clave=MQ.abc-123')
+  const fetchMock = vi.fn(async (input: string, _options?: RequestInit) => {
+    if (input === '/api/auth/me/')
+      return { ok: false, status: 401, json: async () => ({ detail: 'Iniciá sesión.' }) }
+    if (input === '/api/usuarios/definir-clave/') return ok({ status: 'ok' })
+    throw new Error(`URL inesperada: ${input}`)
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  render(<App />)
+
+  fireEvent.change(await screen.findByLabelText('Contraseña nueva'), {
+    target: { value: 'una-clave-larga-1' },
+  })
+  fireEvent.change(screen.getByLabelText('Repetila'), { target: { value: 'una-clave-larga-1' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+
+  expect(await screen.findByText(/tu contraseña quedó definida/)).toBeDefined()
+  expect(window.location.search).toBe('')
+  const envio = fetchMock.mock.calls.find(([url]) => url === '/api/usuarios/definir-clave/')
+  expect(JSON.parse(String(envio?.[1]?.body))).toEqual({
+    uid: 'MQ',
+    token: 'abc-123',
+    clave: 'una-clave-larga-1',
+  })
+})
+
+test('la barra superior muestra la ruta de la pantalla activa y la fecha de hoy', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(2026, 9, 28, 10, 0))
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'ale' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      if (input.startsWith('/api/inventario/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  try {
+    render(<App />)
+
+    const barra = await screen.findByRole('banner', { name: 'Ubicación' })
+    expect(barra.textContent).toContain('Big Media / Comercial / Clientes')
+    expect(within(barra).getByText('Miércoles 28 de octubre de 2026')).toBeDefined()
+    await irA('Carteles')
+    expect(barra.textContent).toContain('Big Media / Inventario / Carteles')
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+test('el menú de iconos muestra el nombre de cada pantalla al pasar el mouse', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'ale' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  const marcas = within(nav).getByRole('button', { name: 'Marcas' })
+  fireEvent.mouseEnter(marcas)
+  expect(screen.getByRole('tooltip').textContent).toBe('Marcas')
+  fireEvent.mouseLeave(marcas)
+  expect(screen.queryByRole('tooltip')).toBeNull()
+
+  fireEvent.focus(screen.getByRole('button', { name: 'Salir' }))
+  expect(screen.getByRole('tooltip').textContent).toBe('Salir')
+  fireEvent.blur(screen.getByRole('button', { name: 'Salir' }))
+  fireEvent.mouseEnter(screen.getByTitle('ale'))
+  expect(screen.getByRole('tooltip').textContent).toBe('ale')
+  fireEvent.mouseLeave(screen.getByTitle('ale'))
+  expect(screen.queryByRole('tooltip')).toBeNull()
+})
+
+test('con una ficha abierta, la ruta suma el cliente y «Clientes» vuelve a la lista', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'ale', rol: 'operativo' })
+      if (input.startsWith('/api/clientes/clientes/'))
+        return ok([
+          {
+            id: 1,
+            nombre: 'Agencia Andes',
+            nombre_visible: 'Agencia Andes',
+            razon_social: '',
+            cuit: '',
+            tipo: 'intermediario',
+            tipo_nombre: 'Intermediario',
+            telefono: '',
+            correo: '',
+            activo: true,
+          },
+        ])
+      if (input.startsWith('/api/clientes/') || input.startsWith('/api/campanias/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<App />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
+  const barra = screen.getByRole('banner', { name: 'Ubicación' })
+  expect(barra.textContent).toContain('Big Media / Comercial / Clientes / Agencia Andes')
+  expect(screen.getByRole('heading', { name: 'Agencia Andes' })).toBeDefined()
+
+  fireEvent.click(within(barra).getByRole('button', { name: 'Clientes' }))
+  expect(await screen.findByRole('heading', { name: 'Clientes' })).toBeDefined()
+  expect(barra.textContent).not.toContain('Agencia Andes')
+  expect(within(barra).queryByRole('button')).toBeNull()
 })

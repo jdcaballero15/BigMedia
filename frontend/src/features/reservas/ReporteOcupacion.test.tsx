@@ -1,7 +1,10 @@
 import { afterEach, expect, test, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import ReporteOcupacionPage from './ReporteOcupacion'
 import { formatearPorcentaje } from './ocupacion'
+import { descargarPdf } from '../../shared/pdf'
+
+vi.mock('../../shared/pdf', () => ({ descargarPdf: vi.fn() }))
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 
@@ -97,10 +100,19 @@ test('cambiar el período vuelve a pedir el reporte', async () => {
   const fetchMock = stubFetch()
   render(<ReporteOcupacionPage />)
   await screen.findByText('Av. San Martín 1234')
-  fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-06' } })
+  fireEvent.change(screen.getByLabelText('Año desde'), { target: { value: '2026' } })
+  fireEvent.change(screen.getByLabelText('Mes desde'), { target: { value: '6' } })
   await waitFor(() =>
     expect(fetchMock.mock.calls.some(([u]) => String(u).includes('desde=2026-06'))).toBe(true),
   )
+})
+
+test('exporta el reporte a PDF', async () => {
+  stubFetch()
+  render(<ReporteOcupacionPage />)
+  await screen.findByText('Av. San Martín 1234')
+  fireEvent.click(screen.getByRole('button', { name: 'Exportar PDF' }))
+  expect(descargarPdf).toHaveBeenCalled()
 })
 
 test('sin carteles muestra el estado vacío', async () => {
@@ -118,4 +130,27 @@ test('exporta el reporte a CSV', async () => {
   await screen.findByText('Av. San Martín 1234')
   fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }))
   expect(crearUrl).toHaveBeenCalled()
+})
+
+test('marca los carteles de baja que tuvieron reservas en el período', async () => {
+  const conBaja = {
+    ...reporte,
+    carteles: [{ ...reporte.carteles[0], de_baja: true }, reporte.carteles[1]],
+  }
+  stubFetch(conBaja)
+  render(<ReporteOcupacionPage />)
+  expect(await screen.findByText('Av. San Martín 1234 (de baja)')).toBeDefined()
+  expect(screen.getByText('Ruta 40 km 10')).toBeDefined()
+})
+
+test('reporteOcupacion_resumen_muestraLaOcupacionDeCadaModalidadYLosCarteles', async () => {
+  stubFetch()
+  render(<ReporteOcupacionPage />)
+
+  const resumen = await screen.findByLabelText('Resumen del período')
+  expect(within(resumen).getByText('Ocupación fija').parentElement?.className).toBe(
+    'cifra cifra-principal',
+  )
+  expect(within(resumen).getByText('Ocupación digital')).toBeDefined()
+  expect(within(resumen).getByText('Carteles en el reporte')).toBeDefined()
 })

@@ -114,3 +114,49 @@ print(json.dumps({'unknown': unknown.status_code, 'http': http.status_code, 'loc
         "http": 301,
         "location": "https://bigmedia.onrender.com/",
     }
+
+
+def _correo(env: dict[str, str]) -> dict[str, object]:
+    script = """
+import json
+from django.conf import settings
+print(json.dumps({
+    'backend': settings.EMAIL_BACKEND,
+    'host': settings.EMAIL_HOST,
+    'port': settings.EMAIL_PORT,
+    'tls': settings.EMAIL_USE_TLS,
+    'desde': settings.DEFAULT_FROM_EMAIL,
+    'administracion': settings.FACTURACION_CORREO_ADMINISTRACION,
+}))
+"""
+    result = run_django(script, env)
+    assert result.returncode == 0, result.stderr
+    config: dict[str, object] = json.loads(result.stdout)
+    return config
+
+
+def test_con_email_host_el_correo_sale_por_smtp():
+    """HU-067: el correo de avisos se configura por variables de entorno."""
+    env = {
+        **production_environment(),
+        "EMAIL_HOST": "smtp.example.com",
+        "EMAIL_PORT": "2525",
+        "EMAIL_USE_TLS": "false",
+        "DEFAULT_FROM_EMAIL": "avisos@example.com",
+        "FACTURACION_CORREO_ADMINISTRACION": "administracion@example.com",
+    }
+    assert _correo(env) == {
+        "backend": "django.core.mail.backends.smtp.EmailBackend",
+        "host": "smtp.example.com",
+        "port": 2525,
+        "tls": False,
+        "desde": "avisos@example.com",
+        "administracion": "administracion@example.com",
+    }
+
+
+def test_sin_email_host_el_correo_va_a_la_consola():
+    env = {**production_environment(), "EMAIL_HOST": "", "EMAIL_PORT": "", "DEFAULT_FROM_EMAIL": ""}
+    config = _correo(env)
+    assert config["backend"] == "django.core.mail.backends.console.EmailBackend"
+    assert (config["port"], config["tls"], config["desde"]) == (587, True, "webmaster@localhost")

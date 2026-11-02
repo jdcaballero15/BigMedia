@@ -91,7 +91,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-003 completa.
-- **Regla de negocio:** Operativo: crea y edita campañas, reservas, clientes, marcas, interacciones y costos, y administra carteles. Administrador: todo, incluida la configuración y la gestión de usuarios. Lectura (Gerencia): solo consulta y reportes. Los permisos se verifican siempre en el servidor, no solo ocultando botones en pantalla.
+- **Regla de negocio:** Operativo: crea y edita campañas, reservas, clientes, marcas, interacciones y costos, y administra carteles. Administrador: todo, incluida la configuración y la gestión de usuarios. Lectura: solo consulta y reportes. Gerencia no es un rol: es un permiso aparte para ver ingresos y auditoría (HU-052, HU-007) que se suma a cualquier rol. Los permisos se verifican siempre en el servidor, no solo ocultando botones en pantalla.
 - **Criterios de aceptación:**
   1. Dado un usuario Operativo, cuando intenta una acción de administración (configuración o usuarios), entonces el servidor la rechaza.
   2. Dado un usuario de Lectura, cuando intenta crear o editar un registro, entonces el servidor lo rechaza aunque envíe la petición por otra vía.
@@ -159,7 +159,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Must
 - **Complejidad:** S
 - **Precondición:** Sesión iniciada con rol Operativo o superior.
-- **Regla de negocio:** Hay 7 formatos: PPL o Gran Formato, Banderolas, Séxtuples, LED, Mediano Formato, Monocolumnas y Carteleras. La modalidad es fija o digital y vive solo en el formato, no se repite en el cartel. "Fija" no implica capacidad 1: los séxtuples son fijos pero multi-marca, con cantidad de slots variable por ubicación. Ancho y alto son opcionales hasta que Seba confirme si guardan dimensiones estándar.
+- **Regla de negocio:** Hay 8 formatos: Gran Formato, PPL, Banderolas, Séxtuples, LED, Mediano Formato, Monocolumnas y Carteleras (PPL se separó de Gran Formato el 2026-11-02). La modalidad es fija o digital y vive solo en el formato, no se repite en el cartel. "Fija" no implica capacidad 1: los séxtuples son fijos pero multi-marca, con cantidad de slots variable por ubicación. Un formato no tiene un tamaño fijo: ancho y alto son opcionales, como medida de referencia, y el tamaño real se carga en cada cartel (RN-019).
 - **Criterios de aceptación:**
   1. Dado un formato nuevo, cuando se guarda con nombre, modalidad y capacidad por defecto mayor o igual a 1, entonces queda disponible para crear carteles.
   2. Dada una capacidad por defecto menor a 1, cuando se guarda, entonces se rechaza.
@@ -238,7 +238,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Must
 - **Complejidad:** L
 - **Precondición:** HU-009, HU-010 y HU-013 completas. Las planillas de Gran Formato (66 o más posiciones) y Séxtuples (226 posiciones) ya existen pero en formato visual y deben transformarse a CSV tabular.
-- **Regla de negocio:** Banderolas, Mediano Formato, Monocolumnas y Carteleras todavía no tienen relevamiento cuantitativo y no se cargan hasta que exista. En los séxtuples la capacidad es la cantidad de slots relevada. La importación no duplica carteles que ya existen (misma dirección y tamaño o slots).
+- **Regla de negocio:** Banderolas, Mediano Formato, Monocolumnas y Carteleras todavía no tienen relevamiento cuantitativo y no se cargan hasta que exista. En los séxtuples, banderolas y PPL (circuitos) la capacidad es la cantidad relevada en cada dirección (RN-005). La importación no duplica carteles que ya existen (misma dirección y tamaño o slots).
 - **Criterios de aceptación:**
   1. Dado un CSV válido de Gran Formato, cuando se importa, entonces se crean todas sus posiciones con formato, dirección, tamaño y zona.
   2. Dado el CSV de Séxtuples, cuando se importa, entonces cada cartel queda con capacidad igual a sus slots.
@@ -267,7 +267,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-016 completa.
-- **Regla de negocio:** La marca no tiene datos de facturación y no se le puede facturar. El cliente de la marca es obligatorio, sea cual sea la vía de entrada (pantalla, importación o API). El rubro vive en la marca, no en el cliente, porque el cliente suele ser una agencia. El grupo económico (por ejemplo, un grupo con varias marcas) es opcional y depende de la pregunta 16.
+- **Regla de negocio:** La marca no tiene datos de facturación y no se le puede facturar. El cliente de la marca es obligatorio, sea cual sea la vía de entrada (pantalla, importación o API). El rubro vive en la marca, no en el cliente, porque el cliente suele ser una agencia. El grupo económico (por ejemplo, un grupo con varias marcas) es opcional: cada marca pertenece a lo sumo a uno, sin importar el cliente que factura (RN-016).
 - **Criterios de aceptación:**
   1. Dada una marca nueva sin cliente, cuando se guarda por cualquier vía, entonces se rechaza.
   2. Dado un cliente intermediario, cuando se abre su ficha, entonces se listan todas sus marcas.
@@ -280,7 +280,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** HU-016 y HU-017 completas.
-- **Regla de negocio:** Un cliente directo existe dos veces: como entidad legal a la que se factura y como marca impresa en el cartel, con la marca apuntando al mismo cliente. Si el cliente cambia de razón social después, la marca no se actualiza sola hasta que Seba responda la pregunta 19. Un cliente directo sin nombre no genera marca, porque no hay con qué nombrarla.
+- **Regla de negocio:** Un cliente directo existe dos veces: como entidad legal a la que se factura y como marca impresa en el cartel, con la marca apuntando al mismo cliente. Si después el cliente cambia de razón social o de nombre, la marca no se toca: es lo que va en el cartel, y si hace falta se renombra a mano en Marcas (RN-017). Un cliente directo sin nombre no genera marca, porque no hay con qué nombrarla.
 - **Criterios de aceptación:**
   1. Dado un cliente directo nuevo, cuando se guarda, entonces se crea en la misma operación una marca con su nombre asociada a él.
   2. Dado un cliente intermediario o intermediario formal, cuando se guarda, entonces no se crea ninguna marca.
@@ -308,11 +308,13 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** HU-016 completa.
-- **Regla de negocio:** El asunto, la fecha y el cliente son obligatorios. La campaña es opcional. Si el cliente es un intermediario formal, se puede indicar opcionalmente con cuál de sus contactos fue (HU-068). Un vínculo opcional a una marca solo se agrega si Seba confirma que registran interacciones antes de que exista campaña (pregunta 12).
+- **Regla de negocio:** El asunto, la fecha y el cliente son obligatorios. La campaña es opcional. Si el cliente es un intermediario formal, se puede indicar opcionalmente con cuál de sus contactos fue (HU-068). También se puede indicar opcionalmente la marca, para las conversaciones que ocurren antes de que exista una campaña: tiene que ser una marca del cliente y, si además hay campaña, la campaña tiene que ser de esa marca (RN-018).
 - **Criterios de aceptación:**
   1. Dada una interacción sin asunto, cuando se guarda, entonces se rechaza.
   2. Dada una interacción con cliente y campaña, cuando se guarda, entonces aparece en la ficha de ambos.
   3. Dada la lista de interacciones, cuando se abre, entonces se ordena por fecha descendente.
+  4. Dada una interacción con marca y sin campaña, cuando se guarda, entonces aparece en la ficha del cliente y en la de la marca (RN-018).
+  5. Dada una interacción con una marca de otro cliente, o con una campaña de otra marca, cuando se guarda, entonces se rechaza (RN-018).
 
 ### HU-021 Ficha de cliente
 
@@ -337,7 +339,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Regla de negocio:** Las campañas de una marca se listan aunque el pagador haya sido distinto en distintos momentos.
 - **Criterios de aceptación:**
   1. Dada la ficha de una marca, cuando se abre, entonces se ven todas sus campañas con su estado.
-  2. Dado un grupo económico (si se implementa), cuando se abre la ficha, entonces se ven las marcas del mismo grupo.
+  2. Dada una marca de un grupo económico, cuando se abre su ficha, entonces se ven las otras marcas del mismo grupo (RN-016).
 
 ### HU-068 Gestionar varios contactos de un intermediario formal
 
@@ -721,7 +723,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Descripción:** Como gerencia, quiero cortar ingresos y ocupación por rubro de la marca y por grupo económico, para saber qué industrias pautan más en vía pública.
 - **Prioridad:** Could
 - **Complejidad:** S
-- **Precondición:** HU-017 completa. El grupo económico depende de la pregunta 16.
+- **Precondición:** HU-017 completa. El grupo económico se toma de la marca (RN-016).
 - **Regla de negocio:** El rubro se toma de la marca y no del cliente, que suele ser una agencia.
 - **Criterios de aceptación:**
   1. Dada una campaña de una agencia para una marca de gastronomía, cuando se corta por rubro, entonces aparece Gastronomía y no Agencia de medios.
@@ -968,12 +970,14 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** M
 - **Precondición:** HU-007 y HU-066 completas.
-- **Regla de negocio:** Un ítem Enviado a facturar no se edita sin una acción explícita de reabrir, que pide motivo y queda auditada (HU-007). Si algo cambia después del envío, Administración recibe un aviso con lo que cambió; el canal de aviso (por ejemplo correo) se define con ellos. Para ítems ya Facturados el comportamiento queda por definir.
+- **Regla de negocio:** Un ítem Enviado a facturar no se edita sin una acción explícita de reabrir, que pide motivo y queda auditada (HU-007). Si algo cambia después del envío, Administración recibe un aviso con lo que cambió; el canal de aviso (por ejemplo correo) se define con ellos. Un ítem ya Facturado no se reabre: si hay que corregirlo, se anula con un motivo (por ejemplo, cuando Administración emite la nota de crédito), queda auditado con su número de factura, Administración recibe el aviso, y la corrección se carga como un ítem nuevo (RN-026).
 - **Criterios de aceptación:**
   1. Dado un ítem Enviado a facturar, cuando se intenta editar sin reabrirlo, entonces el sistema lo impide.
   2. Dado un ítem Enviado, cuando se reabre, entonces se pide un motivo y queda registrado quién, cuándo y por qué.
   3. Dado un ítem reabierto, cuando se guardan cambios, entonces Administración recibe un aviso con los valores anteriores y nuevos.
   4. Dado un ítem reabierto y corregido, cuando se vuelve a enviar, entonces regresa a Enviado a facturar y queda marcado como reenviado.
+  5. Dado un ítem Facturado, cuando se anula, entonces se pide un motivo, queda registrado quién, cuándo y por qué, conserva su número de factura, sale del resumen del mes y Administración recibe un aviso (RN-026).
+  6. Dado un ítem Facturado, cuando se intenta reabrir o editar, entonces el sistema lo impide (RN-026).
 
 # Supuestos y preguntas abiertas
 
@@ -991,7 +995,7 @@ Hay 12 decisiones del negocio que condicionan historias concretas. Hasta que se 
 | ¿Alcanza la vista de estado actual o hace falta ver a futuro? | HU-042 | Seba | Se construye como Should |
 | ¿Administración usa el sistema o solo recibe la planilla? ¿Quién pasa un ítem a Facturado? | HU-065, HU-066, HU-067 | Seba y Administración | Administración recibe la planilla y los avisos por correo; Seba carga el número de factura |
 | Alícuotas de IVA y valores de Gob/Priv y F/V | HU-060, HU-061 | Administración | Alícuota editable por ítem con 21% por defecto; Gob/Priv y F/V como listas administrables |
-| Columnas exactas de la planilla actual de facturación | HU-066 | Seba | Se reproducen tal como están hoy; las nuevas van al final |
+| Columnas exactas de la planilla actual de facturación | HU-066 | Seba | Respondida con la planilla real (RN-024): Cliente (razón social), Importe neto total, Costos incluidos en FC, Detalle costo, Tipo de venta (F/V), Gob/Priv y Tipo, en ese orden; las nuevas van al final |
 | ¿Qué distingue a un intermediario formal de uno común y qué datos lleva cada contacto? | HU-016, HU-068 | Seba | Tipo aparte; contacto con nombre, cargo, correo, teléfono y notas, y un contacto principal |
 
 ## Supuestos asumidos al escribir las historias

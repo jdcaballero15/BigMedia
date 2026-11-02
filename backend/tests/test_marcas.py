@@ -45,6 +45,8 @@ def test_alta_marca_con_cliente_y_rubro_devuelve_nombres_legibles(operativo_clie
         "cliente_nombre",
         "rubro",
         "rubro_nombre",
+        "grupo",
+        "grupo_nombre",
         "activo",
         "creado_en",
         "actualizado_en",

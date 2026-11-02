@@ -12,6 +12,7 @@ const formatos: Formato[] = [
     capacidad_predeterminada: 6,
     ancho: null,
     alto: null,
+    por_cantidad: true,
   },
   {
     id: 2,
@@ -20,6 +21,7 @@ const formatos: Formato[] = [
     capacidad_predeterminada: 12,
     ancho: null,
     alto: null,
+    por_cantidad: false,
   },
 ]
 const estados: Estado[] = [
@@ -35,6 +37,8 @@ const cartel: Cartel = {
   proveedor_nombre: null,
   estado: 1,
   estado_nombre: 'Activo',
+  es_baja: false,
+  operativo: true,
   direccion: 'Av. San Martín 1234',
   tamano: '',
   capacidad: 8,

@@ -8,48 +8,75 @@ import {
   Layers,
   LogOut,
   Megaphone,
+  MessagesSquare,
   Menu,
+  ScrollText,
   Settings,
   Signpost,
+  SlidersHorizontal,
   Tags,
   TrendingUp,
   Truck,
+  Upload,
+  UserCog,
   Users,
   X,
+  Receipt,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import Login from './app/Login'
 import CartelesPage from './features/inventario/CartelesPage'
 import CatalogosPage from './features/inventario/CatalogosPage'
+import ImportacionPage from './features/inventario/ImportacionPage'
 import ClientesPage from './features/clientes/ClientesPage'
 import MarcasPage from './features/clientes/MarcasPage'
 import CampaniasPage from './features/campanias/CampaniasPage'
+import InteraccionesPage from './features/campanias/InteraccionesPage'
 import CostosPage from './features/costos/CostosPage'
 import DisponibilidadPage from './features/disponibilidad/DisponibilidadPage'
 import ReporteIngresosPage from './features/facturacion/ReporteIngresos'
+import PorRubroPage from './features/facturacion/PorRubro'
+import ItemsPage from './features/facturacion/ItemsPage'
 import PanelPrincipal from './features/panel/PanelPrincipal'
+import AuditoriaPage from './features/auditoria/Auditoria'
+import ParametrosPage from './features/reservas/ParametrosPage'
 import ReporteOcupacionPage from './features/reservas/ReporteOcupacion'
+import DefinirClave from './features/usuarios/DefinirClave'
+import UsuariosPage from './features/usuarios/UsuariosPage'
 import { ApiError, apiGet, apiWrite } from './shared/api'
+import { fechaLarga } from './shared/fechas'
+import { DetalleRutaContext } from './shared/ruta'
+import type { DetalleRuta } from './shared/ruta'
+import { PuedeEditarContext } from './shared/sesion'
+import type { Rol } from './shared/sesion'
 import './App.css'
 
 type Session = {
   status: 'checking' | 'anonymous' | 'offline' | 'ready'
   username: string
   esGerencia: boolean
+  rol: Rol
 }
 type Page =
   | 'panel'
   | 'clientes'
   | 'marcas'
   | 'campanias'
+  | 'interacciones'
+  | 'items-facturacion'
   | 'carteles'
   | 'disponibilidad'
+  | 'importacion'
   | 'proveedores'
   | 'costos'
   | 'ingresos'
+  | 'rubro'
   | 'ocupacion'
   | 'formatos'
   | 'catalogos'
+  | 'parametros'
+  | 'auditoria'
+  | 'usuarios'
 
 type Item = {
   id: Page
@@ -57,6 +84,7 @@ type Item = {
   icon: LucideIcon
   render: () => ReactNode
   soloGerencia?: boolean
+  soloAdministrador?: boolean
 }
 
 const sections: { title: string; items: Item[] }[] = [
@@ -77,6 +105,13 @@ const sections: { title: string; items: Item[] }[] = [
         soloGerencia: true,
       },
       {
+        id: 'rubro',
+        label: 'Por rubro o grupo',
+        icon: Tags,
+        render: () => <PorRubroPage />,
+        soloGerencia: true,
+      },
+      {
         id: 'ocupacion',
         label: 'Ocupación',
         icon: BarChart3,
@@ -90,6 +125,18 @@ const sections: { title: string; items: Item[] }[] = [
       { id: 'clientes', label: 'Clientes', icon: Users, render: () => <ClientesPage /> },
       { id: 'marcas', label: 'Marcas', icon: Tags, render: () => <MarcasPage /> },
       { id: 'campanias', label: 'Campañas', icon: Megaphone, render: () => <CampaniasPage /> },
+      {
+        id: 'interacciones',
+        label: 'Interacciones',
+        icon: MessagesSquare,
+        render: () => <InteraccionesPage />,
+      },
+      {
+        id: 'items-facturacion',
+        label: 'Ítems a facturar',
+        icon: Receipt,
+        render: () => <ItemsPage />,
+      },
     ],
   },
   {
@@ -101,6 +148,13 @@ const sections: { title: string; items: Item[] }[] = [
         label: 'Disponibilidad',
         icon: CalendarDays,
         render: () => <DisponibilidadPage />,
+      },
+      {
+        id: 'importacion',
+        label: 'Importar carteles',
+        icon: Upload,
+        render: () => <ImportacionPage />,
+        soloAdministrador: true,
       },
     ],
   },
@@ -140,27 +194,70 @@ const sections: { title: string; items: Item[] }[] = [
     title: 'Configuración',
     items: [
       { id: 'catalogos', label: 'Catálogos', icon: Settings, render: () => <CatalogosPage /> },
+      {
+        id: 'parametros',
+        label: 'Parámetros',
+        icon: SlidersHorizontal,
+        render: () => <ParametrosPage />,
+        soloAdministrador: true,
+      },
+    ],
+  },
+  {
+    title: 'Administración',
+    items: [
+      {
+        id: 'auditoria',
+        label: 'Auditoría',
+        icon: ScrollText,
+        render: () => <AuditoriaPage />,
+        soloGerencia: true,
+      },
+      {
+        id: 'usuarios',
+        label: 'Usuarios',
+        icon: UserCog,
+        render: () => <UsuariosPage />,
+        soloAdministrador: true,
+      },
     ],
   },
 ]
 
 const pages = sections.flatMap((section) => section.items)
 
+/** El link de contraseña llega como `/?definir-clave=<uid>.<token>` (HU-005). */
+function codigoDelLink(): string | null {
+  return new URLSearchParams(window.location.search).get('definir-clave')
+}
+
 function App() {
   const [session, setSession] = useState<Session>({
     status: 'checking',
     username: '',
     esGerencia: false,
+    rol: 'lectura',
   })
   const [page, setPage] = useState<Page>('clientes')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [hoy] = useState(() => fechaLarga(new Date()))
+  const [detalle, setDetalle] = useState<DetalleRuta | null>(null)
+  const [etiqueta, setEtiqueta] = useState<{ texto: string; top: number } | null>(null)
+  const [expirada, setExpirada] = useState(false)
+  const [codigoClave, setCodigoClave] = useState(codigoDelLink)
+  const [claveDefinida, setClaveDefinida] = useState(false)
 
   useEffect(() => {
     let active = true
-    void apiGet<{ username: string; es_gerencia: boolean }>('/api/auth/me/')
+    void apiGet<{ username: string; es_gerencia: boolean; rol: Rol }>('/api/auth/me/')
       .then((user) => {
         if (active)
-          setSession({ status: 'ready', username: user.username, esGerencia: user.es_gerencia })
+          setSession({
+            status: 'ready',
+            username: user.username,
+            esGerencia: user.es_gerencia,
+            rol: user.rol,
+          })
       })
       .catch((error: unknown) => {
         if (active)
@@ -168,6 +265,7 @@ function App() {
             status: error instanceof ApiError && error.status === 401 ? 'anonymous' : 'offline',
             username: '',
             esGerencia: false,
+            rol: 'lectura',
           })
       })
     return () => {
@@ -175,11 +273,34 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    function onSesionExpirada() {
+      setSession({ status: 'anonymous', username: '', esGerencia: false, rol: 'lectura' })
+      setExpirada(true)
+    }
+    window.addEventListener('sesion-expirada', onSesionExpirada)
+    return () => {
+      window.removeEventListener('sesion-expirada', onSesionExpirada)
+    }
+  }, [])
+
   async function signOut() {
     await apiWrite('/api/auth/logout/', 'POST')
-    setSession({ status: 'anonymous', username: '', esGerencia: false })
+    setSession({ status: 'anonymous', username: '', esGerencia: false, rol: 'lectura' })
   }
 
+  if (codigoClave !== null)
+    return (
+      <DefinirClave
+        codigo={codigoClave}
+        onListo={() => {
+          window.history.replaceState(null, '', '/')
+          setCodigoClave(null)
+          setClaveDefinida(true)
+          setSession({ status: 'anonymous', username: '', esGerencia: false, rol: 'lectura' })
+        }}
+      />
+    )
   if (session.status === 'checking')
     return (
       <main className="auth-shell">
@@ -196,16 +317,58 @@ function App() {
   if (session.status === 'anonymous')
     return (
       <Login
-        onLogin={(username, esGerencia) => setSession({ status: 'ready', username, esGerencia })}
+        onLogin={(username, esGerencia, rol) => {
+          setExpirada(false)
+          setClaveDefinida(false)
+          setSession({ status: 'ready', username, esGerencia, rol })
+        }}
+        mensaje={
+          claveDefinida
+            ? 'Listo, tu contraseña quedó definida. Ingresá con tu usuario.'
+            : expirada
+              ? 'Tu sesión expiró por inactividad. Ingresá de nuevo.'
+              : undefined
+        }
       />
     )
 
   const visibles = sections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => !item.soloGerencia || session.esGerencia),
+      items: section.items.filter(
+        (item) =>
+          (!item.soloGerencia || session.esGerencia) &&
+          (!item.soloAdministrador || session.rol === 'administrador'),
+      ),
     }))
     .filter((section) => section.items.length > 0)
+
+  const seccionActiva = sections.find((section) => section.items.some((item) => item.id === page))
+  const paginaActiva = pages.find((item) => item.id === page)
+
+  function mostrarEtiqueta(texto: string, elemento: HTMLElement) {
+    const caja = elemento.getBoundingClientRect()
+    setEtiqueta({ texto, top: caja.top + caja.height / 2 })
+  }
+
+  function botonDelMenu(id: string, texto: string, contenido: ReactNode, onClick: () => void) {
+    return (
+      <button
+        key={id}
+        className={page === id ? 'active' : ''}
+        aria-label={texto}
+        aria-current={page === id ? 'page' : undefined}
+        onClick={onClick}
+        onMouseEnter={(event) => mostrarEtiqueta(texto, event.currentTarget)}
+        onFocus={(event) => mostrarEtiqueta(texto, event.currentTarget)}
+        onMouseLeave={() => setEtiqueta(null)}
+        onBlur={() => setEtiqueta(null)}
+      >
+        {contenido}
+        <span className="nav-label">{texto}</span>
+      </button>
+    )
+  }
 
   return (
     <div className={menuOpen ? 'app-shell menu-open' : 'app-shell'}>
@@ -218,55 +381,78 @@ function App() {
         >
           {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
         </button>
-        <div className="brand-mark">
-          BM<span>.</span>
-        </div>
+        <div className="brand-mark">BM</div>
       </header>
       <aside className="sidebar">
-        <div className="sidebar-brand">
-          <div className="brand-mark">
-            BM<span>.</span>
-          </div>
-          <div className="topbar-title">
-            <strong>Big Media</strong>
-            <small>Sistema de carteles</small>
-          </div>
+        <div className="brand-mark" title="Big Media">
+          BM
         </div>
         <nav className="sidenav" aria-label="Navegación">
           {visibles.map((section) => (
-            <div key={section.title} className="nav-section">
-              <p className="nav-section-title">{section.title}</p>
+            <div
+              key={section.title}
+              className="nav-section"
+              role="group"
+              aria-label={section.title}
+            >
               {section.items.map((item) => {
                 const Icon = item.icon
-                return (
-                  <button
-                    key={item.id}
-                    className={page === item.id ? 'active' : ''}
-                    aria-current={page === item.id ? 'page' : undefined}
-                    onClick={() => {
-                      setPage(item.id)
-                      setMenuOpen(false)
-                    }}
-                  >
-                    <Icon aria-hidden="true" size={18} />
-                    {item.label}
-                  </button>
+                return botonDelMenu(
+                  item.id,
+                  item.label,
+                  <Icon aria-hidden="true" size={20} />,
+                  () => {
+                    setPage(item.id)
+                    setMenuOpen(false)
+                  },
                 )
               })}
             </div>
           ))}
         </nav>
         <div className="sidebar-user">
-          <span>{session.username}</span>
-          <button className="button-ghost" onClick={() => void signOut()}>
-            <LogOut aria-hidden="true" size={16} />
-            Salir
-          </button>
+          <span
+            className="avatar"
+            title={session.username}
+            onMouseEnter={(event) => mostrarEtiqueta(session.username, event.currentTarget)}
+            onMouseLeave={() => setEtiqueta(null)}
+          >
+            {session.username.slice(0, 1).toUpperCase()}
+          </span>
+          {botonDelMenu('salir', 'Salir', <LogOut aria-hidden="true" size={20} />, () => {
+            void signOut()
+          })}
         </div>
       </aside>
-      <main className="app-main" key={page}>
-        {pages.find((item) => item.id === page)?.render()}
-      </main>
+      {etiqueta !== null && (
+        <span className="nav-tooltip" role="tooltip" style={{ top: etiqueta.top }}>
+          {etiqueta.texto}
+        </span>
+      )}
+      <div className="app-content">
+        <header className="topbar" aria-label="Ubicación">
+          <p className="ruta">
+            Big Media <span aria-hidden="true">/</span> {seccionActiva?.title}{' '}
+            <span aria-hidden="true">/</span>{' '}
+            {detalle === null ? (
+              <strong>{paginaActiva?.label}</strong>
+            ) : (
+              <>
+                <button className="ruta-volver" onClick={detalle.onVolver}>
+                  {paginaActiva?.label}
+                </button>{' '}
+                <span aria-hidden="true">/</span> <strong>{detalle.texto}</strong>
+              </>
+            )}
+          </p>
+          <p className="fecha-hoy">{hoy}</p>
+        </header>
+        <main className="app-main" key={page}>
+          <PuedeEditarContext value={session.rol !== 'lectura'}>
+            <DetalleRutaContext value={setDetalle}>{paginaActiva?.render()}</DetalleRutaContext>
+          </PuedeEditarContext>
+        </main>
+      </div>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import ClientesPage from './ClientesPage'
 import type { Cliente, Marca } from './types'
+import { abrirAcciones } from '../../shared/pruebas'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 const fail = (status: number, data: unknown) => ({ ok: false, status, json: async () => data })
@@ -26,6 +27,8 @@ const marcasAgencia: Marca[] = [
     cliente_nombre: 'Agencia Andes',
     rubro: 3,
     rubro_nombre: 'Bebidas',
+    grupo: null,
+    grupo_nombre: null,
     activo: true,
   },
   {
@@ -35,6 +38,8 @@ const marcasAgencia: Marca[] = [
     cliente_nombre: 'Agencia Andes',
     rubro: null,
     rubro_nombre: null,
+    grupo: null,
+    grupo_nombre: null,
     activo: false,
   },
 ]
@@ -43,12 +48,20 @@ type Route = (url: string, options?: RequestInit) => unknown
 
 function mockFetch(route: Route) {
   const fetchMock = vi.fn(async (input: string, options?: RequestInit) => {
-    const response = route(input, options)
+    // La ficha también lista campañas e interacciones del cliente; acá no son el tema del test.
+    const response =
+      route(input, options) ?? (input.startsWith('/api/campanias/') ? ok([]) : undefined)
     if (response === undefined) throw new Error(`URL inesperada: ${input}`)
     return response
   })
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
+}
+
+/** Muestra una sección de la ficha (Campañas, Marcas o Interacciones). */
+function verSeccion(nombre: string) {
+  const secciones = screen.getByRole('navigation', { name: 'Secciones de la ficha' })
+  fireEvent.click(within(secciones).getByRole('button', { name: new RegExp(`^${nombre}`) }))
 }
 
 const called = (fetchMock: ReturnType<typeof mockFetch>, check: (url: string) => boolean) =>
@@ -118,7 +131,9 @@ test('muestra el nombre visible de un cliente sin nombre ni tipo', async () => {
 
   expect(await screen.findByText('Cliente sin nombre #3')).toBeDefined()
   expect(screen.getByText('Sin tipo')).toBeDefined()
-  fireEvent.click(screen.getByRole('button', { name: 'Ver marcas' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Ver ficha' }))
+  expect(screen.getByRole('heading', { name: 'Cliente sin nombre #3' })).toBeDefined()
+  verSeccion('Marcas')
   expect(screen.getByRole('heading', { name: 'Marcas de Cliente sin nombre #3' })).toBeDefined()
 })
 
@@ -206,15 +221,19 @@ test('la ficha de un intermediario lista todas sus marcas', async () => {
   })
   render(<ClientesPage />)
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Ver marcas' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
+  verSeccion('Marcas')
   const ficha = screen.getByRole('region', { name: 'Marcas de Agencia Andes' })
   expect(await within(ficha).findByText('Agua Cumbre')).toBeDefined()
   expect(within(ficha).getByText('Vino Alto')).toBeDefined()
   expect(within(ficha).getByText('Bebidas')).toBeDefined()
   expect(within(ficha).getByText('Inactiva')).toBeDefined()
   expect(screen.queryByText(/Se creó la marca/)).toBeNull()
-  fireEvent.click(within(ficha).getByRole('button', { name: 'Cerrar' }))
+  // Un intermediario común no tiene contactos múltiples (HU-068, criterio 2).
+  expect(screen.queryByRole('region', { name: /Contactos de/ })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Volver a clientes' }))
   expect(screen.queryByRole('region', { name: 'Marcas de Agencia Andes' })).toBeNull()
+  expect(screen.getByRole('heading', { name: 'Clientes' })).toBeDefined()
 })
 
 test.each([
@@ -228,7 +247,7 @@ test.each([
   })
   render(<ClientesPage />)
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Ver marcas' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
   expect(await screen.findByText(mensaje)).toBeDefined()
 })
 
@@ -240,7 +259,8 @@ test('el error al cargar las marcas de la ficha se anuncia como alerta', async (
   })
   render(<ClientesPage />)
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Ver marcas' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
+  verSeccion('Marcas')
   expect((await screen.findByRole('alert')).textContent).toBe('No se pudieron cargar las marcas.')
 })
 
@@ -254,7 +274,8 @@ test('edita un cliente con PATCH y muestra su ficha mientras se edita', async ()
   })
   render(<ClientesPage />)
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+  abrirAcciones(await screen.findByRole('table'))
+  fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
   const form = screen.getByRole('form', { name: 'Formulario de cliente' })
   expect(await screen.findByText('Agua Cumbre')).toBeDefined()
   fireEvent.change(within(form).getByLabelText('Teléfono'), { target: { value: '261 999' } })
@@ -277,7 +298,8 @@ test('inactiva un cliente sin borrarlo', async () => {
   vi.stubGlobal('confirm', () => true)
   render(<ClientesPage />)
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Inactivar' }))
+  abrirAcciones(await screen.findByRole('table'))
+  fireEvent.click(screen.getByRole('button', { name: 'Inactivar' }))
   await waitFor(() => {
     const patch = fetchMock.mock.calls.find(([, options]) => options?.method === 'PATCH')
     expect(body(patch?.[1])).toEqual({ activo: false })
@@ -293,6 +315,104 @@ test('informa el error de la API al inactivar', async () => {
   vi.stubGlobal('confirm', () => true)
   render(<ClientesPage />)
 
-  fireEvent.click(await screen.findByRole('button', { name: 'Inactivar' }))
+  abrirAcciones(await screen.findByRole('table'))
+  fireEvent.click(screen.getByRole('button', { name: 'Inactivar' }))
   expect((await screen.findByRole('alert')).textContent).toBe('No tenés permiso.')
+})
+
+test('la ficha de un intermediario formal muestra sus contactos', async () => {
+  const central = { ...agencia, tipo: 'intermediario_formal' as const }
+  mockFetch((url) => {
+    if (url === '/api/clientes/clientes/') return ok([central])
+    if (url === '/api/clientes/marcas/?cliente=1&incluir_inactivos=1') return ok([])
+    if (url === '/api/clientes/contactos/?cliente=1&incluir_inactivos=1')
+      return ok([
+        {
+          id: 5,
+          cliente: 1,
+          nombre: 'Ana',
+          cargo: '',
+          correo: '',
+          telefono: '',
+          notas: '',
+          principal: true,
+          activo: true,
+        },
+      ])
+    return undefined
+  })
+  render(<ClientesPage />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
+  const contactos = await screen.findByRole('region', { name: 'Contactos de Agencia Andes' })
+  expect(await within(contactos).findByText('Ana')).toBeDefined()
+})
+
+test('la ficha del cliente reúne sus marcas, sus campañas y sus interacciones', async () => {
+  mockFetch((url) => {
+    if (url === '/api/clientes/clientes/') return ok([agencia])
+    if (url === '/api/clientes/marcas/?cliente=1&incluir_inactivos=1') return ok(marcasAgencia)
+    if (url === '/api/campanias/campanias/?cliente=1')
+      return ok([
+        {
+          id: 11,
+          nombre: 'Verano 2027',
+          marca: 7,
+          marca_nombre: 'Agua Cumbre',
+          cliente_facturacion: null,
+          cliente_factura: 1,
+          cliente_factura_nombre: 'Agencia Andes',
+          fecha_inicio: '2027-01-01',
+          fecha_fin: '2027-01-31',
+          estado: 'cotizada',
+        },
+      ])
+    if (url === '/api/campanias/interacciones/?cliente=1')
+      return ok([
+        {
+          id: 4,
+          fecha: '2026-10-20',
+          tipo: 'llamada',
+          asunto: 'Propuesta de verano',
+          cliente: 1,
+          cliente_nombre: 'Agencia Andes',
+          contacto: null,
+          contacto_nombre: null,
+          campania: 11,
+          campania_nombre: 'Verano 2027',
+          notas: '',
+        },
+      ])
+    return undefined
+  })
+  render(<ClientesPage />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
+  const campanias = screen.getByRole('region', { name: 'Campañas de Agencia Andes' })
+  expect(await within(campanias).findByText('Verano 2027')).toBeDefined()
+  expect(within(within(campanias).getByRole('list')).getByText('Cotizada')).toBeDefined()
+  const cantidades = screen.getByLabelText('Cantidades')
+  await waitFor(() => expect(within(cantidades).getAllByText('1')).toHaveLength(2))
+  expect(within(cantidades).getByText('2')).toBeDefined()
+  verSeccion('Marcas')
+  expect(screen.queryByRole('region', { name: 'Campañas de Agencia Andes' })).toBeNull()
+  const marcas = screen.getByRole('region', { name: 'Marcas de Agencia Andes' })
+  expect(await within(marcas).findByText('Vino Alto')).toBeDefined()
+  verSeccion('Interacciones')
+  const interacciones = screen.getByRole('region', { name: 'Interacciones con Agencia Andes' })
+  expect(await within(interacciones).findByText('Propuesta de verano')).toBeDefined()
+})
+
+test('la ficha de un cliente sin campañas muestra las secciones vacías sin errores', async () => {
+  mockFetch((url) => {
+    if (url === '/api/clientes/clientes/') return ok([agencia])
+    if (url.startsWith('/api/clientes/marcas/')) return ok([])
+    return undefined
+  })
+  render(<ClientesPage />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
+  expect(await screen.findByText('Este cliente todavía no tiene marcas.')).toBeDefined()
+  expect(await screen.findByText('Todavía no hay campañas.')).toBeDefined()
+  expect(await screen.findByText('Todavía no hay interacciones registradas.')).toBeDefined()
+  expect(screen.queryByRole('alert')).toBeNull()
 })

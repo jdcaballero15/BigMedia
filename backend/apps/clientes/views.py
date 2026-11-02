@@ -7,8 +7,14 @@ from rest_framework.exceptions import ValidationError
 from config.permisos import LecturaConSesionEdicionOperativo
 from config.texto import normalizar_busqueda
 
-from .models import Cliente, Marca, Rubro
-from .serializers import ClienteSerializer, MarcaSerializer, RubroSerializer
+from .models import Cliente, Contacto, GrupoEconomico, Marca, Rubro
+from .serializers import (
+    ClienteSerializer,
+    ContactoSerializer,
+    GrupoEconomicoSerializer,
+    MarcaSerializer,
+    RubroSerializer,
+)
 
 
 def _id_positivo(valor: str, campo: str) -> int:
@@ -43,6 +49,13 @@ class RubroViewSet(ClientesBaseViewSet):
     serializer_class = RubroSerializer
 
 
+class GrupoEconomicoViewSet(ClientesBaseViewSet):
+    """Catálogo de grupos económicos (RN-016); edita Operativo, como los rubros."""
+
+    queryset = GrupoEconomico.objects.all()
+    serializer_class = GrupoEconomicoSerializer
+
+
 class ClienteViewSet(ClientesBaseViewSet):
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
@@ -62,15 +75,28 @@ class ClienteViewSet(ClientesBaseViewSet):
 
 
 class MarcaViewSet(ClientesBaseViewSet):
-    queryset = Marca.objects.select_related("cliente", "rubro")
+    queryset = Marca.objects.select_related("cliente", "rubro", "grupo")
     serializer_class = MarcaSerializer
 
     def filtrar_lista(self, queryset: QuerySet[Any]) -> QuerySet[Any]:
         params = self.request.query_params
-        for campo in ("cliente", "rubro"):
+        for campo in ("cliente", "rubro", "grupo"):
             if params.get(campo):
                 queryset = queryset.filter(**{f"{campo}_id": _id_positivo(params[campo], campo)})
         texto = self.texto_buscado()
         if texto:
             queryset = queryset.filter(nombre_busqueda__contains=texto)
+        return queryset
+
+
+class ContactoViewSet(ClientesBaseViewSet):
+    """Contactos de un intermediario formal (HU-068); sin DELETE, se inactivan."""
+
+    queryset = Contacto.objects.all()
+    serializer_class = ContactoSerializer
+
+    def filtrar_lista(self, queryset: QuerySet[Any]) -> QuerySet[Any]:
+        cliente = self.request.query_params.get("cliente")
+        if cliente:
+            queryset = queryset.filter(cliente_id=_id_positivo(cliente, "cliente"))
         return queryset

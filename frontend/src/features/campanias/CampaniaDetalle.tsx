@@ -1,7 +1,12 @@
+import { useState } from 'react'
 import ReservasCampania from '../reservas/ReservasCampania'
 import RentabilidadCampania from '../costos/RentabilidadCampania'
+import InteraccionesLista from './InteraccionesLista'
+import PosicionesPorFormato from './PosicionesPorFormato'
 import type { Campania } from './types'
 import { etiquetaEstado } from './types'
+import { formatearFecha } from '../../shared/fechas'
+import { usePuedeEditar } from '../../shared/sesion'
 
 type Props = {
   campania: Campania
@@ -10,9 +15,13 @@ type Props = {
 }
 
 export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props) {
+  const puedeEditar = usePuedeEditar()
+  // Las posiciones y la lista de reservas se recargan cuando la otra crea o edita reservas.
+  const [revisionPosiciones, setRevisionPosiciones] = useState(0)
+  const [revisionReservas, setRevisionReservas] = useState(0)
   const periodo =
     campania.fecha_inicio && campania.fecha_fin
-      ? `${campania.fecha_inicio} → ${campania.fecha_fin}`
+      ? `${formatearFecha(campania.fecha_inicio)} → ${formatearFecha(campania.fecha_fin)}`
       : 'Sin fechas planificadas'
 
   return (
@@ -27,9 +36,11 @@ export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props)
           <button className="button-ghost" onClick={onVolver}>
             Volver
           </button>
-          <button className="button-primary" onClick={onEditar}>
-            Editar
-          </button>
+          {puedeEditar && (
+            <button className="button-primary" onClick={onEditar}>
+              Editar
+            </button>
+          )}
         </div>
       </div>
       <div className="card">
@@ -52,8 +63,25 @@ export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props)
           </div>
         </dl>
       </div>
-      <ReservasCampania campaniaId={campania.id} />
+      <PosicionesPorFormato
+        campaniaId={campania.id}
+        fechaInicio={campania.fecha_inicio}
+        fechaFin={campania.fecha_fin}
+        revisionReservas={revisionPosiciones}
+        onReservasCreadas={() => setRevisionReservas((actual) => actual + 1)}
+      />
+      <ReservasCampania
+        campaniaId={campania.id}
+        revisionExterna={revisionReservas}
+        campaniaConfirmada={campania.estado === 'confirmada'}
+        onCambio={() => setRevisionPosiciones((actual) => actual + 1)}
+      />
       <RentabilidadCampania campaniaId={campania.id} />
+      <InteraccionesLista
+        filtro={{ campania: campania.id }}
+        titulo="Interacciones de la campaña"
+        ocultar="campania"
+      />
     </section>
   )
 }
