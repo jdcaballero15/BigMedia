@@ -17,7 +17,7 @@ Definidas por Gonza el 27/10/2026.
 - **E0 Plataforma base** — base del repositorio y despliegue en Render, y parámetros del motor de disponibilidad configurables desde la
   aplicación (HU-001).
 - **Reestructura del repositorio** (unidad técnica) — gobernanza, CI estricto y protección de ramas.
-- **E2 Inventario de soportes** — HU-008 a HU-014. HU-015 (importación) espera los relevamientos (RN-009).
+- **E2 Inventario de soportes** — HU-008 a HU-015. El importador de HU-015 está hecho (unidad `importacion-inventario`); la carga de Séxtuples espera el departamento de dos filas y la de Gran Formato, su planilla (RN-009).
 - **E3 Clientes, marcas y CRM** — clientes y marcas (HU-016, HU-017, HU-018) y aviso de marcas
   duplicadas (HU-019; su criterio 3 espera un importador de marcas) y contactos del intermediario
   formal (HU-068) e interacciones comerciales (HU-020, en `campanias` por

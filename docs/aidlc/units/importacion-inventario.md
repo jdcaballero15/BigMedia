@@ -1,6 +1,6 @@
 # Unidad: importacion-inventario
 
-- **Estado:** en revisión · **Épica:** E2 Inventario de soportes · **App dueña:** inventario
+- **Estado:** mergeada · **Épica:** E2 Inventario de soportes · **App dueña:** inventario
 - **Origen:** HU-015 (RN-009, RN-005, RN-008) · **Rama:** `feature/inventario-importacion`
 - **Depende de:** [`inventario`](inventario.md) (formatos, zonas, estados y carteles) y el PR #108
   (dudas de Séxtuples resueltas en RN-009).
@@ -140,4 +140,4 @@ cada test y `@pytest.mark.regla` donde corresponda:
     (con el aviso de bundle de más de 500 kB que ya tenía `develop`)
   - `pre-commit run --all-files` (incluye gitleaks): todos Passed
 - Gate 2 aprobado por Gonza el 2026-11-02, con la revisión visual de la pantalla en el navegador.
-- Gate 3 (PR): abierto el 2026-11-02 a pedido de Gonza.
+- Gate 3 (PR): #109, abierto el 2026-11-02 a pedido de Gonza y mergeado ese día.

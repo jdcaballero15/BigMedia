@@ -64,8 +64,8 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E11 Facturación mensual | [ajuste-planilla-facturacion](units/ajuste-planilla-facturacion.md) | facturacion | RN-024, HU-066 (criterio 3) | cierre-de-mes, costos-del-item | Gonza | feature/facturacion-ajuste-planilla | mergeada |
 | E3 Clientes, marcas y CRM | [grupo-economico](units/grupo-economico.md) | clientes | RN-016, HU-017, HU-022 (criterio 2), HU-050 (criterio 2) | clientes-y-marcas, fichas-cliente-y-marca, reporte-por-rubro | Gonza | feature/clientes-grupo-economico | mergeada |
 | E5 Reservas y motor de disponibilidad | [cartel-fuera-de-servicio](units/cartel-fuera-de-servicio.md) | reservas | HU-039 (RN-010) | reservas-base, inventario | Juan Diego | feature/reservas-cartel-fuera-de-servicio | mergeada |
-| E2 Inventario de soportes | [importacion-inventario](units/importacion-inventario.md) | inventario | HU-015 (RN-009, RN-005, RN-008) | inventario | Gonza | feature/inventario-importacion | en revisión |
+| E2 Inventario de soportes | [importacion-inventario](units/importacion-inventario.md) | inventario | HU-015 (RN-009, RN-005, RN-008) | inventario | Gonza | feature/inventario-importacion | mergeada |
 
 ## Notas
 
-- HU-015 (importación de inventario) queda fuera de la unidad `inventario` hasta tener los relevamientos (RN-009).
+- HU-015 (importación de inventario) quedó fuera de la unidad `inventario` hasta tener los relevamientos (RN-009); la implementa `importacion-inventario`. La carga de los datos reales no es una unidad: se hace con la pantalla de importación.
