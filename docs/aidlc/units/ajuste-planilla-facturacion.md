@@ -1,6 +1,6 @@
 # Unidad: ajuste-planilla-facturacion
 
-- **Estado:** en curso · **Épica:** E11 Facturación mensual · **App dueña:** facturacion
+- **Estado:** en revisión · **Épica:** E11 Facturación mensual · **App dueña:** facturacion
 - **Origen:** RN-024 (columnas reales, PR #104), HU-066 (criterio 3) · **Rama:**
   `feature/facturacion-ajuste-planilla`
 
@@ -107,3 +107,6 @@ Backend (pytest contra PostgreSQL, `@pytest.mark.regla("RN-024")`), en
   - Frontend (sin cambios): `format:check`, `lint` y `typecheck` sin errores; `test:coverage`:
     48 archivos, 385 tests, 92,48 % de sentencias y 94,47 % de líneas; `build` OK
   - `pre-commit run --all-files` (incluye gitleaks): todos Passed
+- Gate 2 aprobado por Gonza el 2026-11-02, después de revisar una planilla de ejemplo con datos
+  ficticios.
+- Gate 3 (PR): abierto el 2026-11-02 a pedido de Gonza.
