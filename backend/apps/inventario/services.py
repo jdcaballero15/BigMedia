@@ -157,21 +157,13 @@ def _numero(valor: str) -> Decimal | None:
     return numero if numero.is_finite() else None
 
 
-def es_sextuples(formato: Formato) -> bool:
-    return normalizar_comparacion(formato.nombre) == "sextuples"
-
-
 def _mismo_formato(escrito: str, formato: Formato) -> bool:
-    """«PPL o Gran Formato» y «PPL/Gran Formato» son el mismo nombre."""
-
-    def comparable(nombre: str) -> str:
-        return normalizar_comparacion(nombre).replace(" o ", " ")
-
-    return comparable(escrito) == comparable(formato.nombre)
+    """Sin distinguir mayúsculas, tildes ni signos: «gran formato» es Gran Formato."""
+    return normalizar_comparacion(escrito) == normalizar_comparacion(formato.nombre)
 
 
 def columnas_de(formato: Formato) -> list[str]:
-    medida = "slots" if es_sextuples(formato) else "tamano"
+    medida = "slots" if formato.por_cantidad else "tamano"
     return ["formato", "direccion", medida, "zona", *OPCIONALES]
 
 
@@ -242,7 +234,7 @@ def _obligatorios(datos: dict[str, str], medida: str) -> list[tuple[str, str]]:
 
 def _medida(datos: dict[str, str], cartel: Cartel, formato: Formato) -> tuple[str, str] | None:
     """Pone el tamaño o los slots en el cartel; devuelve el error si el valor no sirve."""
-    if not es_sextuples(formato):
+    if not formato.por_cantidad:
         tamano = normalizar_tamano(datos["tamano"])
         if tamano is None:
             return ("tamano", "El tamaño tiene que ser ancho x alto, por ejemplo 6x3.")
@@ -303,7 +295,7 @@ def _opcionales(datos: dict[str, str], cartel: Cartel) -> list[tuple[str, str]]:
 def _validar_fila(
     numero: int, datos: dict[str, str], formato: Formato, catalogos: Catalogos
 ) -> Candidato | list[FilaReporte]:
-    medida = "slots" if es_sextuples(formato) else "tamano"
+    medida = "slots" if formato.por_cantidad else "tamano"
     ref = datos.get("ref_origen", "")
     errores = _obligatorios(datos, medida)
     cartel = Cartel(formato=formato, direccion=datos.get("direccion", ""))

@@ -46,7 +46,7 @@ CARTELES = (
     ("LED", "Godoy Cruz", "Av. San Martín Sur 2200", 6, "160000", "activo", "ElectroLED Andes"),
     ("LED", "Guaymallén", "Acceso Este km 3", 4, "150000", "mantenimiento", "ElectroLED Andes"),
     (
-        "PPL/Gran Formato",
+        "Gran Formato",
         "Luján de Cuyo",
         "Ruta 7 km 1020",
         1,
@@ -55,7 +55,7 @@ CARTELES = (
         "Estructuras Andinas",
     ),
     (
-        "PPL/Gran Formato",
+        "Gran Formato",
         "Las Heras",
         "Av. Champagnat 1500",
         1,
@@ -63,7 +63,7 @@ CARTELES = (
         "activo",
         "Estructuras Andinas",
     ),
-    ("PPL/Gran Formato", "Maipú", "Ruta 7 km 1035", 1, "300000", "apagado", "Estructuras Andinas"),
+    ("Gran Formato", "Maipú", "Ruta 7 km 1035", 1, "300000", "apagado", "Estructuras Andinas"),
     ("Séxtuples", "Ciudad", "Calle Colón 300", 6, "60000", "activo", ""),
     ("Séxtuples", "Godoy Cruz", "Calle Perú 1200", 6, "55000", "activo", ""),
     ("Banderolas", "Ciudad", "Av. Mitre 800", 1, "40000", "activo", ""),

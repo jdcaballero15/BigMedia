@@ -262,8 +262,10 @@ En **Inventario › Carteles**, tocá **Editar** en el cartel y cambiá su **Est
 Solo el administrador ve **Inventario › Importar carteles**. Sirve para cargar de una vez el
 relevamiento de un formato (por ejemplo, Séxtuples o Gran Formato).
 
-1. Prepará el CSV con la plantilla del formato: Séxtuples lleva la columna `slots`; los demás,
-   `tamano` (por ejemplo `6x3`). Una fila por cartel, guardado como «CSV UTF-8 (delimitado por
+1. Prepará el CSV con la plantilla del formato: los circuitos (Séxtuples, Banderolas y PPL) llevan
+   la columna `slots`, con la cantidad de cada dirección; los demás, `tamano` (por ejemplo `6x3`).
+   Qué formato es un circuito se marca en **Operación › Formatos**, con la casilla «Se carga por
+   cantidad (circuito)». Una fila por cartel, guardado como «CSV UTF-8 (delimitado por
    comas)».
 2. Elegí el **Formato** y el **Archivo CSV**, y tocá **Simular**. No se guarda nada: ves cuántas
    filas se crearían, cuáles ya existen, cuáles se rechazan y cuáles quedan en revisión, con el

@@ -15,6 +15,7 @@ type Registro = {
   capacidad_predeterminada?: number
   ancho?: string | null
   alto?: string | null
+  por_cantidad?: boolean
   operativo?: boolean
   es_baja?: boolean
 }
@@ -57,6 +58,7 @@ export default function CatalogosPage({
   const [alto, setAlto] = useState('')
   const [operativo, setOperativo] = useState(false)
   const [esBaja, setEsBaja] = useState(false)
+  const [porCantidad, setPorCantidad] = useState(false)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
@@ -89,6 +91,7 @@ export default function CatalogosPage({
     setAlto(record === 'new' ? '' : (record.alto ?? ''))
     setOperativo(record === 'new' ? false : (record.operativo ?? false))
     setEsBaja(record === 'new' ? false : (record.es_baja ?? false))
+    setPorCantidad(record === 'new' ? false : (record.por_cantidad ?? false))
     setErrors({})
     setError('')
   }
@@ -103,6 +106,7 @@ export default function CatalogosPage({
       data.capacidad_predeterminada = Number(capacidad)
       data.ancho = ancho ? ancho : null
       data.alto = alto ? alto : null
+      data.por_cantidad = porCantidad
     }
     if (categoria === 'estados') {
       data.operativo = operativo
@@ -240,6 +244,19 @@ export default function CatalogosPage({
                     onChange={(event) => setAlto(event.target.value)}
                   />
                 </label>
+                <label className="checkline">
+                  <input
+                    type="checkbox"
+                    checked={porCantidad}
+                    aria-describedby="ayuda-por-cantidad"
+                    onChange={(event) => setPorCantidad(event.target.checked)}
+                  />
+                  Se carga por cantidad (circuito)
+                </label>
+                <p className="muted" id="ayuda-por-cantidad">
+                  Como Séxtuples, Banderolas o PPL: cada dirección tiene una cantidad y al importar
+                  esa cantidad es la capacidad del cartel.
+                </p>
               </>
             )}
             {categoria === 'estados' && (

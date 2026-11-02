@@ -31,7 +31,7 @@ def _sextuples() -> Formato:
 
 
 def _gran_formato() -> Formato:
-    return Formato.objects.get(nombre="PPL/Gran Formato")
+    return Formato.objects.get(nombre="Gran Formato")
 
 
 def _importar(
@@ -92,9 +92,7 @@ def test_importar_gran_formato_valido_crea_carteles_con_tamano_y_zona(admin_clie
     formato = _gran_formato()
     respuesta = _importar(
         admin_client,
-        [
-            "PPL o Gran Formato,Ruta Ficticia km 5,6 X 3 m,Maipú,,150000,,https://fotos.example/1,GF 2,"
-        ],
+        ["GRAN FORMATO,Ruta Ficticia km 5,6 X 3 m,Maipú,,150000,,https://fotos.example/1,GF 2,"],
         formato=formato,
         encabezado=GRAN_FORMATO,
     )
@@ -268,7 +266,7 @@ def test_importar_acepta_utf8_con_bom(admin_client):
 def test_importar_tamano_se_normaliza(admin_client, valor, esperado):
     _importar(
         admin_client,
-        [f'PPL/Gran Formato,Ruta Ficticia km 5,"{valor}",Ciudad,,,,,,'],
+        [f'Gran Formato,Ruta Ficticia km 5,"{valor}",Ciudad,,,,,,'],
         formato=_gran_formato(),
         encabezado=GRAN_FORMATO,
     )
@@ -281,7 +279,7 @@ def test_importar_tamano_se_normaliza(admin_client, valor, esperado):
 def test_importar_tamano_invalido_se_rechaza(admin_client, valor):
     respuesta = _importar(
         admin_client,
-        [f"PPL/Gran Formato,Ruta Ficticia km 5,{valor},Ciudad,,,,,,"],
+        [f"Gran Formato,Ruta Ficticia km 5,{valor},Ciudad,,,,,,"],
         formato=_gran_formato(),
         encabezado=GRAN_FORMATO,
     )
@@ -409,15 +407,15 @@ def test_importar_tamano_invertido_queda_en_revision(admin_client):
     _importar(
         admin_client,
         [
-            "PPL/Gran Formato,Ruta Ficticia km 5,6x3,Ciudad,,,,,,",
-            "PPL/Gran Formato,Ruta Ficticia km 5,3x6,Ciudad,,,,,,",
+            "Gran Formato,Ruta Ficticia km 5,6x3,Ciudad,,,,,,",
+            "Gran Formato,Ruta Ficticia km 5,3x6,Ciudad,,,,,,",
         ],
         formato=formato,
         encabezado=GRAN_FORMATO,
     )
     respuesta = _importar(
         admin_client,
-        ["PPL/Gran Formato,Ruta Ficticia km 5,3x6,Ciudad,,,,,,"],
+        ["Gran Formato,Ruta Ficticia km 5,3x6,Ciudad,,,,,,"],
         formato=formato,
         encabezado=GRAN_FORMATO,
     )
