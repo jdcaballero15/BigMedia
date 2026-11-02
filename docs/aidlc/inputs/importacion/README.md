@@ -62,15 +62,16 @@ Las planillas actuales están en formato visual (HU-015). Para transformarlas:
 
 La capacidad no va en el archivo: el cartel toma la capacidad por defecto del formato (HU-011).
 
-### Séxtuples
+### Séxtuples y otros circuitos
 
-Las mismas columnas, con `slots` en lugar de `tamano`:
+Los formatos marcados «Se carga por cantidad (circuito)» en la pantalla de Formatos (Séxtuples,
+Banderolas y PPL) usan las mismas columnas, con `slots` en lugar de `tamano`:
 
 | Columna | Obligatoria | Regla | Dónde se guarda |
 | --- | --- | --- | --- |
 | `slots` | Sí | Número entero mayor o igual a 1 | Capacidad del cartel (HU-015) |
 
-En los séxtuples la cantidad de slots es a la vez la capacidad y parte de la identidad del cartel (HU-010). Cómo se trata un cambio de slots depende de la decisión [D-05](../../reglas-de-negocio.md#rn-005-slots-de-los-séxtuples-d-05).
+En un circuito la cantidad es a la vez la capacidad y parte de la identidad del cartel (HU-010, RN-005). Cómo se trata un cambio de slots depende de la decisión [D-05](../../reglas-de-negocio.md#rn-005-slots-de-los-séxtuples-d-05).
 
 ## Normalización
 
