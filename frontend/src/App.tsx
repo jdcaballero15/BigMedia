@@ -17,6 +17,7 @@ import {
   Tags,
   TrendingUp,
   Truck,
+  Upload,
   UserCog,
   Users,
   X,
@@ -26,6 +27,7 @@ import type { LucideIcon } from 'lucide-react'
 import Login from './app/Login'
 import CartelesPage from './features/inventario/CartelesPage'
 import CatalogosPage from './features/inventario/CatalogosPage'
+import ImportacionPage from './features/inventario/ImportacionPage'
 import ClientesPage from './features/clientes/ClientesPage'
 import MarcasPage from './features/clientes/MarcasPage'
 import CampaniasPage from './features/campanias/CampaniasPage'
@@ -64,6 +66,7 @@ type Page =
   | 'items-facturacion'
   | 'carteles'
   | 'disponibilidad'
+  | 'importacion'
   | 'proveedores'
   | 'costos'
   | 'ingresos'
@@ -145,6 +148,13 @@ const sections: { title: string; items: Item[] }[] = [
         label: 'Disponibilidad',
         icon: CalendarDays,
         render: () => <DisponibilidadPage />,
+      },
+      {
+        id: 'importacion',
+        label: 'Importar carteles',
+        icon: Upload,
+        render: () => <ImportacionPage />,
+        soloAdministrador: true,
       },
     ],
   },

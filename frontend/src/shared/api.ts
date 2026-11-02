@@ -60,9 +60,13 @@ export async function apiWrite<T>(
 }
 
 /** Sube un archivo como multipart; el navegador pone el Content-Type con su separador. */
-export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+export async function apiUpload<T>(
+  path: string,
+  form: FormData,
+  method: 'PUT' | 'POST' = 'PUT',
+): Promise<T> {
   const response = await fetch(path, {
-    method: 'PUT',
+    method,
     credentials: 'same-origin',
     headers: { 'X-CSRFToken': csrfToken() },
     body: form,

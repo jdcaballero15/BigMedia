@@ -515,7 +515,7 @@ test('el rol Operativo ve acciones de edición', async () => {
   expect(await screen.findByRole('button', { name: 'Nuevo cliente' })).toBeDefined()
 })
 
-test('muestra Usuarios y Parámetros solo al administrador', async () => {
+test('muestra Usuarios, Parámetros e Importar carteles solo al administrador', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string) => {
@@ -528,6 +528,7 @@ test('muestra Usuarios y Parámetros solo al administrador', async () => {
   const nav = await screen.findByRole('navigation', { name: 'Navegación' })
   expect(within(nav).queryByRole('button', { name: 'Usuarios' })).toBeNull()
   expect(within(nav).queryByRole('button', { name: 'Parámetros' })).toBeNull()
+  expect(within(nav).queryByRole('button', { name: 'Importar carteles' })).toBeNull()
   cleanup()
 
   vi.stubGlobal(
@@ -538,10 +539,13 @@ test('muestra Usuarios y Parámetros solo al administrador', async () => {
       if (input === '/api/usuarios/usuarios/') return ok([])
       if (input === '/api/reservas/parametros/')
         return ok({ borde_inclusivo: true, tentativa_bloquea: false })
+      if (input === '/api/inventario/formatos/') return ok([])
       throw new Error(`URL inesperada: ${input}`)
     }),
   )
   render(<App />)
+  await irA('Importar carteles')
+  expect(await screen.findByRole('heading', { name: 'Importar carteles' })).toBeDefined()
   await irA('Usuarios')
   expect(await screen.findByRole('heading', { name: 'Usuarios' })).toBeDefined()
   await irA('Parámetros')
