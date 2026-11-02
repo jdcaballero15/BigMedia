@@ -1,6 +1,6 @@
 # Unidad: ajuste-importacion-circuitos
 
-- **Estado:** en curso · **Épica:** E2 Inventario de soportes · **App dueña:** inventario
+- **Estado:** en revisión · **Épica:** E2 Inventario de soportes · **App dueña:** inventario
 - **Origen:** RN-005 (ampliación del 2026-11-02), HU-009, HU-015 · **Rama:**
   `feature/inventario-importacion-circuitos`
 - **Depende de:** [`importacion-inventario`](importacion-inventario.md) y el PR #111 (listado de
@@ -104,3 +104,4 @@ datos de esa tabla. Probadas en la base local en los dos sentidos.
     395 tests, 92,75 % de sentencias y 94,77 % de líneas; `build` OK
   - `pre-commit run --all-files` (incluye gitleaks): todos Passed
 - Gate 2 aprobado por Gonza el 2026-11-02, con la revisión visual (casilla en Formatos y simulación de Banderolas o PPL).
+- Gate 3 (PR): abierto el 2026-11-02 a pedido de Gonza.

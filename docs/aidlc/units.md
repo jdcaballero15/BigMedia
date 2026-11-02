@@ -65,7 +65,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E3 Clientes, marcas y CRM | [grupo-economico](units/grupo-economico.md) | clientes | RN-016, HU-017, HU-022 (criterio 2), HU-050 (criterio 2) | clientes-y-marcas, fichas-cliente-y-marca, reporte-por-rubro | Gonza | feature/clientes-grupo-economico | mergeada |
 | E5 Reservas y motor de disponibilidad | [cartel-fuera-de-servicio](units/cartel-fuera-de-servicio.md) | reservas | HU-039 (RN-010) | reservas-base, inventario | Juan Diego | feature/reservas-cartel-fuera-de-servicio | mergeada |
 | E2 Inventario de soportes | [importacion-inventario](units/importacion-inventario.md) | inventario | HU-015 (RN-009, RN-005, RN-008) | inventario | Gonza | feature/inventario-importacion | mergeada |
-| E2 Inventario de soportes | [ajuste-importacion-circuitos](units/ajuste-importacion-circuitos.md) | inventario | RN-005, HU-009, HU-015 | importacion-inventario | Gonza | feature/inventario-importacion-circuitos | en curso |
+| E2 Inventario de soportes | [ajuste-importacion-circuitos](units/ajuste-importacion-circuitos.md) | inventario | RN-005, HU-009, HU-015 | importacion-inventario | Gonza | feature/inventario-importacion-circuitos | en revisión |
 
 ## Notas
 
