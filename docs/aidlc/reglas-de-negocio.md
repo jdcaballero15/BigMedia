@@ -32,11 +32,11 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | RN-002 | ¿Una reserva Pendiente bloquea a otras? | `provisoria` | Ocupa cupo solo visualmente; bloqueo duro al confirmar | Documento de historias (decisión D-02 del 15/10/2026) | HU-001, HU-031, HU-033, HU-041, HU-042, HU-056, HU-059 | Servicio `apps/reservas/services.py` (estados que bloquean), modelo `ParametrosDisponibilidad.tentativa_bloquea` (pantalla Parámetros), `backend/tests/test_disponibilidad.py`, `backend/tests/test_parametros.py`; lista de "Agregar carteles" `carteles_para_tanda` y creación en bloque `crear_reservas_en_bloque` (no valida cupo al crear Pendientes), `backend/tests/test_carteles_para_tanda.py`, `backend/tests/test_reservas_en_bloque.py` |
 | RN-003 | Cómo se cuentan los cupos dentro de un rango | `provisoria` | Pico diario: ocupación máxima por tramo del rango | Juan Diego (2026-10-19), sobre la decisión D-03 del 15/10/2026 | HU-031, HU-032, HU-034, HU-040, HU-042, HU-056 | Servicio `apps/reservas/services.py::conflictos_de` (pico diario, que usan `validar_disponibilidad` y `confirmar_reservas_de_campania`), `backend/tests/test_disponibilidad.py`, `backend/tests/test_confirmacion_en_bloque.py`; lista de "Agregar carteles" `carteles_para_tanda` (reusa `_pico_en_rango`), `backend/tests/test_carteles_para_tanda.py` |
 | RN-004 | Cupos de los LED | `provisoria` | Capacidad editable por cartel; una reserva = un cupo | Documento de historias (decisión D-04 del 15/10/2026) | HU-011, HU-028, HU-031, HU-034, HU-040, HU-048, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
-| RN-005 | Slots de los séxtuples | `provisoria` | Capacidad = slots relevados; una reserva = un slot genérico | Documento de historias (decisión D-05 del 15/10/2026) | HU-010, HU-011, HU-015, HU-030, HU-031, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
+| RN-005 | Slots de los séxtuples | `provisoria` | Capacidad = slots relevados; una reserva = un slot genérico. En la importación, Banderolas y PPL también toman la capacidad de la cantidad relevada | Documento de historias (decisión D-05 del 15/10/2026) | HU-010, HU-011, HU-015, HU-030, HU-031, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
 | RN-006 | Reglas de cancelación | `provisoria` | Cancelar siempre se permite y libera el cupo | Documento de historias (decisión D-06 del 15/10/2026) | HU-024, HU-035, HU-037, HU-045, HU-051, HU-058, HU-060 | Sin implementar |
 | RN-007 | Propiedad de los carteles | `provisoria` | Costos solo de impresión y fijación | Documento de historias (decisión D-07 del 15/10/2026) | HU-010, HU-015, HU-043, HU-044, HU-046 | Modelo `Costo` y margen en `apps/costos/` (default informativo; HU-046 terceros pendiente) |
 | RN-008 | Lista de zonas (departamentos) | `confirmada` | Los nueve departamentos (Ciudad, Godoy Cruz, Maipú, Luján de Cuyo, Guaymallén, Las Heras, San Martín, Rivadavia, San Carlos) | Juan Diego, 15/10/2026, diseño de inventario | HU-010, HU-013, HU-014, HU-015, HU-048 | Migración `inventario/0002_catalogos_iniciales`, catálogo editable |
-| RN-009 | Contenido real de los relevamientos | `pendiente` | Llegó el de Séxtuples (56 direcciones, 226 slots; marca por slot; sin tarifa, proveedor ni foto); falta Gran Formato. Las dudas de Séxtuples quedan resueltas (departamentos normalizados, slots de la columna Cantidad, sin bloques sueltos ni reservas pasadas), salvo el departamento de dos filas | Documento de historias (decisión D-09 del 15/10/2026); planilla de Séxtuples (Gonza, 2026-10-29); decisiones de Gonza (2026-11-02) | HU-015 | Importador `apps/inventario/services.py::importar_carteles` (zona obligatoria y comparada sin tildes ni mayúsculas, capacidad = slots), `backend/tests/test_importacion_carteles.py`; la conversión de la planilla visual al CSV se hace fuera del repositorio |
+| RN-009 | Contenido real de los relevamientos | `provisoria` | Listado del 2026-11-02: Séxtuples (54 direcciones, 226 slots, todas con departamento) y Gran Formato con los medianos mezclados (43 filas, 60 unidades), sin tarifa, proveedor ni foto. Departamentos normalizados; en Gran Formato cada fila es un cartel con capacidad = Unidades; todo se carga como Gran Formato hasta saber cuáles son medianos | Documento de historias (decisión D-09 del 15/10/2026); planilla de Séxtuples (Gonza, 2026-10-29); listado de carteles y decisiones de Gonza (2026-11-02) | HU-015 | Importador `apps/inventario/services.py::importar_carteles` (zona obligatoria y comparada sin tildes ni mayúsculas, capacidad = slots), `backend/tests/test_importacion_carteles.py`; la conversión de la planilla visual al CSV se hace fuera del repositorio |
 | RN-010 | Estados físicos y carteles fuera de servicio | `provisoria` | Alertar y bloquear reservas nuevas | Documento de historias (decisión D-10 del 15/10/2026) | HU-012, HU-039 | Modelo `EstadoCartel`, migración `0002_catalogos_iniciales` (los cinco estados); `validar_cartel_reservable` y `filtrar_vigentes` en `apps/reservas/services.py`, revalidado con el cartel bloqueado en `ReservaViewSet._guardar_con_disponibilidad`; aviso `ReservasAfectadas` en el frontend. Tests en `backend/tests/test_cartel_fuera_de_servicio.py` |
 | RN-011 | ¿Se puede confirmar una campaña incompleta? | `provisoria` | Se exigen cliente, marca y fechas | Documento de historias (decisión D-11 del 15/10/2026) | HU-024, HU-030, HU-049, HU-059 | `apps/campanias/services.py::validar_confirmacion` y su test `test_confirmar_exige_marca_cliente_y_fechas`; la confirmación en bloque de reservas exige la campaña Confirmada: `apps/reservas/services.py::confirmar_reservas_de_campania`, `backend/tests/test_confirmacion_en_bloque.py` |
 | RN-012 | Reservas con fechas pasadas | `provisoria` | No se permite a mano; histórico solo por importación | Documento de historias (decisión D-12 del 15/10/2026) | HU-038, HU-048, HU-049 | Sin implementar |
@@ -47,7 +47,7 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | RN-017 | Cambio de razón social de un cliente directo | `provisoria` | La marca homónima no se actualiza sola; se renombra a mano | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-018 | Servicio `apps/clientes/services.py` (`crear_cliente`: la marca se crea solo en el alta), `backend/tests/test_clientes_marca_homonima.py` |
 | RN-018 | Interacciones antes de la campaña | `provisoria` | Marca opcional en la interacción, del mismo cliente y coherente con la campaña | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-020 | Servicio `apps/campanias/services.py` (`validar_marca_de_interaccion`), modelo `Interaccion.marca`, filtro `?marca=` en `InteraccionViewSet`, `backend/tests/test_interacciones.py` |
 | RN-019 | Dimensiones estándar por formato | `provisoria` | Sin tamaño fijo: ancho y alto del formato opcionales, tamaño real en cada cartel | Gonza (2026-10-28), sobre la decisión D-16 del 15/10/2026 | HU-009 | Modelos `Formato.ancho` y `Formato.alto` (opcionales) y `Cartel.tamano` en `apps/inventario/models.py`; sin test propio |
-| RN-020 | Formatos sin relevamiento | `pendiente` | Sin definir | Documento de historias (decisión D-16 del 15/10/2026) | HU-015 | Sin implementar |
+| RN-020 | Formatos sin relevamiento | `pendiente` | Llegaron Banderolas (14 direcciones, 36 unidades), PPL (15 direcciones, 44 unidades) y Monocolumnas (3 carteles); Mediano Formato viene mezclado con Gran Formato; falta Carteleras | Documento de historias (decisión D-16 del 15/10/2026); listado de carteles y Gonza (2026-11-02) | HU-015 | Sin implementar |
 | RN-021 | Usuarios | `provisoria` | Seba y Ale; el resto se da de alta desde Gestión de usuarios cuando haga falta | Documento de historias (decisión D-16 del 15/10/2026); Gonza (2026-11-02) | HU-004, HU-005 | Sin implementar |
 | RN-022 | Administración usa el sistema o recibe planilla | `provisoria` | Recibe planilla y avisos por correo; Seba carga el número de factura | Documento de historias (bloque Administración del 15/10/2026) | HU-065, HU-066, HU-067 | El operativo pasa el ítem a Facturado con su número (`apps/facturacion/services.py::validar_cambio_de_item`, `backend/tests/test_estados_facturacion.py`) y envía el mes descargando la planilla (`enviar_a_facturar`, `backend/tests/test_cierre_de_mes.py`); al reabrir y al reenviar un ítem, Administración recibe un correo en `FACTURACION_CORREO_ADMINISTRACION` (`apps/facturacion/services.py::avisar_a_administracion`, `backend/tests/test_reabrir_item.py`) |
 | RN-023 | Alícuotas de IVA y listas Gob/Priv y F/V | `provisoria` | 21% por defecto, editable; listas administrables | Documento de historias (bloque Administración del 15/10/2026) | HU-060, HU-061 | `apps/facturacion/models.py` (`alicuota_iva` con 21 % por defecto, `iva_y_total`; catálogos `Sector` y `TipoVenta` administrables en el admin), `backend/tests/test_importes_facturacion.py` |
@@ -186,6 +186,11 @@ realidad entran; coincide con el diseño de `units/base-del-repositorio.md`. · 
 
 **Respuesta:** slot genérico, sin posición exacta, para todos los circuitos grandes (input de Seba; ver arriba). · **Fecha:** 2026-10-19 · **Quién respondió:** Seba (relevado por el equipo)
 
+**Ampliación (importación):** el listado de carteles trae Banderolas y PPL igual que Séxtuples: una
+dirección con una cantidad y un tamaño general para todo el formato. Al importarlos, la capacidad
+del cartel es esa cantidad, como los slots de un séxtuple. · **Fecha:** 2026-11-02 · **Quién
+respondió:** Gonza
+
 ### RN-006 Reglas de cancelación (D-06)
 
 Hoy las historias dicen que cancelar siempre se permite, no borra y libera el cupo (HU-037). Faltan varias reglas que cambian datos y reportes.
@@ -300,8 +305,30 @@ se guarda en el repositorio porque tiene datos reales.
 
 **Fecha:** 2026-11-02 · **Quién respondió:** Gonza
 
-**Respuesta:** _pendiente_ para Gran Formato (se le pidió la planilla a Seba el 2026-11-02) ·
-**Fecha:** · **Quién respondió:**
+**Respuesta (listado de carteles):** el 2026-11-02 llegó un listado nuevo con cuatro hojas
+(«Medianos y Gran Formato», «Séxtuples», «Banderolas» y «PPL»), cada una con Dirección,
+Departamento y Cantidad o Unidades. No se guarda en el repositorio porque tiene datos reales.
+
+- **Séxtuples:** 54 direcciones y 226 slots, todas con departamento y cantidad, sin repetidas ni
+  bloques sueltos. Reemplaza a la planilla del 2026-10-29 para la carga, así que las preguntas 6
+  (salvo la normalización de los nombres) y 7 dejan de aplicar. Tamaño general: 4,36 x 2,16.
+1. Gran Formato, sí: 43 filas y 60 unidades, con los medianos en la misma hoja.
+2. El tamaño viene como ancho x alto en metros, con coma decimal («8 x 4», «13,4 x 2,16»).
+3. El listado no tiene colores ni celdas combinadas.
+4. No trae tarifa, proveedor, foto ni estado.
+5. Tres direcciones figuran dos veces con distinto tamaño: son carteles distintos y se cargan con
+   `confirmar_distinto`.
+
+Decisiones para la carga:
+
+- En Gran Formato, una fila con varias Unidades es **un cartel con capacidad igual a las
+  Unidades**, como un circuito. La capacidad se carga en la ficha después de importar.
+- Toda la hoja se carga como **Gran Formato** hasta que Seba diga cuáles son medianos; después se
+  les cambia el formato en la ficha.
+- Los departamentos se normalizan a los de RN-008 («Lujan» es Luján de Cuyo).
+
+**Fecha:** 2026-11-02 · **Quién respondió:** Big Media, por el listado que le pasó a Gonza, y las
+decisiones de Gonza
 
 ### RN-010 Estados físicos y carteles fuera de servicio (preguntas 9 y 18) (D-10)
 
@@ -419,7 +446,11 @@ Pregunta menor del bloque «Otras preguntas menores» de D-16.
 
 **Formatos sin relevamiento:** ¿cuándo habrá datos de Banderolas, Mediano Formato, Monocolumnas y Carteleras? Afecta HU-015.
 
-**Respuesta:** _pendiente_ (se le preguntó a Seba el 2026-11-02) · **Fecha:** · **Quién respondió:**
+**Respuesta (parcial):** el listado de carteles del 2026-11-02 trae Banderolas (14 direcciones, 36
+unidades, tamaño general 0,72 x 1,62) y PPL (15 direcciones, 44 unidades, tamaño general 1,00 x
+1,50), y Gonza pasó las tres Monocolumnas, con su tamaño, todas en Godoy Cruz. Mediano Formato
+viene mezclado con Gran Formato (RN-009). Falta Carteleras. · **Fecha:** 2026-11-02 · **Quién
+respondió:** Big Media (listado) y Gonza
 
 ### RN-021 Usuarios (D-16)
 

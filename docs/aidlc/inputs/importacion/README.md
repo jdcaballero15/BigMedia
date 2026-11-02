@@ -18,7 +18,7 @@ Las plantillas no traen filas de ejemplo con datos: no hay que inventar carteles
 
 Antes de importar tienen que existir en el sistema:
 
-1. **Los formatos** "PPL o Gran Formato" y "Séxtuples", activos, con su capacidad por defecto (HU-009).
+1. **Los formatos** que se importan (Gran Formato, Séxtuples, Banderolas, PPL, Monocolumnas), activos, con su capacidad por defecto (HU-009).
 2. **Las zonas.** La zona es obligatoria y la lista de departamentos todavía no está confirmada (decisión [D-08](../../reglas-de-negocio.md#rn-008-lista-de-zonas-departamentos-d-08)). Sin zonas no se puede importar ningún cartel.
 3. **Los proveedores** que se nombren en el archivo (HU-008). El importador no crea proveedores nuevos, para que un error de tipeo no genere un proveedor duplicado.
 4. **Los estados de cartel**, si el archivo trae la columna `estado` (HU-012).
@@ -49,7 +49,7 @@ Las planillas actuales están en formato visual (HU-015). Para transformarlas:
 
 | Columna | Obligatoria | Regla | Dónde se guarda |
 | --- | --- | --- | --- |
-| `formato` | Sí | Tiene que coincidir con el formato elegido al importar, sin distinguir mayúsculas, tildes ni signos («PPL o Gran Formato» y «PPL/Gran Formato» son el mismo). Solo se importan formatos de modalidad fija | Cartel |
+| `formato` | Sí | Tiene que coincidir con el formato elegido al importar, sin distinguir mayúsculas, tildes ni signos («gran formato» y «Gran Formato» son el mismo). Solo se importan formatos de modalidad fija | Cartel |
 | `direccion` | Sí | Texto libre, de 3 a 200 caracteres | Cartel |
 | `tamano` | Sí | Ancho x alto, por ejemplo `6x3` o `4,5x2`. Ver normalización | Cartel |
 | `zona` | Sí | Debe existir en la lista de zonas, sin distinguir mayúsculas ni tildes | Cartel |
