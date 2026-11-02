@@ -49,7 +49,7 @@ Las planillas actuales están en formato visual (HU-015). Para transformarlas:
 
 | Columna | Obligatoria | Regla | Dónde se guarda |
 | --- | --- | --- | --- |
-| `formato` | Sí | Tiene que coincidir con el formato elegido al importar (por ejemplo, "PPL o Gran Formato") y estar activo | Cartel |
+| `formato` | Sí | Tiene que coincidir con el formato elegido al importar, sin distinguir mayúsculas, tildes ni signos («PPL o Gran Formato» y «PPL/Gran Formato» son el mismo). Solo se importan formatos de modalidad fija | Cartel |
 | `direccion` | Sí | Texto libre, de 3 a 200 caracteres | Cartel |
 | `tamano` | Sí | Ancho x alto, por ejemplo `6x3` o `4,5x2`. Ver normalización | Cartel |
 | `zona` | Sí | Debe existir en la lista de zonas, sin distinguir mayúsculas ni tildes | Cartel |

@@ -27,3 +27,25 @@ export type Cartel = {
   foto_url: string
   nombre_visible: string
 }
+
+export type ResultadoFila = 'creada' | 'omitida' | 'rechazada' | 'en_revision'
+export type FilaReporte = {
+  fila: number
+  ref_origen: string
+  resultado: ResultadoFila
+  campo: string
+  motivo: string
+  cartel_coincidente: string
+}
+export type Importacion = {
+  simulado: boolean
+  resumen: {
+    leidas: number
+    creadas: number
+    omitidas: number
+    rechazadas: number
+    en_revision: number
+    incompletas: number
+  }
+  filas: FilaReporte[]
+}

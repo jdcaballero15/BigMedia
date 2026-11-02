@@ -1,15 +1,22 @@
 from typing import Any, cast
 
+from django.contrib.auth.models import AbstractBaseUser
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import QuerySet
 from rest_framework import permissions, viewsets
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import MultiPartParser
+from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
+from rest_framework.views import APIView
 
 from apps.auditoria import services as auditoria_services
-from config.permisos import LecturaConSesionEdicionOperativo
+from config.permisos import LecturaConSesionEdicionOperativo, SoloAdministrador
 from config.texto import normalizar_busqueda
 
+from . import services
 from .models import Cartel, EstadoCartel, Formato, Proveedor, Zona
 from .serializers import (
     CartelSerializer,
@@ -93,3 +100,30 @@ class CartelViewSet(InventarioViewSet):
                 direccion_busqueda__icontains=normalizar_busqueda(params["q"].strip())
             )
         return queryset
+
+
+class ImportacionCartelesView(APIView):
+    """Importa carteles desde un CSV, o lo simula sin guardar (HU-015). Solo Administrador."""
+
+    permission_classes = [permissions.IsAuthenticated, SoloAdministrador]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request: Request) -> Response:
+        archivo = request.FILES.get("archivo")
+        if archivo is None:
+            raise ValidationError({"archivo": "Elegí el archivo CSV a importar."})
+        datos = cast(dict[str, Any], request.data)
+        formato_id = str(datos.get("formato", ""))
+        formato = (
+            Formato.objects.filter(pk=int(formato_id)).first() if formato_id.isdecimal() else None
+        )
+        if formato is None:
+            raise ValidationError({"formato": "Elegí un formato que exista."})
+        simular = str(datos.get("simular", "")).casefold() in ("1", "true", "si")
+        try:
+            resultado = services.importar_carteles(
+                archivo, formato, cast(AbstractBaseUser, request.user), simular=simular
+            )
+        except DjangoValidationError as error:
+            raise ValidationError(error.message_dict) from error
+        return Response(resultado.como_dict())
