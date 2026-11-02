@@ -90,3 +90,16 @@ datos de esa tabla. Probadas en la base local en los dos sentidos.
 ## Registro de gates
 
 - Gate 1 (plan): aprobado por Gonza el 2026-11-02 (opción A).
+- Ajustes durante la implementación: la migración se partió en dos (esquema y datos) para que la
+  vuelta atrás funcione en PostgreSQL; `test_seeded_zones_formats_and_states` pasa a contar 8
+  formatos; el importador compara el nombre del formato sin el caso especial de «PPL o Gran
+  Formato». Rebaseada sobre `develop` con el PR #111.
+- Gate 2 (verificación): 2026-11-02 — todo en verde:
+  - `ruff format --check .`: 142 files already formatted; `ruff check .`: All checks passed!
+  - `mypy backend`: Success: no issues found in 142 source files
+  - `makemigrations --check --dry-run`: No changes detected; migraciones 0005 y 0006 aplicadas,
+    revertidas y vueltas a aplicar en la base local
+  - `pytest --cov`: 897 passed, ninguno salteado; Total coverage: 97.21 %
+  - Frontend: `format:check`, `lint` y `typecheck` sin errores; `test:coverage`: 50 archivos,
+    395 tests, 92,75 % de sentencias y 94,77 % de líneas; `build` OK
+  - `pre-commit run --all-files` (incluye gitleaks): todos Passed
