@@ -20,7 +20,7 @@ def test_seeded_zones_formats_and_states():
         "Rivadavia",
         "San Carlos",
     }
-    assert Formato.objects.count() == 7
+    assert Formato.objects.count() == 8
     assert Formato.objects.get(nombre="LED").modalidad == "digital"
     assert Formato.objects.get(nombre="Séxtuples").modalidad == "fija"
     assert set(EstadoCartel.objects.values_list("codigo", flat=True)) == {
