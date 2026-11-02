@@ -325,6 +325,14 @@ El CUIT de facturación del ítem puede ser distinto del CUIT del cliente: la pl
    registrado en **Envíos a facturar**, con quién lo mandó y cuándo, y su planilla se puede volver
    a bajar.
 
+La planilla tiene la forma de la que usa Administración: arriba el período (por ejemplo
+`PERIODO: 2026/9`) y `CARTELERIA`; primero sus siete columnas (**CLIENTE (RAZON SOCIAL)**,
+**IMPORTE NETO TOTAL**, **COSTOS INCLUIDOS EN FC**, **DETALLE COSTO**, **TIPO DE VENTA (F/V)**,
+**GOB/PRIV** y **TIPO**) y después las del sistema (mes, CUIT, marca, orden de compra, grupo,
+etc.). En **TIPO** va el tipo de soporte y la descripción del ítem; en **DETALLE COSTO**, cada costo
+con a quién se le paga. Abajo están la suma de importes, la suma de costos y el **Neto**, como
+fórmulas: si Administración corrige un importe, se recalculan.
+
 Si no hay ningún ítem completo, dice "No hay ítems completos para enviar." y no se envía nada.
 
 ### Después del envío

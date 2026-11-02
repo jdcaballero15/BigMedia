@@ -20,6 +20,7 @@ from django.db.models import Count, DecimalField, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from openpyxl import Workbook
+from openpyxl.worksheet.worksheet import Worksheet
 
 from apps.auditoria import services as auditoria_services
 from apps.costos import services as costos_services
@@ -697,10 +698,36 @@ def _numero(valor: Decimal | None) -> float | None:
     return float(valor) if valor is not None else None
 
 
-# Columnas de la planilla para Administración (RN-024, provisoria hasta tener la planilla real):
-# las de hoy y, al final, las nuevas: orden de compra (HU-062), grupo de factura (HU-064), y
-# costos y neto final (HU-063), y la marca de reenviado (HU-067).
+def _cliente_razon_social(item: ItemFacturacion) -> str | None:
+    if item.cliente is None:
+        return None
+    return item.cliente.razon_social or item.cliente.nombre_visible
+
+
+def _detalle_costo(item: ItemFacturacion) -> str | None:
+    """Cada costo no anulado como «<tipo> <a quién se le paga o proveedor>», separados por «; »."""
+    detalles = []
+    for costo in costos_del_item(item).filter(anulado=False):
+        destino = costo.destinatario or (costo.proveedor.nombre if costo.proveedor else "")
+        detalles.append(f"{costo.get_tipo_display()} {destino}".strip())
+    return "; ".join(detalles) or None
+
+
+def _tipo(item: ItemFacturacion) -> str | None:
+    return " · ".join(dato for dato in (item.tipo_soporte, item.descripcion) if dato) or None
+
+
+# Columnas de la planilla para Administración (RN-024): primero las siete de la planilla real, en
+# su orden, y al final las del sistema: orden de compra (HU-062), grupo de factura (HU-064),
+# neto final (HU-063) y la marca de reenviado (HU-067).
 COLUMNAS_PLANILLA: list[tuple[str, Any]] = [
+    ("CLIENTE (RAZON SOCIAL)", _cliente_razon_social),
+    ("IMPORTE NETO TOTAL", lambda i: _numero(i.neto)),
+    ("COSTOS INCLUIDOS EN FC", lambda i: _numero(costo_total(i))),
+    ("DETALLE COSTO", _detalle_costo),
+    ("TIPO DE VENTA (F/V)", lambda i: i.tipo_venta.nombre if i.tipo_venta else None),
+    ("GOB/PRIV", lambda i: i.sector.nombre if i.sector else None),
+    ("TIPO (cartel/led/ppl/sextuples)", _tipo),
     ("Mes", lambda i: i.mes.strftime("%Y-%m") if i.mes else None),
     ("Cliente", lambda i: i.cliente.nombre_visible if i.cliente else None),
     ("CUIT", lambda i: i.cuit_facturacion or None),
@@ -710,22 +737,25 @@ COLUMNAS_PLANILLA: list[tuple[str, Any]] = [
     ("Período hasta", lambda i: i.periodo_hasta),
     ("Cantidad", lambda i: _numero(i.cantidad)),
     ("Precio unitario", lambda i: _numero(i.precio_unitario)),
-    ("Importe neto", lambda i: _numero(i.neto)),
     ("Alícuota IVA", lambda i: _numero(i.alicuota_iva)),
     ("IVA", lambda i: _numero(i.iva)),
     ("Total", lambda i: _numero(i.total)),
     ("Tipo de servicio", lambda i: i.get_tipo_servicio_display() or None),
-    ("Tipo de soporte", lambda i: i.tipo_soporte or None),
-    ("Gob/Priv", lambda i: i.sector.nombre if i.sector else None),
-    ("Tipo de venta", lambda i: i.tipo_venta.nombre if i.tipo_venta else None),
     ("Notas", lambda i: i.notas or None),
     ("Orden de compra", lambda i: i.orden_compra_numero or None),
     ("Fecha OC", lambda i: i.orden_compra_fecha),
     ("Grupo de factura", lambda i: i.grupo.codigo if i.grupo else None),
-    ("Costos", lambda i: _numero(costo_total(i))),
     ("Neto final", lambda i: _numero(neto_final(i))),
     ("Reenviado", lambda i: "Sí" if i.reenviado else None),
 ]
+
+# Títulos de antes de RN-024 en los valores guardados al reabrir un ítem (HU-067).
+TITULOS_ANTERIORES = {
+    "Importe neto": "IMPORTE NETO TOTAL",
+    "Costos": "COSTOS INCLUIDOS EN FC",
+    "Gob/Priv": "GOB/PRIV",
+    "Tipo de venta": "TIPO DE VENTA (F/V)",
+}
 
 
 def _filas_agrupadas(items: list[ItemFacturacion]) -> list[ItemFacturacion]:
@@ -742,17 +772,29 @@ def _filas_agrupadas(items: list[ItemFacturacion]) -> list[ItemFacturacion]:
     return filas
 
 
+def _agregar_totales(hoja: Worksheet, primera: int, ultima: int) -> None:
+    """Sumas del importe y de los costos, y el neto, con fórmulas para que se recalculen."""
+    hoja.append([None, f"=SUM(B{primera}:B{ultima})", f"=SUM(C{primera}:C{ultima})"])
+    totales = hoja.max_row
+    hoja.append([])
+    hoja.append(["Neto", f"=B{totales}-C{totales}"])
+
+
 def planilla_xlsx(envio: EnvioFacturacion) -> bytes:
     """Planilla .xlsx del envío para Administración (HU-066, criterio 3), por cliente y grupo."""
     libro = Workbook()
     hoja = libro.worksheets[0]
     hoja.title = f"Facturación {envio.mes:%Y-%m}"
+    # Como la planilla real (RN-024): período y título arriba, totales y neto abajo.
+    hoja.append(["PERIODO:", f"{envio.mes.year}/{envio.mes.month}"])
+    hoja.append(["CARTELERIA"])
     hoja.append([titulo for titulo, _ in COLUMNAS_PLANILLA])
     items = con_costo_total(
         envio.items.select_related("cliente", "marca", "sector", "tipo_venta", "grupo")
     )
     for item in _filas_agrupadas(list(items)):
         hoja.append([valor(item) for _, valor in COLUMNAS_PLANILLA])
+    _agregar_totales(hoja, primera=4, ultima=hoja.max_row)
     salida = io.BytesIO()
     libro.save(salida)
     return salida.getvalue()
@@ -816,12 +858,15 @@ def _aviso_de_reapertura(item: ItemFacturacion) -> tuple[str, str]:
 
 
 def _aviso_de_reenvio(item: ItemFacturacion) -> tuple[str, str]:
-    antes = item.valores_al_reabrir
+    antes = {
+        TITULOS_ANTERIORES.get(campo, campo): v for campo, v in item.valores_al_reabrir.items()
+    }
     ahora = valores_de_planilla(item)
+    # Un valor guardado antes de que existiera la columna no se compara: no hay con qué.
     cambios = [
-        f"- {campo}: {antes.get(campo, '') or '(vacío)'} → {valor or '(vacío)'}"
+        f"- {campo}: {antes[campo] or '(vacío)'} → {valor or '(vacío)'}"
         for campo, valor in ahora.items()
-        if antes.get(campo, "") != valor
+        if campo in antes and antes[campo] != valor
     ]
     detalle = "\n".join(cambios) if cambios else "Sin cambios desde la reapertura."
     cuerpo = f"{_titulo(item)} se reenvió a facturar.\n{_reapertura(item)}\n\nCambios:\n{detalle}"
