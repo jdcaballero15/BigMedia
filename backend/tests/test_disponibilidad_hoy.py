@@ -110,9 +110,12 @@ def test_nombre_visible_segun_formato_y_tamano(operativo_client):
     con_tamano = cartel(formato="Carteleras")
     con_tamano.tamano = "6x3"
     con_tamano.save()
+    banderola = cartel(capacidad=3, formato="Banderolas")
     por_id = {f["id"]: f["nombre_visible"] for f in filas(operativo_client)}
     assert "6 slots" in por_id[sextuple.id]
     assert por_id[con_tamano.id].endswith("· 6x3")
+    assert por_id[banderola.id] == banderola.nombre_visible
+    assert por_id[banderola.id].endswith("· 3 unidades")
 
 
 @pytest.mark.django_db

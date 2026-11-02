@@ -38,6 +38,8 @@ class Formato(Catalogo):
     )
     ancho = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     alto = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    # Circuito (Séxtuples, Banderolas, PPL): se carga por cantidad en cada dirección (RN-005).
+    por_cantidad = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["nombre"]
@@ -111,8 +113,22 @@ class Cartel(models.Model):
 
     @property
     def nombre_visible(self) -> str:
-        if self.formato.nombre == "Séxtuples":
-            return f"{self.direccion} · {self.capacidad} slots"
-        if self.tamano:
-            return f"{self.direccion} · {self.tamano}"
-        return self.direccion
+        return nombre_visible(
+            self.direccion,
+            self.tamano,
+            self.capacidad,
+            self.formato.nombre,
+            self.formato.por_cantidad,
+        )
+
+
+def nombre_visible(
+    direccion: str, tamano: str, capacidad: int, formato: str, por_cantidad: bool
+) -> str:
+    """Dirección y su medida: «N slots» en Séxtuples, «N unidades» en otro circuito o el tamaño."""
+    if por_cantidad:
+        unidad = "slots" if formato == "Séxtuples" else "unidades"
+        return f"{direccion} · {capacidad} {unidad}"
+    if tamano:
+        return f"{direccion} · {tamano}"
+    return direccion

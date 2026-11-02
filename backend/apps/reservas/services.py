@@ -13,7 +13,7 @@ from django.utils import timezone
 
 from apps.auditoria import services as auditoria_services
 from apps.campanias.models import Campania
-from apps.inventario.models import Cartel, Formato
+from apps.inventario.models import Cartel, Formato, nombre_visible
 from config.texto import normalizar_busqueda
 
 from .models import MESES_ABREV, ParametrosDisponibilidad, Reserva
@@ -119,11 +119,13 @@ def carteles_con_ocupacion_hoy(dia: date | None = None) -> QuerySet[Cartel]:
 
 def _nombre_visible_de_fila(fila: dict[str, Any]) -> str:
     """Replica `Cartel.nombre_visible` a partir de los campos de un `.values()`."""
-    if fila["formato__nombre"] == "Séxtuples":
-        return f"{fila['direccion']} · {fila['capacidad']} slots"
-    if fila["tamano"]:
-        return f"{fila['direccion']} · {fila['tamano']}"
-    return str(fila["direccion"])
+    return nombre_visible(
+        fila["direccion"],
+        fila["tamano"],
+        fila["capacidad"],
+        fila["formato__nombre"],
+        fila["formato__por_cantidad"],
+    )
 
 
 def fila_disponibilidad(fila: dict[str, Any]) -> dict[str, Any]:
@@ -148,6 +150,7 @@ CAMPOS_DISPONIBILIDAD = (
     "ocupados",
     "formato__nombre",
     "formato__modalidad",
+    "formato__por_cantidad",
     "zona__nombre",
 )
 

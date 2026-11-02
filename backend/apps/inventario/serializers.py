@@ -35,6 +35,7 @@ class FormatoSerializer(CatalogoSerializer):
             "capacidad_predeterminada",
             "ancho",
             "alto",
+            "por_cantidad",
             "activo",
         ]
 
