@@ -1,12 +1,14 @@
-from typing import Any
+from typing import Any, cast
 
 from django.db.models import Q, QuerySet
 from rest_framework import permissions, viewsets
 from rest_framework.exceptions import ValidationError
+from rest_framework.serializers import BaseSerializer
 
 from config.permisos import LecturaConSesionEdicionOperativo
 from config.texto import normalizar_busqueda
 
+from . import services
 from .models import Cliente, Contacto, GrupoEconomico, Marca, Rubro
 from .serializers import (
     ClienteSerializer,
@@ -77,6 +79,9 @@ class ClienteViewSet(ClientesBaseViewSet):
 class MarcaViewSet(ClientesBaseViewSet):
     queryset = Marca.objects.select_related("cliente", "rubro", "grupo")
     serializer_class = MarcaSerializer
+
+    def perform_update(self, serializer: BaseSerializer[Marca]) -> None:
+        services.actualizar_marca(cast(Marca, serializer.instance), serializer.save)
 
     def filtrar_lista(self, queryset: QuerySet[Any]) -> QuerySet[Any]:
         params = self.request.query_params

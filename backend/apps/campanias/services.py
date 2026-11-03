@@ -2,6 +2,8 @@
 
 from django.core.exceptions import ValidationError
 
+from apps.auditoria import services as auditoria_services
+from apps.auditoria.models import RegistroAuditoria
 from apps.clientes.models import Cliente, Contacto, Marca
 from apps.inventario.models import Formato
 
@@ -20,6 +22,29 @@ def validar_confirmacion(campania: Campania) -> None:
     if faltantes:
         detalle = ", ".join(faltantes)
         raise ValidationError({"estado": f"Para confirmar falta cargar {detalle}."})
+
+
+def estampar_cliente_anterior(marca: Marca, cliente_anterior: Cliente) -> None:
+    """Las campañas de la marca sin cliente propio conservan el que las facturaba (HU-027, RN-014).
+
+    Corre cuando la marca pasa a otro cliente, dentro de esa transacción. Toca todas las campañas,
+    en cualquier estado; las que ya tienen cliente propio no cambian. Queda en auditoría como
+    cambio del sistema.
+    """
+    campanias = Campania.objects.select_for_update().filter(
+        marca=marca, cliente_facturacion__isnull=True
+    )
+    for campania in campanias:
+        campania.cliente_facturacion = cliente_anterior
+        campania.save(update_fields=["cliente_facturacion", "actualizado_en"])
+        auditoria_services.registrar_cambios(
+            "campania",
+            campania.pk,
+            {"cliente_facturacion": ""},
+            {"cliente_facturacion": cliente_anterior.nombre_visible},
+            None,
+            origen=RegistroAuditoria.Origen.SISTEMA,
+        )
 
 
 def validar_contacto_de_interaccion(
