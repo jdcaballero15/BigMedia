@@ -1,6 +1,6 @@
 # Unidad: cliente-que-factura
 
-- **Estado:** en revisión · **Épica:** E4 Campañas · **App dueña:** campanias
+- **Estado:** mergeada (PR #115) · **Épica:** E4 Campañas · **App dueña:** campanias
 - **Origen:** HU-027 (criterio 3), RN-014 · **Rama:** `feature/campanias-cliente-que-factura`
 
 ## Objetivo
