@@ -45,3 +45,4 @@ No hace falta un ADR para: nombrar una función, agregar un test, corregir un bu
 | [0007](0007-campanias-importa-de-inventario.md) | Permitir que `campanias` importe de `inventario` | Propuesto | 2026-10-27 |
 | [0008](0008-planilla-xlsx-con-openpyxl.md) | Generar la planilla de facturación en el servidor con `openpyxl` | Propuesto | 2026-10-27 |
 | [0009](0009-pdf-de-orden-de-compra-en-postgresql.md) | Guardar el PDF de la orden de compra en PostgreSQL | Propuesto | 2026-10-27 |
+| [0010](0010-senal-cliente-de-marca-cambiado.md) | Señal de `clientes` cuando una marca cambia de cliente | Propuesto | 2026-11-03 |

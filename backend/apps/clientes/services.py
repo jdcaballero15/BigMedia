@@ -1,5 +1,6 @@
 """Reglas de negocio de clientes y marcas."""
 
+from collections.abc import Callable
 from typing import Any
 
 from django.db import transaction
@@ -7,6 +8,7 @@ from django.db import transaction
 from config.texto import distancia_edicion, normalizar_comparacion
 
 from .models import Cliente, Contacto, Marca
+from .signals import cliente_de_marca_cambiado
 
 # A partir de este largo se toleran dos errores de tipeo en vez de uno (HU-019).
 LARGO_PARA_DOS_ERRORES = 8
@@ -35,6 +37,20 @@ def registrar_cliente(cliente: Cliente) -> Cliente:
 def crear_cliente(**datos: Any) -> Cliente:
     """Crea un cliente con los datos validados; ver `registrar_cliente`."""
     return registrar_cliente(Cliente(**datos))
+
+
+@transaction.atomic
+def actualizar_marca(marca: Marca, guardar: Callable[[], object]) -> None:
+    """Guarda una marca editada y, si pasó a otro cliente, lo avisa (HU-027, ADR-0010).
+
+    `guardar` hace el guardado (el serializer o el admin). El cliente anterior se lee de la base con
+    la marca bloqueada, y la señal se emite en la misma transacción: si quien la escucha falla, la
+    marca tampoco cambia.
+    """
+    anterior = Marca.objects.select_for_update().select_related("cliente").get(pk=marca.pk)
+    guardar()
+    if marca.cliente_id != anterior.cliente_id:
+        cliente_de_marca_cambiado.send(sender=Marca, marca=marca, cliente_anterior=anterior.cliente)
 
 
 def _se_parecen(a: str, b: str) -> bool:

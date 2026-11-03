@@ -77,6 +77,14 @@ las reservas se **cancelan** y los ítems a facturar se **anulan**. Así queda l
    marca con un nombre igual o muy parecido") para que no la cargues dos veces. Revisá la lista y
    decidí.
 
+### Cambiar el cliente de una marca
+
+Si una marca pasa a otro cliente (por ejemplo, cambia de agencia), editala y elegí el cliente nuevo.
+Las campañas que ya existían siguen facturando al cliente anterior: el sistema se lo deja cargado
+como **Cliente que factura** de cada una. Las campañas nuevas de la marca facturan al cliente nuevo.
+Si una campaña existente tiene que pasar al cliente nuevo, editala y volvé a poner **Según la
+marca**.
+
 ### Grupos económicos
 
 Un **grupo económico** junta las marcas de un mismo dueño, aunque las facturen clientes distintos

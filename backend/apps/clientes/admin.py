@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING
 
 from django.contrib import admin
@@ -58,6 +59,14 @@ class MarcaAdmin(BorradoAuditadoAdmin):
     search_fields = ["nombre", "cliente__nombre"]
     list_select_related = ["cliente", "rubro", "grupo"]
     autocomplete_fields = ["cliente", "rubro", "grupo"]
+
+    def save_model(
+        self, request: HttpRequest, obj: Marca, form: ModelForm[Marca], change: bool
+    ) -> None:
+        if not change:
+            super().save_model(request, obj, form, change)
+            return
+        services.actualizar_marca(obj, partial(super().save_model, request, obj, form, change))
 
 
 @admin.register(Contacto)
