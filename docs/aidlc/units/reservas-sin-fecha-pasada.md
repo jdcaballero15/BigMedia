@@ -1,6 +1,6 @@
 # Unidad: reservas-sin-fecha-pasada
 
-- **Estado:** en curso · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** reservas
+- **Estado:** en revisión · **Épica:** E5 Reservas y motor de disponibilidad · **App dueña:** reservas
 - **Origen:** RN-012 · **Rama:** `feature/reservas-sin-fecha-pasada`
 - **Depende de:** el PR #117 (respuesta de RN-012), que tiene que estar mergeado antes del PR de
   código.

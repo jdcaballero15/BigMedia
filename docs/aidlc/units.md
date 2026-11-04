@@ -66,8 +66,8 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E5 Reservas y motor de disponibilidad | [cartel-fuera-de-servicio](units/cartel-fuera-de-servicio.md) | reservas | HU-039 (RN-010) | reservas-base, inventario | Juan Diego | feature/reservas-cartel-fuera-de-servicio | mergeada |
 | E2 Inventario de soportes | [importacion-inventario](units/importacion-inventario.md) | inventario | HU-015 (RN-009, RN-005, RN-008) | inventario | Gonza | feature/inventario-importacion | mergeada |
 | E2 Inventario de soportes | [ajuste-importacion-circuitos](units/ajuste-importacion-circuitos.md) | inventario | RN-005, HU-009, HU-015 | importacion-inventario | Gonza | feature/inventario-importacion-circuitos | mergeada |
-| E4 Campañas | [cliente-que-factura](units/cliente-que-factura.md) | campanias | HU-027 (criterio 3), RN-014 | campanias | Gonza | feature/campanias-cliente-que-factura | en revisión |
-| E5 Reservas y motor de disponibilidad | [reservas-sin-fecha-pasada](units/reservas-sin-fecha-pasada.md) | reservas | RN-012 | reservas-base, parametros-configurables | Gonza | feature/reservas-sin-fecha-pasada | en curso |
+| E4 Campañas | [cliente-que-factura](units/cliente-que-factura.md) | campanias | HU-027 (criterio 3), RN-014 | campanias | Gonza | feature/campanias-cliente-que-factura | mergeada |
+| E5 Reservas y motor de disponibilidad | [reservas-sin-fecha-pasada](units/reservas-sin-fecha-pasada.md) | reservas | RN-012 | reservas-base, parametros-configurables | Gonza | feature/reservas-sin-fecha-pasada | en revisión |
 
 ## Notas
 
