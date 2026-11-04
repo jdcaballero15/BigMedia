@@ -25,7 +25,7 @@ Definidas por Gonza el 27/10/2026.
 - **E4 Campañas** — crear campañas y sus estados (HU-023, HU-024) y cliente que factura propio,
   que se conserva cuando la marca cambia de cliente (HU-027).
 - **E5 Reservas y motor de disponibilidad** — reservas, ciclo de vida y motor de disponibilidad
-  (HU-028 a HU-040).
+  (HU-028 a HU-040), y bloqueo de las reservas que terminan antes de hoy, configurable (RN-012).
 - **E6 Vista de disponibilidad** — disponibilidad de hoy y calendario a futuro (HU-041, HU-042).
 - **E7 Costos y rentabilidad** — costos y márgenes de reserva y de campaña (HU-043, HU-044, HU-025, HU-045).
 - **E8 Reportes y paneles** — panel, reparto de ingresos, ingresos por cliente/marca, ocupación,
@@ -57,7 +57,7 @@ Definidas por Gonza el 27/10/2026.
 
 ## Próximas
 
-- **E5 Reservas** — no dejar crear a mano una reserva con fecha pasada (RN-012).
+- A definir.
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
@@ -85,3 +85,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-10-28 | E12 pasa a Hecho | Quedaron mergeados los PR #91 y #93 |
 | 2026-11-03 | HU-027 pasa a Hecho dentro de E4 | Quedó mergeada la unidad `cliente-que-factura` (PR #115) |
 | 2026-11-04 | Se retiran HU-038 y HU-046; el bloqueo de reservas con fecha pasada (RN-012) queda como próxima | Respuestas de Gonza: no hay histórico y los carteles son propios |
+| 2026-11-04 | El bloqueo de reservas con fecha pasada (RN-012) pasa a Hecho dentro de E5 | Unidad `reservas-sin-fecha-pasada` (PR #118) |

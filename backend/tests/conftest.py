@@ -1,3 +1,5 @@
+from datetime import date
+
 import psycopg
 import pytest
 from django.conf import settings
@@ -24,6 +26,18 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             f"y revisá backend/.env. Detalle: {error}",
             returncode=3,
         )
+
+
+@pytest.fixture(autouse=True)
+def hoy_fijo(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fija el «hoy» de RN-012 antes de las fechas de 2026 que usan los tests.
+
+    Así las reservas de los tests no pasan a ser "con fecha pasada" a medida que pasan los días.
+    Los tests de RN-012 fijan su propio día.
+    """
+    from apps.reservas import services
+
+    monkeypatch.setattr(services, "hoy", lambda: date(2026, 1, 1))
 
 
 @pytest.fixture

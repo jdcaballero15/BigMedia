@@ -33,6 +33,7 @@ export type Reserva = {
 export type ParametrosDisponibilidad = {
   borde_inclusivo: boolean
   tentativa_bloquea: boolean
+  permitir_fecha_pasada: boolean
 }
 
 /** Cartel con cupo libre para la tanda de "Agregar carteles" (HU-056). */
