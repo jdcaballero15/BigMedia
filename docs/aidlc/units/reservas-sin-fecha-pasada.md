@@ -85,4 +85,4 @@ Frontend: `ParametrosPage.test.tsx` cubre el interruptor nuevo.
   revisada a mano: un `AddField` booleano); `pytest --cov` 918 passed, 97,27 %; frontend:
   `format:check`, `lint`, `typecheck`, `test:coverage` (395 tests, 92,75 % de sentencias, 94,77 % de
   líneas) y `build` en verde; `pre-commit run --all-files` en verde, gitleaks incluido.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #118
