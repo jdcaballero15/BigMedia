@@ -72,7 +72,7 @@ export default function ParametrosPage() {
         <div>
           <p className="eyebrow">Configuración</p>
           <h2>Parámetros</h2>
-          <p className="muted">Cómo cuenta la disponibilidad al confirmar una reserva.</p>
+          <p className="muted">Cómo cuenta la disponibilidad y qué reservas se pueden cargar.</p>
         </div>
       </div>
       {error && (
@@ -104,7 +104,8 @@ export default function ParametrosPage() {
             </div>
           ))}
           <p className="muted">
-            El cambio rige desde la próxima confirmación: no recalcula las reservas que ya existen.
+            El cambio rige desde la próxima reserva que se cargue o se confirme: no recalcula las
+            que ya existen.
           </p>
           <div className="parametros-pie">
             {guardado && <p role="status">Parámetros guardados.</p>}
