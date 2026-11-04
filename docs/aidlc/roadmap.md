@@ -22,7 +22,8 @@ Definidas por Gonza el 27/10/2026.
   duplicadas (HU-019; su criterio 3 espera un importador de marcas) y contactos del intermediario
   formal (HU-068) e interacciones comerciales (HU-020, en `campanias` por
   [ADR-0006](../adr/0006-interacciones-en-campanias.md)). El vínculo a marca espera RN-018.
-- **E4 Campañas** — crear campañas y sus estados (HU-023, HU-024).
+- **E4 Campañas** — crear campañas y sus estados (HU-023, HU-024) y cliente que factura propio,
+  que se conserva cuando la marca cambia de cliente (HU-027).
 - **E5 Reservas y motor de disponibilidad** — reservas, ciclo de vida y motor de disponibilidad
   (HU-028 a HU-040).
 - **E6 Vista de disponibilidad** — disponibilidad de hoy y calendario a futuro (HU-041, HU-042).
@@ -82,4 +83,5 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-10-27 | El Should de E11 pasa a Hecho | Quedaron mergeados los PR #81, #82 y #83 |
 | 2026-10-28 | Se agrega E12 Rediseño visual, en curso | Gonza probó la app de punta a punta y pidió mejorar el aspecto de casi todas las pantallas; eligió el estilo sobre maquetas |
 | 2026-10-28 | E12 pasa a Hecho | Quedaron mergeados los PR #91 y #93 |
+| 2026-11-03 | HU-027 pasa a Hecho dentro de E4 | Quedó mergeada la unidad `cliente-que-factura` (PR #115) |
 | 2026-11-04 | Se retiran HU-038 y HU-046; el bloqueo de reservas con fecha pasada (RN-012) queda como próxima | Respuestas de Gonza: no hay histórico y los carteles son propios |
