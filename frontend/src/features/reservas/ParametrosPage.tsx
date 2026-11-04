@@ -5,7 +5,7 @@ import type { ParametrosDisponibilidad } from './types'
 
 const URL = '/api/reservas/parametros/'
 
-// RN-001 (día de borde) y RN-002 (la pendiente bloquea), con su explicación.
+// RN-001 (día de borde), RN-002 (la pendiente bloquea) y RN-012 (fecha pasada), con su explicación.
 const OPCIONES: { campo: keyof ParametrosDisponibilidad; titulo: string; ayuda: string }[] = [
   {
     campo: 'borde_inclusivo',
@@ -17,6 +17,11 @@ const OPCIONES: { campo: keyof ParametrosDisponibilidad; titulo: string; ayuda: 
     titulo: 'La reserva pendiente bloquea el cupo',
     ayuda:
       'Si está marcada, no se puede confirmar una reserva donde una pendiente ya ocupa el cupo.',
+  },
+  {
+    campo: 'permitir_fecha_pasada',
+    titulo: 'Permitir reservas con fecha pasada',
+    ayuda: 'Si está marcada, se puede cargar a mano una reserva que terminó antes de hoy.',
   },
 ]
 

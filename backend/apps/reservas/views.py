@@ -351,6 +351,7 @@ def _parametros_auditados(parametros: ParametrosDisponibilidad) -> dict[str, str
     return {
         "borde_inclusivo": str(parametros.borde_inclusivo),
         "tentativa_bloquea": str(parametros.tentativa_bloquea),
+        "permitir_fecha_pasada": str(parametros.permitir_fecha_pasada),
     }
 
 

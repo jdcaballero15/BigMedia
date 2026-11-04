@@ -75,6 +75,8 @@ class ParametrosDisponibilidad(models.Model):
     borde_inclusivo = models.BooleanField(default=True)
     # Si la reserva pendiente (tentativa) ocupa cupo para el bloqueo duro (RN-002).
     tentativa_bloquea = models.BooleanField(default=False)
+    # Si se puede cargar a mano una reserva que ya terminó (RN-012).
+    permitir_fecha_pasada = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "parámetros de disponibilidad"

@@ -6,7 +6,7 @@ const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data }
 const fail = (status: number, data: unknown) => ({ ok: false, status, json: async () => data })
 
 const URL = '/api/reservas/parametros/'
-const iniciales = { borde_inclusivo: true, tentativa_bloquea: false }
+const iniciales = { borde_inclusivo: true, tentativa_bloquea: false, permitir_fecha_pasada: false }
 
 afterEach(() => {
   cleanup()
@@ -42,6 +42,7 @@ test('guarda el cambio con PATCH y avisa', async () => {
   expect(JSON.parse(String(envio?.[1]?.body))).toEqual({
     borde_inclusivo: true,
     tentativa_bloquea: true,
+    permitir_fecha_pasada: false,
   })
 })
 
@@ -81,13 +82,13 @@ test('parametros_cadaOpcion_esUnInterruptorConSuExplicacion', async () => {
     vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ borde_inclusivo: true, tentativa_bloquea: false }),
+      json: async () => iniciales,
     }),
   )
   render(<ParametrosPage />)
 
   const interruptores = await screen.findAllByRole('switch')
-  expect(interruptores).toHaveLength(2)
+  expect(interruptores).toHaveLength(3)
   expect(
     screen.getByRole('switch', {
       name: 'El día de borde se pisa',
@@ -95,4 +96,11 @@ test('parametros_cadaOpcion_esUnInterruptorConSuExplicacion', async () => {
     }),
   ).toBeDefined()
   expect((interruptores[1] as HTMLInputElement).checked).toBe(false)
+  expect(
+    screen.getByRole('switch', {
+      name: 'Permitir reservas con fecha pasada',
+      description: /terminó antes de hoy/,
+    }),
+  ).toBeDefined()
+  expect((interruptores[2] as HTMLInputElement).checked).toBe(false)
 })
