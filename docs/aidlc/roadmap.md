@@ -56,7 +56,7 @@ Definidas por Gonza el 27/10/2026.
 
 ## Próximas
 
-- A definir después del 04/11.
+- **E5 Reservas** — no dejar crear a mano una reserva con fecha pasada (RN-012).
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
@@ -82,3 +82,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-10-27 | El Should de E11 pasa a Hecho | Quedaron mergeados los PR #81, #82 y #83 |
 | 2026-10-28 | Se agrega E12 Rediseño visual, en curso | Gonza probó la app de punta a punta y pidió mejorar el aspecto de casi todas las pantallas; eligió el estilo sobre maquetas |
 | 2026-10-28 | E12 pasa a Hecho | Quedaron mergeados los PR #91 y #93 |
+| 2026-11-04 | Se retiran HU-038 y HU-046; el bloqueo de reservas con fecha pasada (RN-012) queda como próxima | Respuestas de Gonza: no hay histórico y los carteles son propios |
