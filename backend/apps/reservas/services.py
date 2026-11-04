@@ -49,6 +49,19 @@ def validar_estado_inicial(estado: str) -> None:
         )
 
 
+def hoy() -> date:
+    """La fecha de hoy; los tests la fijan para no depender del día en que corren."""
+    return timezone.localdate()
+
+
+def validar_fecha_no_pasada(fecha_fin: date) -> None:
+    """Una reserva que termina antes de hoy no se carga a mano, salvo que se permita (RN-012)."""
+    if fecha_fin < hoy() and not parametros_disponibilidad().permitir_fecha_pasada:
+        raise ValidationError(
+            {"fecha_fin": "La reserva termina antes de hoy: no se puede cargar con fecha pasada."}
+        )
+
+
 def validar_cartel_reservable(cartel: Cartel) -> None:
     """Un cartel de baja o fuera de servicio no admite reservas nuevas (RN-010, HU-039)."""
     if cartel.estado.es_baja:
@@ -795,6 +808,7 @@ def mover_pendientes(
     """
     if campania.fecha_inicio is None or campania.fecha_fin is None:
         raise ValidationError({"campania": "La campaña no tiene fechas."})
+    validar_fecha_no_pasada(campania.fecha_fin)
     movidas: list[int] = []
     with transaction.atomic():
         reservas = Reserva.objects.select_related("cartel__formato", "campania__marca").filter(

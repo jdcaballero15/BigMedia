@@ -77,6 +77,14 @@ las reservas se **cancelan** y los ítems a facturar se **anulan**. Así queda l
    marca con un nombre igual o muy parecido") para que no la cargues dos veces. Revisá la lista y
    decidí.
 
+### Cambiar el cliente de una marca
+
+Si una marca pasa a otro cliente (por ejemplo, cambia de agencia), editala y elegí el cliente nuevo.
+Las campañas que ya existían siguen facturando al cliente anterior: el sistema se lo deja cargado
+como **Cliente que factura** de cada una. Las campañas nuevas de la marca facturan al cliente nuevo.
+Si una campaña existente tiene que pasar al cliente nuevo, editala y volvé a poner **Según la
+marca**.
+
 ### Grupos económicos
 
 Un **grupo económico** junta las marcas de un mismo dueño, aunque las facturen clientes distintos
@@ -217,6 +225,7 @@ Los más comunes:
 | "Primero confirmá la campaña." | Tocaste **Confirmar reservas** con la campaña Cotizada | Confirmá la campaña y volvé a intentar |
 | "Para confirmar falta cargar las fechas." | La campaña no tiene todo lo necesario para confirmarse | Cargá lo que dice (marca, cliente que factura o fechas) |
 | "El cartel está de baja: no se puede reservar." | El cartel se dio de baja | Elegí otro cartel |
+| "La reserva termina antes de hoy: no se puede cargar con fecha pasada." | La fecha de fin ya pasó. Una reserva que empezó antes pero sigue al aire sí se puede cargar | Revisá la fecha de fin. Si de verdad hay que cargar una reserva vieja, el administrador prende **Permitir reservas con fecha pasada** en **Parámetros** y la vuelve a apagar después |
 | "El cartel está fuera de servicio (Apagado): no se puede reservar hasta que vuelva a un estado operativo." | El cartel está roto, apagado o en mantenimiento | Elegí otro cartel, o esperá a que vuelva a **Activo** |
 | "La fecha de fin no puede ser anterior a la de inicio." | Las fechas están al revés | Corregilas |
 | "No se puede pasar de finalizada a confirmada." | Ese cambio de estado no está permitido | Una Finalizada no cambia; para otra venta, creá una reserva nueva |

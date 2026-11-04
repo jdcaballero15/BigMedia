@@ -60,7 +60,12 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
             and self.instance.cartel_id == cartel.pk
         )
         nuevo_estado = attrs.get("estado")
+        cambia_fin = "fecha_fin" in attrs and (
+            self.instance is None or attrs["fecha_fin"] != self.instance.fecha_fin
+        )
         try:
+            if cambia_fin:
+                services.validar_fecha_no_pasada(attrs["fecha_fin"])
             if cartel is not None and not sin_cambios:
                 services.validar_cartel_reservable(cartel)
             if self.instance is None:
@@ -95,6 +100,10 @@ class ReservasEnBloqueSerializer(serializers.Serializer[dict[str, Any]]):
             raise serializers.ValidationError(
                 {"fecha_fin": "La fecha de fin no puede ser anterior a la de inicio."}
             )
+        try:
+            services.validar_fecha_no_pasada(attrs["fecha_fin"])
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.message_dict) from error
         return attrs
 
 
@@ -114,4 +123,4 @@ class MoverPendientesSerializer(CampaniaDeReservasSerializer):
 class ParametrosDisponibilidadSerializer(serializers.ModelSerializer[ParametrosDisponibilidad]):
     class Meta:
         model = ParametrosDisponibilidad
-        fields = ["borde_inclusivo", "tentativa_bloquea"]
+        fields = ["borde_inclusivo", "tentativa_bloquea", "permitir_fecha_pasada"]

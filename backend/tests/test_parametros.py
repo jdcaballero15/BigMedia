@@ -78,7 +78,11 @@ def _patch(client: Client, data: dict[str, object]) -> Any:
 def test_parametros_fila_inicial_tiene_los_valores_provisorios(admin_client):
     respuesta = admin_client.get(URL)
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"borde_inclusivo": True, "tentativa_bloquea": False}
+    assert respuesta.json() == {
+        "borde_inclusivo": True,
+        "tentativa_bloquea": False,
+        "permitir_fecha_pasada": False,
+    }
     assert ParametrosDisponibilidad.objects.count() == 1
 
 

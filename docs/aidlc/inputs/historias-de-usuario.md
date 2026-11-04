@@ -555,7 +555,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   2. Dado el cupo recién liberado, cuando se crea otra reserva en el mismo rango, entonces se permite.
   3. Dado un operativo, cuando mira la reserva, entonces no existe una acción de eliminar.
 
-### HU-038 Cargar reservas con fechas pasadas
+### HU-038 Cargar reservas con fechas pasadas (retirada 2026-11-04: no hay histórico para importar, RN-012)
 
 - **Actor:** Administrador
 - **Descripción:** Como administrador, quiero importar reservas históricas con fechas pasadas, para tener la historia que alimenta los reportes.
@@ -663,7 +663,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   1. Dada una campaña con varias reservas con costos, cuando se abre, entonces los totales coinciden con la suma manual.
   2. Dada una reserva cancelada, cuando se calcula, entonces no se suma.
 
-### HU-046 Costo de alquiler a terceros
+### HU-046 Costo de alquiler a terceros (retirada 2026-11-04: los carteles son propios y el alquiler ocasional a otra empresa se carga como costo «Alquiler», RN-007)
 
 - **Actor:** Administrador
 - **Descripción:** Como gerencia, quiero registrar el costo de alquiler cuando Big Media revende espacio de un tercero, para calcular el margen real por proveedor.
