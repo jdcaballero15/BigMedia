@@ -57,7 +57,8 @@ Definidas por Gonza el 27/10/2026.
 
 ## Próximas
 
-- A definir.
+- **E4 Campañas** — orden de publicidad de la campaña, guardada en Cloudflare R2 (HU-069,
+  [ADR-0011](../adr/0011-orden-de-publicidad-en-cloudflare-r2.md)).
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
@@ -86,3 +87,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-11-03 | HU-027 pasa a Hecho dentro de E4 | Quedó mergeada la unidad `cliente-que-factura` (PR #115) |
 | 2026-11-04 | Se retiran HU-038 y HU-046; el bloqueo de reservas con fecha pasada (RN-012) queda como próxima | Respuestas de Gonza: no hay histórico y los carteles son propios |
 | 2026-11-04 | El bloqueo de reservas con fecha pasada (RN-012) pasa a Hecho dentro de E5 | Unidad `reservas-sin-fecha-pasada` (PR #118) |
+| 2026-11-07 | La orden de publicidad de la campaña (HU-069) queda como próxima | Los clientes la mandan como parte de la campaña; Juan Diego eligió guardarla en Cloudflare R2 |
