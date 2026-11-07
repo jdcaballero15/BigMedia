@@ -424,15 +424,16 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** M
 - **Precondición:** HU-023 completa.
-- **Regla de negocio:** La orden de publicidad es opcional: no todos los clientes la mandan y no se exige para confirmar la campaña. Una campaña puede tener varias, porque el cliente a veces manda una corregida o una por etapa. Se acepta solo PDF, de hasta 10 páginas en la práctica, con un tamaño máximo configurable. Adjuntan y dan de baja Operativo y Administrador; Lectura solo las abre. Una orden no se borra: se da de baja (HU-006) y sigue en el histórico de la campaña. El archivo no es público: se abre solo con sesión iniciada, y el permiso se verifica en el servidor. Se guarda fuera de la base, en almacenamiento de objetos ([ADR-0011](../../adr/0011-orden-de-publicidad-en-cloudflare-r2.md)).
+- **Regla de negocio:** La orden de publicidad se adjunta en el mismo formulario de la campaña, tanto al crearla (Nueva campaña) como al editarla, y después se abre desde la campaña. Es opcional: no todos los clientes la mandan y no se exige para guardar ni para confirmar la campaña. Si el PDF se rechaza, la campaña no se guarda a medias: se muestra el error y no se pierde lo cargado en el formulario. Una campaña puede tener varias, porque el cliente a veces manda una corregida o una por etapa. Se acepta solo PDF, de hasta 10 páginas en la práctica, con un tamaño máximo configurable. Adjuntan y dan de baja Operativo y Administrador; Lectura solo las abre. Una orden no se borra: se da de baja (HU-006) y sigue en el histórico de la campaña. El archivo no es público: se abre solo con sesión iniciada, y el permiso se verifica en el servidor. Se guarda fuera de la base, en almacenamiento de objetos ([ADR-0011](../../adr/0011-orden-de-publicidad-en-cloudflare-r2.md)).
 - **Criterios de aceptación:**
-  1. Dada una campaña, cuando el operativo adjunta un PDF, entonces queda en la lista de órdenes de publicidad de la campaña, con su nombre, quién lo subió y cuándo, y se puede abrir desde ahí.
-  2. Dada una campaña con una orden de publicidad, cuando se adjunta otra, entonces se conservan las dos.
-  3. Dado un archivo que no es PDF o supera el tamaño máximo, cuando se intenta adjuntar, entonces se rechaza con un mensaje claro.
-  4. Dada una orden de publicidad dada de baja, cuando se abre la campaña, entonces ya no aparece entre las vigentes, pero sigue en el histórico.
-  5. Dado un usuario de Lectura, cuando abre la campaña, entonces puede abrir las órdenes, pero no adjuntar ni dar de baja.
-  6. Dado alguien sin sesión iniciada, cuando pide el archivo, entonces se le niega.
-  7. Dada una campaña sin orden de publicidad, cuando se confirma, entonces se confirma igual.
+  1. Dado el formulario de Nueva campaña, cuando el operativo adjunta un PDF y guarda, entonces la campaña se crea con esa orden de publicidad.
+  2. Dada una campaña con orden de publicidad, cuando se abre, entonces se ve la lista de sus órdenes, con su nombre, quién la subió y cuándo, y cada una se puede abrir desde ahí.
+  3. Dada una campaña existente, cuando el operativo la edita y adjunta otro PDF, entonces se conservan las dos órdenes.
+  4. Dado un archivo que no es PDF o supera el tamaño máximo, cuando se intenta guardar la campaña, entonces se rechaza con un mensaje claro, la campaña no se guarda a medias y el formulario conserva lo cargado.
+  5. Dada una orden de publicidad dada de baja, cuando se abre la campaña, entonces ya no aparece entre las vigentes, pero sigue en el histórico.
+  6. Dado un usuario de Lectura, cuando abre la campaña, entonces puede abrir las órdenes, pero no adjuntar ni dar de baja.
+  7. Dado alguien sin sesión iniciada, cuando pide el archivo, entonces se le niega.
+  8. Dada una campaña sin orden de publicidad, cuando se guarda o se confirma, entonces se acepta igual.
 
 # E5 - Reservas y motor de disponibilidad
 
