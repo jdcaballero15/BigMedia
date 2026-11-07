@@ -121,6 +121,18 @@ Ninguna.
 
 ## Registro de gates
 
-- Gate 1 (plan): pendiente
-- Gate 2 (verificación): pendiente
+- Gate 1 (plan): 2026-11-07 — aprobado por Juan Diego
+- Gate 2 (verificación): 2026-11-07 — esperando a Juan Diego. Salida de los comandos:
+  - `ruff format --check .`: `147 files left unchanged`. `ruff check .`: `All checks passed!`
+  - `mypy backend`: `Success: no issues found in 147 source files`
+  - `makemigrations --check --dry-run`: `No changes detected` (la `0006_orden_publicidad`, revisada
+    a mano, solo crea la tabla)
+  - `pytest --cov`: `936 passed in 2499.53s`, ninguno salteado; `Total coverage: 97.32%`. Las
+    líneas de `campanias` quedan cubiertas; en `settings.py` queda sin cubrir la rama con
+    `R2_BUCKET` (línea 116), que se prueba en staging.
+  - Frontend: `format:check` (`All matched files use Prettier code style!`), `lint` y `typecheck`
+    sin errores, `test:coverage` con `405 passed` (sentencias 92,85 %, líneas 94,83 %), `build`
+    `✓ built in 1m 2s` (con el aviso de chunk de más de 500 kB, que ya existía).
+  - `pre-commit run --all-files`: todos `Passed`, incluido gitleaks (`Detect hardcoded secrets`).
+  - Falta la prueba manual en staging con el bucket real.
 - Gate 3 (PR): pendiente

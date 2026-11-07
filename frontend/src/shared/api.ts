@@ -63,7 +63,7 @@ export async function apiWrite<T>(
 export async function apiUpload<T>(
   path: string,
   form: FormData,
-  method: 'PUT' | 'POST' = 'PUT',
+  method: 'PUT' | 'POST' | 'PATCH' = 'PUT',
 ): Promise<T> {
   const response = await fetch(path, {
     method,

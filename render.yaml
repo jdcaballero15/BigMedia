@@ -52,6 +52,14 @@ services:
         sync: false
       - key: FACTURACION_CORREO_ADMINISTRACION
         sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
 
   - type: web
     name: bigmedia-web-staging
@@ -93,4 +101,12 @@ services:
       - key: DEFAULT_FROM_EMAIL
         sync: false
       - key: FACTURACION_CORREO_ADMINISTRACION
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
         sync: false

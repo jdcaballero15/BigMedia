@@ -121,7 +121,20 @@ que se factura.
 1. **Comercial › Campañas › Nueva campaña**.
 2. Completá nombre, marca, fechas de inicio y fin y, si hace falta, **Cliente que factura**. Si lo
    dejás en **Según la marca**, factura el cliente dueño de la marca.
-3. **Guardar campaña**. Nace en estado **Cotizada**, y mientras está así nada es obligatorio.
+3. Si el cliente mandó la **orden de publicidad**, adjuntala en **Orden de publicidad (PDF)**. Podés
+   sumar más de una y sacar alguna de la lista con **Sacar** antes de guardar. Es opcional.
+4. **Guardar campaña**. Nace en estado **Cotizada**, y mientras está así nada es obligatorio.
+
+### Orden de publicidad
+
+- Solo se aceptan PDF de hasta 10 MB. Si un archivo no sirve, el sistema lo dice y no guarda la
+  campaña; lo que cargaste en el formulario queda como estaba.
+- Para sumar otra orden a una campaña ya creada: **Editar**, adjuntá el PDF y guardá. Las anteriores
+  se conservan.
+- En la campaña, **Órdenes de publicidad** lista cada una con quién la subió y cuándo. Hacé clic en
+  el nombre para abrirla.
+- **Dar de baja** la saca de las vigentes, pero no la borra: queda en **Dadas de baja**. El rol
+  Lectura puede abrirlas, pero no adjuntar ni dar de baja.
 
 Estados de una campaña: **Cotizada** (se está armando), **Confirmada** (el cliente dijo que sí),
 **Cancelada** y **Perdida**.
