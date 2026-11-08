@@ -122,7 +122,7 @@ Ninguna.
 ## Registro de gates
 
 - Gate 1 (plan): 2026-11-07 — aprobado por Juan Diego
-- Gate 2 (verificación): 2026-11-07 — esperando a Juan Diego. Salida de los comandos:
+- Gate 2 (verificación): 2026-11-07 — aprobado por Juan Diego el 2026-11-08. Salida de los comandos:
   - `ruff format --check .`: `147 files left unchanged`. `ruff check .`: `All checks passed!`
   - `mypy backend`: `Success: no issues found in 147 source files`
   - `makemigrations --check --dry-run`: `No changes detected` (la `0006_orden_publicidad`, revisada
