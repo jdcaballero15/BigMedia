@@ -135,4 +135,4 @@ Ninguna.
     `✓ built in 1m 2s` (con el aviso de chunk de más de 500 kB, que ya existía).
   - `pre-commit run --all-files`: todos `Passed`, incluido gitleaks (`Detect hardcoded secrets`).
   - Falta la prueba manual en staging con el bucket real.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #124 (2026-11-08), pedido por Juan Diego
