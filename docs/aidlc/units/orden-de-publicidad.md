@@ -1,6 +1,6 @@
 # Unidad: Orden de publicidad de la campaña
 
-- **Estado:** en curso · **Épica:** E4 Campañas · **App dueña:** `campanias`
+- **Estado:** en revisión · **Épica:** E4 Campañas · **App dueña:** `campanias`
 - **Origen:** HU-069, [ADR-0011](../../adr/0011-orden-de-publicidad-en-cloudflare-r2.md) · **Rama:** `feature/campanias-orden-de-publicidad`
 
 ## Objetivo
