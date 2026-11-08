@@ -10,6 +10,8 @@ import {
   Megaphone,
   MessagesSquare,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   ScrollText,
   Settings,
   Signpost,
@@ -226,6 +228,25 @@ const sections: { title: string; items: Item[] }[] = [
 
 const pages = sections.flatMap((section) => section.items)
 
+/** Cada navegador recuerda si el menú quedó contraído; si no deja guardar, arranca expandido. */
+const CLAVE_MENU_CONTRAIDO = 'bigmedia.menu-contraido'
+
+function leerMenuContraido(): boolean {
+  try {
+    return localStorage.getItem(CLAVE_MENU_CONTRAIDO) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function guardarMenuContraido(contraido: boolean) {
+  try {
+    localStorage.setItem(CLAVE_MENU_CONTRAIDO, String(contraido))
+  } catch {
+    // Sin almacenamiento la elección dura hasta recargar la página.
+  }
+}
+
 /** El link de contraseña llega como `/?definir-clave=<uid>.<token>` (HU-005). */
 function codigoDelLink(): string | null {
   return new URLSearchParams(window.location.search).get('definir-clave')
@@ -240,6 +261,7 @@ function App() {
   })
   const [page, setPage] = useState<Page>('clientes')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [menuContraido, setMenuContraido] = useState(leerMenuContraido)
   const [hoy] = useState(() => fechaLarga(new Date()))
   const [detalle, setDetalle] = useState<DetalleRuta | null>(null)
   const [etiqueta, setEtiqueta] = useState<{ texto: string; top: number } | null>(null)
@@ -346,7 +368,16 @@ function App() {
   const seccionActiva = sections.find((section) => section.items.some((item) => item.id === page))
   const paginaActiva = pages.find((item) => item.id === page)
 
+  function alternarMenu() {
+    const contraido = !menuContraido
+    setMenuContraido(contraido)
+    setEtiqueta(null)
+    guardarMenuContraido(contraido)
+  }
+
   function mostrarEtiqueta(texto: string, elemento: HTMLElement) {
+    // Expandido, el nombre ya está a la vista.
+    if (!menuContraido) return
     const caja = elemento.getBoundingClientRect()
     setEtiqueta({ texto, top: caja.top + caja.height / 2 })
   }
@@ -371,7 +402,11 @@ function App() {
   }
 
   return (
-    <div className={menuOpen ? 'app-shell menu-open' : 'app-shell'}>
+    <div
+      className={['app-shell', menuOpen && 'menu-open', menuContraido && 'menu-contraido']
+        .filter(Boolean)
+        .join(' ')}
+    >
       <header className="mobile-bar">
         <button
           className="icon-button"
@@ -384,8 +419,25 @@ function App() {
         <div className="brand-mark">BM</div>
       </header>
       <aside className="sidebar">
-        <div className="brand-mark" title="Big Media">
-          BM
+        <div className="sidebar-head">
+          <div className="brand">
+            <span className="brand-mark" title="Big Media">
+              BM
+            </span>
+            <span className="brand-name">Big Media</span>
+          </div>
+          <button
+            className="menu-toggle"
+            aria-label={menuContraido ? 'Expandir menú' : 'Contraer menú'}
+            aria-expanded={!menuContraido}
+            onClick={alternarMenu}
+          >
+            {menuContraido ? (
+              <PanelLeftOpen aria-hidden="true" size={18} />
+            ) : (
+              <PanelLeftClose aria-hidden="true" size={18} />
+            )}
+          </button>
         </div>
         <nav className="sidenav" aria-label="Navegación">
           {visibles.map((section) => (
@@ -395,6 +447,9 @@ function App() {
               role="group"
               aria-label={section.title}
             >
+              <p className="nav-section-title" aria-hidden="true">
+                {section.title}
+              </p>
               {section.items.map((item) => {
                 const Icon = item.icon
                 return botonDelMenu(
@@ -411,14 +466,17 @@ function App() {
           ))}
         </nav>
         <div className="sidebar-user">
-          <span
-            className="avatar"
-            title={session.username}
-            onMouseEnter={(event) => mostrarEtiqueta(session.username, event.currentTarget)}
-            onMouseLeave={() => setEtiqueta(null)}
-          >
-            {session.username.slice(0, 1).toUpperCase()}
-          </span>
+          <div className="user-row">
+            <span
+              className="avatar"
+              title={session.username}
+              onMouseEnter={(event) => mostrarEtiqueta(session.username, event.currentTarget)}
+              onMouseLeave={() => setEtiqueta(null)}
+            >
+              {session.username.slice(0, 1).toUpperCase()}
+            </span>
+            <span className="user-name">{session.username}</span>
+          </div>
           {botonDelMenu('salir', 'Salir', <LogOut aria-hidden="true" size={20} />, () => {
             void signOut()
           })}
