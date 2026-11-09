@@ -74,3 +74,11 @@ test('Lectura abre las órdenes pero no las da de baja', () => {
   expect(screen.getByRole('link', { name: 'op-cliente.pdf' })).toBeDefined()
   expect(screen.queryByRole('button', { name: /Dar de baja/ })).toBeNull()
 })
+
+test('la sección usa el encabezado, el cuerpo y la separación de las demás tarjetas', () => {
+  render(<OrdenesPublicidad ordenes={[vigente]} />)
+  const seccion = screen.getByRole('region', { name: 'Órdenes de publicidad' })
+  expect(seccion.classList.contains('section-gap')).toBe(true)
+  expect(seccion.querySelector('.card-heading h3')?.textContent).toBe('Órdenes de publicidad')
+  expect(seccion.querySelector('.card-cuerpo')).not.toBeNull()
+})

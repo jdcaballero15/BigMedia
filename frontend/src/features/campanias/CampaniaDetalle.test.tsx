@@ -47,3 +47,10 @@ test('sin fechas muestra el aviso de período', () => {
   )
   expect(screen.getByText('Sin fechas planificadas')).toBeDefined()
 })
+
+test('la tarjeta de datos tiene espacio interior y separación con la siguiente', () => {
+  render(<CampaniaDetalle campania={campania} onEditar={vi.fn()} onVolver={vi.fn()} />)
+  const tarjeta = screen.getByText('Cliente que factura').closest('.card') as HTMLElement
+  expect(tarjeta.classList.contains('card-cuerpo')).toBe(true)
+  expect(tarjeta.classList.contains('section-gap')).toBe(true)
+})
