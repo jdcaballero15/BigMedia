@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { ApiError, apiGet, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import { usePuedeEditar } from '../../shared/sesion'
-import type { Campania } from '../campanias/types'
-import type { Cliente, Marca } from '../clientes/types'
+import type { Cliente } from '../clientes/types'
 import EnviosDelMes from './EnviosDelMes'
 import ItemForm from './ItemForm'
 import type { ItemInput } from './ItemForm'
@@ -15,8 +14,9 @@ import type {
   ItemGuardado,
   TotalesMes,
 } from './types'
-import { ESTADOS_ITEM, etiquetaEstadoItem, mesActual, urlPdfOrdenCompra } from './types'
+import { ESTADOS_ITEM, mesActual, urlPdfOrdenCompra } from './types'
 import Cifras from '../../shared/Cifras'
+import MenuFila from '../../shared/MenuFila'
 
 const ITEMS = '/api/facturacion/items/'
 const GRUPOS = '/api/facturacion/grupos/'
@@ -24,8 +24,6 @@ const SIN_CATALOGOS: CatalogosFacturacion = { sectores: [], tipos_venta: [] }
 
 type Referencias = {
   clientes: Cliente[]
-  marcas: Marca[]
-  campanias: Campania[]
   catalogos: CatalogosFacturacion
 }
 
@@ -35,7 +33,7 @@ function monto(valor: string | null): string {
 
 type AvisoOrdenCompra = { numero: string; items: AvisosItem['orden_compra'] }
 
-/** Ítems a facturar del mes con totales, estados, OC y grupos (HU-060 a HU-065). */
+/** Facturación: ítems del mes, totales, estados, OC y grupos (HU-060 a HU-065) y su Excel (HU-070). */
 export default function ItemsPage() {
   const puedeEditar = usePuedeEditar()
   const [mes, setMes] = useState(mesActual())
@@ -44,8 +42,6 @@ export default function ItemsPage() {
   const [totales, setTotales] = useState<TotalesMes | null>(null)
   const [referencias, setReferencias] = useState<Referencias>({
     clientes: [],
-    marcas: [],
-    campanias: [],
     catalogos: SIN_CATALOGOS,
   })
   const [error, setError] = useState('')
@@ -59,25 +55,24 @@ export default function ItemsPage() {
     let active = true
     void Promise.all([
       apiGet<Cliente[]>('/api/clientes/clientes/?incluir_inactivos=1'),
-      apiGet<Marca[]>('/api/clientes/marcas/?incluir_inactivos=1'),
-      apiGet<Campania[]>('/api/campanias/campanias/'),
       apiGet<CatalogosFacturacion>('/api/facturacion/catalogos/'),
     ])
-      .then(([clientes, marcas, campanias, catalogos]) => {
-        if (active) setReferencias({ clientes, marcas, campanias, catalogos })
+      .then(([clientes, catalogos]) => {
+        if (active) setReferencias({ clientes, catalogos })
       })
       .catch(() => {
-        if (active) setError('No se pudieron cargar clientes, marcas o campañas.')
+        if (active) setError('No se pudieron cargar los clientes o los catálogos.')
       })
     return () => {
       active = false
     }
   }, [])
 
+  const filtro = new URLSearchParams({ mes, ...(estado && { estado }) }).toString()
+
   useEffect(() => {
     if (!mes) return
     let active = true
-    const filtro = new URLSearchParams({ mes, ...(estado && { estado }) }).toString()
     void Promise.all([
       apiGet<ItemFacturacion[]>(`${ITEMS}?${filtro}`),
       apiGet<TotalesMes>(`${ITEMS}totales/?mes=${mes}`),
@@ -95,7 +90,7 @@ export default function ItemsPage() {
     return () => {
       active = false
     }
-  }, [mes, estado, revision])
+  }, [mes, filtro, revision])
 
   const recargar = () => setRevision((actual) => actual + 1)
 
@@ -133,25 +128,31 @@ export default function ItemsPage() {
     <section>
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Facturación</p>
-          <h2>Ítems a facturar</h2>
-          <p className="muted">Cargá cada ítem cuando llega la orden de compra.</p>
+          <p className="eyebrow">Comercial</p>
+          <h2>Facturación</h2>
+          <p className="muted">
+            Cargá cada ítem cuando llega la orden de compra y descargá el Excel para Administración.
+          </p>
         </div>
-        {puedeEditar && (
-          <button className="button-primary" onClick={() => setEditando('nuevo')}>
-            Nuevo ítem
-          </button>
-        )}
+        <div className="row-actions">
+          <a className="button-ghost" href={`${ITEMS}planilla/?${filtro}`} download>
+            Descargar Excel
+          </a>
+          {puedeEditar && (
+            <button className="button-primary" onClick={() => setEditando('nuevo')}>
+              Nuevo ítem
+            </button>
+          )}
+        </div>
       </div>
       {editando !== null && (
         <ItemForm
           key={editando === 'nuevo' ? 'nuevo' : editando.id}
           item={editando === 'nuevo' ? null : editando}
+          mes={mes}
           {...referencias}
           onSave={guardar}
           onCancel={() => setEditando(null)}
-          onPdfCambiado={recargar}
-          onCostosCambiados={recargar}
         />
       )}
       <div className="filters card" role="search" aria-label="Filtros de ítems">
@@ -256,16 +257,14 @@ function TablaItems(props: TablaProps) {
         <thead>
           <tr>
             {puedeEditar && <th aria-label="Selección" />}
-            <th>Cliente</th>
-            <th>Descripción</th>
-            <th>Neto</th>
-            <th>IVA</th>
-            <th>Total</th>
-            <th>Costos</th>
-            <th>Neto final</th>
-            <th>Grupo</th>
-            <th>Estado</th>
-            {puedeEditar && <th>Acciones</th>}
+            <th>Cliente (razón social)</th>
+            <th>Importe neto total</th>
+            <th>Costos incluidos</th>
+            <th>Detalle costo</th>
+            <th>Tipo de venta</th>
+            <th>Gob/Priv</th>
+            <th>Tipo</th>
+            {puedeEditar && <th aria-label="Acciones" />}
           </tr>
         </thead>
         <tbody>
@@ -295,22 +294,26 @@ type FilaProps = {
   onCambio: () => void
 }
 
+type Pedido = 'facturar' | 'reabrir' | 'anular-facturado'
+
+/** Las acciones que piden un dato antes de confirmarse: qué se pide y a dónde va. */
+const PEDIDOS: Record<Pedido, { campo: string; confirmar: string }> = {
+  facturar: { campo: 'Número de factura', confirmar: 'Confirmar' },
+  reabrir: { campo: 'Motivo de la reapertura', confirmar: 'Confirmar reapertura' },
+  'anular-facturado': { campo: 'Motivo de la anulación', confirmar: 'Confirmar anulación' },
+}
+
+/** Una fila con las siete columnas de la planilla (RN-024) y sus acciones en el menú ⋯. */
 function FilaItem(props: FilaProps) {
   const { item, puedeEditar, seleccionado, onAlternar, onEditar, onCambio } = props
-  const [facturando, setFacturando] = useState(false)
-  const [numero, setNumero] = useState('')
-  const [reabriendo, setReabriendo] = useState(false)
-  const [motivo, setMotivo] = useState('')
-  const [anulando, setAnulando] = useState(false)
-  const [motivoAnulacion, setMotivoAnulacion] = useState('')
+  const [pedido, setPedido] = useState<Pedido | null>(null)
+  const [texto, setTexto] = useState('')
   const [errores, setErrores] = useState<Record<string, string[]>>({})
 
   async function escribir(url: string, method: 'POST' | 'PATCH', datos?: Record<string, string>) {
     try {
       await apiWrite(url, method, datos)
-      setFacturando(false)
-      setReabriendo(false)
-      setAnulando(false)
+      setPedido(null)
       onCambio()
     } catch (cause) {
       const campos = cause instanceof ApiError ? cause.fields : {}
@@ -322,10 +325,24 @@ function FilaItem(props: FilaProps) {
   const cambiarEstado = (datos: Record<string, string>) =>
     escribir(`${ITEMS}${item.id}/`, 'PATCH', datos)
 
-  const anulado = item.estado === 'anulado'
+  function pedir(accion: Pedido) {
+    setTexto('')
+    setErrores({})
+    setPedido(accion)
+  }
+
+  function confirmar() {
+    if (pedido === 'facturar') void cambiarEstado({ estado: 'facturado', numero_factura: texto })
+    else if (pedido === 'reabrir')
+      void escribir(`${ITEMS}${item.id}/reabrir/`, 'POST', { motivo: texto })
+    else void escribir(`${ITEMS}${item.id}/anular-facturado/`, 'POST', { motivo: texto })
+  }
+
   const borrador = item.estado === 'borrador'
+  const enviado = item.estado === 'enviado'
+  const mensajes = errores.estado ?? errores.numero_factura ?? errores.motivo ?? errores.grupo
   return (
-    <tr className={anulado ? 'muted' : undefined}>
+    <tr className={item.estado === 'anulado' ? 'muted' : undefined}>
       {puedeEditar && (
         <td>
           {borrador && (
@@ -338,134 +355,52 @@ function FilaItem(props: FilaProps) {
           )}
         </td>
       )}
-      <td className="primary-cell">
-        {item.cliente_nombre ?? 'Sin cliente'}
-        {item.cuit_facturacion && <small className="muted"> · CUIT {item.cuit_facturacion}</small>}
-      </td>
-      <td>
-        {item.descripcion || '—'}
-        {item.orden_compra_numero && (
-          <small className="muted"> · OC {item.orden_compra_numero}</small>
-        )}
-        {item.orden_compra_pdf && (
-          <>
-            {' '}
-            <a href={urlPdfOrdenCompra(item.id)} target="_blank" rel="noreferrer">
-              PDF
-            </a>
-          </>
-        )}
-      </td>
+      <td className="primary-cell">{item.cliente_razon_social ?? 'Sin cliente'}</td>
       <td>{monto(item.neto)}</td>
-      <td>{monto(item.iva)}</td>
-      <td>{monto(item.total)}</td>
-      <td>{monto(item.costo_total)}</td>
-      <td>{monto(item.neto_final)}</td>
-      <td>
-        {item.grupo_codigo ?? '—'}
-        {item.grupo_codigo && puedeEditar && borrador && (
-          <button
-            className="button-ghost"
-            onClick={() => void escribir(`${ITEMS}${item.id}/quitar-del-grupo/`, 'POST')}
-          >
-            Quitar del grupo
-          </button>
-        )}
-        <FieldErrors messages={errores.grupo} />
-      </td>
-      <td>
-        {etiquetaEstadoItem(item.estado)}
-        {item.numero_factura && <small className="muted"> · {item.numero_factura}</small>}
-        {item.reenviado && <small className="muted"> · Reenviado</small>}
-        {borrador && item.reabierto_en && (
-          <small className="muted"> · Reabierto: {item.motivo_reapertura}</small>
-        )}
-        {anulado && item.anulado_en && (
-          <small className="muted"> · Anulado: {item.motivo_anulacion}</small>
-        )}
-        <FieldErrors messages={errores.estado ?? errores.numero_factura ?? errores.motivo} />
-      </td>
+      <td>{monto(item.costos_incluidos)}</td>
+      <td>{item.detalle_costo || '—'}</td>
+      <td>{item.tipo_venta_nombre ?? '—'}</td>
+      <td>{item.sector_nombre ?? '—'}</td>
+      <td>{item.tipo_soporte || '—'}</td>
       {puedeEditar && (
         <td className="row-actions">
-          {borrador && (
-            <button className="button-ghost" onClick={onEditar}>
-              Editar
-            </button>
+          <MenuFila
+            acciones={[
+              borrador && { etiqueta: 'Editar', onClick: onEditar },
+              enviado && { etiqueta: 'Marcar facturado', onClick: () => pedir('facturar') },
+              enviado && { etiqueta: 'Reabrir', onClick: () => pedir('reabrir') },
+              (borrador || enviado) && {
+                etiqueta: 'Anular',
+                onClick: () => void cambiarEstado({ estado: 'anulado' }),
+              },
+              item.estado === 'facturado' && {
+                etiqueta: 'Anular',
+                onClick: () => pedir('anular-facturado'),
+              },
+              borrador &&
+                item.grupo_codigo !== null && {
+                  etiqueta: 'Quitar del grupo',
+                  onClick: () => void escribir(`${ITEMS}${item.id}/quitar-del-grupo/`, 'POST'),
+                },
+              item.orden_compra_pdf !== null && {
+                etiqueta: 'Ver PDF de la OC',
+                onClick: () => window.open(urlPdfOrdenCompra(item.id), '_blank', 'noreferrer'),
+              },
+            ]}
+          />
+          {pedido !== null && (
+            <>
+              <input
+                aria-label={PEDIDOS[pedido].campo}
+                value={texto}
+                onChange={(event) => setTexto(event.target.value)}
+              />
+              <button className="button-primary" onClick={confirmar}>
+                {PEDIDOS[pedido].confirmar}
+              </button>
+            </>
           )}
-          {item.estado === 'enviado' &&
-            (facturando ? (
-              <>
-                <input
-                  aria-label="Número de factura"
-                  value={numero}
-                  onChange={(event) => setNumero(event.target.value)}
-                />
-                <button
-                  className="button-primary"
-                  onClick={() =>
-                    void cambiarEstado({ estado: 'facturado', numero_factura: numero })
-                  }
-                >
-                  Confirmar
-                </button>
-              </>
-            ) : (
-              <button className="button-ghost" onClick={() => setFacturando(true)}>
-                Marcar facturado
-              </button>
-            ))}
-          {item.estado === 'enviado' &&
-            (reabriendo ? (
-              <>
-                <input
-                  aria-label="Motivo de la reapertura"
-                  value={motivo}
-                  onChange={(event) => setMotivo(event.target.value)}
-                />
-                <button
-                  className="button-primary"
-                  onClick={() => void escribir(`${ITEMS}${item.id}/reabrir/`, 'POST', { motivo })}
-                >
-                  Confirmar reapertura
-                </button>
-              </>
-            ) : (
-              <button className="button-ghost" onClick={() => setReabriendo(true)}>
-                Reabrir
-              </button>
-            ))}
-          {(item.estado === 'borrador' || item.estado === 'enviado') && (
-            <button
-              className="button-ghost"
-              onClick={() => void cambiarEstado({ estado: 'anulado' })}
-            >
-              Anular
-            </button>
-          )}
-          {item.estado === 'facturado' &&
-            (anulando ? (
-              <>
-                <input
-                  aria-label="Motivo de la anulación"
-                  value={motivoAnulacion}
-                  onChange={(event) => setMotivoAnulacion(event.target.value)}
-                />
-                <button
-                  className="button-primary"
-                  onClick={() =>
-                    void escribir(`${ITEMS}${item.id}/anular-facturado/`, 'POST', {
-                      motivo: motivoAnulacion,
-                    })
-                  }
-                >
-                  Confirmar anulación
-                </button>
-              </>
-            ) : (
-              <button className="button-ghost" onClick={() => setAnulando(true)}>
-                Anular
-              </button>
-            ))}
+          <FieldErrors messages={mensajes} />
         </td>
       )}
     </tr>

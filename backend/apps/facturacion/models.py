@@ -153,6 +153,12 @@ class ItemFacturacion(models.Model):
     tipo_venta = models.ForeignKey(
         TipoVenta, on_delete=models.PROTECT, related_name="items", null=True, blank=True
     )
+    # Costos incluidos en la factura y su detalle, escritos a mano para la planilla de
+    # Administración (HU-060, RN-024). No son los costos del módulo de costos (HU-063).
+    costos_incluidos = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
+    )
+    detalle_costo = models.TextField(blank=True)
     notas = models.TextField(blank=True)
     orden_compra_numero = models.CharField("número de orden de compra", max_length=50, blank=True)
     orden_compra_fecha = models.DateField("fecha de aprobación de la OC", null=True, blank=True)
@@ -213,6 +219,11 @@ class ItemFacturacion(models.Model):
                     & (models.Q(precio_unitario__gte=0) | models.Q(precio_unitario__isnull=True))
                 ),
                 name="item_facturacion_importes_no_negativos",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(costos_incluidos__gte=0)
+                | models.Q(costos_incluidos__isnull=True),
+                name="item_facturacion_costos_incluidos_no_negativos",
             ),
             models.CheckConstraint(
                 condition=models.Q(alicuota_iva__gte=0) & models.Q(alicuota_iva__lte=100),
