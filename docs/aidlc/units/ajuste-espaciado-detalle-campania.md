@@ -71,5 +71,5 @@ Ninguna.
     formato": en los demás formularios el botón está fuera de la grilla.
   - `pre-commit run --all-files`: todos `Passed`, incluido gitleaks.
   - Backend sin cambios: ruff, mypy y pytest no se volvieron a correr localmente; los corre el CI.
-  - Falta la prueba visual en staging.
+  - Prueba visual en local (2026-11-09): Juan Diego revisó el detalle de campaña y lo aprobó.
 - Gate 3 (PR): pendiente
