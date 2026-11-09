@@ -1,6 +1,6 @@
 # Unidad: Ajuste de la navegación lateral
 
-- **Estado:** en revisión · **Épica:** — (unidad técnica de interfaz) · **App dueña:** frontend
+- **Estado:** mergeada · **Épica:** — (unidad técnica de interfaz) · **App dueña:** frontend
 - **Origen:** pedido de Juan Diego del 08/11/2026 · **Rama:** `feature/frontend-menu-expandible`
 
 ## Objetivo
