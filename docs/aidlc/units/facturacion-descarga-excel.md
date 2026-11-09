@@ -85,4 +85,4 @@ restricción de no negativo. No mueve datos: los ítems existentes quedan con es
 - Gate 1 (plan): 2026-11-09 — aprobado por Juan Diego
 - Gate 2 (verificación, primera corrida, antes del ajuste del formulario): 2026-11-09 — corrida, pendiente de aprobación de Juan Diego tras probarlo en local. ruff format y check sin observaciones (148 archivos); mypy sin errores (148 archivos); sin migraciones pendientes; pytest 952 tests contra PostgreSQL, ninguno salteado, cobertura 97,37 %; pre-commit (incluye gitleaks) sin hallazgos; frontend format, lint, typecheck y build OK, 416 tests, cobertura 92,81 % sentencias / 94,82 % líneas.
 - Gate 2 (verificación, tras el ajuste del formulario): 2026-11-09 — aprobado por Juan Diego tras probarlo en local. Sin cambios en el backend desde la primera corrida (952 tests, cobertura 97,37 %); pre-commit (incluye gitleaks) sin hallazgos; frontend format, lint, typecheck y build OK, 405 tests, cobertura 92,74 % sentencias / 94,75 % líneas.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #128
