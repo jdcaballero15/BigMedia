@@ -141,6 +141,15 @@ STORAGES = {
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Logs a la salida estándar, que es lo que muestra Render. Sin esto, con DEBUG apagado Django no
+# escribe el traceback de un error 500 en ningún lado.
+LOGGING: dict[str, Any] = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
+}
+
 # Panel principal (HU-047): ventana de "reservas por vencer" en días.
 PANEL_DIAS_POR_VENCER = int(os.environ.get("PANEL_DIAS_POR_VENCER", "30"))
 

@@ -1,5 +1,7 @@
 """Django reads its environment file from backend/, next to the process that uses it."""
 
+import io
+import logging
 from pathlib import Path
 
 from django.conf import settings
@@ -24,3 +26,22 @@ def test_settings_bloqueo_por_defecto_cinco_intentos_quince_minutos():
     assert settings.LOGIN_MAX_INTENTOS == 5
     assert settings.LOGIN_BLOQUEO_MINUTOS == 15
     assert settings.AUTHENTICATION_BACKENDS == ["apps.usuarios.backends.BackendConBloqueo"]
+
+
+def test_error_del_servidor_queda_en_el_log_con_traceback(monkeypatch):
+    # Con DEBUG apagado (staging y producción), un 500 tiene que verse en los logs de Render.
+    consola = next(
+        handler
+        for handler in logging.getLogger().handlers
+        if type(handler) is logging.StreamHandler
+    )
+    salida = io.StringIO()
+    monkeypatch.setattr(consola, "stream", salida)
+    try:
+        raise RuntimeError("falla de prueba")
+    except RuntimeError:
+        logging.getLogger("django.request").error(
+            "Internal Server Error: /api/prueba/", exc_info=True
+        )
+    assert "Internal Server Error: /api/prueba/" in salida.getvalue()
+    assert "RuntimeError: falla de prueba" in salida.getvalue()
