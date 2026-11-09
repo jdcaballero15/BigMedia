@@ -4,6 +4,7 @@ import { ApiError } from '../../shared/api'
 import CampoFecha from '../../shared/CampoFecha'
 import { erroresDeFechas } from '../../shared/fechas'
 import { FieldErrors } from '../../shared/FieldErrors'
+import OrdenesAdjuntas from './OrdenesAdjuntas'
 import { vigentes } from '../../shared/opciones'
 import MarcaForm from '../clientes/MarcaForm'
 import type { MarcaInput } from '../clientes/MarcaForm'
@@ -18,6 +19,7 @@ export type CampaniaInput = {
   fecha_inicio: string | null
   fecha_fin: string | null
   estado: EstadoCampania
+  ordenes_publicidad: File[]
 }
 
 type Props = {
@@ -49,6 +51,7 @@ export default function CampaniaForm({
   const [estado, setEstado] = useState<EstadoCampania>(campania?.estado ?? 'cotizada')
   const [marcasLocales, setMarcasLocales] = useState<Marca[]>([])
   const [creandoMarca, setCreandoMarca] = useState(false)
+  const [ordenes, setOrdenes] = useState<File[]>([])
 
   // Las marcas creadas al vuelo se muestran aunque el padre todavía no refrescó su lista.
   const opcionesMarca = [...marcas, ...marcasLocales].filter(
@@ -80,6 +83,7 @@ export default function CampaniaForm({
         fecha_inicio: fechaInicio || null,
         fecha_fin: fechaFin || null,
         estado,
+        ordenes_publicidad: ordenes,
       })
     } catch (cause) {
       if (cause instanceof ApiError) setErrors(cause.fields)
@@ -164,6 +168,11 @@ export default function CampaniaForm({
           errores={errors.fecha_fin}
         />
       </div>
+      <OrdenesAdjuntas
+        archivos={ordenes}
+        onCambio={setOrdenes}
+        errores={errors.ordenes_publicidad}
+      />
       {creandoMarca ? (
         <MarcaForm
           clientes={clientes}

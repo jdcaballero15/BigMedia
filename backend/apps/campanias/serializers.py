@@ -7,13 +7,25 @@ from apps.clientes.models import Cliente
 from apps.inventario.models import Formato
 
 from . import services
-from .models import Campania, Interaccion, LineaFormato
+from .models import Campania, Interaccion, LineaFormato, OrdenPublicidad
+
+
+class OrdenPublicidadSerializer(serializers.ModelSerializer[OrdenPublicidad]):
+    """Datos de la orden de publicidad, sin el archivo: se abre por su propia URL (HU-069)."""
+
+    subida_por_nombre = serializers.CharField(source="subida_por.username", read_only=True)
+
+    class Meta:
+        model = OrdenPublicidad
+        fields = ["id", "nombre", "tamanio", "subida_por_nombre", "subida_en", "activa"]
+        read_only_fields = fields
 
 
 class CampaniaSerializer(serializers.ModelSerializer[Campania]):
     cliente_factura = serializers.SerializerMethodField()
     cliente_factura_nombre = serializers.SerializerMethodField()
     marca_nombre = serializers.CharField(source="marca.nombre", read_only=True, default=None)
+    ordenes_publicidad = OrdenPublicidadSerializer(many=True, read_only=True)
 
     class Meta:
         model = Campania
@@ -28,6 +40,7 @@ class CampaniaSerializer(serializers.ModelSerializer[Campania]):
             "fecha_inicio",
             "fecha_fin",
             "estado",
+            "ordenes_publicidad",
             "creado_en",
             "actualizado_en",
         ]

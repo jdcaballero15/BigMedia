@@ -112,3 +112,53 @@ test('permite crear una marca al vuelo y la deja seleccionada', async () => {
     expect((screen.getByLabelText('Marca') as HTMLSelectElement).value).toBe('20'),
   )
 })
+
+function adjuntar(...nombres: string[]) {
+  const archivos = nombres.map(
+    (nombre) => new File(['%PDF-1.4'], nombre, { type: 'application/pdf' }),
+  )
+  fireEvent.change(screen.getByLabelText('Orden de publicidad (PDF)'), {
+    target: { files: archivos },
+  })
+}
+
+test('adjunta órdenes de publicidad y las envía con la campaña (HU-069)', async () => {
+  const onSave = vi.fn().mockResolvedValue(undefined)
+  render(<CampaniaForm {...base} onSave={onSave} onCrearMarca={vi.fn()} />)
+  adjuntar('op-1.pdf')
+  adjuntar('op-2.pdf')
+  const lista = screen.getByRole('list', { name: 'Órdenes de publicidad a adjuntar' })
+  expect(within(lista).getAllByRole('listitem')).toHaveLength(2)
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar campaña' }))
+  await waitFor(() => expect(onSave).toHaveBeenCalled())
+  const enviadas = (onSave.mock.calls[0][0] as { ordenes_publicidad: File[] }).ordenes_publicidad
+  expect(enviadas.map((archivo) => archivo.name)).toEqual(['op-1.pdf', 'op-2.pdf'])
+})
+
+test('saca una orden de la lista antes de guardar', async () => {
+  const onSave = vi.fn().mockResolvedValue(undefined)
+  render(<CampaniaForm {...base} onSave={onSave} onCrearMarca={vi.fn()} />)
+  adjuntar('op-1.pdf', 'op-2.pdf')
+  fireEvent.click(screen.getByRole('button', { name: 'Sacar op-1.pdf' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar campaña' }))
+  await waitFor(() => expect(onSave).toHaveBeenCalled())
+  const enviadas = (onSave.mock.calls[0][0] as { ordenes_publicidad: File[] }).ordenes_publicidad
+  expect(enviadas.map((archivo) => archivo.name)).toEqual(['op-2.pdf'])
+})
+
+test('si el PDF se rechaza muestra el error y conserva lo cargado', async () => {
+  const onSave = vi
+    .fn()
+    .mockRejectedValue(
+      new ApiError(400, { ordenes_publicidad: ['El archivo tiene que ser un PDF.'] }),
+    )
+  render(<CampaniaForm {...base} onSave={onSave} onCrearMarca={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Verano 2027' } })
+  adjuntar('op.pdf')
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar campaña' }))
+  await waitFor(() =>
+    expect(screen.getAllByText('El archivo tiene que ser un PDF.').length).toBeGreaterThan(0),
+  )
+  expect((screen.getByLabelText('Nombre') as HTMLInputElement).value).toBe('Verano 2027')
+  expect(screen.getByText('op.pdf')).toBeDefined()
+})

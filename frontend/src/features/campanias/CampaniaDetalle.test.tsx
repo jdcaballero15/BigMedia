@@ -19,6 +19,7 @@ const campania: Campania = {
   fecha_inicio: '2027-01-01',
   fecha_fin: '2027-01-31',
   estado: 'confirmada',
+  ordenes_publicidad: [],
 }
 
 afterEach(() => {

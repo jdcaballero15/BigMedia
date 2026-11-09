@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 from django.conf import settings
@@ -131,3 +132,39 @@ class Interaccion(models.Model):
 
     def __str__(self) -> str:
         return f"{self.fecha} · {self.asunto}"
+
+
+def ruta_orden_publicidad(instancia: "OrdenPublicidad", _nombre: str) -> str:
+    """Clave del objeto en el bucket, sin el nombre original del archivo (ADR-0011)."""
+    return f"campanias/{instancia.campania_id}/ordenes-publicidad/{uuid.uuid4().hex}.pdf"
+
+
+class OrdenPublicidad(models.Model):
+    """PDF de la orden de publicidad que manda el cliente (HU-069), en R2 (ADR-0011).
+
+    Una campaña puede tener varias. No se borra: se da de baja y sigue en el histórico.
+    """
+
+    campania = models.ForeignKey(
+        Campania, on_delete=models.PROTECT, related_name="ordenes_publicidad"
+    )
+    archivo = models.FileField(upload_to=ruta_orden_publicidad, max_length=255)
+    nombre = models.CharField(max_length=255)
+    tamanio = models.PositiveIntegerField()
+    subida_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+"
+    )
+    subida_en = models.DateTimeField(auto_now_add=True)
+    activa = models.BooleanField(default=True)
+    dada_de_baja_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+", null=True
+    )
+    dada_de_baja_en = models.DateTimeField(null=True)
+
+    class Meta:
+        ordering = ["subida_en", "id"]
+        verbose_name = "orden de publicidad"
+        verbose_name_plural = "órdenes de publicidad"
+
+    def __str__(self) -> str:
+        return self.nombre

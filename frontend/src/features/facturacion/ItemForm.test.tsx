@@ -48,6 +48,7 @@ const campanias: Campania[] = [
     fecha_inicio: null,
     fecha_fin: null,
     estado: 'confirmada',
+    ordenes_publicidad: [],
   },
 ]
 const catalogos = {

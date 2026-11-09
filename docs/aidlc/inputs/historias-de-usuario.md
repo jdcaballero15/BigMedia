@@ -28,7 +28,7 @@ Este documento define 68 historias de usuario, agrupadas en 12 épicas, que cubr
 | E1 | Seguridad y acceso | HU-003 a HU-007 |
 | E2 | Inventario de soportes | HU-008 a HU-015 |
 | E3 | Clientes, marcas y CRM | HU-016 a HU-022 y HU-068 |
-| E4 | Campañas | HU-023 a HU-027 |
+| E4 | Campañas | HU-023 a HU-027 y HU-069 |
 | E5 | Reservas y motor de disponibilidad | HU-028 a HU-040 |
 | E6 | Vista de disponibilidad | HU-041 a HU-042 |
 | E7 | Costos y rentabilidad | HU-043 a HU-046 |
@@ -416,6 +416,24 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   1. Dada una campaña sin cliente propio, cuando se consulta quién factura, entonces es el cliente de la marca.
   2. Dada una campaña con cliente propio, cuando se consulta, entonces es el indicado.
   3. Dado un cambio de cliente en una marca, cuando se guarda, entonces las campañas anteriores conservan su cliente original.
+
+### HU-069 Orden de publicidad de la campaña
+
+- **Actor:** Operativo
+- **Descripción:** Como operador comercial, quiero adjuntar a la campaña la orden de publicidad que manda el cliente, para tener a mano lo que el cliente aprobó.
+- **Prioridad:** Should
+- **Complejidad:** M
+- **Precondición:** HU-023 completa.
+- **Regla de negocio:** La orden de publicidad se adjunta en el mismo formulario de la campaña, tanto al crearla (Nueva campaña) como al editarla, y después se abre desde la campaña. Es opcional: no todos los clientes la mandan y no se exige para guardar ni para confirmar la campaña. Si el PDF se rechaza, la campaña no se guarda a medias: se muestra el error y no se pierde lo cargado en el formulario. Una campaña puede tener varias, porque el cliente a veces manda una corregida o una por etapa. Se acepta solo PDF, de hasta 10 páginas en la práctica, con un tamaño máximo configurable. Adjuntan y dan de baja Operativo y Administrador; Lectura solo las abre. Una orden no se borra: se da de baja (HU-006) y sigue en el histórico de la campaña. El archivo no es público: se abre solo con sesión iniciada, y el permiso se verifica en el servidor. Se guarda fuera de la base, en almacenamiento de objetos ([ADR-0011](../../adr/0011-orden-de-publicidad-en-cloudflare-r2.md)).
+- **Criterios de aceptación:**
+  1. Dado el formulario de Nueva campaña, cuando el operativo adjunta un PDF y guarda, entonces la campaña se crea con esa orden de publicidad.
+  2. Dada una campaña con orden de publicidad, cuando se abre, entonces se ve la lista de sus órdenes, con su nombre, quién la subió y cuándo, y cada una se puede abrir desde ahí.
+  3. Dada una campaña existente, cuando el operativo la edita y adjunta otro PDF, entonces se conservan las dos órdenes.
+  4. Dado un archivo que no es PDF o supera el tamaño máximo, cuando se intenta guardar la campaña, entonces se rechaza con un mensaje claro, la campaña no se guarda a medias y el formulario conserva lo cargado.
+  5. Dada una orden de publicidad dada de baja, cuando se abre la campaña, entonces ya no aparece entre las vigentes, pero sigue en el histórico.
+  6. Dado un usuario de Lectura, cuando abre la campaña, entonces puede abrir las órdenes, pero no adjuntar ni dar de baja.
+  7. Dado alguien sin sesión iniciada, cuando pide el archivo, entonces se le niega.
+  8. Dada una campaña sin orden de publicidad, cuando se guarda o se confirma, entonces se acepta igual.
 
 # E5 - Reservas y motor de disponibilidad
 
