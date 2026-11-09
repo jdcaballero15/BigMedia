@@ -159,6 +159,7 @@ erDiagram
     Cliente ||--o{ Interaccion : "cliente"
     Contacto |o--o{ Interaccion : "contacto"
     Campania |o--o{ Interaccion : "campania"
+    Campania ||--o{ OrdenPublicidad : "campania"
     Campania {
         string nombre
         date fecha_inicio
@@ -175,6 +176,13 @@ erDiagram
         date fecha
         string notas
     }
+    OrdenPublicidad {
+        file archivo "en Cloudflare R2"
+        string nombre
+        int tamanio
+        datetime subida_en
+        bool activa
+    }
 ```
 
 | Modelo | Para qué | Campos clave | Reglas |
@@ -182,6 +190,7 @@ erDiagram
 | `Campania` | El contenedor comercial de un cliente y una marca | `marca`, `cliente_facturacion`, fechas, `estado` | Todo opcional mientras está Cotizada. Para confirmarla se exigen marca, cliente que factura y ambas fechas (RN-011). Quién factura: `cliente_facturacion` si está; si no, el cliente de la marca (RN-014) |
 | `LineaFormato` | Cuántas posiciones de un formato pide la campaña (HU-055) | `formato`, `cantidad` (opcional) | Un formato no se repite entre las líneas activas. Cambiarla o quitarla no toca las reservas. Quitar es `activa=False` |
 | `Interaccion` | Reunión o llamada con un cliente (HU-020) | `tipo`, `fecha`, `cliente`, `contacto` y `campania` opcionales, `registrada_por` | El contacto tiene que ser del mismo cliente y estar activo. Vive acá y no en `clientes` porque puede llevar campaña |
+| `OrdenPublicidad` | PDF de la orden de publicidad que manda el cliente (HU-069) | `campania`, `archivo`, `nombre`, `tamanio`, `subida_por`, `subida_en`, `activa` | Varias por campaña, opcionales. Solo PDF, hasta `CAMPANIAS_OP_MAX_MB`. El archivo está en Cloudflare R2 con una clave sin el nombre original ([ADR-0011](adr/0011-orden-de-publicidad-en-cloudflare-r2.md)). Dar de baja es `activa=False` y no borra el archivo |
 
 ## `reservas`
 

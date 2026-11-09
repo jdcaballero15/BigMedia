@@ -105,11 +105,40 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [FRONTEND_DIST] if FRONTEND_DIST.exists() else []
-if DESPLEGADO:
-    STORAGES = {
-        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
+
+# Archivos subidos (HU-069, ADR-0011): bucket privado de Cloudflare R2 si hay R2_BUCKET;
+# si no (desarrollo local), el disco en backend/media/, que git ignora.
+R2_BUCKET = os.environ.get("R2_BUCKET", "")
+ALMACENAMIENTO_ARCHIVOS: dict[str, Any] = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+if R2_BUCKET:
+    ALMACENAMIENTO_ARCHIVOS = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": R2_BUCKET,
+            "endpoint_url": f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com",
+            "access_key": os.environ["R2_ACCESS_KEY_ID"],
+            "secret_key": os.environ["R2_SECRET_ACCESS_KEY"],
+            "region_name": "auto",
+            "signature_version": "s3v4",
+            "default_acl": None,
+            "file_overwrite": False,
+            # URL firmada para abrir un archivo, válida por 5 minutos.
+            "querystring_auth": True,
+            "querystring_expire": 300,
+        },
     }
+STORAGES = {
+    "default": ALMACENAMIENTO_ARCHIVOS,
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if DESPLEGADO
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        )
+    },
+}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Panel principal (HU-047): ventana de "reservas por vencer" en días.
@@ -117,6 +146,9 @@ PANEL_DIAS_POR_VENCER = int(os.environ.get("PANEL_DIAS_POR_VENCER", "30"))
 
 # Tamaño máximo del PDF de la orden de compra en MB (HU-062, ADR-0009).
 FACTURACION_OC_MAX_MB = int(os.environ.get("FACTURACION_OC_MAX_MB", "5"))
+
+# Tamaño máximo de cada PDF de la orden de publicidad en MB (HU-069, ADR-0011).
+CAMPANIAS_OP_MAX_MB = int(os.environ.get("CAMPANIAS_OP_MAX_MB", "10"))
 
 # Correo saliente (HU-067): SMTP si hay EMAIL_HOST; si no, se escribe en la consola.
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")

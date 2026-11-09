@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { apiGet, apiWrite } from '../../shared/api'
+import { apiGet, apiUpload, apiWrite } from '../../shared/api'
 import type { Cliente, Marca, Rubro } from '../clientes/types'
 import type { MarcaInput } from '../clientes/MarcaForm'
 import CampaniaForm from './CampaniaForm'
@@ -17,6 +17,19 @@ type CambioDeFechas = {
   finAnterior: string
   inicioNuevo: string
   finNuevo: string
+}
+
+/** Multipart de la campaña: un valor vacío va como "" y el servidor lo toma como nulo. */
+function formularioCampania(
+  datos: Omit<CampaniaInput, 'ordenes_publicidad'>,
+  archivos: File[],
+): FormData {
+  const form = new FormData()
+  for (const [campo, valor] of Object.entries(datos)) {
+    form.append(campo, valor === null ? '' : String(valor))
+  }
+  for (const archivo of archivos) form.append('ordenes_publicidad', archivo)
+  return form
 }
 
 /** Cambio de fechas que puede arrastrar Pendientes (HU-058): ambas fechas, antes y después. */
@@ -94,7 +107,13 @@ export default function CampaniasPage() {
     if (editing === null) return
     const path =
       editing === 'new' ? '/api/campanias/campanias/' : `/api/campanias/campanias/${editing.id}/`
-    const guardada = await apiWrite<Campania>(path, editing === 'new' ? 'POST' : 'PATCH', input)
+    const metodo = editing === 'new' ? 'POST' : 'PATCH'
+    const { ordenes_publicidad: archivos, ...datos } = input
+    // Con PDF adjuntos, la campaña y sus órdenes van en un solo pedido (HU-069, criterio 4).
+    const guardada =
+      archivos.length > 0
+        ? await apiUpload<Campania>(path, formularioCampania(datos, archivos), metodo)
+        : await apiWrite<Campania>(path, metodo, datos)
     if (editing !== 'new') setCambioDeFechas(detectarCambioDeFechas(editing, guardada))
     setEditing(null)
     setRevision((current) => current + 1)

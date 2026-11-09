@@ -16,6 +16,7 @@ const campania = {
   fecha_inicio: null,
   fecha_fin: null,
   estado: 'cotizada',
+  ordenes_publicidad: [],
 }
 
 function stubFetch(overrides?: (input: string, options?: RequestInit) => unknown) {
@@ -85,6 +86,34 @@ test('crea una campaña desde la pantalla', async () => {
       ),
     ).toBe(true),
   )
+})
+
+test('crea la campaña con su orden de publicidad en un solo pedido multipart', async () => {
+  const fetchMock = stubFetch((input, options) => {
+    if (input.includes('/campanias/campanias/') && options?.method === 'POST') return ok({ id: 9 })
+    return undefined
+  })
+  render(<CampaniasPage />)
+  await screen.findByText('Verano 2027')
+  fireEvent.click(screen.getByRole('button', { name: 'Nueva campaña' }))
+  const form = screen.getByRole('form', { name: 'Formulario de campaña' })
+  fireEvent.change(within(form).getByLabelText('Nombre'), { target: { value: 'Invierno' } })
+  const pdf = new File(['%PDF-1.4'], 'op.pdf', { type: 'application/pdf' })
+  fireEvent.change(within(form).getByLabelText('Orden de publicidad (PDF)'), {
+    target: { files: [pdf] },
+  })
+  fireEvent.click(within(form).getByRole('button', { name: 'Guardar campaña' }))
+  await waitFor(() => {
+    const llamada = fetchMock.mock.calls.find(
+      ([url, options]) => String(url) === '/api/campanias/campanias/' && options?.method === 'POST',
+    )
+    expect(llamada).toBeDefined()
+    const cuerpo = llamada?.[1]?.body as FormData
+    expect(cuerpo.get('nombre')).toBe('Invierno')
+    expect(cuerpo.get('marca')).toBe('')
+    expect(cuerpo.get('estado')).toBe('cotizada')
+    expect((cuerpo.getAll('ordenes_publicidad')[0] as File).name).toBe('op.pdf')
+  })
 })
 
 test('al cambiar las fechas pregunta si mover las Pendientes', async () => {
