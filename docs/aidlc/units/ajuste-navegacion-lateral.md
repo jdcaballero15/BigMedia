@@ -69,4 +69,4 @@ Ninguna.
 
 - Gate 1 (plan): 2026-11-08 — aprobado por Juan Diego
 - Gate 2 (verificación): 2026-11-08 — aprobado por Juan Diego tras probarlo en local. ruff format y check sin observaciones (146 archivos); mypy sin errores (146 archivos); sin migraciones pendientes; pytest 918 tests contra PostgreSQL, ninguno salteado, cobertura 97,27 %; pre-commit (incluye gitleaks) sin hallazgos; frontend format, lint, typecheck y build OK, 398 tests, cobertura 92,79 % sentencias / 94,79 % líneas.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #125
