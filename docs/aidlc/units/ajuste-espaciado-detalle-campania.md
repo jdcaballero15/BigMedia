@@ -1,6 +1,6 @@
 # Unidad: Ajuste de espaciado del detalle de campaña
 
-- **Estado:** en curso · **Épica:** E12 Rediseño visual · **App dueña:** `frontend`
+- **Estado:** en revisión · **Épica:** E12 Rediseño visual · **App dueña:** `frontend`
 - **Origen:** pedido de Juan Diego (2026-11-08), al probar HU-069 en staging · **Rama:** `fix/frontend-espaciado-detalle-campania`
 
 ## Objetivo
