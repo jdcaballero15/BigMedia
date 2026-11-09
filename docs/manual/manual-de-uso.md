@@ -318,53 +318,25 @@ Facturación**. Cuando quieras, descargás el Excel para Administración; a fin 
 
 ### Cargar un ítem
 
-1. **Comercial › Facturación › Nuevo ítem**.
-2. Arriba están los siete datos de la planilla de Administración, en su orden: **Cliente que
-   factura**, **Importe neto total**, **Costos incluidos**, **Detalle costo**, **Tipo de venta**,
-   **Gob/Priv** y **Tipo** (el tipo de soporte, por ejemplo «Séxtuples»).
+1. Elegí el **Mes** en la lista: el ítem nuevo queda en ese mes.
+2. Tocá **Nuevo ítem**. El formulario tiene solo los siete datos de la planilla de Administración,
+   en su orden: **Cliente (razón social)**, **Importe neto total**, **Costos incluidos**,
+   **Detalle costo**, **Tipo de venta**, **Gob/Priv** y **Tipo** (por ejemplo, «Séxtuples»).
+   **Nada es obligatorio mientras está en Borrador.**
    - **Costos incluidos** y **Detalle costo** se escriben a mano: un importe y un texto (por
-     ejemplo, «Comisión agencia»). Son solo para la planilla: no cambian los **Costos del ítem** ni
-     la rentabilidad.
-3. Debajo, si querés, completá mes de facturación, campaña, CUIT, marca, tipo de servicio,
-   descripción, período, cantidad y precio unitario. **Nada es obligatorio mientras está en
-   Borrador.**
-4. **Importe neto total:** si lo dejás vacío, se calcula como cantidad × precio unitario.
-5. **IVA y total** se calculan solos con la alícuota (21 % si no la cambiás).
-6. **Guardar ítem**. Nace en **Borrador**.
+     ejemplo, «Comisión agencia»). Son solo para la planilla: no cambian los costos del módulo de
+     **Costos** ni la rentabilidad.
+3. **IVA y total** se calculan solos con la alícuota de 21 %.
+4. **Guardar ítem**. Nace en **Borrador**.
 
 La lista muestra una fila por ítem con esas siete columnas. Las acciones de cada ítem (**Editar**,
-**Marcar facturado**, **Reabrir**, **Anular**, **Quitar del grupo**, **Ver PDF de la OC**) están en
-el botón **⋯** del final de la fila. Para ver los ítems de un estado, usá el filtro **Estado**.
+**Marcar facturado**, **Reabrir**, **Anular**, **Quitar del grupo** y, si tiene, **Ver PDF de la
+OC**) están en el botón **⋯** del final de la fila. Para ver los ítems de un estado, usá el filtro
+**Estado**.
 
 Arriba de la lista ves los totales del mes (neto, IVA, total, costos y neto final), sin contar los
-anulados.
-
-### Costos del ítem
-
-Guardá el ítem y volvé a **Editar**: abajo está **Costos del ítem**.
-
-1. Elegí el **Tipo de costo** (por ejemplo, Comisión o Impresión) y **Cómo se calcula**: **Monto
-   fijo** o **Porcentaje del neto**. Con un 15 % sobre un neto de $10.000, el costo es $1.500.
-2. Indicá a quién se le paga: un **Proveedor** o, si no lo es, escribilo en **A quién se le paga**.
-3. Tocá **Agregar costo**.
-
-- Si cambiás el importe neto, los costos en porcentaje se recalculan solos.
-- Si el ítem tiene campaña, podés **Vincular** un costo ya cargado en una de sus reservas. No se
-  copia: es el mismo costo, así la rentabilidad de la campaña lo cuenta una sola vez.
-- **Anular** un costo pide un motivo; deja de sumar pero queda a la vista. Un costo de reserva
-  vinculado se anula desde **Costos**.
-
-Los totales del mes suman estos costos (**Costos** y **Neto final**), y la planilla de **Enviar a
-facturar** los usa.
-
-### Orden de compra
-
-- En el ítem cargá el **Número de orden de compra** y su **Fecha de aprobación**.
-- Para adjuntar el **PDF de la orden de compra**, guardá el ítem primero y volvé a **Editar**. Solo
-  se aceptan PDF de hasta 5 MB. Desde el formulario podés abrirlo o quitarlo, y en la lista lo
-  abrís con **⋯ › Ver PDF de la OC**.
-- Si el número de OC ya está cargado en otro ítem, el sistema lo guarda igual y te avisa en cuál
-  está, por si es un duplicado.
+anulados. Los costos y el neto final de esos totales salen de los costos del módulo de **Costos**
+vinculados a los ítems, no de lo escrito en **Costos incluidos**.
 
 ### Varios ítems en una misma factura
 
@@ -373,8 +345,6 @@ facturar** los usa.
    en la planilla de **Enviar a facturar**, donde salen juntos.
 3. **Quitar del grupo** deja un ítem independiente.
 
-El CUIT de facturación del ítem puede ser distinto del CUIT del cliente: la planilla muestra el del
-ítem.
 
 ### Descargar el Excel para Administración
 

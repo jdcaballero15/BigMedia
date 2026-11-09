@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { ApiError, apiGet, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import { usePuedeEditar } from '../../shared/sesion'
-import type { Campania } from '../campanias/types'
-import type { Cliente, Marca } from '../clientes/types'
+import type { Cliente } from '../clientes/types'
 import EnviosDelMes from './EnviosDelMes'
 import ItemForm from './ItemForm'
 import type { ItemInput } from './ItemForm'
@@ -25,8 +24,6 @@ const SIN_CATALOGOS: CatalogosFacturacion = { sectores: [], tipos_venta: [] }
 
 type Referencias = {
   clientes: Cliente[]
-  marcas: Marca[]
-  campanias: Campania[]
   catalogos: CatalogosFacturacion
 }
 
@@ -45,8 +42,6 @@ export default function ItemsPage() {
   const [totales, setTotales] = useState<TotalesMes | null>(null)
   const [referencias, setReferencias] = useState<Referencias>({
     clientes: [],
-    marcas: [],
-    campanias: [],
     catalogos: SIN_CATALOGOS,
   })
   const [error, setError] = useState('')
@@ -60,15 +55,13 @@ export default function ItemsPage() {
     let active = true
     void Promise.all([
       apiGet<Cliente[]>('/api/clientes/clientes/?incluir_inactivos=1'),
-      apiGet<Marca[]>('/api/clientes/marcas/?incluir_inactivos=1'),
-      apiGet<Campania[]>('/api/campanias/campanias/'),
       apiGet<CatalogosFacturacion>('/api/facturacion/catalogos/'),
     ])
-      .then(([clientes, marcas, campanias, catalogos]) => {
-        if (active) setReferencias({ clientes, marcas, campanias, catalogos })
+      .then(([clientes, catalogos]) => {
+        if (active) setReferencias({ clientes, catalogos })
       })
       .catch(() => {
-        if (active) setError('No se pudieron cargar clientes, marcas o campañas.')
+        if (active) setError('No se pudieron cargar los clientes o los catálogos.')
       })
     return () => {
       active = false
@@ -156,11 +149,10 @@ export default function ItemsPage() {
         <ItemForm
           key={editando === 'nuevo' ? 'nuevo' : editando.id}
           item={editando === 'nuevo' ? null : editando}
+          mes={mes}
           {...referencias}
           onSave={guardar}
           onCancel={() => setEditando(null)}
-          onPdfCambiado={recargar}
-          onCostosCambiados={recargar}
         />
       )}
       <div className="filters card" role="search" aria-label="Filtros de ítems">

@@ -13,8 +13,9 @@ los ítems de la lista para pasárselos a Administración, sin enviar el mes.
 
 - **Nombre:** «Facturación» en el menú, el título de la pantalla y la ruta de arriba.
 - **Los siete datos:** cliente (razón social), importe neto total, costos incluidos, detalle
-  costo, tipo de venta, Gob/Priv y tipo. Aparecen primero en el formulario de «Nuevo ítem», en
-  ese orden.
+  costo, tipo de venta, Gob/Priv y tipo. Son los únicos del formulario de «Nuevo ítem» y de
+  edición, en ese orden (ajuste del 09/11/2026, tras la prueba en local: al principio quedaban
+  arriba y el resto debajo). El mes de un ítem nuevo es el elegido en la lista.
 - **Costos incluidos y detalle costo:** dos datos nuevos del ítem que se escriben a mano (un
   importe y un texto). No tocan el módulo de costos ni la rentabilidad.
 - **Lista:** solo esas siete columnas, sin Estado. Al final de cada fila queda el menú de tres
@@ -42,13 +43,17 @@ los ítems de la lista para pasárselos a Administración, sin enviar el mes.
   - `ItemsPage.tsx`: el título pasa a «Facturación». La tabla muestra solo las siete columnas más
     el menú de tres puntos, y suma el botón «Descargar Excel», que arma la URL con los filtros
     actuales.
-  - `ItemForm.tsx` y `types.ts`: los siete datos arriba y en orden, con los dos campos nuevos; el
-    resto (mes, CUIT, marca, campaña, descripción, período, cantidad, precio, IVA, OC, notas)
-    queda debajo.
+  - `ItemForm.tsx` y `types.ts`: solo los siete datos, en orden, con los dos campos nuevos. Salen
+    del formulario el mes, la campaña, el CUIT, la marca, el tipo de servicio, la descripción, el
+    período, la cantidad, el precio, la alícuota, la orden de compra (número, fecha y PDF), los
+    costos del ítem y las notas. Al editar solo viajan los siete datos, así que lo que un ítem ya
+    tenga no se pisa. La página deja de cargar marcas y campañas.
 - **Manual de uso:** la sección de ítems a facturar pasa a «Facturación» y explica la descarga.
 
-**Fuera de alcance:** no cambian «Enviar a facturar» ni su planilla (HU-066), la sección de costos
-del ítem (HU-063), los totales del mes ni el módulo de costos.
+**Fuera de alcance:** no cambian «Enviar a facturar» ni su planilla (HU-066), los totales del mes,
+el módulo de costos ni el backend de la orden de compra y de los costos del ítem (HU-062, HU-063):
+solo dejan de cargarse desde esta pantalla. Los componentes `PdfOrdenCompra` y `CostosDelItem`
+quedan sin uso en la pantalla y no se borran en esta unidad.
 
 ## Migraciones
 
@@ -70,12 +75,14 @@ restricción de no negativo. No mueve datos: los ítems existentes quedan con es
   - Respeta los filtros de mes y estado, excluye los anulados, no cambia el estado de los ítems,
     funciona con la lista vacía y la puede usar Lectura.
 - Frontend (Vitest): el menú y el título dicen «Facturación»; la tabla tiene solo las siete
-  columnas; el formulario muestra primero los siete datos y manda los dos nuevos; «Descargar
+  columnas; el formulario tiene solo los siete datos, manda el mes elegido en un ítem nuevo y no
+  lo cambia al editar; «Descargar
   Excel» apunta a la URL con los filtros actuales. La cobertura se mantiene ≥ 80 %.
 - Prueba manual en local: cargar un ítem nuevo, filtrar por mes, descargar el Excel y abrirlo.
 
 ## Registro de gates
 
 - Gate 1 (plan): 2026-11-09 — aprobado por Juan Diego
-- Gate 2 (verificación): 2026-11-09 — corrida, pendiente de aprobación de Juan Diego tras probarlo en local. ruff format y check sin observaciones (148 archivos); mypy sin errores (148 archivos); sin migraciones pendientes; pytest 952 tests contra PostgreSQL, ninguno salteado, cobertura 97,37 %; pre-commit (incluye gitleaks) sin hallazgos; frontend format, lint, typecheck y build OK, 416 tests, cobertura 92,81 % sentencias / 94,82 % líneas.
+- Gate 2 (verificación, primera corrida, antes del ajuste del formulario): 2026-11-09 — corrida, pendiente de aprobación de Juan Diego tras probarlo en local. ruff format y check sin observaciones (148 archivos); mypy sin errores (148 archivos); sin migraciones pendientes; pytest 952 tests contra PostgreSQL, ninguno salteado, cobertura 97,37 %; pre-commit (incluye gitleaks) sin hallazgos; frontend format, lint, typecheck y build OK, 416 tests, cobertura 92,81 % sentencias / 94,82 % líneas.
+- Gate 2 (verificación, tras el ajuste del formulario): 2026-11-09 — corrida, pendiente de aprobación de Juan Diego tras probarlo en local. Sin cambios en el backend desde la primera corrida (952 tests, cobertura 97,37 %); pre-commit (incluye gitleaks) sin hallazgos; frontend format, lint, typecheck y build OK, 405 tests, cobertura 92,74 % sentencias / 94,75 % líneas.
 - Gate 3 (PR): pendiente

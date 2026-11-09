@@ -337,7 +337,7 @@ test('si fallan las referencias lo avisa', async () => {
   )
   render(<ItemsPage />)
   expect(
-    await screen.findByText('No se pudieron cargar clientes, marcas o campañas.'),
+    await screen.findByText('No se pudieron cargar los clientes o los catálogos.'),
   ).toBeDefined()
 })
 
