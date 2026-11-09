@@ -69,7 +69,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E4 Campañas | [cliente-que-factura](units/cliente-que-factura.md) | campanias | HU-027 (criterio 3), RN-014 | campanias | Gonza | feature/campanias-cliente-que-factura | mergeada |
 | E5 Reservas y motor de disponibilidad | [reservas-sin-fecha-pasada](units/reservas-sin-fecha-pasada.md) | reservas | RN-012 | reservas-base, parametros-configurables | Gonza | feature/reservas-sin-fecha-pasada | mergeada |
 | E4 Campañas | [orden-de-publicidad](units/orden-de-publicidad.md) | campanias | HU-069, ADR-0011 | campanias | Juan Diego | feature/campanias-orden-de-publicidad | en revisión |
-| — (unidad técnica) | [ajuste-navegacion-lateral](units/ajuste-navegacion-lateral.md) | frontend | pedido 08/11/2026 | estilo-base | Juan Diego | feature/frontend-menu-expandible | en revisión |
+| — (unidad técnica) | [ajuste-navegacion-lateral](units/ajuste-navegacion-lateral.md) | frontend | pedido 08/11/2026 | estilo-base | Juan Diego | feature/frontend-menu-expandible | mergeada |
 
 ## Notas
 
