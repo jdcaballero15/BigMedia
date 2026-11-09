@@ -5,9 +5,11 @@ y seguí los pasos. Los ejemplos usan los datos inventados de prueba, nunca dato
 
 ## Cómo está organizada la pantalla
 
-A la izquierda está el menú, con un icono por pantalla. Pasá el mouse por un icono para ver su
-nombre; una línea separa cada grupo. Abajo están tu usuario (la inicial) y **Salir**. En el celular,
-el botón de arriba a la izquierda abre el menú con los nombres a la vista.
+A la izquierda está el menú: cada pantalla tiene su icono y su nombre, agrupadas bajo el título de
+su grupo. Abajo están tu usuario y **Salir**. Si ya conocés los iconos, el botón de arriba a la
+derecha del menú (**Contraer menú**) lo achica a solo iconos; ahí, pasá el mouse por un icono para
+ver su nombre, y el mismo botón (**Expandir menú**) lo vuelve a abrir. El navegador recuerda cómo
+lo dejaste. En el celular, el botón de arriba a la izquierda abre el menú con los nombres a la vista.
 
 Los grupos son estos:
 
