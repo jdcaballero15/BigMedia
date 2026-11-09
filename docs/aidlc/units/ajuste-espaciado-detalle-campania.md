@@ -72,4 +72,4 @@ Ninguna.
   - `pre-commit run --all-files`: todos `Passed`, incluido gitleaks.
   - Backend sin cambios: ruff, mypy y pytest no se volvieron a correr localmente; los corre el CI.
   - Prueba visual en local (2026-11-09): Juan Diego revisó el detalle de campaña y lo aprobó.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #129 (2026-11-09), pedido por Juan Diego
