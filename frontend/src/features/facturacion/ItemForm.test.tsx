@@ -118,9 +118,7 @@ test('al vincular una campaña precarga cliente, CUIT, marca y soporte', async (
   const onSave = renderizar()
   cambiar('Campaña', '5')
   await waitFor(() =>
-    expect((screen.getByLabelText('Tipo de soporte') as HTMLInputElement).value).toBe(
-      'Gran Formato, LED',
-    ),
+    expect((screen.getByLabelText('Tipo') as HTMLInputElement).value).toBe('Gran Formato, LED'),
   )
   const entrada = await guardar(onSave)
   expect(entrada).toMatchObject({
@@ -139,7 +137,7 @@ test('la campaña no pisa lo ya cargado y tolera que fallen las líneas', async 
   )
   const onSave = renderizar()
   cambiar('Cliente que factura', '1')
-  cambiar('Tipo de soporte', 'Medianera')
+  cambiar('Tipo', 'Medianera')
   cambiar('Campaña', '5')
   const entrada = await guardar(onSave)
   expect(entrada).toMatchObject({ cliente: 1, tipo_soporte: 'Medianera', marca: 7 })
@@ -155,9 +153,9 @@ test('cambiar cantidad o precio vacía el neto para que lo calcule el servidor',
     alicuota_iva: '21.00',
   } as ItemFacturacion
   const onSave = renderizar(existente)
-  expect((screen.getByLabelText('Importe neto') as HTMLInputElement).value).toBe('10000.00')
+  expect((screen.getByLabelText('Importe neto total') as HTMLInputElement).value).toBe('10000.00')
   cambiar('Cantidad', '3')
-  expect((screen.getByLabelText('Importe neto') as HTMLInputElement).value).toBe('')
+  expect((screen.getByLabelText('Importe neto total') as HTMLInputElement).value).toBe('')
   const entrada = await guardar(onSave)
   expect(entrada).toMatchObject({ mes: '2026-11-01', cantidad: '3', neto: null })
 })
@@ -165,7 +163,7 @@ test('cambiar cantidad o precio vacía el neto para que lo calcule el servidor',
 test('un neto escrito a mano se respeta aunque cambie el precio', async () => {
   const onSave = renderizar()
   cambiar('Cantidad', '10')
-  cambiar('Importe neto', '9500')
+  cambiar('Importe neto total', '9500')
   cambiar('Precio unitario', '1000')
   const entrada = await guardar(onSave)
   expect(entrada).toMatchObject({ cantidad: '10', precio_unitario: '1000', neto: '9500' })
@@ -304,5 +302,51 @@ test('un ítem guardado muestra sus costos y avisa cuando cambian', async () => 
   await waitFor(() => expect(onCostosCambiados).toHaveBeenCalledTimes(1))
   expect(fetchMock.mock.calls.some(([url]) => url === '/api/facturacion/items/4/costos/')).toBe(
     true,
+  )
+})
+
+// --- HU-060: los siete datos de la planilla primero, con los costos escritos a mano ---
+
+test('el formulario muestra primero los siete datos de la planilla, en orden', () => {
+  renderizar()
+  const grupo = screen.getByRole('group', { name: 'Datos de la planilla' })
+  const etiquetas = Array.from(grupo.querySelectorAll(':scope > label')).map((label) =>
+    label.firstChild?.textContent?.trim(),
+  )
+  expect(etiquetas).toEqual([
+    'Cliente que factura',
+    'Importe neto total',
+    'Costos incluidos',
+    'Detalle costo',
+    'Tipo de venta',
+    'Gob/Priv',
+    'Tipo',
+  ])
+})
+
+test('manda los costos incluidos y su detalle, y vacío viaja como null', async () => {
+  let onSave = renderizar()
+  let entrada = await guardar(onSave)
+  expect(entrada).toMatchObject({ costos_incluidos: null, detalle_costo: '' })
+  cleanup()
+
+  onSave = renderizar()
+  cambiar('Costos incluidos', '1500')
+  cambiar('Detalle costo', 'Comisión agencia')
+  entrada = await guardar(onSave)
+  expect(entrada).toMatchObject({ costos_incluidos: '1500', detalle_costo: 'Comisión agencia' })
+})
+
+test('al editar precarga los costos incluidos y su detalle', () => {
+  renderizar({
+    id: 3,
+    mes: '2026-11-01',
+    alicuota_iva: '21.00',
+    costos_incluidos: '1500.00',
+    detalle_costo: 'Comisión agencia',
+  } as ItemFacturacion)
+  expect((screen.getByLabelText('Costos incluidos') as HTMLInputElement).value).toBe('1500.00')
+  expect((screen.getByLabelText('Detalle costo') as HTMLInputElement).value).toBe(
+    'Comisión agencia',
   )
 })

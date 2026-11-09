@@ -48,6 +48,7 @@ export type ItemFacturacion = {
   mes: string | null
   cliente: number | null
   cliente_nombre: string | null
+  cliente_razon_social: string | null
   cuit_facturacion: string
   marca: number | null
   marca_nombre: string | null
@@ -70,6 +71,8 @@ export type ItemFacturacion = {
   sector_nombre: string | null
   tipo_venta: number | null
   tipo_venta_nombre: string | null
+  costos_incluidos: string | null
+  detalle_costo: string
   notas: string
   estado: EstadoItem
   numero_factura: string

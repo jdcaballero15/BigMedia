@@ -77,5 +77,5 @@ restricción de no negativo. No mueve datos: los ítems existentes quedan con es
 ## Registro de gates
 
 - Gate 1 (plan): 2026-11-09 — aprobado por Juan Diego
-- Gate 2 (verificación): pendiente
+- Gate 2 (verificación): 2026-11-09 — corrida, pendiente de aprobación de Juan Diego tras probarlo en local. ruff format y check sin observaciones (148 archivos); mypy sin errores (148 archivos); sin migraciones pendientes; pytest 952 tests contra PostgreSQL, ninguno salteado, cobertura 97,37 %; pre-commit (incluye gitleaks) sin hallazgos; frontend format, lint, typecheck y build OK, 416 tests, cobertura 92,81 % sentencias / 94,82 % líneas.
 - Gate 3 (PR): pendiente

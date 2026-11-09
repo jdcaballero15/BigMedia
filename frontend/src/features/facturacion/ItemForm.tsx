@@ -33,6 +33,7 @@ const CAMPOS_NULLABLES = [
   'cantidad',
   'precio_unitario',
   'neto',
+  'costos_incluidos',
   'periodo_desde',
   'periodo_hasta',
   'orden_compra_fecha',
@@ -58,6 +59,8 @@ function datosIniciales(item: ItemFacturacion | null): Datos {
     tipo_soporte: item?.tipo_soporte ?? '',
     sector: texto(item?.sector),
     tipo_venta: texto(item?.tipo_venta),
+    costos_incluidos: texto(item?.costos_incluidos),
+    detalle_costo: item?.detalle_costo ?? '',
     notas: item?.notas ?? '',
     orden_compra_numero: item?.orden_compra_numero ?? '',
     orden_compra_fecha: texto(item?.orden_compra_fecha),
@@ -80,7 +83,8 @@ function aEntrada(datos: Datos): ItemInput {
   return entrada
 }
 
-/** Alta y edición de un ítem a facturar: precargas (HU-060), OC (HU-062) y costos (HU-063). */
+/** Alta y edición de un ítem a facturar: primero los siete datos de la planilla (HU-060,
+ * RN-024), después precargas, OC (HU-062) y costos del módulo (HU-063). */
 export default function ItemForm(props: Props) {
   const { item, clientes, marcas, campanias, catalogos, onSave, onCancel } = props
   const { onPdfCambiado, onCostosCambiados } = props
@@ -173,6 +177,67 @@ export default function ItemForm(props: Props) {
           Cancelar
         </button>
       </div>
+      <div className="form-grid" role="group" aria-label="Datos de la planilla">
+        <label>
+          Cliente que factura
+          <select value={datos.cliente} onChange={(event) => elegirCliente(event.target.value)}>
+            <option value="">Sin cliente</option>
+            {vigentes(clientes, item?.cliente).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre_visible}
+              </option>
+            ))}
+          </select>
+          <FieldErrors messages={errors.cliente} />
+        </label>
+        <label>
+          Importe neto total
+          <input
+            inputMode="decimal"
+            aria-label="Importe neto total"
+            value={datos.neto}
+            placeholder="Cantidad × precio"
+            onChange={(event) => {
+              setNetoTocado(true)
+              cambiar('neto', event.target.value)
+            }}
+          />
+          <small className="muted">Vacío: se calcula como cantidad × precio unitario.</small>
+          <FieldErrors messages={errors.neto} />
+        </label>
+        {campoTexto('costos_incluidos', 'Costos incluidos', { inputMode: 'decimal' })}
+        {campoTexto('detalle_costo', 'Detalle costo')}
+        <label>
+          Tipo de venta
+          <select
+            value={datos.tipo_venta}
+            onChange={(event) => cambiar('tipo_venta', event.target.value)}
+          >
+            <option value="">Sin definir</option>
+            {conElegida(catalogos.tipos_venta, item?.tipo_venta, item?.tipo_venta_nombre).map(
+              (t) => (
+                <option key={t.id} value={t.id}>
+                  {t.nombre}
+                </option>
+              ),
+            )}
+          </select>
+          <FieldErrors messages={errors.tipo_venta} />
+        </label>
+        <label>
+          Gob/Priv
+          <select value={datos.sector} onChange={(event) => cambiar('sector', event.target.value)}>
+            <option value="">Sin definir</option>
+            {conElegida(catalogos.sectores, item?.sector, item?.sector_nombre).map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nombre}
+              </option>
+            ))}
+          </select>
+          <FieldErrors messages={errors.sector} />
+        </label>
+        {campoTexto('tipo_soporte', 'Tipo')}
+      </div>
       <div className="form-grid">
         {campoTexto('mes', 'Mes de facturación', { type: 'month' })}
         <label>
@@ -189,18 +254,6 @@ export default function ItemForm(props: Props) {
             ))}
           </select>
           <FieldErrors messages={errors.campania} />
-        </label>
-        <label>
-          Cliente que factura
-          <select value={datos.cliente} onChange={(event) => elegirCliente(event.target.value)}>
-            <option value="">Sin cliente</option>
-            {vigentes(clientes, item?.cliente).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre_visible}
-              </option>
-            ))}
-          </select>
-          <FieldErrors messages={errors.cliente} />
         </label>
         {campoTexto('cuit_facturacion', 'CUIT de facturación')}
         <label>
@@ -260,52 +313,7 @@ export default function ItemForm(props: Props) {
           />
           <FieldErrors messages={errors.precio_unitario} />
         </label>
-        <label>
-          Importe neto
-          <input
-            inputMode="decimal"
-            aria-label="Importe neto"
-            value={datos.neto}
-            placeholder="Cantidad × precio"
-            onChange={(event) => {
-              setNetoTocado(true)
-              cambiar('neto', event.target.value)
-            }}
-          />
-          <small className="muted">Vacío: se calcula como cantidad × precio unitario.</small>
-          <FieldErrors messages={errors.neto} />
-        </label>
         {campoTexto('alicuota_iva', 'Alícuota de IVA (%)', { inputMode: 'decimal' })}
-        {campoTexto('tipo_soporte', 'Tipo de soporte')}
-        <label>
-          Gob/Priv
-          <select value={datos.sector} onChange={(event) => cambiar('sector', event.target.value)}>
-            <option value="">Sin definir</option>
-            {conElegida(catalogos.sectores, item?.sector, item?.sector_nombre).map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
-          <FieldErrors messages={errors.sector} />
-        </label>
-        <label>
-          Tipo de venta
-          <select
-            value={datos.tipo_venta}
-            onChange={(event) => cambiar('tipo_venta', event.target.value)}
-          >
-            <option value="">Sin definir</option>
-            {conElegida(catalogos.tipos_venta, item?.tipo_venta, item?.tipo_venta_nombre).map(
-              (t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nombre}
-                </option>
-              ),
-            )}
-          </select>
-          <FieldErrors messages={errors.tipo_venta} />
-        </label>
         {campoTexto('orden_compra_numero', 'Número de orden de compra')}
         <CampoFecha
           label="Fecha de aprobación de la OC"

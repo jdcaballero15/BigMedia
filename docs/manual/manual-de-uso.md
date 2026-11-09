@@ -17,7 +17,7 @@ Los grupos son estos:
 | --- | --- |
 | Inicio | **Panel**: ocupación de hoy, campañas activas y por vencer |
 | Reportes | **Ingresos**, **Por rubro o grupo**, **Ocupación** |
-| Comercial | **Clientes**, **Marcas**, **Campañas**, **Interacciones**, **Ítems a facturar** |
+| Comercial | **Clientes**, **Marcas**, **Campañas**, **Interacciones**, **Facturación** |
 | Inventario | **Carteles**, **Disponibilidad** |
 | Operación | **Proveedores**, **Costos**, **Formatos** |
 | Configuración | **Catálogos**, **Parámetros** |
@@ -32,7 +32,7 @@ la campaña. Al final de cada fila queda a la vista la acción principal (**Ver 
 **Dar de baja** y similares. Si el manual nombra una acción que no ves en la fila, está en los tres
 puntos. El menú se cierra con Escape o tocando afuera.
 
-Arriba de cada reporte y de Ítems a facturar hay cifras con lo más importante del período; la que
+Arriba de cada reporte y de Facturación hay cifras con lo más importante del período; la que
 está en azul es la principal. En los reportes, el período se elige con **mes** y **año** de
 **Desde** y de **Hasta**; el fin nunca queda antes del inicio.
 
@@ -311,20 +311,30 @@ Qué pasa con cada fila:
 **Descargar reporte** baja el resultado en CSV. Cada cartel importado queda en la auditoría con el
 nombre del archivo y la fila de origen.
 
-## 9. Cargar los ítems a facturar y enviar el mes
+## 9. Facturación: cargar los ítems, descargar el Excel y enviar el mes
 
-Cada vez que llega una orden de compra, cargás lo que hay que facturar. A fin de mes, lo enviás a
-Administración.
+Cada vez que llega una orden de compra, cargás lo que hay que facturar en **Comercial ›
+Facturación**. Cuando quieras, descargás el Excel para Administración; a fin de mes, enviás el mes.
 
 ### Cargar un ítem
 
-1. **Comercial › Ítems a facturar › Nuevo ítem**.
-2. Completá mes de facturación, cliente, marca, campaña, descripción del servicio, período, cantidad
-   y precio unitario, tipo de servicio y de soporte, sector (Gob/Priv) y tipo de venta (F/V).
-   **Nada es obligatorio mientras está en Borrador.**
-3. **Importe neto:** si lo dejás vacío, se calcula como cantidad × precio unitario.
-4. **IVA y total** se calculan solos con la alícuota (21 % si no la cambiás).
-5. **Guardar ítem**. Nace en **Borrador**.
+1. **Comercial › Facturación › Nuevo ítem**.
+2. Arriba están los siete datos de la planilla de Administración, en su orden: **Cliente que
+   factura**, **Importe neto total**, **Costos incluidos**, **Detalle costo**, **Tipo de venta**,
+   **Gob/Priv** y **Tipo** (el tipo de soporte, por ejemplo «Séxtuples»).
+   - **Costos incluidos** y **Detalle costo** se escriben a mano: un importe y un texto (por
+     ejemplo, «Comisión agencia»). Son solo para la planilla: no cambian los **Costos del ítem** ni
+     la rentabilidad.
+3. Debajo, si querés, completá mes de facturación, campaña, CUIT, marca, tipo de servicio,
+   descripción, período, cantidad y precio unitario. **Nada es obligatorio mientras está en
+   Borrador.**
+4. **Importe neto total:** si lo dejás vacío, se calcula como cantidad × precio unitario.
+5. **IVA y total** se calculan solos con la alícuota (21 % si no la cambiás).
+6. **Guardar ítem**. Nace en **Borrador**.
+
+La lista muestra una fila por ítem con esas siete columnas. Las acciones de cada ítem (**Editar**,
+**Marcar facturado**, **Reabrir**, **Anular**, **Quitar del grupo**, **Ver PDF de la OC**) están en
+el botón **⋯** del final de la fila. Para ver los ítems de un estado, usá el filtro **Estado**.
 
 Arriba de la lista ves los totales del mes (neto, IVA, total, costos y neto final), sin contar los
 anulados.
@@ -344,27 +354,36 @@ Guardá el ítem y volvé a **Editar**: abajo está **Costos del ítem**.
 - **Anular** un costo pide un motivo; deja de sumar pero queda a la vista. Un costo de reserva
   vinculado se anula desde **Costos**.
 
-La lista muestra el **costo total** y el **neto final** (neto menos costos) de cada ítem, y la
-planilla los suma al final.
+Los totales del mes suman estos costos (**Costos** y **Neto final**), y la planilla de **Enviar a
+facturar** los usa.
 
 ### Orden de compra
 
 - En el ítem cargá el **Número de orden de compra** y su **Fecha de aprobación**.
 - Para adjuntar el **PDF de la orden de compra**, guardá el ítem primero y volvé a **Editar**. Solo
-  se aceptan PDF de hasta 5 MB. Desde el formulario podés abrirlo o quitarlo, y en la lista aparece
-  el enlace **PDF**.
+  se aceptan PDF de hasta 5 MB. Desde el formulario podés abrirlo o quitarlo, y en la lista lo
+  abrís con **⋯ › Ver PDF de la OC**.
 - Si el número de OC ya está cargado en otro ítem, el sistema lo guarda igual y te avisa en cuál
   está, por si es un duplicado.
 
 ### Varios ítems en una misma factura
 
 1. Marcá los ítems en Borrador del mismo mes que van juntos.
-2. Tocá **Agrupar en una factura**. Comparten un grupo (por ejemplo, G-12), que se ve en la columna
-   **Grupo** y en la planilla, donde salen juntos.
+2. Tocá **Agrupar en una factura**. Comparten un grupo (por ejemplo, G-12), que se ve en el ítem y
+   en la planilla de **Enviar a facturar**, donde salen juntos.
 3. **Quitar del grupo** deja un ítem independiente.
 
 El CUIT de facturación del ítem puede ser distinto del CUIT del cliente: la planilla muestra el del
 ítem.
+
+### Descargar el Excel para Administración
+
+**Descargar Excel**, arriba a la derecha, baja un .xlsx con los ítems que ves en la lista según el
+**Mes** y el **Estado** elegidos, sin los anulados. Tiene solo las siete columnas de la planilla
+(**CLIENTE (RAZON SOCIAL)**, **IMPORTE NETO TOTAL**, **COSTOS INCLUIDOS EN FC**, **DETALLE COSTO**,
+**TIPO DE VENTA (F/V)**, **GOB/PRIV** y **TIPO**), con el período arriba y los totales y el
+**Neto** abajo. Descargarlo no cambia el estado de ningún ítem: se puede bajar las veces que haga
+falta. También lo pueden bajar los usuarios de solo lectura.
 
 ### Enviar el mes a facturar
 
@@ -398,7 +417,7 @@ Si no hay ningún ítem completo, dice "No hay ítems completos para enviar." y 
   reapertura** y tocá **Confirmar reapertura**. Vuelve a Borrador, queda registrado quién, cuándo y
   por qué, y Administración recibe un correo para que no lo facture todavía.
 - Corregí el ítem y volvé a tocar **Enviar a facturar** del mes. Sale de nuevo como Enviado, con la
-  marca **Reenviado** en la lista y en la planilla, y Administración recibe otro correo con los
+  marca **Reenviado** en la planilla, y Administración recibe otro correo con los
   valores anteriores y nuevos de lo que cambió.
 - Un ítem ya facturado no se reabre. Si hay que corregirlo (por ejemplo, porque Administración
   emitió la nota de crédito), tocá **Anular**, escribí el **Motivo de la anulación** y tocá
