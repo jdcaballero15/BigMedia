@@ -492,6 +492,29 @@ p.error[role='alert'] {
   padding: 1.1rem 1.2rem 0.4rem;
 }
 
+/* Contenido de una card que no es una tabla: la card no trae espacio interior propio. */
+.card-cuerpo {
+  padding: 1rem 1.2rem 1.2rem;
+}
+
+.card > h3 + .card-cuerpo,
+.card-heading + .card-cuerpo {
+  padding-top: 0.4rem;
+}
+
+.card-cuerpo > ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.card-cuerpo li + li {
+  margin-top: 0.5rem;
+}
+
+.card-cuerpo > :last-child {
+  margin-bottom: 0;
+}
+
 .filters {
   display: grid;
   grid-template-columns: repeat(4, minmax(130px, 1fr)) auto;
@@ -573,6 +596,16 @@ textarea:focus {
   grid-template-columns: repeat(3, minmax(160px, 1fr));
   gap: 1rem;
   margin-bottom: 1.2rem;
+}
+
+.form-grid.card-cuerpo {
+  margin-bottom: 0;
+}
+
+/* El botón de enviar de una grilla de campos no se estira a todo el ancho de su columna. */
+.form-grid > button[type='submit'] {
+  align-self: end;
+  justify-self: start;
 }
 
 .form-grid .wide {

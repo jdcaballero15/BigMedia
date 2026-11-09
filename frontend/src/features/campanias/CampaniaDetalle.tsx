@@ -44,7 +44,7 @@ export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props)
           )}
         </div>
       </div>
-      <div className="card">
+      <div className="card card-cuerpo section-gap">
         <dl className="detail-grid">
           <div>
             <dt>Estado</dt>

@@ -61,6 +61,15 @@ Ninguna.
 
 ## Registro de gates
 
-- Gate 1 (plan): pendiente
-- Gate 2 (verificación): pendiente
+- Gate 1 (plan): 2026-11-08 — aprobado por Juan Diego
+- Gate 2 (verificación): 2026-11-08 — esperando a Juan Diego. Salida de los comandos:
+  - Los 3 tests nuevos fallaban antes del cambio (`3 failed | 24 passed`) y pasan después.
+  - Frontend: `format:check` (`All matched files use Prettier code style!`), `lint` y `typecheck`
+    sin errores, `test:coverage` con `411 passed` (sentencias 92,88 %, líneas 94,86 %), `build`
+    `✓ built in 2.78s`.
+  - La regla del botón (`.form-grid > button[type='submit']`) solo alcanza a "Posiciones por
+    formato": en los demás formularios el botón está fuera de la grilla.
+  - `pre-commit run --all-files`: todos `Passed`, incluido gitleaks.
+  - Backend sin cambios: ruff, mypy y pytest no se volvieron a correr localmente; los corre el CI.
+  - Falta la prueba visual en staging.
 - Gate 3 (PR): pendiente

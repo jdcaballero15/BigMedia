@@ -45,46 +45,50 @@ export default function OrdenesPublicidad({ ordenes: iniciales }: Props) {
   }
 
   return (
-    <section className="card" aria-label="Órdenes de publicidad">
-      <h3>Órdenes de publicidad</h3>
-      {vigentes.length === 0 ? (
-        <p className="muted">Sin órdenes de publicidad.</p>
-      ) : (
-        <ul>
-          {vigentes.map((orden) => (
-            <li key={orden.id}>
-              {datos(orden)}
-              {puedeEditar && (
-                <>
-                  {' '}
-                  <button
-                    type="button"
-                    className="button-ghost"
-                    onClick={() => void darDeBaja(orden)}
-                  >
-                    Dar de baja {orden.nombre}
-                  </button>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      {dadasDeBaja.length > 0 && (
-        <details>
-          <summary>Dadas de baja ({dadasDeBaja.length})</summary>
+    <section className="card section-gap" aria-label="Órdenes de publicidad">
+      <div className="card-heading">
+        <h3>Órdenes de publicidad</h3>
+      </div>
+      <div className="card-cuerpo">
+        {vigentes.length === 0 ? (
+          <p className="muted">Sin órdenes de publicidad.</p>
+        ) : (
           <ul>
-            {dadasDeBaja.map((orden) => (
-              <li key={orden.id}>{datos(orden)}</li>
+            {vigentes.map((orden) => (
+              <li key={orden.id}>
+                {datos(orden)}
+                {puedeEditar && (
+                  <>
+                    {' '}
+                    <button
+                      type="button"
+                      className="button-ghost"
+                      onClick={() => void darDeBaja(orden)}
+                    >
+                      Dar de baja {orden.nombre}
+                    </button>
+                  </>
+                )}
+              </li>
             ))}
           </ul>
-        </details>
-      )}
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
+        )}
+        {dadasDeBaja.length > 0 && (
+          <details>
+            <summary>Dadas de baja ({dadasDeBaja.length})</summary>
+            <ul>
+              {dadasDeBaja.map((orden) => (
+                <li key={orden.id}>{datos(orden)}</li>
+              ))}
+            </ul>
+          </details>
+        )}
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
     </section>
   )
 }
