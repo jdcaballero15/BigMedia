@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import logging
 import smtplib
+from collections.abc import Iterable
 from datetime import date
 from decimal import Decimal
 from functools import partial
@@ -698,7 +699,7 @@ def _numero(valor: Decimal | None) -> float | None:
     return float(valor) if valor is not None else None
 
 
-def _cliente_razon_social(item: ItemFacturacion) -> str | None:
+def cliente_razon_social(item: ItemFacturacion) -> str | None:
     if item.cliente is None:
         return None
     return item.cliente.razon_social or item.cliente.nombre_visible
@@ -721,7 +722,7 @@ def _tipo(item: ItemFacturacion) -> str | None:
 # su orden, y al final las del sistema: orden de compra (HU-062), grupo de factura (HU-064),
 # neto final (HU-063) y la marca de reenviado (HU-067).
 COLUMNAS_PLANILLA: list[tuple[str, Any]] = [
-    ("CLIENTE (RAZON SOCIAL)", _cliente_razon_social),
+    ("CLIENTE (RAZON SOCIAL)", cliente_razon_social),
     ("IMPORTE NETO TOTAL", lambda i: _numero(i.neto)),
     ("COSTOS INCLUIDOS EN FC", lambda i: _numero(costo_total(i))),
     ("DETALLE COSTO", _detalle_costo),
@@ -795,6 +796,38 @@ def planilla_xlsx(envio: EnvioFacturacion) -> bytes:
     for item in _filas_agrupadas(list(items)):
         hoja.append([valor(item) for _, valor in COLUMNAS_PLANILLA])
     _agregar_totales(hoja, primera=4, ultima=hoja.max_row)
+    salida = io.BytesIO()
+    libro.save(salida)
+    return salida.getvalue()
+
+
+# «Descargar Excel» de la lista (HU-070): solo las siete columnas de la planilla real (RN-024),
+# con los costos incluidos y el detalle escritos en el ítem (HU-060), no los del módulo de costos.
+COLUMNAS_DESCARGA: list[tuple[str, Any]] = [
+    ("CLIENTE (RAZON SOCIAL)", cliente_razon_social),
+    ("IMPORTE NETO TOTAL", lambda i: _numero(i.neto)),
+    ("COSTOS INCLUIDOS EN FC", lambda i: _numero(i.costos_incluidos)),
+    ("DETALLE COSTO", lambda i: i.detalle_costo or None),
+    ("TIPO DE VENTA (F/V)", lambda i: i.tipo_venta.nombre if i.tipo_venta else None),
+    ("GOB/PRIV", lambda i: i.sector.nombre if i.sector else None),
+    ("TIPO (cartel/led/ppl/sextuples)", lambda i: i.tipo_soporte or None),
+]
+
+
+def planilla_de_lista_xlsx(items: Iterable[ItemFacturacion], mes: date | None) -> bytes:
+    """Planilla .xlsx de los ítems de la lista, sin enviarlos ni cambiarles el estado (HU-070)."""
+    libro = Workbook()
+    hoja = libro.worksheets[0]
+    hoja.title = f"Facturación {mes:%Y-%m}" if mes else "Facturación"
+    # Como la planilla real (RN-024): período (si hay mes) y título arriba, totales y neto abajo.
+    if mes is not None:
+        hoja.append(["PERIODO:", f"{mes.year}/{mes.month}"])
+    hoja.append(["CARTELERIA"])
+    hoja.append([titulo for titulo, _ in COLUMNAS_DESCARGA])
+    primera = hoja.max_row + 1
+    for item in items:
+        hoja.append([valor(item) for _, valor in COLUMNAS_DESCARGA])
+    _agregar_totales(hoja, primera=primera, ultima=hoja.max_row)
     salida = io.BytesIO()
     libro.save(salida)
     return salida.getvalue()

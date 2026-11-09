@@ -135,7 +135,7 @@ const sections: { title: string; items: Item[] }[] = [
       },
       {
         id: 'items-facturacion',
-        label: 'Ítems a facturar',
+        label: 'Facturación',
         icon: Receipt,
         render: () => <ItemsPage />,
       },

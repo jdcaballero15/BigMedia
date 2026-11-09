@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import ItemsPage from './ItemsPage'
 import { PuedeEditarContext } from '../../shared/sesion'
+import { abrirAcciones } from '../../shared/pruebas'
 import { mesActual } from './types'
 import type { ItemFacturacion } from './types'
 
@@ -14,6 +15,7 @@ function item(id: number, extra: Partial<ItemFacturacion> = {}): ItemFacturacion
     mes: '2026-11-01',
     cliente: 1,
     cliente_nombre: 'Cliente Uno',
+    cliente_razon_social: 'Cliente Uno SA',
     cuit_facturacion: '20123456786',
     marca: null,
     marca_nombre: null,
@@ -31,11 +33,13 @@ function item(id: number, extra: Partial<ItemFacturacion> = {}): ItemFacturacion
     costo_total: '0.00',
     neto_final: '10000.00',
     tipo_servicio: 'alquiler',
-    tipo_soporte: '',
+    tipo_soporte: `Ítem ${id}`,
     sector: null,
     sector_nombre: null,
     tipo_venta: null,
     tipo_venta_nombre: null,
+    costos_incluidos: null,
+    detalle_costo: '',
     notas: '',
     estado: 'borrador',
     numero_factura: '',
@@ -100,14 +104,70 @@ function patches(fetchMock: ReturnType<typeof stubFetch>) {
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
-test('muestra el costo total y el neto final de cada ítem y del mes (HU-063)', async () => {
-  stubFetch([item(1, { costo_total: '1500.00', neto_final: '8500.00' })])
+/** Abre el menú ⋯ de la fila y elige una acción. */
+function elegir(fila: HTMLElement, accion: string) {
+  abrirAcciones(fila)
+  fireEvent.click(within(fila).getByRole('button', { name: accion }))
+}
+
+/** Las acciones que ofrece el menú ⋯ de la fila (lo abre y lo vuelve a cerrar). */
+function acciones(fila: HTMLElement): string[] {
+  abrirAcciones(fila)
+  const lista = fila.querySelector('.menu-fila-lista')
+  const etiquetas = Array.from(lista?.querySelectorAll('button') ?? []).map((b) => b.textContent)
+  abrirAcciones(fila)
+  return etiquetas.filter((etiqueta): etiqueta is string => etiqueta !== null)
+}
+
+test('cada fila muestra las siete columnas de la planilla (HU-060, RN-024)', async () => {
+  stubFetch([
+    item(1, {
+      costos_incluidos: '1500.00',
+      detalle_costo: 'Comisión agencia',
+      tipo_venta_nombre: 'F',
+      sector_nombre: 'Privado',
+    }),
+  ])
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  expect(within(fila).getByText('$1.500,00')).toBeDefined()
-  expect(within(fila).getByText('$8.500,00')).toBeDefined()
+  const celdas = Array.from(fila.querySelectorAll('td')).map((celda) => celda.textContent)
+  expect(celdas.slice(1, 8)).toEqual([
+    'Cliente Uno SA',
+    '$10.000,00',
+    '$1.500,00',
+    'Comisión agencia',
+    'F',
+    'Privado',
+    'Ítem 1',
+  ])
+  const titulos = screen.getAllByRole('columnheader').map((titulo) => titulo.textContent)
+  expect(titulos.filter(Boolean)).toEqual([
+    'Cliente (razón social)',
+    'Importe neto total',
+    'Costos incluidos',
+    'Detalle costo',
+    'Tipo de venta',
+    'Gob/Priv',
+    'Tipo',
+  ])
+  expect(screen.queryByRole('columnheader', { name: 'Estado' })).toBeNull()
+})
+
+test('una fila sin datos muestra guiones y «Sin cliente»', async () => {
+  stubFetch([item(1, { cliente: null, cliente_razon_social: null, neto: null, tipo_soporte: '' })])
+  render(<ItemsPage />)
+  const fila = (await screen.findByText('Sin cliente')).closest('tr') as HTMLElement
+  const celdas = Array.from(fila.querySelectorAll('td')).map((celda) => celda.textContent)
+  expect(celdas.slice(2, 8)).toEqual(['—', '—', '—', '—', '—', '—'])
+})
+
+test('los totales del mes siguen con los costos del módulo (HU-063)', async () => {
+  stubFetch([item(1)])
+  render(<ItemsPage />)
+  await screen.findByText('Ítem 1')
   const suma = screen.getByLabelText('Totales del mes')
   expect(within(suma).getByText('Costos').nextElementSibling?.textContent).toBe('$1.500,00')
   expect(within(suma).getByText('Neto final').nextElementSibling?.textContent).toBe('$8.500,00')
@@ -117,8 +177,8 @@ test('lista los ítems del mes actual con sus importes y los totales sin anulado
   const fetchMock = stubFetch([item(1), item(2, { estado: 'anulado' })])
   render(<ItemsPage />)
   expect(await screen.findByText('Ítem 1')).toBeDefined()
-  // Dos filas más el total del mes.
-  expect(screen.getAllByText('$12.100,00')).toHaveLength(3)
+  // Dos filas más el neto del mes.
+  expect(screen.getAllByText('$10.000,00')).toHaveLength(3)
   const suma = screen.getByLabelText('Totales del mes')
   expect(within(suma).getByText('Ítems').nextElementSibling?.textContent).toBe('2sin anulados')
   expect(within(suma).getByText('Total').parentElement?.className).toBe('cifra cifra-principal')
@@ -168,7 +228,7 @@ test('crea un ítem nuevo y recarga', async () => {
   await screen.findByText('No hay ítems en este mes.')
   fireEvent.click(screen.getByRole('button', { name: 'Nuevo ítem' }))
   const form = screen.getByRole('form', { name: 'Formulario de ítem a facturar' })
-  fireEvent.change(within(form).getByLabelText('Importe neto'), { target: { value: '500' } })
+  fireEvent.change(within(form).getByLabelText('Importe neto total'), { target: { value: '500' } })
   fireEvent.click(within(form).getByRole('button', { name: 'Guardar ítem' }))
   await waitFor(() =>
     expect(screen.queryByRole('form', { name: 'Formulario de ítem a facturar' })).toBeNull(),
@@ -181,9 +241,9 @@ test('solo los ítems en Borrador se editan', async () => {
   stubFetch([item(1), item(2, { estado: 'enviado' })])
   render(<ItemsPage />)
   const enviado = (await screen.findByText('Ítem 2')).closest('tr') as HTMLElement
-  expect(within(enviado).queryByRole('button', { name: 'Editar' })).toBeNull()
+  expect(acciones(enviado)).not.toContain('Editar')
   const borrador = screen.getByText('Ítem 1').closest('tr') as HTMLElement
-  fireEvent.click(within(borrador).getByRole('button', { name: 'Editar' }))
+  elegir(borrador, 'Editar')
   expect(screen.getByRole('heading', { name: 'Editar ítem' })).toBeDefined()
 })
 
@@ -193,7 +253,7 @@ test('guarda la edición de un ítem', async () => {
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  fireEvent.click(within(fila).getByRole('button', { name: 'Editar' }))
+  elegir(fila, 'Editar')
   const form = screen.getByRole('form', { name: 'Formulario de ítem a facturar' })
   fireEvent.click(within(form).getByRole('button', { name: 'Guardar ítem' }))
   await waitFor(() => expect(patches(fetchMock)).toHaveLength(1))
@@ -206,7 +266,7 @@ test('anula un ítem', async () => {
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  fireEvent.click(within(fila).getByRole('button', { name: 'Anular' }))
+  elegir(fila, 'Anular')
   await waitFor(() =>
     expect(patches(fetchMock)).toEqual([['/api/facturacion/items/1/', { estado: 'anulado' }]]),
   )
@@ -218,7 +278,7 @@ test('marca facturado con el número de factura', async () => {
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  fireEvent.click(within(fila).getByRole('button', { name: 'Marcar facturado' }))
+  elegir(fila, 'Marcar facturado')
   fireEvent.change(within(fila).getByLabelText('Número de factura'), {
     target: { value: 'A-0001-00000123' },
   })
@@ -238,7 +298,7 @@ test('muestra el error del servidor al facturar sin número', async () => {
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  fireEvent.click(within(fila).getByRole('button', { name: 'Marcar facturado' }))
+  elegir(fila, 'Marcar facturado')
   fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar' }))
   expect(
     await within(fila).findByText('Cargá el número de factura para pasar el ítem a Facturado.'),
@@ -251,7 +311,7 @@ test('un error sin campos muestra un mensaje general', async () => {
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  fireEvent.click(within(fila).getByRole('button', { name: 'Anular' }))
+  elegir(fila, 'Anular')
   expect(await within(fila).findByText('No se pudo guardar el cambio.')).toBeDefined()
 })
 
@@ -277,21 +337,24 @@ test('si fallan las referencias lo avisa', async () => {
   )
   render(<ItemsPage />)
   expect(
-    await screen.findByText('No se pudieron cargar clientes, marcas o campañas.'),
+    await screen.findByText('No se pudieron cargar los clientes o los catálogos.'),
   ).toBeDefined()
 })
 
 // --- HU-062: orden de compra en el listado y aviso de duplicado ---
 
-test('muestra la orden de compra y el enlace al PDF', async () => {
-  stubFetch([
-    item(1, { orden_compra_numero: 'OC-77', orden_compra_pdf: { nombre: 'oc.pdf', tamanio: 9 } }),
-  ])
+test('abre el PDF de la orden de compra desde el menú', async () => {
+  const abrir = vi.spyOn(window, 'open').mockReturnValue(null)
+  stubFetch([item(1, { orden_compra_pdf: { nombre: 'oc.pdf', tamanio: 9 } }), item(2)])
   render(<ItemsPage />)
-  const fila = (await screen.findByText(/Ítem 1/)).closest('tr') as HTMLElement
-  expect(fila.textContent).toContain('OC OC-77')
-  expect(within(fila).getByRole('link', { name: 'PDF' }).getAttribute('href')).toBe(
+  const sinPdf = (await screen.findByText('Ítem 2')).closest('tr') as HTMLElement
+  expect(acciones(sinPdf)).not.toContain('Ver PDF de la OC')
+  const fila = screen.getByText('Ítem 1').closest('tr') as HTMLElement
+  elegir(fila, 'Ver PDF de la OC')
+  expect(abrir).toHaveBeenCalledWith(
     '/api/facturacion/items/1/orden-compra-pdf/',
+    '_blank',
+    'noreferrer',
   )
 })
 
@@ -305,7 +368,7 @@ test('al guardar con una OC repetida avisa con el ítem coincidente', async () =
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  fireEvent.click(within(fila).getByRole('button', { name: 'Editar' }))
+  elegir(fila, 'Editar')
   fireEvent.click(screen.getByRole('button', { name: 'Guardar ítem' }))
   const aviso = await screen.findByRole('status', { name: 'Aviso de orden de compra' })
   expect(aviso.textContent).toContain(
@@ -389,10 +452,9 @@ test('muestra el grupo y lo quita de un ítem en Borrador', async () => {
   )
   render(<ItemsPage />)
   const enviado = (await screen.findByText('Ítem 2')).closest('tr') as HTMLElement
-  expect(enviado.textContent).toContain('G-5')
-  expect(within(enviado).queryByRole('button', { name: 'Quitar del grupo' })).toBeNull()
+  expect(acciones(enviado)).not.toContain('Quitar del grupo')
   const fila = screen.getByText('Ítem 1').closest('tr') as HTMLElement
-  fireEvent.click(within(fila).getByRole('button', { name: 'Quitar del grupo' }))
+  elegir(fila, 'Quitar del grupo')
   await waitFor(() =>
     expect(
       fetchMock.mock.calls.some(
@@ -411,7 +473,7 @@ test('muestra el error al quitar del grupo', async () => {
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  fireEvent.click(within(fila).getByRole('button', { name: 'Quitar del grupo' }))
+  elegir(fila, 'Quitar del grupo')
   expect(await within(fila).findByText('El ítem no está en un grupo de factura.')).toBeDefined()
 })
 
@@ -423,8 +485,8 @@ test('reabre un ítem enviado con motivo', async () => {
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  expect(within(fila).queryByRole('button', { name: 'Editar' })).toBeNull()
-  fireEvent.click(within(fila).getByRole('button', { name: 'Reabrir' }))
+  expect(acciones(fila)).not.toContain('Editar')
+  elegir(fila, 'Reabrir')
   fireEvent.change(within(fila).getByLabelText('Motivo de la reapertura'), {
     target: { value: 'Cambió el neto' },
   })
@@ -448,21 +510,16 @@ test('una reapertura rechazada muestra el motivo del servidor', async () => {
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  fireEvent.click(within(fila).getByRole('button', { name: 'Reabrir' }))
+  elegir(fila, 'Reabrir')
   fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar reapertura' }))
   expect(await within(fila).findByText('Indicá el motivo de la reapertura.')).toBeDefined()
 })
 
-test('marca los reenviados y los reabiertos con su motivo', async () => {
-  stubFetch([
-    item(1, { estado: 'enviado', reenviado: true }),
-    item(2, { reabierto_en: '2026-11-03T10:00:00Z', motivo_reapertura: 'Cambió el neto' }),
-  ])
+test('un ítem enviado ofrece facturar, reabrir y anular, y no editar', async () => {
+  stubFetch([item(1, { estado: 'enviado' })])
   render(<ItemsPage />)
-  const reenviado = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  expect(reenviado.textContent).toContain('Reenviado')
-  const reabierto = screen.getByText('Ítem 2').closest('tr') as HTMLElement
-  expect(reabierto.textContent).toContain('Reabierto: Cambió el neto')
+  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  expect(acciones(fila)).toEqual(['Marcar facturado', 'Reabrir', 'Anular'])
 })
 
 // --- RN-026: anular un ítem facturado ---
@@ -474,8 +531,8 @@ test('anula un ítem facturado con motivo y no le ofrece reabrir (RN-026)', asyn
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  expect(within(fila).queryByRole('button', { name: 'Reabrir' })).toBeNull()
-  fireEvent.click(within(fila).getByRole('button', { name: 'Anular' }))
+  expect(acciones(fila)).not.toContain('Reabrir')
+  elegir(fila, 'Anular')
   fireEvent.change(within(fila).getByLabelText('Motivo de la anulación'), {
     target: { value: 'Nota de crédito NC-7' },
   })
@@ -499,22 +556,48 @@ test('una anulación rechazada muestra el motivo del servidor (RN-026)', async (
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  fireEvent.click(within(fila).getByRole('button', { name: 'Anular' }))
+  elegir(fila, 'Anular')
   fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar anulación' }))
   expect(await within(fila).findByText('Indicá el motivo de la anulación.')).toBeDefined()
 })
 
-test('un facturado anulado muestra su motivo (RN-026)', async () => {
-  stubFetch([
-    item(1, {
-      estado: 'anulado',
-      numero_factura: 'A-1',
-      anulado_en: '2026-11-20T10:00:00Z',
-      motivo_anulacion: 'Nota de crédito NC-7',
-    }),
-  ])
+test('un ítem anulado se ve atenuado y sin acciones (RN-026)', async () => {
+  stubFetch([item(1, { estado: 'anulado', numero_factura: 'A-1' })])
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  expect(fila.textContent).toContain('A-1')
-  expect(fila.textContent).toContain('Anulado: Nota de crédito NC-7')
+  expect(fila.className).toBe('muted')
+  expect(within(fila).queryByRole('button', { name: 'Más acciones' })).toBeNull()
+})
+
+// --- HU-070: descargar el Excel de la lista ---
+
+test('«Descargar Excel» baja la lista con los filtros actuales', async () => {
+  stubFetch([item(1)])
+  render(<ItemsPage />)
+  await screen.findByText('Ítem 1')
+  const enlace = screen.getByRole('link', { name: 'Descargar Excel' })
+  expect(enlace.getAttribute('href')).toBe(`/api/facturacion/items/planilla/?mes=${mesActual()}`)
+  expect(enlace.hasAttribute('download')).toBe(true)
+  fireEvent.change(screen.getByLabelText('Mes'), { target: { value: '2026-12' } })
+  fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'borrador' } })
+  expect(enlace.getAttribute('href')).toBe(
+    '/api/facturacion/items/planilla/?mes=2026-12&estado=borrador',
+  )
+})
+
+test('sin permiso de edición también se descarga el Excel', async () => {
+  stubFetch([item(1)])
+  render(
+    <PuedeEditarContext.Provider value={false}>
+      <ItemsPage />
+    </PuedeEditarContext.Provider>,
+  )
+  await screen.findByText('Ítem 1')
+  expect(screen.getByRole('link', { name: 'Descargar Excel' })).toBeDefined()
+})
+
+test('la pantalla se llama Facturación', async () => {
+  stubFetch([])
+  render(<ItemsPage />)
+  expect(await screen.findByRole('heading', { name: 'Facturación' })).toBeDefined()
 })
