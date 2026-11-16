@@ -20,8 +20,8 @@ Los grupos son estos:
 | Comercial | **Clientes**, **Marcas**, **Campañas**, **Interacciones**, **Facturación** |
 | Inventario | **Carteles**, **Disponibilidad** |
 | Operación | **Proveedores**, **Costos**, **Formatos** |
-| Configuración | **Catálogos**, **Parámetros** |
-| Administración | **Auditoría**, **Usuarios** |
+| Configuración | **Catálogos** |
+| Administración | **Usuarios** |
 
 Arriba, la barra muestra dónde estás (por ejemplo, «Big Media / Comercial / Clientes») y la
 fecha de hoy.
@@ -37,8 +37,7 @@ está en azul es la principal. En los reportes, el período se elige con **mes**
 **Desde** y de **Hasta**; el fin nunca queda antes del inicio.
 
 Lo que podés hacer depende de tu rol: **Operativo** carga y edita; **Lectura** solo consulta;
-**Ingresos** y **Auditoría** necesitan además el permiso de Gerencia; **Usuarios** y
-**Parámetros** son del administrador.
+**Ingresos** necesita además el permiso de Gerencia; **Usuarios** es del administrador.
 
 En el sistema **nada se borra**: los clientes, marcas y carteles se **inactivan** o se dan de baja,
 las reservas se **cancelan** y los ítems a facturar se **anulan**. Así queda la historia completa.
@@ -240,7 +239,7 @@ Los más comunes:
 | "Primero confirmá la campaña." | Tocaste **Confirmar reservas** con la campaña Cotizada | Confirmá la campaña y volvé a intentar |
 | "Para confirmar falta cargar las fechas." | La campaña no tiene todo lo necesario para confirmarse | Cargá lo que dice (marca, cliente que factura o fechas) |
 | "El cartel está de baja: no se puede reservar." | El cartel se dio de baja | Elegí otro cartel |
-| "La reserva termina antes de hoy: no se puede cargar con fecha pasada." | La fecha de fin ya pasó. Una reserva que empezó antes pero sigue al aire sí se puede cargar | Revisá la fecha de fin. Si de verdad hay que cargar una reserva vieja, el administrador prende **Permitir reservas con fecha pasada** en **Parámetros** y la vuelve a apagar después |
+| "La reserva termina antes de hoy: no se puede cargar con fecha pasada." | La fecha de fin ya pasó. Una reserva que empezó antes pero sigue al aire sí se puede cargar | Revisá la fecha de fin. Si de verdad hay que cargar una reserva vieja, pedíselo al equipo técnico |
 | "El cartel está fuera de servicio (Apagado): no se puede reservar hasta que vuelva a un estado operativo." | El cartel está roto, apagado o en mantenimiento | Elegí otro cartel, o esperá a que vuelva a **Activo** |
 | "La fecha de fin no puede ser anterior a la de inicio." | Las fechas están al revés | Corregilas |
 | "No se puede pasar de finalizada a confirmada." | Ese cambio de estado no está permitido | Una Finalizada no cambia; para otra venta, creá una reserva nueva |
@@ -314,7 +313,7 @@ nombre del archivo y la fila de origen.
 ## 9. Facturación: cargar los ítems, descargar el Excel y enviar el mes
 
 Cada vez que llega una orden de compra, cargás lo que hay que facturar en **Comercial ›
-Facturación**. Cuando quieras, descargás el Excel para Administración; a fin de mes, enviás el mes.
+Facturación**. Cuando quieras, descargás el Excel y se lo pasás a Administración.
 
 ### Cargar un ítem
 
@@ -322,83 +321,46 @@ Facturación**. Cuando quieras, descargás el Excel para Administración; a fin 
 2. Tocá **Nuevo ítem**. El formulario tiene solo los siete datos de la planilla de Administración,
    en su orden: **Cliente (razón social)**, **Importe neto total**, **Costos incluidos**,
    **Detalle costo**, **Tipo de venta**, **Gob/Priv** y **Tipo** (por ejemplo, «Séxtuples»).
-   **Nada es obligatorio mientras está en Borrador.**
+   **Nada es obligatorio.**
    - **Costos incluidos** y **Detalle costo** se escriben a mano: un importe y un texto (por
      ejemplo, «Comisión agencia»). Son solo para la planilla: no cambian los costos del módulo de
      **Costos** ni la rentabilidad.
 3. **IVA y total** se calculan solos con la alícuota de 21 %.
-4. **Guardar ítem**. Nace en **Borrador**.
+4. **Guardar ítem**.
 
 La lista muestra una fila por ítem con esas siete columnas. Las acciones de cada ítem (**Editar**,
-**Marcar facturado**, **Reabrir**, **Anular**, **Quitar del grupo** y, si tiene, **Ver PDF de la
-OC**) están en el botón **⋯** del final de la fila. Para ver los ítems de un estado, usá el filtro
-**Estado**.
+**Dar de baja**, **Quitar del grupo** y, si tiene, **Ver PDF de la OC**) están en el botón **⋯**
+del final de la fila. Un ítem se puede editar siempre: si cambió algo, corregilo y volvé a
+descargar el Excel.
 
-Arriba de la lista ves los totales del mes (neto, IVA, total, costos y neto final), sin contar los
-anulados. Los costos y el neto final de esos totales salen de los costos del módulo de **Costos**
-vinculados a los ítems, no de lo escrito en **Costos incluidos**.
+**Dar de baja** saca un ítem cargado por error: deja de verse en la lista, en los totales y en el
+Excel. No se borra: queda registrado quién lo dio de baja y cuándo.
+
+Arriba de la lista ves los totales del mes (neto, IVA, total, costos y neto final). Los costos y
+el neto final de esos totales salen de los costos del módulo de **Costos** vinculados a los ítems,
+no de lo escrito en **Costos incluidos**.
 
 ### Varios ítems en una misma factura
 
-1. Marcá los ítems en Borrador del mismo mes que van juntos.
-2. Tocá **Agrupar en una factura**. Comparten un grupo (por ejemplo, G-12), que se ve en el ítem y
-   en la planilla de **Enviar a facturar**, donde salen juntos.
+1. Marcá los ítems del mismo mes que van juntos.
+2. Tocá **Agrupar en una factura**. Comparten un grupo (por ejemplo, G-12), que se ve en el ítem.
 3. **Quitar del grupo** deja un ítem independiente.
-
 
 ### Descargar el Excel para Administración
 
-**Descargar Excel**, arriba a la derecha, baja un .xlsx con los ítems que ves en la lista según el
-**Mes** y el **Estado** elegidos, sin los anulados. Tiene solo las siete columnas de la planilla
-(**CLIENTE (RAZON SOCIAL)**, **IMPORTE NETO TOTAL**, **COSTOS INCLUIDOS EN FC**, **DETALLE COSTO**,
-**TIPO DE VENTA (F/V)**, **GOB/PRIV** y **TIPO**), con el período arriba y los totales y el
-**Neto** abajo. Descargarlo no cambia el estado de ningún ítem: se puede bajar las veces que haga
-falta. También lo pueden bajar los usuarios de solo lectura.
-
-### Enviar el mes a facturar
-
-1. Elegí el **Mes** y tocá **Enviar a facturar**.
-2. Se envían los Borradores **completos**: los que tienen cliente, importe neto y mes. Los demás
-   quedan en Borrador y el sistema te dice qué les falta. Por ejemplo:
-
-   > Se enviaron 5 ítems a facturar. Descargar planilla
-   > 1 quedó en Borrador porque le falta: Impresión lona Vendimia: cliente, importe neto
-
-3. **Descargar planilla** baja el .xlsx de ese envío para Administración. Cada envío queda
-   registrado en **Envíos a facturar**, con quién lo mandó y cuándo, y su planilla se puede volver
-   a bajar.
-
-La planilla tiene la forma de la que usa Administración: arriba el período (por ejemplo
-`PERIODO: 2026/9`) y `CARTELERIA`; primero sus siete columnas (**CLIENTE (RAZON SOCIAL)**,
+**Descargar Excel**, arriba a la derecha, baja un .xlsx con los ítems del **Mes** elegido. Tiene
+el aspecto de la planilla de Administración: arriba el período (por ejemplo, `PERIODO: 2026/9`) en
+naranja y `CARTELERIA` en verde; después las siete columnas (**CLIENTE (RAZON SOCIAL)**,
 **IMPORTE NETO TOTAL**, **COSTOS INCLUIDOS EN FC**, **DETALLE COSTO**, **TIPO DE VENTA (F/V)**,
-**GOB/PRIV** y **TIPO**) y después las del sistema (mes, CUIT, marca, orden de compra, grupo,
-etc.). En **TIPO** va el tipo de soporte y la descripción del ítem; en **DETALLE COSTO**, cada costo
-con a quién se le paga. Abajo están la suma de importes, la suma de costos y el **Neto**, como
-fórmulas: si Administración corrige un importe, se recalculan.
-
-Si no hay ningún ítem completo, dice "No hay ítems completos para enviar." y no se envía nada.
-
-### Después del envío
-
-- Cuando Administración factura, tocá **Marcar facturado** en el ítem, escribí el **Número de
-  factura** y confirmá (sin número no se puede marcar).
-- **Anular** saca un ítem que no va. Se puede anular en Borrador o en Enviado.
-- Un ítem enviado ya no se edita. Para corregirlo, tocá **Reabrir**, escribí el **Motivo de la
-  reapertura** y tocá **Confirmar reapertura**. Vuelve a Borrador, queda registrado quién, cuándo y
-  por qué, y Administración recibe un correo para que no lo facture todavía.
-- Corregí el ítem y volvé a tocar **Enviar a facturar** del mes. Sale de nuevo como Enviado, con la
-  marca **Reenviado** en la planilla, y Administración recibe otro correo con los
-  valores anteriores y nuevos de lo que cambió.
-- Un ítem ya facturado no se reabre. Si hay que corregirlo (por ejemplo, porque Administración
-  emitió la nota de crédito), tocá **Anular**, escribí el **Motivo de la anulación** y tocá
-  **Confirmar anulación**. Pasa a Anulado conservando su número de factura, sale del resumen del
-  mes, queda registrado quién, cuándo y por qué, y Administración recibe un correo. Después cargá
-  la corrección como un ítem nuevo.
+**GOB/PRIV** y **TIPO**) con los importes como «$ 450.000»; y abajo la suma de importes, la suma de
+costos y el **Neto**, como fórmulas: si Administración corrige un importe, se recalculan. Si
+cambiás el mes, el Excel trae los ítems y el período de ese mes. Se puede bajar las veces que haga
+falta, y también lo pueden bajar los usuarios de solo lectura.
 
 ## Preguntas frecuentes
 
 **¿Puedo borrar algo que cargué mal?**
-No desde la aplicación. Inactivá el cliente o la marca, cancelá la reserva o anulá el ítem. Si
+No desde la aplicación. Inactivá el cliente o la marca, cancelá la reserva o dá de baja el ítem. Si
 realmente hay que borrar un error de carga, lo hace el administrador desde el panel de
 administración, y queda registrado en la auditoría.
 
@@ -414,8 +376,8 @@ Puede pasar: el lugar es de la reserva que se confirma primero. El mensaje te di
 ocupa, para que puedan hablarlo.
 
 **¿Quién cambió este dato?**
-**Administración › Auditoría** (con permiso de Gerencia) muestra cada cambio, con quién lo hizo y
-cuándo.
+El sistema registra cada cambio, con quién lo hizo y cuándo, aunque hoy esa pantalla no está en el
+menú. Si necesitás consultarlo, pedíselo al equipo técnico.
 
 **El sistema me volvió a pedir la contraseña.**
 La sesión se cierra sola después de un rato sin uso (30 minutos, salvo que se cambie). Volvé a

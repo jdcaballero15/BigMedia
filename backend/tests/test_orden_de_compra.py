@@ -192,10 +192,10 @@ def test_un_item_sin_orden_de_compra_se_guarda(operativo_client):
 
 
 @pytest.mark.django_db
-def test_fuera_de_borrador_no_se_cambia_la_orden_de_compra(operativo_client):
-    item = ItemFacturacion.objects.create(estado="enviado")
+def test_item_dado_de_baja_no_cambia_la_orden_de_compra(operativo_client):
+    item = ItemFacturacion.objects.create(estado="anulado")
     respuesta = _patch(operativo_client, item.pk, {"orden_compra_numero": "OC-2"})
-    assert respuesta.status_code == 400
+    assert respuesta.status_code == 404
     assert _subir(operativo_client, item).status_code == 400
     assert operativo_client.delete(_url_pdf(item)).status_code in (400, 404)
 

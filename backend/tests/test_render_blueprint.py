@@ -62,7 +62,7 @@ def test_blueprint_demo_password_only_in_staging_without_storing_it():
 
 
 def test_blueprint_asks_mail_settings_without_storing_them():
-    """HU-067: el correo de avisos se configura en el panel de Render, nunca en Git."""
+    """El correo saliente se configura en el panel de Render, nunca en Git."""
     claves = (
         "EMAIL_HOST",
         "EMAIL_PORT",
@@ -70,7 +70,6 @@ def test_blueprint_asks_mail_settings_without_storing_them():
         "EMAIL_HOST_PASSWORD",
         "EMAIL_USE_TLS",
         "DEFAULT_FROM_EMAIL",
-        "FACTURACION_CORREO_ADMINISTRACION",
     )
     for servicio in blueprint()["services"][:2]:
         env = {item["key"]: item for item in servicio["envVars"]}

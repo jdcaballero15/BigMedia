@@ -97,11 +97,11 @@ def test_quitar_un_item_sin_grupo_se_rechaza(operativo_client):
 
 
 @pytest.mark.django_db
-def test_fuera_de_borrador_no_se_quita_del_grupo(operativo_client):
+def test_item_dado_de_baja_no_se_quita_del_grupo(operativo_client):
     item, otro = _items(2)
     _agrupar(operativo_client, [item, otro])
-    ItemFacturacion.objects.filter(pk=item.pk).update(estado="enviado")
-    assert _quitar(operativo_client, item).status_code == 400
+    ItemFacturacion.objects.filter(pk=item.pk).update(estado="anulado")
+    assert _quitar(operativo_client, item).status_code == 404
 
 
 # --- Validaciones del agrupado ---
@@ -132,12 +132,19 @@ def test_items_sin_mes_no_se_agrupan(operativo_client):
 
 
 @pytest.mark.django_db
-def test_items_fuera_de_borrador_no_se_agrupan(operativo_client):
+def test_items_dados_de_baja_no_se_agrupan(operativo_client):
+    (item,) = _items(1)
+    (baja,) = _items(1, estado="anulado")
+    respuesta = _agrupar(operativo_client, [item, baja])
+    assert respuesta.status_code == 400
+    assert respuesta.json() == {"items": ["No se agrupan ítems dados de baja."]}
+
+
+@pytest.mark.django_db
+def test_items_que_estaban_enviados_se_agrupan(operativo_client):
     (item,) = _items(1)
     (enviado,) = _items(1, estado="enviado")
-    respuesta = _agrupar(operativo_client, [item, enviado])
-    assert respuesta.status_code == 400
-    assert respuesta.json() == {"items": ["Solo se agrupan ítems en Borrador."]}
+    assert _agrupar(operativo_client, [item, enviado]).status_code == 201
 
 
 @pytest.mark.django_db

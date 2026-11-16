@@ -3,7 +3,6 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     CatalogosFacturacionView,
-    EnvioFacturacionViewSet,
     GrupoFacturaViewSet,
     IngresosView,
     ItemFacturacionViewSet,
@@ -14,7 +13,6 @@ from .views import (
 
 router = DefaultRouter()
 router.register("items", ItemFacturacionViewSet, basename="item-facturacion")
-router.register("envios", EnvioFacturacionViewSet, basename="envio-facturacion")
 router.register("grupos", GrupoFacturaViewSet, basename="grupo-factura")
 
 urlpatterns = [

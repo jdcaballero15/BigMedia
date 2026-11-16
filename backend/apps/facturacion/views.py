@@ -22,7 +22,6 @@ from config.permisos import LecturaConSesionEdicionOperativo, LecturaSoloGerenci
 
 from . import services
 from .models import (
-    EnvioFacturacion,
     GrupoFactura,
     ItemFacturacion,
     OrdenCompraPdf,
@@ -31,14 +30,14 @@ from .models import (
 )
 from .serializers import (
     CostoDelItemSerializer,
-    EnvioFacturacionSerializer,
     GrupoFacturaSerializer,
     ItemFacturacionSerializer,
     NuevoCostoSerializer,
 )
 
-# Cambios del ítem que quedan auditados (HU-007): estado, número e importes.
-CAMPOS_AUDITADOS = ("estado", "numero_factura", "neto", "alicuota_iva", "cliente_id")
+# Cambios del ítem que quedan auditados (HU-007): importes y cliente. La baja se audita en
+# `services.dar_de_baja`.
+CAMPOS_AUDITADOS = ("neto", "alicuota_iva", "cliente_id")
 
 
 def _primer_dia(valor: str | None, por_defecto: date) -> date:
@@ -133,23 +132,25 @@ def _auditables(item: ItemFacturacion) -> dict[str, str]:
 
 
 class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
-    """Ítems a facturar (HU-060, HU-061, HU-065); sin DELETE: se anulan por estado."""
+    """Ítems a facturar (HU-060, HU-061). Sin DELETE: se dan de baja y desde ahí no se ven."""
 
     permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
     http_method_names = ["get", "post", "patch", "head", "options"]
     # El PDF de la OC se informa (nombre y tamaño) sin traer su contenido.
-    queryset = ItemFacturacion.objects.select_related(
-        "cliente",
-        "marca",
-        "campania",
-        "sector",
-        "tipo_venta",
-        "creado_por",
-        "grupo",
-        "reabierto_por",
-        "anulado_por",
-        "orden_compra_pdf",
-    ).defer("orden_compra_pdf__contenido")
+    queryset = (
+        services.vigentes()
+        .select_related(
+            "cliente",
+            "marca",
+            "campania",
+            "sector",
+            "tipo_venta",
+            "creado_por",
+            "grupo",
+            "orden_compra_pdf",
+        )
+        .defer("orden_compra_pdf__contenido")
+    )
     serializer_class = ItemFacturacionSerializer
 
     def _con_avisos(self, respuesta: Response) -> Response:
@@ -186,10 +187,6 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
         params = self.request.query_params
         if params.get("mes"):
             queryset = queryset.filter(mes=_mes(params["mes"]))
-        if params.get("estado"):
-            if params["estado"] not in ItemFacturacion.Estado.values:
-                raise ValidationError({"estado": "Estado desconocido."})
-            queryset = queryset.filter(estado=params["estado"])
         for campo in ("cliente", "campania"):
             if params.get(campo):
                 queryset = queryset.filter(**{f"{campo}_id": _id_positivo(params[campo], campo)})
@@ -197,11 +194,8 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
 
     @action(detail=False, methods=["get"])
     def planilla(self, request: Request) -> HttpResponse:
-        """«Descargar Excel» de la lista con sus filtros, sin los anulados (HU-070).
-
-        No envía los ítems a facturar ni les cambia el estado.
-        """
-        items = self.get_queryset().exclude(estado=ItemFacturacion.Estado.ANULADO)
+        """«Descargar Excel» de la lista con sus filtros, sin los dados de baja (HU-070)."""
+        items = self.get_queryset()
         mes = request.query_params.get("mes")
         periodo = _mes(mes) if mes else None
         nombre = f"facturacion-{periodo:%Y-%m}.xlsx" if periodo else "facturacion.xlsx"
@@ -221,29 +215,12 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
             raise _a_drf(error) from error
         return Response(self.get_serializer(self.get_queryset().get(pk=item.pk)).data)
 
-    @action(detail=True, methods=["post"])
-    def reabrir(self, request: Request, pk: str) -> Response:
-        """Vuelve a Borrador un ítem Enviado, con motivo, y avisa a Administración (HU-067)."""
-        item = get_object_or_404(ItemFacturacion.objects.only("id"), pk=pk)
-        motivo = request.data.get("motivo") if isinstance(request.data, dict) else None
-        try:
-            services.reabrir(item.pk, motivo if isinstance(motivo, str) else "", _usuario(request))
-        except DjangoValidationError as error:
-            raise _a_drf(error) from error
-        return Response(self.get_serializer(self.get_queryset().get(pk=item.pk)).data)
-
-    @action(detail=True, methods=["post"], url_path="anular-facturado")
-    def anular_facturado(self, request: Request, pk: str) -> Response:
-        """Anula un ítem Facturado, con motivo, y avisa a Administración (RN-026)."""
-        item = get_object_or_404(ItemFacturacion.objects.only("id"), pk=pk)
-        motivo = request.data.get("motivo") if isinstance(request.data, dict) else None
-        try:
-            services.anular_facturado(
-                item.pk, motivo if isinstance(motivo, str) else "", _usuario(request)
-            )
-        except DjangoValidationError as error:
-            raise _a_drf(error) from error
-        return Response(self.get_serializer(self.get_queryset().get(pk=item.pk)).data)
+    @action(detail=True, methods=["post"], url_path="dar-de-baja")
+    def dar_de_baja(self, request: Request, pk: str) -> Response:
+        """Da de baja un ítem cargado por error, sin borrarlo (HU-060)."""
+        item = get_object_or_404(self.get_queryset(), pk=pk)
+        services.dar_de_baja(item.pk, _usuario(request))
+        return Response({"id": item.pk})
 
     def _item_para_costos(self, pk: str) -> ItemFacturacion:
         return get_object_or_404(ItemFacturacion.objects.only("id", "campania_id"), pk=pk)
@@ -371,38 +348,4 @@ class CatalogosFacturacionView(APIView):
                 "sectores": list(Sector.objects.filter(activo=True).values("id", "nombre")),
                 "tipos_venta": list(TipoVenta.objects.filter(activo=True).values("id", "nombre")),
             }
-        )
-
-
-class EnvioFacturacionViewSet(viewsets.GenericViewSet[EnvioFacturacion]):
-    """Envíos a facturar del mes (HU-066): se crean y se consultan, no se editan ni se borran."""
-
-    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
-    queryset = EnvioFacturacion.objects.select_related("enviado_por").prefetch_related("items")
-    serializer_class = EnvioFacturacionSerializer
-
-    def list(self, request: Request) -> Response:
-        envios = self.get_queryset().filter(mes=_mes(request.query_params.get("mes")))
-        return Response(self.get_serializer(envios, many=True).data)
-
-    def create(self, request: Request) -> Response:
-        valor = request.data.get("mes") if isinstance(request.data, dict) else None
-        envio, incompletos = services.enviar_a_facturar(
-            _mes(valor if isinstance(valor, str) else None), _usuario(request)
-        )
-        datos = {
-            "envio": self.get_serializer(envio).data if envio else None,
-            "incompletos": incompletos,
-        }
-        return Response(datos, status=201 if envio else 200)
-
-    @action(detail=True, methods=["get"])
-    def planilla(self, _request: Request, pk: str) -> HttpResponse:
-        """Descarga la planilla .xlsx del envío para Administración (HU-066)."""
-        envio = get_object_or_404(self.get_queryset(), pk=pk)
-        nombre = f"facturacion-{envio.mes:%Y-%m}-{envio.pk}.xlsx"
-        return HttpResponse(
-            services.planilla_xlsx(envio),
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": f'attachment; filename="{nombre}"'},
         )

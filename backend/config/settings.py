@@ -159,7 +159,8 @@ FACTURACION_OC_MAX_MB = int(os.environ.get("FACTURACION_OC_MAX_MB", "5"))
 # Tamaño máximo de cada PDF de la orden de publicidad en MB (HU-069, ADR-0011).
 CAMPANIAS_OP_MAX_MB = int(os.environ.get("CAMPANIAS_OP_MAX_MB", "10"))
 
-# Correo saliente (HU-067): SMTP si hay EMAIL_HOST; si no, se escribe en la consola.
+# Correo saliente: SMTP si hay EMAIL_HOST; si no, se escribe en la consola. Hoy ninguna
+# funcionalidad manda correos (HU-067 se retiró el 2026-11-16).
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_BACKEND = (
     "django.core.mail.backends.smtp.EmailBackend"
@@ -171,8 +172,6 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() == "true"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL") or "webmaster@localhost"
-# Dirección de Administración para los avisos de facturación (RN-022). Vacía: no se avisa.
-FACTURACION_CORREO_ADMINISTRACION = os.environ.get("FACTURACION_CORREO_ADMINISTRACION", "")
 
 # Sesión por inactividad (HU-003 criterio 4): timeout deslizante configurable.
 # SESSION_SAVE_EVERY_REQUEST renueva el vencimiento en cada request (sliding window).
