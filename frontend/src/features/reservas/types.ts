@@ -70,3 +70,26 @@ export type ResultadoConfirmacion = {
     ocupada_por: { campania: number; campania_nombre: string }[]
   }[]
 }
+
+/** Reserva que ocupa un casillero, o una tentativa, en la vista Posiciones (HU-071). */
+export type Ocupante = {
+  reserva_id: number
+  marca_id: number | null
+  marca_nombre: string | null
+  campania_id: number
+  campania_nombre: string
+  es_esta_campania: boolean
+  estado: string
+  fecha_inicio: string
+  fecha_fin: string
+}
+
+/** Fila de la vista Posiciones: la de la tabla más los casilleros por slot (HU-071). */
+export type FilaPosiciones = CartelTanda & {
+  direccion: string
+  lleno: boolean
+  /** Uno por slot; reservas que se suceden comparten casillero. */
+  slots: Ocupante[][]
+  /** Pendientes que no bloquean, las propias incluidas (RN-002). */
+  tentativas_detalle: Ocupante[]
+}
