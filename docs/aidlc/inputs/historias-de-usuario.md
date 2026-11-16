@@ -304,13 +304,13 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 ### HU-020 Registrar interacciones comerciales
 
 - **Actor:** Operativo
-- **Descripción:** Como operativo, quiero registrar reuniones y llamadas con asunto, fecha, notas, cliente y campaña opcional, para no perder el rastro de las conversaciones comerciales.
+- **Descripción:** Como operativo, quiero registrar reuniones y llamadas con fecha, cliente, asunto y notas opcionales, y campaña opcional, para no perder el rastro de las conversaciones comerciales.
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** HU-016 completa.
-- **Regla de negocio:** El asunto, la fecha y el cliente son obligatorios. La campaña es opcional. Si el cliente es un intermediario formal, se puede indicar opcionalmente con cuál de sus contactos fue (HU-068). También se puede indicar opcionalmente la marca, para las conversaciones que ocurren antes de que exista una campaña: tiene que ser una marca del cliente y, si además hay campaña, la campaña tiene que ser de esa marca (RN-018).
+- **Regla de negocio:** La fecha y el cliente son obligatorios. El asunto es opcional; si se deja vacío, se muestra «Sin asunto». La campaña es opcional. Si el cliente es un intermediario formal, se puede indicar opcionalmente con cuál de sus contactos fue (HU-068). También se puede indicar opcionalmente la marca, para las conversaciones que ocurren antes de que exista una campaña: tiene que ser una marca del cliente y, si además hay campaña, la campaña tiene que ser de esa marca (RN-018).
 - **Criterios de aceptación:**
-  1. Dada una interacción sin asunto, cuando se guarda, entonces se rechaza.
+  1. Dada una interacción sin asunto, cuando se guarda, entonces se acepta y se muestra «Sin asunto» en la lista y las fichas.
   2. Dada una interacción con cliente y campaña, cuando se guarda, entonces aparece en la ficha de ambos.
   3. Dada la lista de interacciones, cuando se abre, entonces se ordena por fecha descendente.
   4. Dada una interacción con marca y sin campaña, cuando se guarda, entonces aparece en la ficha del cliente y en la de la marca (RN-018).
