@@ -75,7 +75,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E12 Rediseño visual | [ajuste-barra-lateral](units/ajuste-barra-lateral.md) | frontend | pedido de Juan Diego (2026-11-16), HU-001, HU-007 | pantallas-rediseno | Juan Diego | fix/frontend-ocultar-parametros-auditoria | mergeada |
 | E11 Facturación mensual | [facturacion-planilla-con-formato](units/facturacion-planilla-con-formato.md) | facturacion | HU-070 (ajuste), RN-024 | facturacion-descarga-excel | Juan Diego | feature/facturacion-planilla-con-formato | mergeada |
 | E11 Facturación mensual | [facturacion-sin-estados](units/facturacion-sin-estados.md) | facturacion | HU-060, HU-064 (ajuste); HU-065, HU-066, HU-067 (retiradas) | facturacion-descarga-excel | Juan Diego | feature/facturacion-sin-estados | mergeada |
-| — (unidad técnica) | [ajustes-prueba-core](units/ajustes-prueba-core.md) | frontend, campanias | pedido de Juan Diego (2026-11-16), HU-020, HU-042, HU-044, HU-045 | docs/historias-asunto-opcional para HU-020 | Juan Diego | feature/frontend-ajustes-prueba-core | en curso |
+| — (unidad técnica) | [ajustes-prueba-core](units/ajustes-prueba-core.md) | frontend, campanias | pedido de Juan Diego (2026-11-16), HU-020, HU-042, HU-044, HU-045 | docs/historias-asunto-opcional para HU-020 | Juan Diego | feature/frontend-ajustes-prueba-core | en revisión |
 
 ## Notas
 
