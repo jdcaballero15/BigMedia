@@ -156,7 +156,7 @@ def test_descarga_sin_mes_no_lleva_periodo(operativo_client):
 
 
 @pytest.mark.django_db
-def test_descarga_respeta_los_filtros_y_excluye_los_anulados(operativo_client):
+def test_descarga_respeta_los_filtros_y_excluye_los_dados_de_baja(operativo_client):
     _item("Noviembre", neto=Decimal("1"))
     _item("Octubre", neto=Decimal("1"), mes=date(2026, 10, 1))
     _item("Anulado", neto=Decimal("1"), estado=ItemFacturacion.Estado.ANULADO)
@@ -164,23 +164,6 @@ def test_descarga_respeta_los_filtros_y_excluye_los_anulados(operativo_client):
     _, filas = _descargar(operativo_client, "?mes=2026-11")
     clientes = [fila["CLIENTE (RAZON SOCIAL)"] for fila in _filas_de_items(filas)]
     assert sorted(clientes) == ["Facturado SA", "Noviembre SA"]
-    _, filas = _descargar(operativo_client, "?mes=2026-11&estado=borrador")
-    assert [fila["CLIENTE (RAZON SOCIAL)"] for fila in _filas_de_items(filas)] == ["Noviembre SA"]
-
-
-@pytest.mark.django_db
-def test_descarga_filtrada_por_anulados_sale_vacia(operativo_client):
-    _item("Anulado", neto=Decimal("1"), estado=ItemFacturacion.Estado.ANULADO)
-    _, filas = _descargar(operativo_client, "?estado=anulado")
-    assert _filas_de_items(filas) == []
-
-
-@pytest.mark.django_db
-def test_descarga_no_cambia_el_estado_de_los_items(operativo_client):
-    item = _item("Alfa", neto=Decimal("1"))
-    _descargar(operativo_client, "?mes=2026-11")
-    item.refresh_from_db()
-    assert item.estado == ItemFacturacion.Estado.BORRADOR
 
 
 @pytest.mark.django_db
@@ -200,11 +183,6 @@ def test_descarga_la_puede_usar_lectura(lector_client):
 @pytest.mark.django_db
 def test_descarga_sin_sesion_se_rechaza(client):
     assert client.get(PLANILLA).status_code in (401, 403)
-
-
-@pytest.mark.django_db
-def test_descarga_con_estado_desconocido_se_rechaza(operativo_client):
-    assert operativo_client.get(f"{PLANILLA}?estado=otro").status_code == 400
 
 
 @pytest.mark.django_db

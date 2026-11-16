@@ -41,15 +41,6 @@ function item(id: number, extra: Partial<ItemFacturacion> = {}): ItemFacturacion
     costos_incluidos: null,
     detalle_costo: '',
     notas: '',
-    estado: 'borrador',
-    numero_factura: '',
-    reabierto_en: null,
-    reabierto_por_nombre: null,
-    motivo_reapertura: '',
-    reenviado: false,
-    anulado_en: null,
-    anulado_por_nombre: null,
-    motivo_anulacion: '',
     orden_compra_numero: '',
     orden_compra_fecha: null,
     orden_compra_pdf: null,
@@ -87,12 +78,17 @@ function stubFetch(
     if (input.includes('/campanias/campanias/')) return ok([])
     if (input.includes('/facturacion/catalogos/')) return ok({ sectores: [], tipos_venta: [] })
     if (input.includes('/items/totales/')) return ok(totales)
-    if (input.includes('/facturacion/envios/')) return ok([])
     if (input.includes('/facturacion/items/')) return ok(items)
     throw new Error(`URL inesperada: ${input}`)
   })
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
+}
+
+function posts(fetchMock: ReturnType<typeof stubFetch>) {
+  return fetchMock.mock.calls
+    .filter(([, options]) => options?.method === 'POST')
+    .map(([url, options]) => [url, options?.body ? JSON.parse(String(options.body)) : undefined])
 }
 
 function patches(fetchMock: ReturnType<typeof stubFetch>) {
@@ -173,14 +169,14 @@ test('los totales del mes siguen con los costos del módulo (HU-063)', async () 
   expect(within(suma).getByText('Neto final').nextElementSibling?.textContent).toBe('$8.500,00')
 })
 
-test('lista los ítems del mes actual con sus importes y los totales sin anulados', async () => {
-  const fetchMock = stubFetch([item(1), item(2, { estado: 'anulado' })])
+test('lista los ítems del mes actual con sus importes y los totales', async () => {
+  const fetchMock = stubFetch([item(1), item(2)])
   render(<ItemsPage />)
   expect(await screen.findByText('Ítem 1')).toBeDefined()
   // Dos filas más el neto del mes.
   expect(screen.getAllByText('$10.000,00')).toHaveLength(3)
   const suma = screen.getByLabelText('Totales del mes')
-  expect(within(suma).getByText('Ítems').nextElementSibling?.textContent).toBe('2sin anulados')
+  expect(within(suma).getByText('Ítems').nextElementSibling?.textContent).toBe('2')
   expect(within(suma).getByText('Total').parentElement?.className).toBe('cifra cifra-principal')
   const mes = mesActual()
   expect(fetchMock.mock.calls.some(([url]) => String(url).includes(`items/?mes=${mes}`))).toBe(true)
@@ -189,19 +185,26 @@ test('lista los ítems del mes actual con sus importes y los totales sin anulado
   )
 })
 
-test('filtra por mes y estado', async () => {
+test('filtra por mes y no ofrece filtro de estado', async () => {
   const fetchMock = stubFetch([item(1)])
   render(<ItemsPage />)
   await screen.findByText('Ítem 1')
+  expect(screen.queryByLabelText('Estado')).toBeNull()
   fireEvent.change(screen.getByLabelText('Mes'), { target: { value: '2026-12' } })
-  fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'enviado' } })
   await waitFor(() =>
-    expect(
-      fetchMock.mock.calls.some(([url]) =>
-        String(url).includes('items/?mes=2026-12&estado=enviado'),
-      ),
-    ).toBe(true),
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('items/?mes=2026-12'))).toBe(
+      true,
+    ),
   )
+})
+
+test('no hay recuadro de envíos ni «Enviar a facturar»', async () => {
+  const fetchMock = stubFetch([item(1)])
+  render(<ItemsPage />)
+  await screen.findByText('Ítem 1')
+  expect(screen.queryByRole('region', { name: 'Envíos a facturar' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Enviar a facturar' })).toBeNull()
+  expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/envios/'))).toBe(false)
 })
 
 test('sin ítems lo avisa', async () => {
@@ -237,13 +240,12 @@ test('crea un ítem nuevo y recarga', async () => {
   expect(JSON.parse(String(options?.body)).neto).toBe('500')
 })
 
-test('solo los ítems en Borrador se editan', async () => {
-  stubFetch([item(1), item(2, { estado: 'enviado' })])
+test('cada ítem ofrece Editar y Dar de baja', async () => {
+  stubFetch([item(1)])
   render(<ItemsPage />)
-  const enviado = (await screen.findByText('Ítem 2')).closest('tr') as HTMLElement
-  expect(acciones(enviado)).not.toContain('Editar')
-  const borrador = screen.getByText('Ítem 1').closest('tr') as HTMLElement
-  elegir(borrador, 'Editar')
+  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  expect(acciones(fila)).toEqual(['Editar', 'Dar de baja'])
+  elegir(fila, 'Editar')
   expect(screen.getByRole('heading', { name: 'Editar ítem' })).toBeDefined()
 })
 
@@ -260,63 +262,46 @@ test('guarda la edición de un ítem', async () => {
   expect(patches(fetchMock)[0][0]).toBe('/api/facturacion/items/1/')
 })
 
-test('anula un ítem', async () => {
-  const fetchMock = stubFetch([item(1)], (_input, options) =>
-    options?.method === 'PATCH' ? ok(item(1, { estado: 'anulado' })) : undefined,
+test('da de baja un ítem y recarga la lista', async () => {
+  const fetchMock = stubFetch([item(1)], (input, options) =>
+    options?.method === 'POST' && input.includes('/dar-de-baja/') ? ok({ id: 1 }) : undefined,
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  elegir(fila, 'Anular')
+  const cargas = () =>
+    fetchMock.mock.calls.filter(([url]) => String(url).includes('items/?mes=')).length
+  expect(cargas()).toBe(1)
+  elegir(fila, 'Dar de baja')
   await waitFor(() =>
-    expect(patches(fetchMock)).toEqual([['/api/facturacion/items/1/', { estado: 'anulado' }]]),
+    expect(posts(fetchMock)).toEqual([['/api/facturacion/items/1/dar-de-baja/', {}]]),
   )
+  await waitFor(() => expect(cargas()).toBe(2))
 })
 
-test('marca facturado con el número de factura', async () => {
-  const fetchMock = stubFetch([item(1, { estado: 'enviado' })], (_input, options) =>
-    options?.method === 'PATCH' ? ok(item(1, { estado: 'facturado' })) : undefined,
-  )
-  render(<ItemsPage />)
-  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  elegir(fila, 'Marcar facturado')
-  fireEvent.change(within(fila).getByLabelText('Número de factura'), {
-    target: { value: 'A-0001-00000123' },
-  })
-  fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar' }))
-  await waitFor(() =>
-    expect(patches(fetchMock)).toEqual([
-      ['/api/facturacion/items/1/', { estado: 'facturado', numero_factura: 'A-0001-00000123' }],
-    ]),
-  )
-})
-
-test('muestra el error del servidor al facturar sin número', async () => {
-  stubFetch([item(1, { estado: 'enviado' })], (_input, options) =>
-    options?.method === 'PATCH'
-      ? rechazo({ numero_factura: ['Cargá el número de factura para pasar el ítem a Facturado.'] })
+test('un error al dar de baja muestra el motivo del servidor', async () => {
+  stubFetch([item(1)], (_input, options) =>
+    options?.method === 'POST'
+      ? rechazo({ estado: ['No se puede dar de baja este ítem.'] })
       : undefined,
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  elegir(fila, 'Marcar facturado')
-  fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar' }))
-  expect(
-    await within(fila).findByText('Cargá el número de factura para pasar el ítem a Facturado.'),
-  ).toBeDefined()
+  elegir(fila, 'Dar de baja')
+  expect(await within(fila).findByText('No se puede dar de baja este ítem.')).toBeDefined()
 })
 
 test('un error sin campos muestra un mensaje general', async () => {
   stubFetch([item(1)], (_input, options) =>
-    options?.method === 'PATCH' ? { ok: false, status: 500, json: async () => ({}) } : undefined,
+    options?.method === 'POST' ? { ok: false, status: 500, json: async () => ({}) } : undefined,
   )
   render(<ItemsPage />)
   const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  elegir(fila, 'Anular')
+  elegir(fila, 'Dar de baja')
   expect(await within(fila).findByText('No se pudo guardar el cambio.')).toBeDefined()
 })
 
 test('sin permiso de edición solo lista', async () => {
-  stubFetch([item(1, { estado: 'enviado', numero_factura: '' })])
+  stubFetch([item(1)])
   render(
     <PuedeEditarContext.Provider value={false}>
       <ItemsPage />
@@ -380,25 +365,17 @@ test('al guardar con una OC repetida avisa con el ítem coincidente', async () =
 
 // --- HU-064: agrupar y quitar del grupo ---
 
-function posts(fetchMock: ReturnType<typeof stubFetch>) {
-  return fetchMock.mock.calls
-    .filter(([, options]) => options?.method === 'POST')
-    .map(([url, options]) => [url, JSON.parse(String(options?.body))])
-}
-
 test('agrupa los ítems seleccionados en una factura', async () => {
-  const fetchMock = stubFetch(
-    [item(1), item(2), item(3, { estado: 'enviado' })],
-    (input, options) =>
-      options?.method === 'POST' && input.includes('/grupos/')
-        ? ok({ id: 5, codigo: 'G-5', mes: '2026-11', items: [1, 2] })
-        : undefined,
+  const fetchMock = stubFetch([item(1), item(2), item(3)], (input, options) =>
+    options?.method === 'POST' && input.includes('/grupos/')
+      ? ok({ id: 5, codigo: 'G-5', mes: '2026-11', items: [1, 2] })
+      : undefined,
   )
   render(<ItemsPage />)
   await screen.findByText('Ítem 1')
   const boton = screen.getByRole('button', { name: 'Agrupar en una factura (0)' })
   expect((boton as HTMLButtonElement).disabled).toBe(true)
-  expect(screen.queryByRole('checkbox', { name: 'Seleccionar ítem 3' })).toBeNull()
+  expect(screen.getAllByRole('checkbox')).toHaveLength(3)
   fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar ítem 1' }))
   fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar ítem 2' }))
   fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar ítem 2' }))
@@ -441,18 +418,15 @@ test('un error sin motivo al agrupar muestra un mensaje general', async () => {
   expect((await screen.findByRole('alert')).textContent).toBe('No se pudieron agrupar los ítems.')
 })
 
-test('muestra el grupo y lo quita de un ítem en Borrador', async () => {
+test('quita del grupo solo a un ítem agrupado', async () => {
   const fetchMock = stubFetch(
-    [
-      item(1, { grupo: 5, grupo_codigo: 'G-5' }),
-      item(2, { grupo: 5, grupo_codigo: 'G-5', estado: 'enviado' }),
-    ],
+    [item(1, { grupo: 5, grupo_codigo: 'G-5' }), item(2)],
     (input, options) =>
       options?.method === 'POST' && input.includes('/quitar-del-grupo/') ? ok(item(1)) : undefined,
   )
   render(<ItemsPage />)
-  const enviado = (await screen.findByText('Ítem 2')).closest('tr') as HTMLElement
-  expect(acciones(enviado)).not.toContain('Quitar del grupo')
+  const suelto = (await screen.findByText('Ítem 2')).closest('tr') as HTMLElement
+  expect(acciones(suelto)).not.toContain('Quitar del grupo')
   const fila = screen.getByText('Ítem 1').closest('tr') as HTMLElement
   elegir(fila, 'Quitar del grupo')
   await waitFor(() =>
@@ -477,98 +451,6 @@ test('muestra el error al quitar del grupo', async () => {
   expect(await within(fila).findByText('El ítem no está en un grupo de factura.')).toBeDefined()
 })
 
-// --- HU-067: reabrir un ítem enviado ---
-
-test('reabre un ítem enviado con motivo', async () => {
-  const fetchMock = stubFetch([item(1, { estado: 'enviado' })], (_input, options) =>
-    options?.method === 'POST' ? ok(item(1)) : undefined,
-  )
-  render(<ItemsPage />)
-  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  expect(acciones(fila)).not.toContain('Editar')
-  elegir(fila, 'Reabrir')
-  fireEvent.change(within(fila).getByLabelText('Motivo de la reapertura'), {
-    target: { value: 'Cambió el neto' },
-  })
-  fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar reapertura' }))
-  await waitFor(() =>
-    expect(
-      fetchMock.mock.calls.some(
-        ([url, options]) =>
-          url === '/api/facturacion/items/1/reabrir/' &&
-          JSON.parse(String(options?.body)).motivo === 'Cambió el neto',
-      ),
-    ).toBe(true),
-  )
-})
-
-test('una reapertura rechazada muestra el motivo del servidor', async () => {
-  stubFetch([item(1, { estado: 'enviado' })], (_input, options) =>
-    options?.method === 'POST'
-      ? rechazo({ motivo: ['Indicá el motivo de la reapertura.'] })
-      : undefined,
-  )
-  render(<ItemsPage />)
-  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  elegir(fila, 'Reabrir')
-  fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar reapertura' }))
-  expect(await within(fila).findByText('Indicá el motivo de la reapertura.')).toBeDefined()
-})
-
-test('un ítem enviado ofrece facturar, reabrir y anular, y no editar', async () => {
-  stubFetch([item(1, { estado: 'enviado' })])
-  render(<ItemsPage />)
-  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  expect(acciones(fila)).toEqual(['Marcar facturado', 'Reabrir', 'Anular'])
-})
-
-// --- RN-026: anular un ítem facturado ---
-
-test('anula un ítem facturado con motivo y no le ofrece reabrir (RN-026)', async () => {
-  const fetchMock = stubFetch(
-    [item(1, { estado: 'facturado', numero_factura: 'A-1' })],
-    (_input, options) => (options?.method === 'POST' ? ok(item(1)) : undefined),
-  )
-  render(<ItemsPage />)
-  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  expect(acciones(fila)).not.toContain('Reabrir')
-  elegir(fila, 'Anular')
-  fireEvent.change(within(fila).getByLabelText('Motivo de la anulación'), {
-    target: { value: 'Nota de crédito NC-7' },
-  })
-  fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar anulación' }))
-  await waitFor(() =>
-    expect(
-      fetchMock.mock.calls.some(
-        ([url, options]) =>
-          url === '/api/facturacion/items/1/anular-facturado/' &&
-          JSON.parse(String(options?.body)).motivo === 'Nota de crédito NC-7',
-      ),
-    ).toBe(true),
-  )
-})
-
-test('una anulación rechazada muestra el motivo del servidor (RN-026)', async () => {
-  stubFetch([item(1, { estado: 'facturado', numero_factura: 'A-1' })], (_input, options) =>
-    options?.method === 'POST'
-      ? rechazo({ motivo: ['Indicá el motivo de la anulación.'] })
-      : undefined,
-  )
-  render(<ItemsPage />)
-  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  elegir(fila, 'Anular')
-  fireEvent.click(within(fila).getByRole('button', { name: 'Confirmar anulación' }))
-  expect(await within(fila).findByText('Indicá el motivo de la anulación.')).toBeDefined()
-})
-
-test('un ítem anulado se ve atenuado y sin acciones (RN-026)', async () => {
-  stubFetch([item(1, { estado: 'anulado', numero_factura: 'A-1' })])
-  render(<ItemsPage />)
-  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
-  expect(fila.className).toBe('muted')
-  expect(within(fila).queryByRole('button', { name: 'Más acciones' })).toBeNull()
-})
-
 // --- HU-070: descargar el Excel de la lista ---
 
 test('«Descargar Excel» baja la lista con los filtros actuales', async () => {
@@ -579,10 +461,7 @@ test('«Descargar Excel» baja la lista con los filtros actuales', async () => {
   expect(enlace.getAttribute('href')).toBe(`/api/facturacion/items/planilla/?mes=${mesActual()}`)
   expect(enlace.hasAttribute('download')).toBe(true)
   fireEvent.change(screen.getByLabelText('Mes'), { target: { value: '2026-12' } })
-  fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'borrador' } })
-  expect(enlace.getAttribute('href')).toBe(
-    '/api/facturacion/items/planilla/?mes=2026-12&estado=borrador',
-  )
+  expect(enlace.getAttribute('href')).toBe('/api/facturacion/items/planilla/?mes=2026-12')
 })
 
 test('sin permiso de edición también se descarga el Excel', async () => {

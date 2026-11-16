@@ -23,19 +23,6 @@ export type ReporteIngresos = {
   total: string
 }
 
-export type EstadoItem = 'borrador' | 'enviado' | 'facturado' | 'anulado'
-
-export const ESTADOS_ITEM: { value: EstadoItem; label: string }[] = [
-  { value: 'borrador', label: 'Borrador' },
-  { value: 'enviado', label: 'Enviado a facturar' },
-  { value: 'facturado', label: 'Facturado' },
-  { value: 'anulado', label: 'Anulado' },
-]
-
-export function etiquetaEstadoItem(estado: EstadoItem): string {
-  return ESTADOS_ITEM.find((item) => item.value === estado)?.label ?? estado
-}
-
 export const TIPOS_SERVICIO = [
   { value: 'alquiler', label: 'Alquiler' },
   { value: 'impresion_colocacion', label: 'Impresión y colocación' },
@@ -74,15 +61,6 @@ export type ItemFacturacion = {
   costos_incluidos: string | null
   detalle_costo: string
   notas: string
-  estado: EstadoItem
-  numero_factura: string
-  reabierto_en: string | null
-  reabierto_por_nombre: string | null
-  motivo_reapertura: string
-  reenviado: boolean
-  anulado_en: string | null
-  anulado_por_nombre: string | null
-  motivo_anulacion: string
   orden_compra_numero: string
   orden_compra_fecha: string | null
   orden_compra_pdf: PdfOrdenCompra | null
@@ -142,19 +120,4 @@ export type CatalogosFacturacion = {
 /** Mes actual como "aaaa-mm", el formato del filtro y del campo de mes. */
 export function mesActual(hoy: Date = new Date()): string {
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
-}
-
-/** Envío a facturar de un mes (HU-066). */
-export type EnvioFacturacion = {
-  id: number
-  mes: string
-  enviado_por_nombre: string
-  enviado_en: string
-  items: number[]
-  cantidad: number
-}
-
-export type ResultadoEnvio = {
-  envio: EnvioFacturacion | null
-  incompletos: { item: number; descripcion: string; faltan: string[] }[]
 }

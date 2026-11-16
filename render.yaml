@@ -37,7 +37,7 @@ services:
         sync: false
       - key: DJANGO_SUPERUSER_PASSWORD
         sync: false
-      # Correo de avisos a Administración (HU-067). Se cargan en el panel; vacías, no se envía.
+      # Correo saliente. Se carga en el panel; vacío, no se envía. Hoy nada manda correos.
       - key: EMAIL_HOST
         sync: false
       - key: EMAIL_PORT
@@ -49,8 +49,6 @@ services:
       - key: EMAIL_USE_TLS
         sync: false
       - key: DEFAULT_FROM_EMAIL
-        sync: false
-      - key: FACTURACION_CORREO_ADMINISTRACION
         sync: false
       - key: R2_ACCOUNT_ID
         sync: false
@@ -87,7 +85,7 @@ services:
       # Contraseña de los usuarios de demo (opcional; sin ella no se crean).
       - key: DJANGO_DEMO_PASSWORD
         sync: false
-      # Correo de avisos a Administración (HU-067). Se cargan en el panel; vacías, no se envía.
+      # Correo saliente. Se carga en el panel; vacío, no se envía. Hoy nada manda correos.
       - key: EMAIL_HOST
         sync: false
       - key: EMAIL_PORT
@@ -99,8 +97,6 @@ services:
       - key: EMAIL_USE_TLS
         sync: false
       - key: DEFAULT_FROM_EMAIL
-        sync: false
-      - key: FACTURACION_CORREO_ADMINISTRACION
         sync: false
       - key: R2_ACCOUNT_ID
         sync: false

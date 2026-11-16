@@ -9,7 +9,6 @@ from apps.costos.models import Costo
 
 from . import services
 from .models import (
-    EnvioFacturacion,
     GrupoFactura,
     ItemFacturacion,
     OrdenCompraPdf,
@@ -34,12 +33,6 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
     )
     grupo_codigo = serializers.CharField(source="grupo.codigo", read_only=True, default=None)
     orden_compra_pdf = serializers.SerializerMethodField()
-    reabierto_por_nombre = serializers.CharField(
-        source="reabierto_por.username", read_only=True, default=None
-    )
-    anulado_por_nombre = serializers.CharField(
-        source="anulado_por.username", read_only=True, default=None
-    )
     cliente_razon_social = serializers.SerializerMethodField()
     costo_total = serializers.SerializerMethodField()
     neto_final = serializers.SerializerMethodField()
@@ -84,15 +77,6 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
             "orden_compra_pdf",
             "grupo",
             "grupo_codigo",
-            "estado",
-            "numero_factura",
-            "reabierto_en",
-            "reabierto_por_nombre",
-            "motivo_reapertura",
-            "reenviado",
-            "anulado_en",
-            "anulado_por_nombre",
-            "motivo_anulacion",
             "creado_por_nombre",
             "creado_en",
             "actualizado_en",
@@ -130,9 +114,6 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
             raise serializers.ValidationError(error.messages) from error
         return cuit
 
-    def validate_numero_factura(self, value: str) -> str:
-        return value.strip()
-
     def validate_orden_compra_numero(self, value: str) -> str:
         return value.strip()
 
@@ -144,10 +125,6 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
             raise serializers.ValidationError(
                 {"periodo_hasta": "El fin del período no puede ser anterior al inicio."}
             )
-        try:
-            services.validar_cambio_de_item(self.instance, attrs)
-        except DjangoValidationError as error:
-            raise serializers.ValidationError(error.message_dict) from error
         self._completar_neto(attrs)
         return attrs
 
@@ -172,23 +149,6 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
         sugerido = neto_sugerido(cantidad, precio)
         if sugerido is not None or "neto" in attrs:
             attrs["neto"] = sugerido
-
-
-class EnvioFacturacionSerializer(serializers.ModelSerializer[EnvioFacturacion]):
-    mes = serializers.DateField(format="%Y-%m", read_only=True)
-    enviado_por_nombre = serializers.CharField(source="enviado_por.username", read_only=True)
-    items = serializers.SerializerMethodField()
-    cantidad = serializers.SerializerMethodField()
-
-    class Meta:
-        model = EnvioFacturacion
-        fields = ["id", "mes", "enviado_por_nombre", "enviado_en", "items", "cantidad"]
-
-    def get_items(self, envio: EnvioFacturacion) -> list[int]:
-        return sorted(item.pk for item in envio.items.all())
-
-    def get_cantidad(self, envio: EnvioFacturacion) -> int:
-        return len(envio.items.all())
 
 
 class GrupoFacturaSerializer(serializers.ModelSerializer[GrupoFactura]):

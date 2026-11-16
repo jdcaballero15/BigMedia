@@ -153,11 +153,18 @@ def test_alta_de_costo_con_proveedor_inactivo_da_400(operativo_client):
 
 
 @pytest.mark.django_db
-def test_no_se_cargan_costos_en_un_item_fuera_de_borrador(operativo_client):
-    item = _item(estado="enviado")
+def test_no_se_cargan_costos_en_un_item_dado_de_baja(operativo_client):
+    item = _item(estado="anulado")
     respuesta = _post(operativo_client, _url(item), {"tipo": "otro", "monto": "10"})
     assert respuesta.status_code == 400
     assert "estado" in respuesta.json()
+
+
+@pytest.mark.django_db
+def test_se_cargan_costos_en_un_item_que_estaba_enviado(operativo_client):
+    item = _item(estado="enviado")
+    respuesta = _post(operativo_client, _url(item), {"tipo": "otro", "monto": "10"})
+    assert respuesta.status_code == 201, respuesta.json()
 
 
 @pytest.mark.django_db
@@ -362,9 +369,9 @@ def test_totales_del_mes_suman_costos_y_neto_final_sin_anulados(operativo_client
         "13300.00",
     )
     listado = operativo_client.get(f"{URL}?mes=2026-11").json()
-    no_anulados = [i for i in listado if i["estado"] != "anulado"]
-    assert sum(Decimal(i["costo_total"]) for i in no_anulados) == Decimal(totales["costos"])
-    assert sum(Decimal(i["neto_final"]) for i in no_anulados) == Decimal(totales["neto_final"])
+    assert anulado.pk not in [i["id"] for i in listado]
+    assert sum(Decimal(i["costo_total"]) for i in listado) == Decimal(totales["costos"])
+    assert sum(Decimal(i["neto_final"]) for i in listado) == Decimal(totales["neto_final"])
 
 
 # --- El módulo de costos sigue siendo de reservas ---
