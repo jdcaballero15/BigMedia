@@ -421,3 +421,24 @@ test('seleccionar todos los filtrados en Posiciones ignora llenos y ya en la cam
   expect(screen.getByText('Gran Formato 2 de 4')).toBeDefined()
   expect(screen.getByRole('button', { name: 'Quitar Av. Prueba 1 · 2 slots' })).toBeDefined()
 })
+
+test('una respuesta vieja que llega tarde no pisa a la más nueva', async () => {
+  let soltarVieja: (valor: unknown) => void = () => {}
+  const vieja = new Promise((resolver) => {
+    soltarVieja = resolver
+  })
+  stubFetch([cartel(2)], (input) => {
+    if (input.includes('/carteles-para-tanda/') && !input.includes('q=')) return vieja
+    return undefined
+  })
+  renderizar()
+  fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'nueva' } })
+  expect(await screen.findByText('Av. Prueba 2 · 8x3')).toBeDefined()
+
+  soltarVieja(ok([cartel(1)]))
+  await vieja
+  await new Promise((resolver) => setTimeout(resolver, 0))
+
+  expect(screen.queryByText('Av. Prueba 1 · 8x3')).toBeNull()
+  expect(screen.getByText('Av. Prueba 2 · 8x3')).toBeDefined()
+})

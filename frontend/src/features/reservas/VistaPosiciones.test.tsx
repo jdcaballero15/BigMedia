@@ -159,3 +159,16 @@ test('mientras carga o sin carteles lo avisa', () => {
   renderizar([])
   expect(screen.getByText('No hay carteles con estos filtros.')).toBeTruthy()
 })
+
+test('las tentativas van junto a la dirección, fuera de la tira de slots', () => {
+  const tentativa = ocupante('Kamet', { estado: 'pendiente' })
+  const propia = ocupante('Propia', { es_esta_campania: true, estado: 'pendiente' })
+  renderizar([
+    fila(1, { capacidad: 12, tentativas: 1, tentativas_detalle: [tentativa] }),
+    fila(2, { capacidad: 12, en_campania: true, tentativas_detalle: [propia] }),
+  ])
+  const direccion1 = within(filaDe('Av. Prueba 1')).getAllByRole('cell')[0]
+  expect(within(direccion1).getByText('· 1 tentativas')).toBeTruthy()
+  const direccion2 = within(filaDe('Av. Prueba 2')).getAllByRole('cell')[0]
+  expect(within(direccion2).getByText('Esta campaña (pendiente)')).toBeTruthy()
+})

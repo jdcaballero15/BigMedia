@@ -106,13 +106,13 @@ export default function VistaPosiciones({ filas, seleccion, onAlternar }: Props)
               <td className="primary-cell">
                 {fila.direccion}
                 {fila.lleno && <small className="muted posiciones-lleno">Lleno</small>}
+                <Tentativas fila={fila} />
               </td>
               <td>{fila.zona_nombre}</td>
               <td>{fila.capacidad}</td>
               <td>
                 <div className="posiciones-scroll">
                   <Slots fila={fila} elegido={seleccion.has(fila.id)} onAlternar={onAlternar} />
-                  <Tentativas fila={fila} />
                 </div>
               </td>
             </tr>

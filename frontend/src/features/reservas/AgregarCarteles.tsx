@@ -141,8 +141,12 @@ export default function AgregarCarteles(props: Props) {
     let active = true
     const pedido =
       vista === 'tabla'
-        ? apiGet<CartelTanda[]>(`/api/reservas/carteles-para-tanda/?${consulta}`).then(setFilas)
-        : apiGet<FilaPosiciones[]>(`/api/reservas/posiciones/?${consulta}`).then(setFilasPosiciones)
+        ? apiGet<CartelTanda[]>(`/api/reservas/carteles-para-tanda/?${consulta}`).then((rows) => {
+            if (active) setFilas(rows)
+          })
+        : apiGet<FilaPosiciones[]>(`/api/reservas/posiciones/?${consulta}`).then((rows) => {
+            if (active) setFilasPosiciones(rows)
+          })
     void pedido
       .then(() => {
         if (active) setError('')
