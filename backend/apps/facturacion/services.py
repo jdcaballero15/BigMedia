@@ -21,6 +21,7 @@ from django.db.models import Count, DecimalField, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from openpyxl import Workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.worksheet.worksheet import Worksheet
 
 from apps.auditoria import services as auditoria_services
@@ -814,6 +815,45 @@ COLUMNAS_DESCARGA: list[tuple[str, Any]] = [
 ]
 
 
+# Aspecto de la planilla real de Administración (HU-070, RN-024).
+NARANJA, VERDE, AMARILLO_CLARO, DURAZNO = "FFC000", "92D050", "FFF2CC", "FCE4D6"
+FORMATO_PESOS = '"$" #,##0'
+ANCHOS_DESCARGA = {"A": 30, "B": 18, "C": 18, "D": 40, "E": 12, "F": 12, "G": 50}
+_FINO = Side(style="thin")
+_BORDE = Border(left=_FINO, right=_FINO, top=_FINO, bottom=_FINO)
+_NEGRITA = Font(bold=True)
+
+
+def _relleno(color: str) -> PatternFill:
+    return PatternFill(fill_type="solid", start_color=color, end_color=color)
+
+
+def _dar_formato_a_la_descarga(hoja: Worksheet, titulo: int, totales: int) -> None:
+    """Colores, bordes, importes en pesos y anchos, como la planilla real (RN-024)."""
+    if titulo == 2:
+        for celda in hoja[1][:2]:
+            celda.fill, celda.font = _relleno(NARANJA), _NEGRITA
+    hoja.merge_cells(start_row=titulo, start_column=1, end_row=titulo, end_column=7)
+    celda_titulo = hoja.cell(titulo, 1)
+    celda_titulo.fill, celda_titulo.font = _relleno(VERDE), _NEGRITA
+    celda_titulo.alignment = Alignment(horizontal="center")
+    for celda in hoja[titulo + 1][:7]:
+        celda.fill, celda.font = _relleno(AMARILLO_CLARO), _NEGRITA
+        celda.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    for fila in hoja.iter_rows(min_row=titulo + 1, max_row=totales, max_col=7):
+        for celda in fila:
+            celda.border = _BORDE
+            if celda.column in (2, 3):
+                celda.number_format = FORMATO_PESOS
+    for celda in hoja[totales][:7]:
+        celda.fill = _relleno(DURAZNO)
+        if celda.column in (2, 3):
+            celda.font = _NEGRITA
+    hoja.cell(totales + 2, 2).number_format = FORMATO_PESOS
+    for columna, ancho in ANCHOS_DESCARGA.items():
+        hoja.column_dimensions[columna].width = ancho
+
+
 def planilla_de_lista_xlsx(items: Iterable[ItemFacturacion], mes: date | None) -> bytes:
     """Planilla .xlsx de los ítems de la lista, sin enviarlos ni cambiarles el estado (HU-070)."""
     libro = Workbook()
@@ -823,11 +863,13 @@ def planilla_de_lista_xlsx(items: Iterable[ItemFacturacion], mes: date | None) -
     if mes is not None:
         hoja.append(["PERIODO:", f"{mes.year}/{mes.month}"])
     hoja.append(["CARTELERIA"])
-    hoja.append([titulo for titulo, _ in COLUMNAS_DESCARGA])
+    titulo = hoja.max_row
+    hoja.append([nombre for nombre, _ in COLUMNAS_DESCARGA])
     primera = hoja.max_row + 1
     for item in items:
         hoja.append([valor(item) for _, valor in COLUMNAS_DESCARGA])
     _agregar_totales(hoja, primera=primera, ultima=hoja.max_row)
+    _dar_formato_a_la_descarga(hoja, titulo=titulo, totales=hoja.max_row - 2)
     salida = io.BytesIO()
     libro.save(salida)
     return salida.getvalue()

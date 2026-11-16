@@ -73,6 +73,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E11 Facturación mensual | [facturacion-descarga-excel](units/facturacion-descarga-excel.md) | facturacion | HU-060 (ajuste), HU-070 (RN-024) | items-a-facturar, cierre-de-mes | Juan Diego | feature/facturacion-descarga-excel | en revisión |
 | E12 Rediseño visual | [ajuste-espaciado-detalle-campania](units/ajuste-espaciado-detalle-campania.md) | frontend | pedido de Juan Diego (2026-11-08) | pantallas-rediseno, orden-de-publicidad | Juan Diego | fix/frontend-espaciado-detalle-campania | en revisión |
 | E12 Rediseño visual | [ajuste-barra-lateral](units/ajuste-barra-lateral.md) | frontend | pedido de Juan Diego (2026-11-16), HU-001, HU-007 | pantallas-rediseno | Juan Diego | fix/frontend-ocultar-parametros-auditoria | en revisión |
+| E11 Facturación mensual | [facturacion-planilla-con-formato](units/facturacion-planilla-con-formato.md) | facturacion | HU-070 (ajuste), RN-024 | facturacion-descarga-excel | Juan Diego | feature/facturacion-planilla-con-formato | en curso |
 
 ## Notas
 
