@@ -409,21 +409,7 @@ test('muestra Por rubro o grupo a gerencia', async () => {
   expect(within(nav).getByRole('button', { name: 'Por rubro o grupo' })).toBeDefined()
 })
 
-test('oculta Auditoría a quien no es gerencia', async () => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: string) => {
-      if (input === '/api/auth/me/') return ok({ username: 'trabajador', es_gerencia: false })
-      if (input.startsWith('/api/clientes/')) return ok([])
-      throw new Error(`URL inesperada: ${input}`)
-    }),
-  )
-  render(<App />)
-  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
-  expect(within(nav).queryByRole('button', { name: 'Auditoría' })).toBeNull()
-})
-
-test('muestra Auditoría a gerencia', async () => {
+test('no muestra Auditoría en el menú, ni a gerencia', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string) => {
@@ -434,7 +420,7 @@ test('muestra Auditoría a gerencia', async () => {
   )
   render(<App />)
   const nav = await screen.findByRole('navigation', { name: 'Navegación' })
-  expect(within(nav).getByRole('button', { name: 'Auditoría' })).toBeDefined()
+  expect(within(nav).queryByRole('button', { name: 'Auditoría' })).toBeNull()
 })
 
 test('abre y cierra el menú en pantallas chicas', async () => {
@@ -528,7 +514,7 @@ test('el rol Operativo ve acciones de edición', async () => {
   expect(await screen.findByRole('button', { name: 'Nuevo cliente' })).toBeDefined()
 })
 
-test('muestra Usuarios, Parámetros e Importar carteles solo al administrador', async () => {
+test('muestra Usuarios e Importar carteles solo al administrador, y Parámetros a nadie', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string) => {
@@ -550,8 +536,6 @@ test('muestra Usuarios, Parámetros e Importar carteles solo al administrador', 
       if (input === '/api/auth/me/') return ok({ username: 'admin', rol: 'administrador' })
       if (input.startsWith('/api/clientes/')) return ok([])
       if (input === '/api/usuarios/usuarios/') return ok([])
-      if (input === '/api/reservas/parametros/')
-        return ok({ borde_inclusivo: true, tentativa_bloquea: false })
       if (input === '/api/inventario/formatos/') return ok([])
       throw new Error(`URL inesperada: ${input}`)
     }),
@@ -561,8 +545,8 @@ test('muestra Usuarios, Parámetros e Importar carteles solo al administrador', 
   expect(await screen.findByRole('heading', { name: 'Importar carteles' })).toBeDefined()
   await irA('Usuarios')
   expect(await screen.findByRole('heading', { name: 'Usuarios' })).toBeDefined()
-  await irA('Parámetros')
-  expect(await screen.findByRole('heading', { name: 'Parámetros' })).toBeDefined()
+  const navAdmin = screen.getByRole('navigation', { name: 'Navegación' })
+  expect(within(navAdmin).queryByRole('button', { name: 'Parámetros' })).toBeNull()
 })
 
 test('el link de contraseña muestra el formulario y después el login', async () => {

@@ -20,8 +20,8 @@ Los grupos son estos:
 | Comercial | **Clientes**, **Marcas**, **Campañas**, **Interacciones**, **Facturación** |
 | Inventario | **Carteles**, **Disponibilidad** |
 | Operación | **Proveedores**, **Costos**, **Formatos** |
-| Configuración | **Catálogos**, **Parámetros** |
-| Administración | **Auditoría**, **Usuarios** |
+| Configuración | **Catálogos** |
+| Administración | **Usuarios** |
 
 Arriba, la barra muestra dónde estás (por ejemplo, «Big Media / Comercial / Clientes») y la
 fecha de hoy.
@@ -37,8 +37,7 @@ está en azul es la principal. En los reportes, el período se elige con **mes**
 **Desde** y de **Hasta**; el fin nunca queda antes del inicio.
 
 Lo que podés hacer depende de tu rol: **Operativo** carga y edita; **Lectura** solo consulta;
-**Ingresos** y **Auditoría** necesitan además el permiso de Gerencia; **Usuarios** y
-**Parámetros** son del administrador.
+**Ingresos** necesita además el permiso de Gerencia; **Usuarios** es del administrador.
 
 En el sistema **nada se borra**: los clientes, marcas y carteles se **inactivan** o se dan de baja,
 las reservas se **cancelan** y los ítems a facturar se **anulan**. Así queda la historia completa.
@@ -240,7 +239,7 @@ Los más comunes:
 | "Primero confirmá la campaña." | Tocaste **Confirmar reservas** con la campaña Cotizada | Confirmá la campaña y volvé a intentar |
 | "Para confirmar falta cargar las fechas." | La campaña no tiene todo lo necesario para confirmarse | Cargá lo que dice (marca, cliente que factura o fechas) |
 | "El cartel está de baja: no se puede reservar." | El cartel se dio de baja | Elegí otro cartel |
-| "La reserva termina antes de hoy: no se puede cargar con fecha pasada." | La fecha de fin ya pasó. Una reserva que empezó antes pero sigue al aire sí se puede cargar | Revisá la fecha de fin. Si de verdad hay que cargar una reserva vieja, el administrador prende **Permitir reservas con fecha pasada** en **Parámetros** y la vuelve a apagar después |
+| "La reserva termina antes de hoy: no se puede cargar con fecha pasada." | La fecha de fin ya pasó. Una reserva que empezó antes pero sigue al aire sí se puede cargar | Revisá la fecha de fin. Si de verdad hay que cargar una reserva vieja, pedíselo al equipo técnico |
 | "El cartel está fuera de servicio (Apagado): no se puede reservar hasta que vuelva a un estado operativo." | El cartel está roto, apagado o en mantenimiento | Elegí otro cartel, o esperá a que vuelva a **Activo** |
 | "La fecha de fin no puede ser anterior a la de inicio." | Las fechas están al revés | Corregilas |
 | "No se puede pasar de finalizada a confirmada." | Ese cambio de estado no está permitido | Una Finalizada no cambia; para otra venta, creá una reserva nueva |
@@ -414,8 +413,8 @@ Puede pasar: el lugar es de la reserva que se confirma primero. El mensaje te di
 ocupa, para que puedan hablarlo.
 
 **¿Quién cambió este dato?**
-**Administración › Auditoría** (con permiso de Gerencia) muestra cada cambio, con quién lo hizo y
-cuándo.
+El sistema registra cada cambio, con quién lo hizo y cuándo, aunque hoy esa pantalla no está en el
+menú. Si necesitás consultarlo, pedíselo al equipo técnico.
 
 **El sistema me volvió a pedir la contraseña.**
 La sesión se cierra sola después de un rato sin uso (30 minutos, salvo que se cambie). Volvé a
