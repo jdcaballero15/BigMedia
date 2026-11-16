@@ -77,14 +77,13 @@ Cada bloque dice qué se muestra, qué hace cada uno en su pantalla y qué tiene
   ve pero no bloquea.
 - **Calendario**: buscar lugar libre para el mes que viene.
 
-### 6. Ítems a facturar (10 minutos)
+### 6. Facturación (10 minutos)
 
 - Ingresar con `demo-gerencia`.
 - Crear dos ítems del mes: uno completo (cliente y neto) y uno sin cliente.
 - Ver el IVA y el total calculados solos.
-- **Enviar a facturar**: se envía uno, el otro queda en Borrador con lo que le falta.
-- **Descargar planilla** y abrirla juntos: ¿están las columnas que usa Administración?
-- **Marcar facturado** con un número de factura inventado, y **Anular** el otro.
+- **Descargar Excel** y abrirlo juntos: ¿se ve como la planilla que usa Administración?
+- **Editar** un ítem, volver a descargar y ver el cambio; **Dar de baja** el otro.
 
 ## Preguntas abiertas para hacer frente a la pantalla
 
@@ -100,10 +99,7 @@ el equipo la carga en un PR de historias, con su entrada en el
 | RN-006 | ¿Se puede cancelar una reserva confirmada siempre? ¿Con algún aviso o costo? | Siempre se permite y libera el lugar |
 | RN-011 | ¿Se puede confirmar una campaña a la que le falta algún dato? | No: exige marca, cliente que factura y fechas |
 | RN-012 | ¿Se bloquea cargar a mano una reserva que ya terminó? | Sí, salvo que el administrador prenda el interruptor en Parámetros |
-| RN-022 | ¿Administración usa el sistema o recibe la planilla? | Recibe la planilla; Seba carga el número de factura |
 | RN-023 | ¿Qué alícuotas de IVA se usan además del 21 %? ¿Las listas Gob/Priv y F/V están completas? | 21 % por defecto, editable; listas administrables |
-| RN-025 | ¿Se envían los ítems completos aunque haya incompletos en el mes? | Sí; los incompletos se listan con lo que les falta |
-| RN-026 | ¿Alcanza con anular el ítem facturado y cargar uno nuevo para corregirlo? | Se anula con motivo, queda auditado y avisa a Administración |
 | RN-027 | Una orden de compra del 14/09 al 13/10, ¿se factura entera en un mes? | Sí, un solo ítem en el mes en que se factura |
 
 ## Después de la sesión

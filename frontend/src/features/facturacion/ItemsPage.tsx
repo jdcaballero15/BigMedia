@@ -3,7 +3,6 @@ import { ApiError, apiGet, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import { usePuedeEditar } from '../../shared/sesion'
 import type { Cliente } from '../clientes/types'
-import EnviosDelMes from './EnviosDelMes'
 import ItemForm from './ItemForm'
 import type { ItemInput } from './ItemForm'
 import { formatearMonto } from './montos'
@@ -14,7 +13,7 @@ import type {
   ItemGuardado,
   TotalesMes,
 } from './types'
-import { ESTADOS_ITEM, mesActual, urlPdfOrdenCompra } from './types'
+import { mesActual, urlPdfOrdenCompra } from './types'
 import Cifras from '../../shared/Cifras'
 import MenuFila from '../../shared/MenuFila'
 
@@ -33,11 +32,10 @@ function monto(valor: string | null): string {
 
 type AvisoOrdenCompra = { numero: string; items: AvisosItem['orden_compra'] }
 
-/** Facturación: ítems del mes, totales, estados, OC y grupos (HU-060 a HU-065) y su Excel (HU-070). */
+/** Facturación: ítems del mes, totales, OC y grupos (HU-060 a HU-064) y su Excel (HU-070). */
 export default function ItemsPage() {
   const puedeEditar = usePuedeEditar()
   const [mes, setMes] = useState(mesActual())
-  const [estado, setEstado] = useState('')
   const [items, setItems] = useState<ItemFacturacion[] | null>(null)
   const [totales, setTotales] = useState<TotalesMes | null>(null)
   const [referencias, setReferencias] = useState<Referencias>({
@@ -68,7 +66,7 @@ export default function ItemsPage() {
     }
   }, [])
 
-  const filtro = new URLSearchParams({ mes, ...(estado && { estado }) }).toString()
+  const filtro = new URLSearchParams({ mes }).toString()
 
   useEffect(() => {
     if (!mes) return
@@ -160,23 +158,12 @@ export default function ItemsPage() {
           Mes
           <input type="month" value={mes} onChange={(event) => setMes(event.target.value)} />
         </label>
-        <label>
-          Estado
-          <select value={estado} onChange={(event) => setEstado(event.target.value)}>
-            <option value="">Todos</option>
-            {ESTADOS_ITEM.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
       {totales && (
         <Cifras
           titulo="Totales del mes"
           cifras={[
-            { etiqueta: 'Ítems', valor: totales.cantidad, detalle: 'sin anulados' },
+            { etiqueta: 'Ítems', valor: totales.cantidad },
             { etiqueta: 'Neto', valor: formatearMonto(totales.neto) },
             { etiqueta: 'IVA', valor: formatearMonto(totales.iva) },
             { etiqueta: 'Total', valor: formatearMonto(totales.total), tono: 'principal' },
@@ -216,12 +203,6 @@ export default function ItemsPage() {
           )}
         </div>
       )}
-      <EnviosDelMes
-        mes={mes}
-        puedeEditar={puedeEditar}
-        hayBorradores={estado !== '' || (items ?? []).some((item) => item.estado === 'borrador')}
-        onEnviado={recargar}
-      />
       {items === null ? (
         !error && <p className="empty">Cargando ítems…</p>
       ) : items.length === 0 ? (
@@ -294,26 +275,14 @@ type FilaProps = {
   onCambio: () => void
 }
 
-type Pedido = 'facturar' | 'reabrir' | 'anular-facturado'
-
-/** Las acciones que piden un dato antes de confirmarse: qué se pide y a dónde va. */
-const PEDIDOS: Record<Pedido, { campo: string; confirmar: string }> = {
-  facturar: { campo: 'Número de factura', confirmar: 'Confirmar' },
-  reabrir: { campo: 'Motivo de la reapertura', confirmar: 'Confirmar reapertura' },
-  'anular-facturado': { campo: 'Motivo de la anulación', confirmar: 'Confirmar anulación' },
-}
-
 /** Una fila con las siete columnas de la planilla (RN-024) y sus acciones en el menú ⋯. */
 function FilaItem(props: FilaProps) {
   const { item, puedeEditar, seleccionado, onAlternar, onEditar, onCambio } = props
-  const [pedido, setPedido] = useState<Pedido | null>(null)
-  const [texto, setTexto] = useState('')
   const [errores, setErrores] = useState<Record<string, string[]>>({})
 
-  async function escribir(url: string, method: 'POST' | 'PATCH', datos?: Record<string, string>) {
+  async function escribir(url: string) {
     try {
-      await apiWrite(url, method, datos)
-      setPedido(null)
+      await apiWrite(url, 'POST')
       onCambio()
     } catch (cause) {
       const campos = cause instanceof ApiError ? cause.fields : {}
@@ -322,37 +291,17 @@ function FilaItem(props: FilaProps) {
       )
     }
   }
-  const cambiarEstado = (datos: Record<string, string>) =>
-    escribir(`${ITEMS}${item.id}/`, 'PATCH', datos)
-
-  function pedir(accion: Pedido) {
-    setTexto('')
-    setErrores({})
-    setPedido(accion)
-  }
-
-  function confirmar() {
-    if (pedido === 'facturar') void cambiarEstado({ estado: 'facturado', numero_factura: texto })
-    else if (pedido === 'reabrir')
-      void escribir(`${ITEMS}${item.id}/reabrir/`, 'POST', { motivo: texto })
-    else void escribir(`${ITEMS}${item.id}/anular-facturado/`, 'POST', { motivo: texto })
-  }
-
-  const borrador = item.estado === 'borrador'
-  const enviado = item.estado === 'enviado'
-  const mensajes = errores.estado ?? errores.numero_factura ?? errores.motivo ?? errores.grupo
+  const mensajes = errores.estado ?? errores.grupo
   return (
-    <tr className={item.estado === 'anulado' ? 'muted' : undefined}>
+    <tr>
       {puedeEditar && (
         <td>
-          {borrador && (
-            <input
-              type="checkbox"
-              aria-label={`Seleccionar ítem ${item.id}`}
-              checked={seleccionado}
-              onChange={onAlternar}
-            />
-          )}
+          <input
+            type="checkbox"
+            aria-label={`Seleccionar ítem ${item.id}`}
+            checked={seleccionado}
+            onChange={onAlternar}
+          />
         </td>
       )}
       <td className="primary-cell">{item.cliente_razon_social ?? 'Sin cliente'}</td>
@@ -366,40 +315,21 @@ function FilaItem(props: FilaProps) {
         <td className="row-actions">
           <MenuFila
             acciones={[
-              borrador && { etiqueta: 'Editar', onClick: onEditar },
-              enviado && { etiqueta: 'Marcar facturado', onClick: () => pedir('facturar') },
-              enviado && { etiqueta: 'Reabrir', onClick: () => pedir('reabrir') },
-              (borrador || enviado) && {
-                etiqueta: 'Anular',
-                onClick: () => void cambiarEstado({ estado: 'anulado' }),
+              { etiqueta: 'Editar', onClick: onEditar },
+              {
+                etiqueta: 'Dar de baja',
+                onClick: () => void escribir(`${ITEMS}${item.id}/dar-de-baja/`),
               },
-              item.estado === 'facturado' && {
-                etiqueta: 'Anular',
-                onClick: () => pedir('anular-facturado'),
+              item.grupo_codigo !== null && {
+                etiqueta: 'Quitar del grupo',
+                onClick: () => void escribir(`${ITEMS}${item.id}/quitar-del-grupo/`),
               },
-              borrador &&
-                item.grupo_codigo !== null && {
-                  etiqueta: 'Quitar del grupo',
-                  onClick: () => void escribir(`${ITEMS}${item.id}/quitar-del-grupo/`, 'POST'),
-                },
               item.orden_compra_pdf !== null && {
                 etiqueta: 'Ver PDF de la OC',
                 onClick: () => window.open(urlPdfOrdenCompra(item.id), '_blank', 'noreferrer'),
               },
             ]}
           />
-          {pedido !== null && (
-            <>
-              <input
-                aria-label={PEDIDOS[pedido].campo}
-                value={texto}
-                onChange={(event) => setTexto(event.target.value)}
-              />
-              <button className="button-primary" onClick={confirmar}>
-                {PEDIDOS[pedido].confirmar}
-              </button>
-            </>
-          )}
           <FieldErrors messages={mensajes} />
         </td>
       )}

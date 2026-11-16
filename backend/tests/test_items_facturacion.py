@@ -32,13 +32,13 @@ def _cliente() -> Cliente:
 
 
 @pytest.mark.django_db
-def test_item_sin_datos_se_guarda_en_borrador_con_el_mes_actual(operativo_client):
+def test_item_sin_datos_se_guarda_con_el_mes_actual(operativo_client):
     respuesta = _post(operativo_client, {})
     assert respuesta.status_code == 201
     cuerpo = respuesta.json()
     hoy = timezone.localdate()
     assert cuerpo["mes"] == date(hoy.year, hoy.month, 1).isoformat()
-    assert cuerpo["estado"] == "borrador"
+    assert ItemFacturacion.objects.get(pk=cuerpo["id"]).estado == "borrador"
     assert cuerpo["alicuota_iva"] == "21.00"
     assert (cuerpo["neto"], cuerpo["iva"], cuerpo["total"]) == (None, None, None)
     assert cuerpo["creado_por_nombre"] == "operativo"
@@ -51,10 +51,11 @@ def test_el_mes_se_puede_cambiar_y_se_guarda_como_primer_dia(operativo_client):
 
 
 @pytest.mark.django_db
-def test_un_item_nuevo_no_puede_nacer_en_otro_estado(operativo_client):
-    respuesta = _post(operativo_client, {"estado": "facturado", "numero_factura": "A-1"})
-    assert respuesta.status_code == 400
-    assert "estado" in respuesta.json()
+def test_un_item_nuevo_ignora_estado_y_numero_de_factura(operativo_client):
+    respuesta = _post(operativo_client, {"estado": "anulado", "numero_factura": "A-1"})
+    assert respuesta.status_code == 201
+    item = ItemFacturacion.objects.get(pk=respuesta.json()["id"])
+    assert (item.estado, item.numero_factura) == ("borrador", "")
 
 
 # --- Criterio 3: CUIT del ítem independiente del cliente ---
@@ -142,7 +143,7 @@ def test_catalogos_lista_solo_los_activos(lector_client):
 
 
 @pytest.mark.django_db
-def test_lista_filtra_por_mes_estado_cliente_y_campania(operativo_client):
+def test_lista_filtra_por_mes_cliente_y_campania_sin_dados_de_baja(operativo_client):
     cliente = _cliente()
     campania = Campania.objects.create()
     buscado = ItemFacturacion.objects.create(
@@ -153,13 +154,13 @@ def test_lista_filtra_por_mes_estado_cliente_y_campania(operativo_client):
     ItemFacturacion.objects.create(
         mes=date(2026, 11, 1), cliente=cliente, campania=campania, estado="anulado"
     )
-    params = f"?mes=2026-11&estado=borrador&cliente={cliente.pk}&campania={campania.pk}"
+    params = f"?mes=2026-11&cliente={cliente.pk}&campania={campania.pk}"
     lista = operativo_client.get(f"{URL}{params}").json()
     assert [item["id"] for item in lista] == [buscado.pk]
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("params", ["?mes=11-2026", "?estado=perdido", "?cliente=x", "?campania=0"])
+@pytest.mark.parametrize("params", ["?mes=11-2026", "?cliente=x", "?campania=0"])
 def test_filtros_invalidos_se_rechazan(operativo_client, params):
     assert operativo_client.get(f"{URL}{params}").status_code == 400
 
@@ -176,14 +177,10 @@ def test_item_en_borrador_se_edita(operativo_client):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("estado", ["enviado", "facturado", "anulado"])
-def test_fuera_de_borrador_no_se_editan_los_datos(operativo_client, estado):
-    item = ItemFacturacion.objects.create(
-        estado=estado, numero_factura="A-1" if estado == "facturado" else ""
-    )
+def test_item_dado_de_baja_no_se_editan_los_datos(operativo_client):
+    item = ItemFacturacion.objects.create(estado="anulado")
     respuesta = _patch(operativo_client, item.pk, {"neto": "5.00"})
-    assert respuesta.status_code == 400
-    assert respuesta.json()["estado"] == ["Solo se pueden editar los datos de un ítem en Borrador."]
+    assert respuesta.status_code == 404
     item.refresh_from_db()
     assert item.neto is None
 

@@ -4,18 +4,15 @@ from __future__ import annotations
 
 import io
 import logging
-import smtplib
 from collections.abc import Iterable
 from datetime import date
 from decimal import Decimal
-from functools import partial
 from typing import Any
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
-from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.db.models import Count, DecimalField, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
@@ -32,7 +29,6 @@ from apps.reservas.services import reparto_por_mes
 
 from .models import (
     CostoDeItem,
-    EnvioFacturacion,
     GrupoFactura,
     ItemFacturacion,
     OrdenCompraPdf,
@@ -247,63 +243,34 @@ def reporte_ingresos(desde: date, hasta: date) -> dict[str, Any]:
     return {"periodos": periodos, "clientes": clientes, "total": _fmt(total)}
 
 
-# Transiciones de estado del ítem (HU-065). Borrador pasa a Enviado solo con "Enviar a facturar"
-# (HU-066); un Facturado se anula solo con `anular_facturado`, que pide motivo (RN-026).
-TRANSICIONES_ITEM: dict[str, set[str]] = {
-    ItemFacturacion.Estado.BORRADOR: {ItemFacturacion.Estado.ANULADO},
-    ItemFacturacion.Estado.ENVIADO: {
-        ItemFacturacion.Estado.FACTURADO,
-        ItemFacturacion.Estado.ANULADO,
-    },
-    ItemFacturacion.Estado.FACTURADO: set(),
-    ItemFacturacion.Estado.ANULADO: set(),
-}
-# Fuera de Borrador solo se cambia el estado (y el número al facturar); para corregir un Enviado
-# se lo reabre (HU-067).
-CAMPOS_FUERA_DE_BORRADOR = {"estado", "numero_factura"}
+# El ítem no tiene estados (HU-065 retirada): `estado` solo marca la baja lógica (HU-060).
+# `anulado` es «dado de baja»; los demás valores, que quedaron de antes, cuentan como vigente.
+def vigentes() -> QuerySet[ItemFacturacion]:
+    """Los ítems que no se dieron de baja."""
+    return ItemFacturacion.objects.exclude(estado=ItemFacturacion.Estado.ANULADO)
 
 
-def _etiqueta(estado: str) -> str:
-    return str(ItemFacturacion.Estado(estado).label)
+def dar_de_baja(item_id: int, usuario: AbstractBaseUser) -> ItemFacturacion:
+    """Da de baja un ítem cargado por error: sale de la lista, los totales y el Excel (HU-060).
 
-
-def _validar_estado(actual: str, nuevo: str, campos: set[str]) -> None:
-    if actual != ItemFacturacion.Estado.BORRADOR and campos - CAMPOS_FUERA_DE_BORRADOR:
-        raise ValidationError({"estado": "Solo se pueden editar los datos de un ítem en Borrador."})
-    if nuevo != actual and nuevo not in TRANSICIONES_ITEM[actual]:
-        raise ValidationError(
-            {"estado": f"No se puede pasar de {_etiqueta(actual)} a {_etiqueta(nuevo)}."}
+    No se borra (HU-006): queda con quién y cuándo, y auditado en la misma transacción (HU-007).
+    """
+    with transaction.atomic():
+        item = vigentes().select_for_update().get(pk=item_id)
+        anterior = item.estado
+        item.estado = ItemFacturacion.Estado.ANULADO
+        item.anulado_en = timezone.now()
+        item.anulado_por_id = usuario.pk
+        item.save(update_fields=["estado", "anulado_en", "anulado_por", "actualizado_en"])
+        auditoria_services.registrar_cambios(
+            "item_facturacion", item.pk, {"estado": anterior}, {"estado": item.estado}, usuario
         )
-
-
-def _validar_numero_factura(actual: str, nuevo: str, numero: str, cargado: bool) -> None:
-    if nuevo == ItemFacturacion.Estado.FACTURADO and actual != nuevo and not numero:
-        raise ValidationError(
-            {"numero_factura": "Cargá el número de factura para pasar el ítem a Facturado."}
-        )
-    if cargado and nuevo != ItemFacturacion.Estado.FACTURADO:
-        raise ValidationError(
-            {"numero_factura": "El número de factura se carga al pasar el ítem a Facturado."}
-        )
-
-
-def validar_cambio_de_item(item: ItemFacturacion | None, datos: dict[str, Any]) -> None:
-    """Estados y número de factura de un alta (`item` None) o una edición (HU-065)."""
-    if item is None:
-        if datos.get("estado", ItemFacturacion.Estado.BORRADOR) != ItemFacturacion.Estado.BORRADOR:
-            raise ValidationError({"estado": "Un ítem nuevo nace en Borrador."})
-        actual = ItemFacturacion.Estado.BORRADOR.value
-    else:
-        actual = item.estado
-    nuevo = datos.get("estado", actual)
-    _validar_estado(actual, nuevo, set(datos))
-    numero = datos.get("numero_factura", getattr(item, "numero_factura", "")).strip()
-    _validar_numero_factura(actual, nuevo, numero, "numero_factura" in datos)
+    return item
 
 
 def totales_del_mes(mes: date) -> dict[str, Any]:
-    """Neto, IVA, total, costos y neto final del mes, sin los anulados (HU-065, HU-063)."""
-    items = ItemFacturacion.objects.filter(mes=mes).exclude(estado=ItemFacturacion.Estado.ANULADO)
+    """Neto, IVA, total, costos y neto final del mes, sin los dados de baja (HU-060, HU-063)."""
+    items = vigentes().filter(mes=mes)
     fila = items.aggregate(
         cantidad=Count("id"), neto=Sum("neto"), iva=Sum("iva"), total=Sum("total")
     )
@@ -401,7 +368,7 @@ def _validar_importe(datos: dict[str, Any]) -> None:
 
 
 def agregar_costo(item_id: int, datos: dict[str, Any], usuario: AbstractBaseUser) -> Costo:
-    """Carga un costo propio del ítem en Borrador, fijo o en porcentaje del neto (HU-063).
+    """Carga un costo propio del ítem vigente, fijo o en porcentaje del neto (HU-063).
 
     Crea el costo sin reserva y su vínculo en la misma transacción, y lo deja auditado.
     """
@@ -410,7 +377,7 @@ def agregar_costo(item_id: int, datos: dict[str, Any], usuario: AbstractBaseUser
         costos_services.validar_proveedor_activo(datos["proveedor"])
     with transaction.atomic():
         item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
-        _exigir_borrador(item, "cargar costos")
+        _exigir_vigente(item, "cargar costos")
         porcentaje = datos.get("porcentaje")
         costo = Costo.objects.create(
             tipo=datos["tipo"],
@@ -433,7 +400,7 @@ def vincular_costo(item_id: int, costo_id: int, usuario: AbstractBaseUser) -> Co
     """Vincula al ítem un costo de una reserva de su campaña, sin copiarlo (HU-063, criterio 4)."""
     with transaction.atomic():
         item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
-        _exigir_borrador(item, "cargar costos")
+        _exigir_vigente(item, "cargar costos")
         if item.campania_id is None:
             raise ValidationError(
                 {"campania": "Solo se vinculan costos de reserva a un ítem con campaña."}
@@ -463,7 +430,7 @@ def anular_costo(item_id: int, costo_id: int, motivo: str, usuario: AbstractBase
         raise ValidationError({"motivo": "Indicá el motivo de la anulación."})
     with transaction.atomic():
         item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
-        _exigir_borrador(item, "anular costos")
+        _exigir_vigente(item, "anular costos")
         costo = Costo.objects.select_for_update().get(item_vinculado__item=item, pk=costo_id)
         if costo.reserva_id is not None:
             raise ValidationError({"costo": "Es un costo de una reserva: anulalo desde Costos."})
@@ -487,87 +454,24 @@ def recalcular_porcentuales(item: ItemFacturacion) -> None:
             costo.save(update_fields=["monto", "actualizado_en"])
 
 
-def faltantes_para_enviar(item: ItemFacturacion) -> list[str]:
-    """Lo que se exige al enviar a facturar (HU-066): cliente, importe neto y mes."""
-    faltan = []
-    if item.cliente_id is None:
-        faltan.append("cliente")
-    if item.neto is None:
-        faltan.append("importe neto")
-    if item.mes is None:
-        faltan.append("mes")
-    return faltan
-
-
-def enviar_a_facturar(
-    mes: date, usuario: AbstractBaseUser
-) -> tuple[EnvioFacturacion | None, list[dict[str, Any]]]:
-    """Pasa a Enviado los Borradores completos del mes y registra el envío (HU-066).
-
-    Los incompletos no se envían y se devuelven con lo que les falta (RN-025). Bloquea los
-    Borradores del mes, así dos envíos simultáneos no mandan un ítem dos veces. Sin ítems
-    completos no crea un envío.
-    """
-    with transaction.atomic():
-        borradores = list(
-            ItemFacturacion.objects.select_for_update()
-            .filter(mes=mes, estado=ItemFacturacion.Estado.BORRADOR)
-            .order_by("id")
-        )
-        completos = [item for item in borradores if not faltantes_para_enviar(item)]
-        incompletos = [
-            {
-                "item": item.pk,
-                "descripcion": item.descripcion or "Sin descripción",
-                "faltan": faltantes_para_enviar(item),
-            }
-            for item in borradores
-            if faltantes_para_enviar(item)
-        ]
-        if not completos:
-            return None, incompletos
-        envio = EnvioFacturacion.objects.create(mes=mes, enviado_por_id=usuario.pk)
-        envio.items.set(completos)
-        for item in completos:
-            _marcar_enviado(item, usuario)
-    return envio, incompletos
-
-
-def _marcar_enviado(item: ItemFacturacion, usuario: AbstractBaseUser) -> None:
-    """Pasa el ítem a Enviado; si estaba reabierto, lo marca reenviado y avisa (HU-067)."""
-    item.estado = ItemFacturacion.Estado.ENVIADO
-    item.reenviado = item.reabierto_en is not None
-    item.save(update_fields=["estado", "reenviado", "actualizado_en"])
-    auditoria_services.registrar_cambios(
-        "item_facturacion",
-        item.pk,
-        {"estado": ItemFacturacion.Estado.BORRADOR.value},
-        {"estado": ItemFacturacion.Estado.ENVIADO.value},
-        usuario,
-    )
-    if item.reenviado:
-        asunto, cuerpo = _aviso_de_reenvio(item)
-        transaction.on_commit(partial(avisar_a_administracion, asunto, cuerpo))
-
-
 def ordenes_de_compra_duplicadas(item: ItemFacturacion) -> list[dict[str, Any]]:
     """Otros ítems no anulados con el mismo número de OC (HU-062, criterio 2). Solo avisa."""
     numero = item.orden_compra_numero.strip()
     if not numero:
         return []
     coincidentes = (
-        ItemFacturacion.objects.filter(orden_compra_numero__iexact=numero)
+        vigentes()
+        .filter(orden_compra_numero__iexact=numero)
         .exclude(pk=item.pk)
-        .exclude(estado=ItemFacturacion.Estado.ANULADO)
         .order_by("id")
         .values_list("pk", "descripcion")
     )
     return [{"id": pk, "descripcion": desc or "Sin descripción"} for pk, desc in coincidentes]
 
 
-def _exigir_borrador(item: ItemFacturacion, que: str) -> None:
-    if item.estado != ItemFacturacion.Estado.BORRADOR:
-        raise ValidationError({"estado": f"Solo se puede {que} de un ítem en Borrador."})
+def _exigir_vigente(item: ItemFacturacion, que: str) -> None:
+    if item.estado == ItemFacturacion.Estado.ANULADO:
+        raise ValidationError({"estado": f"No se puede {que} de un ítem dado de baja."})
 
 
 def validar_pdf(archivo: UploadedFile[bytes] | None) -> UploadedFile[bytes]:
@@ -596,7 +500,7 @@ def guardar_pdf_orden_compra(
     """Adjunta (o reemplaza) el PDF de la OC de un ítem en Borrador, auditado (HU-062)."""
     with transaction.atomic():
         item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
-        _exigir_borrador(item, "cambiar la orden de compra")
+        _exigir_vigente(item, "cambiar la orden de compra")
         archivo = validar_pdf(archivo)
         anterior = _nombre_pdf(item)
         nombre = (archivo.name or "orden-de-compra.pdf")[-255:]
@@ -623,7 +527,7 @@ def quitar_pdf_orden_compra(item_id: int, usuario: AbstractBaseUser) -> bool:
     """Saca el PDF de la OC de un ítem en Borrador, auditado. Devuelve False si no tenía."""
     with transaction.atomic():
         item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
-        _exigir_borrador(item, "cambiar la orden de compra")
+        _exigir_vigente(item, "cambiar la orden de compra")
         anterior = _nombre_pdf(item)
         if not anterior:
             return False
@@ -642,8 +546,8 @@ def _mes_agrupable(ids: list[int], items: list[ItemFacturacion]) -> date:
     """Valida que los ítems se puedan agrupar y devuelve su mes común."""
     if len(items) != len(ids):
         raise ValidationError({"items": "Alguno de los ítems no existe."})
-    if any(item.estado != ItemFacturacion.Estado.BORRADOR for item in items):
-        raise ValidationError({"items": "Solo se agrupan ítems en Borrador."})
+    if any(item.estado == ItemFacturacion.Estado.ANULADO for item in items):
+        raise ValidationError({"items": "No se agrupan ítems dados de baja."})
     meses = {item.mes for item in items}
     mes = meses.pop() if len(meses) == 1 else None
     if mes is None:
@@ -686,7 +590,7 @@ def quitar_del_grupo(item_id: int, usuario: AbstractBaseUser) -> ItemFacturacion
         item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
         if item.grupo_id is None:
             raise ValidationError({"grupo": "El ítem no está en un grupo de factura."})
-        _exigir_borrador(item, "cambiar el grupo de factura")
+        _exigir_vigente(item, "cambiar el grupo de factura")
         anterior = f"G-{item.grupo_id}"
         item.grupo = None
         item.save(update_fields=["grupo", "actualizado_en"])
@@ -706,100 +610,12 @@ def cliente_razon_social(item: ItemFacturacion) -> str | None:
     return item.cliente.razon_social or item.cliente.nombre_visible
 
 
-def _detalle_costo(item: ItemFacturacion) -> str | None:
-    """Cada costo no anulado como «<tipo> <a quién se le paga o proveedor>», separados por «; »."""
-    detalles = []
-    for costo in costos_del_item(item).filter(anulado=False):
-        destino = costo.destinatario or (costo.proveedor.nombre if costo.proveedor else "")
-        detalles.append(f"{costo.get_tipo_display()} {destino}".strip())
-    return "; ".join(detalles) or None
-
-
-def _tipo(item: ItemFacturacion) -> str | None:
-    return " · ".join(dato for dato in (item.tipo_soporte, item.descripcion) if dato) or None
-
-
-# Columnas de la planilla para Administración (RN-024): primero las siete de la planilla real, en
-# su orden, y al final las del sistema: orden de compra (HU-062), grupo de factura (HU-064),
-# neto final (HU-063) y la marca de reenviado (HU-067).
-COLUMNAS_PLANILLA: list[tuple[str, Any]] = [
-    ("CLIENTE (RAZON SOCIAL)", cliente_razon_social),
-    ("IMPORTE NETO TOTAL", lambda i: _numero(i.neto)),
-    ("COSTOS INCLUIDOS EN FC", lambda i: _numero(costo_total(i))),
-    ("DETALLE COSTO", _detalle_costo),
-    ("TIPO DE VENTA (F/V)", lambda i: i.tipo_venta.nombre if i.tipo_venta else None),
-    ("GOB/PRIV", lambda i: i.sector.nombre if i.sector else None),
-    ("TIPO (cartel/led/ppl/sextuples)", _tipo),
-    ("Mes", lambda i: i.mes.strftime("%Y-%m") if i.mes else None),
-    ("Cliente", lambda i: i.cliente.nombre_visible if i.cliente else None),
-    ("CUIT", lambda i: i.cuit_facturacion or None),
-    ("Marca", lambda i: i.marca.nombre if i.marca else None),
-    ("Descripción", lambda i: i.descripcion or None),
-    ("Período desde", lambda i: i.periodo_desde),
-    ("Período hasta", lambda i: i.periodo_hasta),
-    ("Cantidad", lambda i: _numero(i.cantidad)),
-    ("Precio unitario", lambda i: _numero(i.precio_unitario)),
-    ("Alícuota IVA", lambda i: _numero(i.alicuota_iva)),
-    ("IVA", lambda i: _numero(i.iva)),
-    ("Total", lambda i: _numero(i.total)),
-    ("Tipo de servicio", lambda i: i.get_tipo_servicio_display() or None),
-    ("Notas", lambda i: i.notas or None),
-    ("Orden de compra", lambda i: i.orden_compra_numero or None),
-    ("Fecha OC", lambda i: i.orden_compra_fecha),
-    ("Grupo de factura", lambda i: i.grupo.codigo if i.grupo else None),
-    ("Neto final", lambda i: _numero(neto_final(i))),
-    ("Reenviado", lambda i: "Sí" if i.reenviado else None),
-]
-
-# Títulos de antes de RN-024 en los valores guardados al reabrir un ítem (HU-067).
-TITULOS_ANTERIORES = {
-    "Importe neto": "IMPORTE NETO TOTAL",
-    "Costos": "COSTOS INCLUIDOS EN FC",
-    "Gob/Priv": "GOB/PRIV",
-    "Tipo de venta": "TIPO DE VENTA (F/V)",
-}
-
-
-def _filas_agrupadas(items: list[ItemFacturacion]) -> list[ItemFacturacion]:
-    """Por cliente, y los ítems de un grupo juntos donde aparece el primero (HU-064, criterio 3)."""
-    ordenados = sorted(items, key=lambda i: (i.cliente.nombre_visible if i.cliente else "", i.pk))
-    filas: list[ItemFacturacion] = []
-    grupos_puestos: set[int] = set()
-    for item in ordenados:
-        if item.grupo_id is None:
-            filas.append(item)
-        elif item.grupo_id not in grupos_puestos:
-            grupos_puestos.add(item.grupo_id)
-            filas.extend(i for i in ordenados if i.grupo_id == item.grupo_id)
-    return filas
-
-
 def _agregar_totales(hoja: Worksheet, primera: int, ultima: int) -> None:
     """Sumas del importe y de los costos, y el neto, con fórmulas para que se recalculen."""
     hoja.append([None, f"=SUM(B{primera}:B{ultima})", f"=SUM(C{primera}:C{ultima})"])
     totales = hoja.max_row
     hoja.append([])
     hoja.append(["Neto", f"=B{totales}-C{totales}"])
-
-
-def planilla_xlsx(envio: EnvioFacturacion) -> bytes:
-    """Planilla .xlsx del envío para Administración (HU-066, criterio 3), por cliente y grupo."""
-    libro = Workbook()
-    hoja = libro.worksheets[0]
-    hoja.title = f"Facturación {envio.mes:%Y-%m}"
-    # Como la planilla real (RN-024): período y título arriba, totales y neto abajo.
-    hoja.append(["PERIODO:", f"{envio.mes.year}/{envio.mes.month}"])
-    hoja.append(["CARTELERIA"])
-    hoja.append([titulo for titulo, _ in COLUMNAS_PLANILLA])
-    items = con_costo_total(
-        envio.items.select_related("cliente", "marca", "sector", "tipo_venta", "grupo")
-    )
-    for item in _filas_agrupadas(list(items)):
-        hoja.append([valor(item) for _, valor in COLUMNAS_PLANILLA])
-    _agregar_totales(hoja, primera=4, ultima=hoja.max_row)
-    salida = io.BytesIO()
-    libro.save(salida)
-    return salida.getvalue()
 
 
 # «Descargar Excel» de la lista (HU-070): solo las siete columnas de la planilla real (RN-024),
@@ -873,157 +689,3 @@ def planilla_de_lista_xlsx(items: Iterable[ItemFacturacion], mes: date | None) -
     salida = io.BytesIO()
     libro.save(salida)
     return salida.getvalue()
-
-
-# --- Reabrir un ítem enviado y avisar a Administración (HU-067, RN-022) ---
-
-
-def _como_texto(valor: Any) -> str:
-    if valor is None:
-        return ""
-    if isinstance(valor, float):
-        return f"{valor:.2f}"
-    if isinstance(valor, date):
-        return valor.isoformat()
-    return str(valor)
-
-
-def valores_de_planilla(item: ItemFacturacion) -> dict[str, str]:
-    """Lo que Administración ve del ítem en la planilla, como texto, para comparar."""
-    return {
-        titulo: _como_texto(valor(item))
-        for titulo, valor in COLUMNAS_PLANILLA
-        if titulo != "Reenviado"
-    }
-
-
-def avisar_a_administracion(asunto: str, cuerpo: str) -> None:
-    """Manda el aviso por correo (RN-022). Si no hay dirección o falla, lo deja en el log."""
-    destino = settings.FACTURACION_CORREO_ADMINISTRACION
-    if not destino:
-        logger.warning(
-            "Aviso a Administración sin enviar (falta FACTURACION_CORREO_ADMINISTRACION): %s",
-            asunto,
-        )
-        return
-    try:
-        send_mail(asunto, cuerpo, None, [destino])
-    except (smtplib.SMTPException, OSError):
-        logger.exception("No se pudo enviar el aviso a Administración: %s", asunto)
-
-
-def _titulo(item: ItemFacturacion) -> str:
-    return f"Ítem #{item.pk} · {item.descripcion or 'Sin descripción'}"
-
-
-def _reapertura(item: ItemFacturacion) -> str:
-    cuando = timezone.localtime(item.reabierto_en).strftime("%d/%m/%Y %H:%M")
-    quien = item.reabierto_por.get_username() if item.reabierto_por else "—"
-    return f"Reabierto por {quien} el {cuando}.\nMotivo: {item.motivo_reapertura}"
-
-
-def _aviso_de_reapertura(item: ItemFacturacion) -> tuple[str, str]:
-    mes = item.mes.strftime("%Y-%m") if item.mes else "sin mes"
-    cuerpo = (
-        f"{_titulo(item)} (mes {mes}) se reabrió para corregirlo.\n"
-        f"{_reapertura(item)}\n\n"
-        "No lo facturen hasta que se reenvíe: les va a llegar otro aviso con lo que cambió."
-    )
-    return f"Ítem #{item.pk} reabierto: no facturar hasta el reenvío", cuerpo
-
-
-def _aviso_de_reenvio(item: ItemFacturacion) -> tuple[str, str]:
-    antes = {
-        TITULOS_ANTERIORES.get(campo, campo): v for campo, v in item.valores_al_reabrir.items()
-    }
-    ahora = valores_de_planilla(item)
-    # Un valor guardado antes de que existiera la columna no se compara: no hay con qué.
-    cambios = [
-        f"- {campo}: {antes[campo] or '(vacío)'} → {valor or '(vacío)'}"
-        for campo, valor in ahora.items()
-        if campo in antes and antes[campo] != valor
-    ]
-    detalle = "\n".join(cambios) if cambios else "Sin cambios desde la reapertura."
-    cuerpo = f"{_titulo(item)} se reenvió a facturar.\n{_reapertura(item)}\n\nCambios:\n{detalle}"
-    return f"Ítem #{item.pk} reenviado a facturar", cuerpo
-
-
-def reabrir(item_id: int, motivo: str, usuario: AbstractBaseUser) -> ItemFacturacion:
-    """Vuelve a Borrador un ítem Enviado para corregirlo, con motivo y auditado (HU-067).
-
-    Guarda cómo estaba en la planilla para avisar qué cambió al reenviarlo. El aviso sale al
-    confirmarse la transacción.
-    """
-    motivo = motivo.strip()[:200]
-    if not motivo:
-        raise ValidationError({"motivo": "Indicá el motivo de la reapertura."})
-    with transaction.atomic():
-        item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
-        if item.estado != ItemFacturacion.Estado.ENVIADO:
-            raise ValidationError({"estado": "Solo se reabre un ítem Enviado a facturar."})
-        anteriores = {"estado": item.estado, "motivo_reapertura": item.motivo_reapertura}
-        item.valores_al_reabrir = valores_de_planilla(item)
-        item.estado = ItemFacturacion.Estado.BORRADOR
-        item.reabierto_en = timezone.now()
-        item.reabierto_por_id = usuario.pk
-        item.motivo_reapertura = motivo
-        item.reenviado = False
-        item.save()
-        auditoria_services.registrar_cambios(
-            "item_facturacion",
-            item.pk,
-            anteriores,
-            {"estado": item.estado, "motivo_reapertura": motivo},
-            usuario,
-        )
-        asunto, cuerpo = _aviso_de_reapertura(item)
-        transaction.on_commit(partial(avisar_a_administracion, asunto, cuerpo))
-    return item
-
-
-def _aviso_de_anulacion(item: ItemFacturacion) -> tuple[str, str]:
-    mes = item.mes.strftime("%Y-%m") if item.mes else "sin mes"
-    cuando = timezone.localtime(item.anulado_en).strftime("%d/%m/%Y %H:%M")
-    quien = item.anulado_por.get_username() if item.anulado_por else "—"
-    grupo = (
-        f"\nEstaba en el grupo de factura {item.grupo.codigo}: revisen la factura completa."
-        if item.grupo
-        else ""
-    )
-    cuerpo = (
-        f"{_titulo(item)} (mes {mes}, factura {item.numero_factura}) se anuló.\n"
-        f"Anulado por {quien} el {cuando}.\nMotivo: {item.motivo_anulacion}{grupo}\n\n"
-        "Si corresponde, la corrección les llega como un ítem nuevo."
-    )
-    return f"Ítem #{item.pk} facturado anulado", cuerpo
-
-
-def anular_facturado(item_id: int, motivo: str, usuario: AbstractBaseUser) -> ItemFacturacion:
-    """Anula un ítem ya Facturado para corregirlo, con motivo y auditado (RN-026).
-
-    Conserva el número de factura. El aviso a Administración sale al confirmarse la transacción;
-    la corrección se carga como un ítem nuevo.
-    """
-    motivo = motivo.strip()[:200]
-    if not motivo:
-        raise ValidationError({"motivo": "Indicá el motivo de la anulación."})
-    with transaction.atomic():
-        item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
-        if item.estado != ItemFacturacion.Estado.FACTURADO:
-            raise ValidationError({"estado": "Solo se anula así un ítem Facturado."})
-        anteriores = {"estado": item.estado, "motivo_anulacion": item.motivo_anulacion}
-        item.estado = ItemFacturacion.Estado.ANULADO
-        item.anulado_en = timezone.now()
-        item.anulado_por_id = usuario.pk
-        item.motivo_anulacion = motivo
-        item.save()
-        auditoria_services.registrar_cambios(
-            "item_facturacion",
-            item.pk,
-            anteriores,
-            {"estado": item.estado, "motivo_anulacion": motivo},
-            usuario,
-        )
-        asunto, cuerpo = _aviso_de_anulacion(item)
-        transaction.on_commit(partial(avisar_a_administracion, asunto, cuerpo))
-    return item

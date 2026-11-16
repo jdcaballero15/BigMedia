@@ -95,10 +95,11 @@ class GrupoFactura(models.Model):
 
 
 class ItemFacturacion(models.Model):
-    """Ítem a facturar del mes (HU-060). Nada es obligatorio hasta enviarlo (HU-066).
+    """Ítem a facturar del mes (HU-060). Ningún dato es obligatorio.
 
-    El IVA y el total se calculan siempre desde el neto y la alícuota (HU-061). No se borra:
-    se anula por estado (HU-065).
+    El IVA y el total se calculan siempre desde el neto y la alícuota (HU-061). No se borra: se da
+    de baja con `estado` = anulado. Los demás estados, el número de factura y los campos de
+    reapertura quedaron de antes de retirar HU-065 a HU-067 (2026-11-16): se conservan, sin uso.
     """
 
     class Estado(models.TextChoices):

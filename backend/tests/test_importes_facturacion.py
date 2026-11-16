@@ -106,7 +106,7 @@ def test_importes_se_guardan_como_decimal():
 
 
 @pytest.mark.django_db
-def test_totales_del_mes_no_suman_los_anulados(operativo_client):
+def test_totales_del_mes_no_suman_los_dados_de_baja(operativo_client):
     ItemFacturacion.objects.create(mes=date(2026, 11, 1), neto=Decimal("1000.00"))
     ItemFacturacion.objects.create(
         mes=date(2026, 11, 1), neto=Decimal("500.00"), estado="facturado", numero_factura="A-1"
@@ -124,8 +124,8 @@ def test_totales_del_mes_no_suman_los_anulados(operativo_client):
         "costos": "0.00",
         "neto_final": "1500.00",
     }
-    # Los anulados siguen en el listado del mes.
-    assert len(operativo_client.get(f"{URL}?mes=2026-11").json()) == 4
+    # Los dados de baja tampoco aparecen en el listado del mes.
+    assert len(operativo_client.get(f"{URL}?mes=2026-11").json()) == 3
 
 
 @pytest.mark.django_db

@@ -39,12 +39,13 @@ anulación quedan en la base, sin uso desde la app, para no perder lo ya registr
   - Nueva acción `POST items/<id>/dar-de-baja/`.
   - La lista, los totales y el Excel excluyen siempre los dados de baja; el filtro `estado` se
     saca. Un ítem dado de baja no se puede editar (404 en el `PATCH`).
-- `serializers.py`: `estado` y `numero_factura` pasan a solo lectura; `reenviado` y lo del envío
-  salen de los campos. Se borra `EnvioFacturacionSerializer`.
+- `serializers.py`: `estado`, `numero_factura` y los campos de reapertura y anulación salen de la
+  API (si llegan en un pedido, se ignoran). Se borra `EnvioFacturacionSerializer`.
 - `admin.py`: sin cambios (el admin puede seguir viendo el estado guardado).
 - `config/settings.py`, `backend/.env.example` y `render.yaml`: se saca
-  `FACTURACION_CORREO_ADMINISTRACION`, que solo usaban los avisos. `EMAIL_*` queda porque lo usan
-  otras partes.
+  `FACTURACION_CORREO_ADMINISTRACION`, que solo usaban los avisos. `EMAIL_*` queda configurado,
+  pero hoy ninguna funcionalidad manda correos (el plan decía que lo usaban otras partes: no es
+  así). Sacarlo queda para otra unidad.
 
 ### Frontend (`features/facturacion`)
 
@@ -56,13 +57,17 @@ anulación quedan en la base, sin uso desde la app, para no perder lo ya registr
   - La casilla para agrupar aparece en todos los ítems.
   - La cifra «Ítems» deja de decir «sin anulados».
 - `types.ts`: se van `EstadoItem`, `ESTADOS_ITEM`, `etiquetaEstadoItem` y los tipos del envío.
-- `CostosDelItem.tsx` y `PdfOrdenCompra.tsx`: los mensajes de error dejan de esperar el campo
-  `estado`.
+- `CostosDelItem.tsx` y `PdfOrdenCompra.tsx`: sin cambios. El servidor sigue respondiendo con el
+  campo `estado` cuando el ítem está dado de baja, así que sus mensajes de error siguen sirviendo.
 
 ### Documentación
 
 - `docs/aidlc/reglas-de-negocio.md`: "Dónde vive" de RN-022, RN-024, RN-025 y RN-026.
-- `docs/manual/manual-de-uso.md`: Facturación sin estados, envío ni reapertura, y con «Dar de baja».
+- `docs/manual/manual-de-uso.md`: Facturación sin estados, envío ni reapertura, con «Dar de baja»
+  y con el formato nuevo del Excel.
+- `docs/manual/guion-de-capacitacion.md`: el bloque de Facturación y las preguntas RN-022, RN-025
+  y RN-026, que ya no aplican.
+- `docs/operacion/traspaso-de-accesos.md`: el correo para avisos pasa a «no aplica».
 
 ## Fuera de alcance
 
@@ -99,5 +104,16 @@ Ninguna. `makemigrations --check` tiene que seguir sin cambios.
 ## Registro de gates
 
 - Gate 1 (plan): 2026-11-16 — aprobado por Juan Diego
-- Gate 2 (verificación): pendiente
+- Gate 2 (verificación): 2026-11-16 — aprobado por Juan Diego. Salida de los comandos:
+  - `test_baja_item_facturacion.py` fallaba antes del cambio (`12 failed, 1 passed`) y pasa después
+    (`13 passed`); en el frontend, 16 tests de `ItemsPage` fallaban antes y pasan después.
+  - Se borraron 5 archivos de tests de lo retirado y se ajustaron 14 tests a «dado de baja».
+  - `ruff format --check` (`144 files already formatted`), `ruff check` (`All checks passed!`),
+    `mypy backend` (`Success: no issues found in 144 source files`) y `makemigrations --check`
+    (`No changes detected`).
+  - `pytest --cov`: `890 passed in 1064.85s`, coverage total 97,29 %, ningún test salteado.
+  - Frontend: `format:check` (`All matched files use Prettier code style!`), `lint` y `typecheck`
+    sin errores, `test:coverage` con `394 passed` en 50 archivos (sentencias 92,72 %, líneas
+    94,70 %), `build` `✓ built in 1.88s`.
+  - `pre-commit run --all-files`: todos `Passed`, incluido gitleaks.
 - Gate 3 (PR): pendiente
