@@ -886,7 +886,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-016 y HU-017 completas.
-- **Regla de negocio:** Ningún campo es obligatorio para guardar el ítem, igual que en la campaña; los datos se exigen recién al enviar a facturar (HU-066). Campos: mes de facturación (por defecto el mes actual, editable); cliente que factura y CUIT de facturación (precargado desde el cliente, editable por ítem); marca anunciante; descripción del servicio y período del servicio (desde y hasta); cantidad, precio unitario, importe neto y alícuota de IVA; tipo de servicio (alquiler, impresión y colocación, otro); tipo de soporte, Gob/Priv y tipo de venta (F/V); costos incluidos en la factura (un importe) y detalle del costo (texto libre); notas para Administración. El ítem puede vincularse opcionalmente a una campaña; esto es necesario porque "impresión y colocación" no es una reserva. La pantalla se llama «Facturación». El formulario de Nuevo ítem (y el de edición) tiene solo los siete datos de la planilla de Administración (RN-024), en este orden: cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo (el tipo de soporte). El mes de un ítem nuevo es el que está elegido en la lista. Los demás datos del ítem dejan de cargarse desde la pantalla: los ítems que ya los tienen los conservan, y el alta se simplifica a lo que pide Administración. La lista de ítems muestra solo esas siete columnas. Los costos incluidos y su detalle se escriben en el ítem y no tocan el módulo de costos ni la rentabilidad (HU-043, HU-063).
+- **Regla de negocio:** Ningún campo es obligatorio para guardar el ítem, igual que en la campaña; tampoco se exigen después, porque ya no hay envío (HU-066 retirada). Campos: mes de facturación (por defecto el mes actual, editable); cliente que factura y CUIT de facturación (precargado desde el cliente, editable por ítem); marca anunciante; descripción del servicio y período del servicio (desde y hasta); cantidad, precio unitario, importe neto y alícuota de IVA; tipo de servicio (alquiler, impresión y colocación, otro); tipo de soporte, Gob/Priv y tipo de venta (F/V); costos incluidos en la factura (un importe) y detalle del costo (texto libre); notas para Administración. El ítem puede vincularse opcionalmente a una campaña; esto es necesario porque "impresión y colocación" no es una reserva. La pantalla se llama «Facturación». El formulario de Nuevo ítem (y el de edición) tiene solo los siete datos de la planilla de Administración (RN-024), en este orden: cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo (el tipo de soporte). El mes de un ítem nuevo es el que está elegido en la lista. Los demás datos del ítem dejan de cargarse desde la pantalla: los ítems que ya los tienen los conservan, y el alta se simplifica a lo que pide Administración. La lista de ítems muestra solo esas siete columnas. Los costos incluidos y su detalle se escriben en el ítem y no tocan el módulo de costos ni la rentabilidad (HU-043, HU-063). Desde el 2026-11-16 el ítem no tiene estados ni número de factura: se carga, se edita mientras haga falta y se baja en Excel (HU-070). Nunca se borra: si se cargó por error, se da de baja (HU-006).
 - **Criterios de aceptación:**
   1. Dado un ítem sin ningún dato, cuando se guarda, entonces se acepta.
   2. Dado un ítem nuevo, cuando se crea, entonces el mes de facturación es el mes actual y puede cambiarse.
@@ -894,6 +894,8 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   4. Dado un ítem vinculado a una campaña, cuando se vincula, entonces cliente, marca y soporte se precargan desde ella.
   5. Dado un ítem sin campaña, cuando se carga, entonces todos sus datos se completan a mano.
   6. Dado el formulario de Nuevo ítem, cuando se abre, entonces muestra solo cliente, importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo, en ese orden.
+  7. Dado un ítem cargado, cuando se edita, entonces se puede cambiar cualquiera de sus datos: el ítem no tiene estados (HU-065 retirada).
+  8. Dado un ítem dado de baja, cuando se consultan la lista, los totales y el Excel (HU-070), entonces no aparece ni se suma, pero no se borra (HU-006).
   7. Dado un ítem con costos incluidos y detalle del costo escritos a mano, cuando se guarda, entonces se conservan tal cual y no se crea ni cambia ningún costo del módulo de costos.
   8. Dada la lista de ítems, cuando se muestra, entonces sus columnas son solo cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo.
 
@@ -951,10 +953,10 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Criterios de aceptación:**
   1. Dados tres ítems, cuando se agrupan, entonces comparten un mismo grupo de factura visible en cada uno.
   2. Dado un ítem agrupado, cuando se quita del grupo, entonces vuelve a ser independiente.
-  3. Dada la planilla de salida, cuando se genera, entonces los ítems de un mismo grupo aparecen juntos y con el mismo identificador de grupo.
+  3. (sin efecto desde 2026-11-16: la planilla de salida era la del envío de HU-066, que se retiró; la descarga de HU-070 lleva solo las siete columnas de Administración, sin grupo).
   4. Dado un ítem con CUIT distinto del cliente, cuando se guarda, entonces el cliente no cambia y la planilla muestra el CUIT del ítem.
 
-### HU-065 Estados del ítem y número de factura
+### HU-065 Estados del ítem y número de factura (retirada 2026-11-16: no se usan estados ni envío: el ítem se carga y se baja en Excel (HU-070); la baja lógica pasa a HU-060)
 
 - **Actor:** Operativo
 - **Descripción:** Como operador comercial, quiero que cada ítem tenga un estado (Borrador, Enviado a facturar o Facturado) y cargar el número de factura al facturarlo, para reemplazar el "ya facturado" escrito en texto.
@@ -968,7 +970,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   3. Dado un ítem anulado, cuando se consultan totales y reportes, entonces no se suma, pero sigue visible en el histórico.
   4. Dado cualquier rol operativo, cuando mira un ítem, entonces no existe una acción de eliminar.
 
-### HU-066 Cierre de mes y envío a Administración
+### HU-066 Cierre de mes y envío a Administración (retirada 2026-11-16: «Enviar a facturar» se saca; Administración recibe el Excel de HU-070)
 
 - **Actor:** Operativo
 - **Descripción:** Como operador comercial, quiero filtrar los ítems por mes y enviarlos todos a facturar con una planilla en el formato que conoce Administración, para no armar el listado a mano.
@@ -984,7 +986,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   5. Dado un ítem anulado o ya Facturado, cuando se envía el mes, entonces no aparece en la planilla.
   6. Dado un envío realizado, cuando se consulta, entonces queda registrado quién lo hizo, cuándo y qué ítems incluyó.
 
-### HU-067 Reabrir un ítem enviado
+### HU-067 Reabrir un ítem enviado (retirada 2026-11-16: sin envío no hay nada que reabrir ni avisar; un ítem se corrige editándolo)
 
 - **Actor:** Operativo
 - **Descripción:** Como operador comercial, quiero poder reabrir un ítem ya enviado para corregirlo, dejando registro, y que Administración se entere del cambio, para que nadie facture con datos desactualizados.
@@ -1000,18 +1002,18 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   5. Dado un ítem Facturado, cuando se anula, entonces se pide un motivo, queda registrado quién, cuándo y por qué, conserva su número de factura, sale del resumen del mes y Administración recibe un aviso (RN-026).
   6. Dado un ítem Facturado, cuando se intenta reabrir o editar, entonces el sistema lo impide (RN-026).
 
-### HU-070 Descargar la planilla de facturación sin enviar
+### HU-070 Descargar la planilla de facturación
 
 - **Actor:** Operativo
-- **Descripción:** Como operador comercial, quiero descargar en Excel los ítems de la lista de Facturación cuando quiera, para pasárselos a Administración sin tener que enviar el mes a facturar.
+- **Descripción:** Como operador comercial, quiero descargar en Excel los ítems de la lista de Facturación cuando quiera, para pasárselos a Administración con el formato de su planilla.
 - **Prioridad:** Must
 - **Complejidad:** S
 - **Precondición:** HU-060 completa.
-- **Regla de negocio:** La pantalla Facturación tiene un botón «Descargar Excel» que baja un .xlsx con los ítems que muestra la lista según los filtros (por ejemplo, el mes), sin los anulados. Lleva solo las siete columnas de la planilla de Administración, en su orden (RN-024): cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo, con los costos incluidos y el detalle escritos en el ítem (HU-060). Descargar no cambia el estado de ningún ítem. «Enviar a facturar» (HU-066) sigue igual.
+- **Regla de negocio:** La pantalla Facturación tiene un botón «Descargar Excel» que baja un .xlsx con los ítems que muestra la lista según los filtros (por ejemplo, el mes), sin los dados de baja. Lleva solo las siete columnas de la planilla de Administración, en su orden (RN-024): cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo, con los costos incluidos y el detalle escritos en el ítem (HU-060). El archivo reproduce el aspecto de la planilla de Administración (RN-024): «PERIODO:» y el mes sobre fondo naranja; «CARTELERIA» como título sobre fondo verde, combinado a lo ancho de las siete columnas; los títulos de las columnas en negrita, centrados, con ajuste de texto y fondo amarillo claro; todas las celdas de la tabla con borde; los importes como «$ 450.000» (sin decimales a la vista, aunque el valor los conserve); debajo, la fila de totales con fondo durazno y la fila «Neto»; y anchos de columna que dejan leer cada dato.
 - **Criterios de aceptación:**
-  1. Dada la lista filtrada por un mes, cuando se usa «Descargar Excel», entonces se baja un .xlsx con una fila por cada ítem de la lista, sin los anulados.
+  1. Dada la lista filtrada por un mes, cuando se usa «Descargar Excel», entonces se baja un .xlsx con una fila por cada ítem de la lista, sin los dados de baja.
   2. Dado el archivo descargado, cuando se abre, entonces tiene solo las siete columnas, en el orden de la planilla de Administración.
-  3. Dados ítems en Borrador, cuando se descargan, entonces siguen en Borrador.
+  3. Dado el archivo descargado, cuando se abre, entonces el período, el título, los títulos de columna, los totales y el neto tienen el formato de la planilla de Administración, y los importes se ven como «$ 450.000».
   4. Dada una lista sin ítems, cuando se usa «Descargar Excel», entonces se baja el archivo con los títulos de las columnas y sin filas.
   5. Dado un usuario de Lectura, cuando entra a Facturación, entonces también puede descargar el Excel.
 
