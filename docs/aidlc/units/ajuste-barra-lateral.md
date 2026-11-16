@@ -1,6 +1,6 @@
 # Unidad: ajuste-barra-lateral
 
-- **Estado:** en revisión · **Épica:** E12 Rediseño visual · **App dueña:** `frontend`
+- **Estado:** mergeada · **Épica:** E12 Rediseño visual · **App dueña:** `frontend`
 - **Origen:** pedido de Juan Diego (2026-11-16), HU-001 y HU-007 ajustadas en el PR #131 ·
   **Rama:** `fix/frontend-ocultar-parametros-auditoria`
 

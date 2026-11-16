@@ -1,6 +1,6 @@
 # Unidad: facturacion-sin-estados
 
-- **Estado:** en curso · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
+- **Estado:** mergeada · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
 - **Origen:** pedido de Juan Diego (2026-11-16): HU-065, HU-066 y HU-067 retiradas, HU-060 y HU-064
   ajustadas en el PR de historias `docs/historias-facturacion-sin-estados` ·
   **Rama:** `feature/facturacion-sin-estados`
@@ -116,4 +116,4 @@ Ninguna. `makemigrations --check` tiene que seguir sin cambios.
     sin errores, `test:coverage` con `394 passed` en 50 archivos (sentencias 92,72 %, líneas
     94,70 %), `build` `✓ built in 1.88s`.
   - `pre-commit run --all-files`: todos `Passed`, incluido gitleaks.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #135 (2026-11-16), pedido por Juan Diego; mergeado el mismo día
