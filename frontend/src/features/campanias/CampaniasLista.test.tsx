@@ -18,6 +18,7 @@ const campanias: Campania[] = [
     fecha_inicio: '2027-01-01',
     fecha_fin: '2027-01-31',
     estado: 'confirmada',
+    ordenes_publicidad: [],
   },
   {
     id: 12,
@@ -30,6 +31,7 @@ const campanias: Campania[] = [
     fecha_inicio: null,
     fecha_fin: null,
     estado: 'cancelada',
+    ordenes_publicidad: [],
   },
 ]
 

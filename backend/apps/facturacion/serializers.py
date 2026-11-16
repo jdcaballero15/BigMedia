@@ -40,6 +40,7 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
     anulado_por_nombre = serializers.CharField(
         source="anulado_por.username", read_only=True, default=None
     )
+    cliente_razon_social = serializers.SerializerMethodField()
     costo_total = serializers.SerializerMethodField()
     neto_final = serializers.SerializerMethodField()
     # Se acepta con o sin guiones y se guardan los 11 dígitos (como en clientes).
@@ -52,6 +53,7 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
             "mes",
             "cliente",
             "cliente_nombre",
+            "cliente_razon_social",
             "cuit_facturacion",
             "marca",
             "marca_nombre",
@@ -74,6 +76,8 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
             "sector_nombre",
             "tipo_venta",
             "tipo_venta_nombre",
+            "costos_incluidos",
+            "detalle_costo",
             "notas",
             "orden_compra_numero",
             "orden_compra_fecha",
@@ -102,6 +106,9 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
         except OrdenCompraPdf.DoesNotExist:
             return None
         return {"nombre": pdf.nombre, "tamanio": pdf.tamanio}
+
+    def get_cliente_razon_social(self, item: ItemFacturacion) -> str | None:
+        return services.cliente_razon_social(item)
 
     def get_costo_total(self, item: ItemFacturacion) -> str:
         return f"{services.costo_total(item):.2f}"

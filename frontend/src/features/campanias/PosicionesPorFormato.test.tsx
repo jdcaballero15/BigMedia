@@ -298,3 +298,10 @@ test('agregar carteles abre la tanda de esa línea con las fechas de la campaña
   fireEvent.click(within(tanda).getByRole('button', { name: 'Cerrar' }))
   expect(screen.queryByRole('region', { name: 'Agregar carteles' })).toBeNull()
 })
+
+test('el alta de línea tiene espacio interior dentro de la tarjeta', async () => {
+  stubFetch()
+  render(<PosicionesPorFormato campaniaId={5} />)
+  const alta = await screen.findByRole('form', { name: 'Agregar línea de formato' })
+  expect(alta.classList.contains('card-cuerpo')).toBe(true)
+})

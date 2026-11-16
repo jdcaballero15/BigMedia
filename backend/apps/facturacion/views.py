@@ -179,7 +179,7 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
 
     def get_queryset(self) -> QuerySet[ItemFacturacion]:
         queryset = super().get_queryset()
-        if self.action != "list":
+        if self.action not in ("list", "planilla"):
             return queryset
         # En el listado, el costo total viene sumado en la consulta (HU-063).
         queryset = services.con_costo_total(queryset)
@@ -194,6 +194,22 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
             if params.get(campo):
                 queryset = queryset.filter(**{f"{campo}_id": _id_positivo(params[campo], campo)})
         return queryset
+
+    @action(detail=False, methods=["get"])
+    def planilla(self, request: Request) -> HttpResponse:
+        """«Descargar Excel» de la lista con sus filtros, sin los anulados (HU-070).
+
+        No envía los ítems a facturar ni les cambia el estado.
+        """
+        items = self.get_queryset().exclude(estado=ItemFacturacion.Estado.ANULADO)
+        mes = request.query_params.get("mes")
+        periodo = _mes(mes) if mes else None
+        nombre = f"facturacion-{periodo:%Y-%m}.xlsx" if periodo else "facturacion.xlsx"
+        return HttpResponse(
+            services.planilla_de_lista_xlsx(items, periodo),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f'attachment; filename="{nombre}"'},
+        )
 
     @action(detail=True, methods=["post"], url_path="quitar-del-grupo")
     def quitar_del_grupo(self, request: Request, pk: str) -> Response:

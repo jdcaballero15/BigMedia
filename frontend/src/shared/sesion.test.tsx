@@ -26,6 +26,7 @@ const campania: Campania = {
   fecha_inicio: null,
   fecha_fin: null,
   estado: 'cotizada',
+  ordenes_publicidad: [],
 }
 
 const pantallas: [string, () => ReactNode, string][] = [

@@ -10,6 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "Django>=5.2,<6",
     "dj-database-url>=2,<4",
+    "django-storages[s3]>=1.14,<2",
     "djangorestframework>=3.16,<4",
     "gunicorn>=23,<25",
     "openpyxl>=3.1,<4",

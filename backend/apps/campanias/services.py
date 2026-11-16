@@ -1,13 +1,23 @@
 """Reglas de negocio de campañas."""
 
+from __future__ import annotations
+
+from django.conf import settings
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import UploadedFile
+from django.db import transaction
+from django.utils import timezone
 
 from apps.auditoria import services as auditoria_services
 from apps.auditoria.models import RegistroAuditoria
 from apps.clientes.models import Cliente, Contacto, Marca
 from apps.inventario.models import Formato
 
-from .models import Campania, LineaFormato
+from .models import Campania, LineaFormato, OrdenPublicidad
+
+# Campo con el que la auditoría de la campaña registra adjuntar y dar de baja una orden.
+CAMPO_AUDITORIA_OP = "orden_publicidad"
 
 
 def validar_confirmacion(campania: Campania) -> None:
@@ -106,3 +116,62 @@ def validar_linea_formato(
         repetidas = repetidas.exclude(pk=actual.pk)
     if repetidas.exists():
         raise ValidationError({"formato": f"La campaña ya tiene una línea de {formato.nombre}."})
+
+
+def validar_ordenes_publicidad(archivos: list[UploadedFile[bytes]]) -> None:
+    """Solo PDF y hasta el tamaño máximo configurado (HU-069, criterio 4).
+
+    Se valida todo antes de guardar nada: si un archivo falla, no se toca la base.
+    """
+    maximo = settings.CAMPANIAS_OP_MAX_MB
+    for archivo in archivos:
+        nombre = archivo.name or ""
+        archivo.seek(0)
+        es_pdf = nombre.lower().endswith(".pdf") and archivo.read(5) == b"%PDF-"
+        archivo.seek(0)
+        if not es_pdf:
+            raise ValidationError({"ordenes_publicidad": "El archivo tiene que ser un PDF."})
+        if (archivo.size or 0) > maximo * 1024 * 1024:
+            raise ValidationError(
+                {
+                    "ordenes_publicidad": (
+                        f"El PDF «{nombre}» supera el tamaño máximo de {maximo} MB."
+                    )
+                }
+            )
+
+
+def adjuntar_ordenes_publicidad(
+    campania: Campania, archivos: list[UploadedFile[bytes]], usuario: AbstractBaseUser
+) -> None:
+    """Sube cada PDF al almacenamiento y lo registra en la campaña, auditado (HU-069)."""
+    for archivo in archivos:
+        nombre = (archivo.name or "")[:255]
+        orden = OrdenPublicidad(
+            campania=campania, nombre=nombre, tamanio=archivo.size or 0, subida_por_id=usuario.pk
+        )
+        orden.archivo.save(nombre, archivo, save=False)
+        orden.save()
+        auditoria_services.registrar_cambios(
+            "campania", campania.pk, {CAMPO_AUDITORIA_OP: ""}, {CAMPO_AUDITORIA_OP: nombre}, usuario
+        )
+
+
+def dar_de_baja_orden_publicidad(orden_id: int, usuario: AbstractBaseUser) -> OrdenPublicidad:
+    """Baja lógica: deja de estar vigente, pero el archivo y la fila quedan (HU-006, HU-069)."""
+    with transaction.atomic():
+        orden = OrdenPublicidad.objects.select_for_update().get(pk=orden_id)
+        if not orden.activa:
+            return orden
+        orden.activa = False
+        orden.dada_de_baja_por_id = usuario.pk
+        orden.dada_de_baja_en = timezone.now()
+        orden.save(update_fields=["activa", "dada_de_baja_por_id", "dada_de_baja_en"])
+        auditoria_services.registrar_cambios(
+            "campania",
+            orden.campania_id,
+            {CAMPO_AUDITORIA_OP: orden.nombre},
+            {CAMPO_AUDITORIA_OP: ""},
+            usuario,
+        )
+    return orden

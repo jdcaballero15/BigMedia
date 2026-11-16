@@ -1,66 +1,39 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { ApiError, apiGet } from '../../shared/api'
-import CampoFecha from '../../shared/CampoFecha'
-import { erroresDeFechas } from '../../shared/fechas'
+import { ApiError } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import { vigentes } from '../../shared/opciones'
-import type { Campania } from '../campanias/types'
-import type { Cliente, Marca } from '../clientes/types'
-import CostosDelItem from './CostosDelItem'
-import PdfOrdenCompra from './PdfOrdenCompra'
+import type { Cliente } from '../clientes/types'
 import type { CatalogosFacturacion, ItemFacturacion } from './types'
-import { TIPOS_SERVICIO, mesActual } from './types'
 
 export type ItemInput = Record<string, string | number | null>
 
 type Props = {
   item: ItemFacturacion | null
+  /** Mes elegido en la lista (`AAAA-MM`): es el mes de un ítem nuevo. */
+  mes: string
   clientes: Cliente[]
-  marcas: Marca[]
-  campanias: Campania[]
   catalogos: CatalogosFacturacion
   onSave: (input: ItemInput) => Promise<void>
   onCancel: () => void
-  onPdfCambiado?: () => void
-  onCostosCambiados?: () => void
 }
 
 type Datos = Record<string, string>
 
-const CAMPOS_ID = ['cliente', 'marca', 'campania', 'sector', 'tipo_venta']
-const CAMPOS_NULLABLES = [
-  'cantidad',
-  'precio_unitario',
-  'neto',
-  'periodo_desde',
-  'periodo_hasta',
-  'orden_compra_fecha',
-]
+const CAMPOS_ID = ['cliente', 'sector', 'tipo_venta']
+const IMPORTES = ['neto', 'costos_incluidos']
 
 function datosIniciales(item: ItemFacturacion | null): Datos {
   const texto = (valor: string | number | null | undefined) =>
     valor === null || valor === undefined ? '' : String(valor)
   return {
-    mes: item ? texto(item.mes).slice(0, 7) : mesActual(),
     cliente: texto(item?.cliente),
-    cuit_facturacion: item?.cuit_facturacion ?? '',
-    marca: texto(item?.marca),
-    campania: texto(item?.campania),
-    descripcion: item?.descripcion ?? '',
-    periodo_desde: texto(item?.periodo_desde),
-    periodo_hasta: texto(item?.periodo_hasta),
-    cantidad: texto(item?.cantidad),
-    precio_unitario: texto(item?.precio_unitario),
     neto: texto(item?.neto),
-    alicuota_iva: item?.alicuota_iva ?? '21.00',
-    tipo_servicio: item?.tipo_servicio ?? '',
-    tipo_soporte: item?.tipo_soporte ?? '',
-    sector: texto(item?.sector),
+    costos_incluidos: texto(item?.costos_incluidos),
+    detalle_costo: item?.detalle_costo ?? '',
     tipo_venta: texto(item?.tipo_venta),
-    notas: item?.notas ?? '',
-    orden_compra_numero: item?.orden_compra_numero ?? '',
-    orden_compra_fecha: texto(item?.orden_compra_fecha),
+    sector: texto(item?.sector),
+    tipo_soporte: item?.tipo_soporte ?? '',
   }
 }
 
@@ -72,20 +45,20 @@ function conElegida(opciones: Opcion[], id: number | null | undefined, nombre?: 
   return [...opciones, { id, nombre: `${nombre ?? `#${id}`} (inactivo)` }]
 }
 
-/** Lo que viaja a la API: vacío es null en IDs, importes y fechas; el mes, su primer día. */
-function aEntrada(datos: Datos): ItemInput {
-  const entrada: ItemInput = { ...datos, mes: datos.mes ? `${datos.mes}-01` : null }
+/** Lo que viaja a la API: vacío es null en IDs e importes; un ítem nuevo lleva el mes elegido. */
+function aEntrada(datos: Datos, mesNuevo: string | null): ItemInput {
+  const entrada: ItemInput = { ...datos }
   for (const campo of CAMPOS_ID) entrada[campo] = datos[campo] ? Number(datos[campo]) : null
-  for (const campo of CAMPOS_NULLABLES) entrada[campo] = datos[campo].trim() || null
+  for (const campo of IMPORTES) entrada[campo] = datos[campo].trim() || null
+  if (mesNuevo) entrada.mes = `${mesNuevo}-01`
   return entrada
 }
 
-/** Alta y edición de un ítem a facturar: precargas (HU-060), OC (HU-062) y costos (HU-063). */
+/** Alta y edición de un ítem: solo los siete datos de la planilla de Administración (HU-060,
+ * RN-024). Lo demás que ya tenga un ítem no viaja, así que no se pisa al editarlo. */
 export default function ItemForm(props: Props) {
-  const { item, clientes, marcas, campanias, catalogos, onSave, onCancel } = props
-  const { onPdfCambiado, onCostosCambiados } = props
+  const { item, mes, clientes, catalogos, onSave, onCancel } = props
   const [datos, setDatos] = useState<Datos>(() => datosIniciales(item))
-  const [netoTocado, setNetoTocado] = useState(false)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -93,53 +66,13 @@ export default function ItemForm(props: Props) {
   const cambiar = (campo: string, valor: string) =>
     setDatos((actuales) => ({ ...actuales, [campo]: valor }))
 
-  /** Cambiar cantidad o precio vacía el neto que no se cargó a mano: lo recalcula el servidor. */
-  function cambiarBase(campo: string, valor: string) {
-    setDatos((actuales) => ({ ...actuales, [campo]: valor, ...(netoTocado ? {} : { neto: '' }) }))
-  }
-
-  /** Precarga el CUIT del cliente si el ítem todavía no tiene uno (criterio 3). */
-  function elegirCliente(valor: string) {
-    const cuit = clientes.find((c) => String(c.id) === valor)?.cuit ?? ''
-    setDatos((actuales) => ({
-      ...actuales,
-      cliente: valor,
-      cuit_facturacion: actuales.cuit_facturacion || cuit,
-    }))
-  }
-
-  /** Precarga cliente, marca y soporte de la campaña sin pisar lo ya cargado (criterio 4). */
-  async function elegirCampania(valor: string) {
-    cambiar('campania', valor)
-    const campania = campanias.find((c) => String(c.id) === valor)
-    if (!campania) return
-    const cliente = clientes.find((c) => c.id === campania.cliente_factura)
-    setDatos((actuales) => ({
-      ...actuales,
-      cliente: actuales.cliente || String(campania.cliente_factura ?? ''),
-      cuit_facturacion: actuales.cuit_facturacion || (cliente?.cuit ?? ''),
-      marca: actuales.marca || String(campania.marca ?? ''),
-    }))
-    const lineas = await apiGet<{ formato_nombre: string }[]>(
-      `/api/campanias/lineas-formato/?campania=${campania.id}`,
-    ).catch(() => [])
-    const soporte = lineas.map((linea) => linea.formato_nombre).join(', ')
-    setDatos((actuales) => ({ ...actuales, tipo_soporte: actuales.tipo_soporte || soporte }))
-  }
-
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setGeneralError('')
-    const fechasInvalidas = erroresDeFechas({
-      periodo_desde: datos.periodo_desde,
-      periodo_hasta: datos.periodo_hasta,
-      orden_compra_fecha: datos.orden_compra_fecha,
-    })
-    setErrors(fechasInvalidas)
-    if (Object.keys(fechasInvalidas).length > 0) return
+    setErrors({})
     setSaving(true)
     try {
-      await onSave(aEntrada(datos))
+      await onSave(aEntrada(datos, item ? null : mes))
     } catch (cause) {
       if (cause instanceof ApiError) setErrors(cause.fields)
       setGeneralError(cause instanceof Error ? cause.message : 'No se pudo guardar el ítem.')
@@ -160,6 +93,13 @@ export default function ItemForm(props: Props) {
     </label>
   )
 
+  const opciones = (lista: Opcion[]) =>
+    lista.map((opcion) => (
+      <option key={opcion.id} value={opcion.id}>
+        {opcion.nombre}
+      </option>
+    ))
+
   return (
     <form
       className="card edit-form section-gap"
@@ -174,121 +114,24 @@ export default function ItemForm(props: Props) {
         </button>
       </div>
       <div className="form-grid">
-        {campoTexto('mes', 'Mes de facturación', { type: 'month' })}
         <label>
-          Campaña
+          Cliente (razón social)
           <select
-            value={datos.campania}
-            onChange={(event) => void elegirCampania(event.target.value)}
+            value={datos.cliente}
+            onChange={(event) => cambiar('cliente', event.target.value)}
           >
-            <option value="">Sin campaña</option>
-            {campanias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre || `Campaña #${c.id}`}
-              </option>
-            ))}
-          </select>
-          <FieldErrors messages={errors.campania} />
-        </label>
-        <label>
-          Cliente que factura
-          <select value={datos.cliente} onChange={(event) => elegirCliente(event.target.value)}>
             <option value="">Sin cliente</option>
             {vigentes(clientes, item?.cliente).map((c) => (
               <option key={c.id} value={c.id}>
-                {c.nombre_visible}
+                {c.razon_social || c.nombre_visible}
               </option>
             ))}
           </select>
           <FieldErrors messages={errors.cliente} />
         </label>
-        {campoTexto('cuit_facturacion', 'CUIT de facturación')}
-        <label>
-          Marca
-          <select value={datos.marca} onChange={(event) => cambiar('marca', event.target.value)}>
-            <option value="">Sin marca</option>
-            {vigentes(marcas, item?.marca).map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.nombre}
-              </option>
-            ))}
-          </select>
-          <FieldErrors messages={errors.marca} />
-        </label>
-        <label>
-          Tipo de servicio
-          <select
-            value={datos.tipo_servicio}
-            onChange={(event) => cambiar('tipo_servicio', event.target.value)}
-          >
-            <option value="">Sin definir</option>
-            {TIPOS_SERVICIO.map((tipo) => (
-              <option key={tipo.value} value={tipo.value}>
-                {tipo.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        {campoTexto('descripcion', 'Descripción del servicio')}
-        <CampoFecha
-          label="Período desde"
-          value={datos.periodo_desde}
-          onChange={(valor) => cambiar('periodo_desde', valor)}
-          errores={errors.periodo_desde}
-        />
-        <CampoFecha
-          label="Período hasta"
-          value={datos.periodo_hasta}
-          onChange={(valor) => cambiar('periodo_hasta', valor)}
-          errores={errors.periodo_hasta}
-        />
-        <label>
-          Cantidad
-          <input
-            inputMode="decimal"
-            value={datos.cantidad}
-            onChange={(event) => cambiarBase('cantidad', event.target.value)}
-          />
-          <FieldErrors messages={errors.cantidad} />
-        </label>
-        <label>
-          Precio unitario
-          <input
-            inputMode="decimal"
-            value={datos.precio_unitario}
-            onChange={(event) => cambiarBase('precio_unitario', event.target.value)}
-          />
-          <FieldErrors messages={errors.precio_unitario} />
-        </label>
-        <label>
-          Importe neto
-          <input
-            inputMode="decimal"
-            aria-label="Importe neto"
-            value={datos.neto}
-            placeholder="Cantidad × precio"
-            onChange={(event) => {
-              setNetoTocado(true)
-              cambiar('neto', event.target.value)
-            }}
-          />
-          <small className="muted">Vacío: se calcula como cantidad × precio unitario.</small>
-          <FieldErrors messages={errors.neto} />
-        </label>
-        {campoTexto('alicuota_iva', 'Alícuota de IVA (%)', { inputMode: 'decimal' })}
-        {campoTexto('tipo_soporte', 'Tipo de soporte')}
-        <label>
-          Gob/Priv
-          <select value={datos.sector} onChange={(event) => cambiar('sector', event.target.value)}>
-            <option value="">Sin definir</option>
-            {conElegida(catalogos.sectores, item?.sector, item?.sector_nombre).map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.nombre}
-              </option>
-            ))}
-          </select>
-          <FieldErrors messages={errors.sector} />
-        </label>
+        {campoTexto('neto', 'Importe neto total', { inputMode: 'decimal' })}
+        {campoTexto('costos_incluidos', 'Costos incluidos', { inputMode: 'decimal' })}
+        {campoTexto('detalle_costo', 'Detalle costo')}
         <label>
           Tipo de venta
           <select
@@ -296,40 +139,19 @@ export default function ItemForm(props: Props) {
             onChange={(event) => cambiar('tipo_venta', event.target.value)}
           >
             <option value="">Sin definir</option>
-            {conElegida(catalogos.tipos_venta, item?.tipo_venta, item?.tipo_venta_nombre).map(
-              (t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nombre}
-                </option>
-              ),
-            )}
+            {opciones(conElegida(catalogos.tipos_venta, item?.tipo_venta, item?.tipo_venta_nombre))}
           </select>
           <FieldErrors messages={errors.tipo_venta} />
         </label>
-        {campoTexto('orden_compra_numero', 'Número de orden de compra')}
-        <CampoFecha
-          label="Fecha de aprobación de la OC"
-          value={datos.orden_compra_fecha}
-          onChange={(valor) => cambiar('orden_compra_fecha', valor)}
-          errores={errors.orden_compra_fecha}
-        />
-        <PdfOrdenCompra
-          itemId={item?.id ?? null}
-          pdf={item?.orden_compra_pdf ?? null}
-          onCambio={() => onPdfCambiado?.()}
-        />
-        <CostosDelItem
-          itemId={item?.id ?? null}
-          campania={item?.campania ?? null}
-          onCambio={() => onCostosCambiados?.()}
-        />
-        <label className="wide">
-          Notas para Administración
-          <textarea
-            value={datos.notas}
-            onChange={(event) => cambiar('notas', event.target.value)}
-          />
+        <label>
+          Gob/Priv
+          <select value={datos.sector} onChange={(event) => cambiar('sector', event.target.value)}>
+            <option value="">Sin definir</option>
+            {opciones(conElegida(catalogos.sectores, item?.sector, item?.sector_nombre))}
+          </select>
+          <FieldErrors messages={errors.sector} />
         </label>
+        {campoTexto('tipo_soporte', 'Tipo')}
       </div>
       {generalError && (
         <p className="error" role="alert">

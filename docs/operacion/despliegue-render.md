@@ -62,6 +62,12 @@ Orden recomendado:
    - `DATABASE_URL` de `bigmedia-web-staging`: la URL directa de Neon.
    - `DJANGO_SUPERUSER_USERNAME` y `DJANGO_SUPERUSER_PASSWORD`, para cada entorno (pueden ser
      distintos). Contraseñas largas y únicas; no las guardes en el repositorio ni las mandes por chat.
+   - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` y `R2_BUCKET`, para cada entorno,
+     con su propio bucket (`bigmedia-prod` y `bigmedia-staging`). Salen de Cloudflare → **R2**: el
+     Account ID está en la página de R2 y las claves, en un token de API con permiso **Object Read &
+     Write** limitado a ese bucket ([ADR-0011](../adr/0011-orden-de-publicidad-en-cloudflare-r2.md)).
+     Sin `R2_BUCKET`, las órdenes de publicidad se guardan en el disco del servicio y se pierden en
+     el próximo deploy.
    - `DJANGO_DEMO_PASSWORD`, solo en staging y opcional: la contraseña de los usuarios de demo. Tiene
      que estar cargada antes del primer arranque con el lote demo, porque los usuarios se crean junto
      con ese lote.
@@ -126,6 +132,8 @@ inventario real.
 - Antes de usar el sistema como fuente de datos real, iniciar una restauración de prueba hacia **una nueva instancia**. Comprobar allí las tablas y registros de `django_migrations`; no cambiar la conexión de producción para esta prueba. La instancia temporal puede generar un cargo hasta que se elimine.
 - Antes de una migración de riesgo, crear una exportación lógica desde **Recovery → Create export**, descargarla y guardarla en almacenamiento privado bajo control de Big Media. Render conserva esas exportaciones en su panel durante siete días; descargar una copia para retención mayor.
 - Si se necesita recuperar producción, crear una instancia restaurada, verificar sus datos, cambiar `DATABASE_URL` del servicio web hacia ella y comprobar salud e inicio de sesión antes de retirar la instancia anterior. Un rollback de código **no revierte** una migración de base.
+- Los PDF de las órdenes de publicidad no están en la base sino en Cloudflare R2, así que no entran
+  en estas copias. Para poder recuperarlos, activar una copia del bucket desde el panel de R2.
 - Si Big Media necesita conservar copias por más de tres días de manera continua, definir y probar una copia externa periódica antes de depender exclusivamente del sistema.
 
 ## Operación diaria

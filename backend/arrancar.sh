@@ -8,4 +8,5 @@ python manage.py asegurar_admin
 if [ "$DJANGO_ENV" = "staging" ]; then
   python manage.py cargar_datos_ejemplo
 fi
-exec gunicorn config.wsgi:application --bind "0.0.0.0:${PORT:-10000}"
+# --access-logfile -: cada pedido (método, ruta y status) queda en los logs de Render.
+exec gunicorn config.wsgi:application --bind "0.0.0.0:${PORT:-10000}" --access-logfile -

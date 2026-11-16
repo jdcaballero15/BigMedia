@@ -2,6 +2,7 @@ import { useState } from 'react'
 import ReservasCampania from '../reservas/ReservasCampania'
 import RentabilidadCampania from '../costos/RentabilidadCampania'
 import InteraccionesLista from './InteraccionesLista'
+import OrdenesPublicidad from './OrdenesPublicidad'
 import PosicionesPorFormato from './PosicionesPorFormato'
 import type { Campania } from './types'
 import { etiquetaEstado } from './types'
@@ -43,7 +44,7 @@ export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props)
           )}
         </div>
       </div>
-      <div className="card">
+      <div className="card card-cuerpo section-gap">
         <dl className="detail-grid">
           <div>
             <dt>Estado</dt>
@@ -63,6 +64,7 @@ export default function CampaniaDetalle({ campania, onEditar, onVolver }: Props)
           </div>
         </dl>
       </div>
+      <OrdenesPublicidad ordenes={campania.ordenes_publicidad} />
       <PosicionesPorFormato
         campaniaId={campania.id}
         fechaInicio={campania.fecha_inicio}

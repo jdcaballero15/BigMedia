@@ -168,7 +168,11 @@ function AltaLinea({ campaniaId, formatos, onGuardada }: AltaProps) {
   }
 
   return (
-    <form className="form-grid" aria-label="Agregar línea de formato" onSubmit={guardar}>
+    <form
+      className="form-grid card-cuerpo"
+      aria-label="Agregar línea de formato"
+      onSubmit={guardar}
+    >
       <label>
         Formato
         <select value={formato} onChange={(event) => setFormato(event.target.value)}>

@@ -2,7 +2,7 @@
 
 Oct 14, 2026 · @Juan Diego
 
-Este documento define 68 historias de usuario, agrupadas en 12 épicas, que cubren los requisitos vigentes del sistema de reservas de espacios publicitarios de vía pública (OOH) de Big Media Argentina, pensado como una aplicación desarrollada desde cero y sin dependencia de una plataforma de terceros. El objetivo central es **evitar la doble reserva de un cartel en fechas superpuestas** y conservar un historial que permita analizar la rentabilidad por cartel y por cliente.
+Este documento define 70 historias de usuario, agrupadas en 12 épicas, que cubren los requisitos vigentes del sistema de reservas de espacios publicitarios de vía pública (OOH) de Big Media Argentina, pensado como una aplicación desarrollada desde cero y sin dependencia de una plataforma de terceros. El objetivo central es **evitar la doble reserva de un cartel en fechas superpuestas** y conservar un historial que permita analizar la rentabilidad por cartel y por cliente.
 
 ## Cómo leer las historias
 
@@ -28,14 +28,14 @@ Este documento define 68 historias de usuario, agrupadas en 12 épicas, que cubr
 | E1 | Seguridad y acceso | HU-003 a HU-007 |
 | E2 | Inventario de soportes | HU-008 a HU-015 |
 | E3 | Clientes, marcas y CRM | HU-016 a HU-022 y HU-068 |
-| E4 | Campañas | HU-023 a HU-027 |
+| E4 | Campañas | HU-023 a HU-027 y HU-069 |
 | E5 | Reservas y motor de disponibilidad | HU-028 a HU-040 |
 | E6 | Vista de disponibilidad | HU-041 a HU-042 |
 | E7 | Costos y rentabilidad | HU-043 a HU-046 |
 | E8 | Reportes y paneles | HU-047 a HU-052 |
 | E9 | Entrega y traspaso | HU-053 a HU-054 |
 | E10 | Armado de campañas y reserva masiva | HU-055 a HU-059 |
-| E11 | Facturación mensual | HU-060 a HU-067 |
+| E11 | Facturación mensual | HU-060 a HU-067 y HU-070 |
 
 La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta alrededor de ella y nunca adentro.
 
@@ -416,6 +416,24 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   1. Dada una campaña sin cliente propio, cuando se consulta quién factura, entonces es el cliente de la marca.
   2. Dada una campaña con cliente propio, cuando se consulta, entonces es el indicado.
   3. Dado un cambio de cliente en una marca, cuando se guarda, entonces las campañas anteriores conservan su cliente original.
+
+### HU-069 Orden de publicidad de la campaña
+
+- **Actor:** Operativo
+- **Descripción:** Como operador comercial, quiero adjuntar a la campaña la orden de publicidad que manda el cliente, para tener a mano lo que el cliente aprobó.
+- **Prioridad:** Should
+- **Complejidad:** M
+- **Precondición:** HU-023 completa.
+- **Regla de negocio:** La orden de publicidad se adjunta en el mismo formulario de la campaña, tanto al crearla (Nueva campaña) como al editarla, y después se abre desde la campaña. Es opcional: no todos los clientes la mandan y no se exige para guardar ni para confirmar la campaña. Si el PDF se rechaza, la campaña no se guarda a medias: se muestra el error y no se pierde lo cargado en el formulario. Una campaña puede tener varias, porque el cliente a veces manda una corregida o una por etapa. Se acepta solo PDF, de hasta 10 páginas en la práctica, con un tamaño máximo configurable. Adjuntan y dan de baja Operativo y Administrador; Lectura solo las abre. Una orden no se borra: se da de baja (HU-006) y sigue en el histórico de la campaña. El archivo no es público: se abre solo con sesión iniciada, y el permiso se verifica en el servidor. Se guarda fuera de la base, en almacenamiento de objetos ([ADR-0011](../../adr/0011-orden-de-publicidad-en-cloudflare-r2.md)).
+- **Criterios de aceptación:**
+  1. Dado el formulario de Nueva campaña, cuando el operativo adjunta un PDF y guarda, entonces la campaña se crea con esa orden de publicidad.
+  2. Dada una campaña con orden de publicidad, cuando se abre, entonces se ve la lista de sus órdenes, con su nombre, quién la subió y cuándo, y cada una se puede abrir desde ahí.
+  3. Dada una campaña existente, cuando el operativo la edita y adjunta otro PDF, entonces se conservan las dos órdenes.
+  4. Dado un archivo que no es PDF o supera el tamaño máximo, cuando se intenta guardar la campaña, entonces se rechaza con un mensaje claro, la campaña no se guarda a medias y el formulario conserva lo cargado.
+  5. Dada una orden de publicidad dada de baja, cuando se abre la campaña, entonces ya no aparece entre las vigentes, pero sigue en el histórico.
+  6. Dado un usuario de Lectura, cuando abre la campaña, entonces puede abrir las órdenes, pero no adjuntar ni dar de baja.
+  7. Dado alguien sin sesión iniciada, cuando pide el archivo, entonces se le niega.
+  8. Dada una campaña sin orden de publicidad, cuando se guarda o se confirma, entonces se acepta igual.
 
 # E5 - Reservas y motor de disponibilidad
 
@@ -868,13 +886,16 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-016 y HU-017 completas.
-- **Regla de negocio:** Ningún campo es obligatorio para guardar el ítem, igual que en la campaña; los datos se exigen recién al enviar a facturar (HU-066). Campos: mes de facturación (por defecto el mes actual, editable); cliente que factura y CUIT de facturación (precargado desde el cliente, editable por ítem); marca anunciante; descripción del servicio y período del servicio (desde y hasta); cantidad, precio unitario, importe neto y alícuota de IVA; tipo de servicio (alquiler, impresión y colocación, otro); tipo de soporte, Gob/Priv y tipo de venta (F/V); notas para Administración. El ítem puede vincularse opcionalmente a una campaña; esto es necesario porque "impresión y colocación" no es una reserva.
+- **Regla de negocio:** Ningún campo es obligatorio para guardar el ítem, igual que en la campaña; los datos se exigen recién al enviar a facturar (HU-066). Campos: mes de facturación (por defecto el mes actual, editable); cliente que factura y CUIT de facturación (precargado desde el cliente, editable por ítem); marca anunciante; descripción del servicio y período del servicio (desde y hasta); cantidad, precio unitario, importe neto y alícuota de IVA; tipo de servicio (alquiler, impresión y colocación, otro); tipo de soporte, Gob/Priv y tipo de venta (F/V); costos incluidos en la factura (un importe) y detalle del costo (texto libre); notas para Administración. El ítem puede vincularse opcionalmente a una campaña; esto es necesario porque "impresión y colocación" no es una reserva. La pantalla se llama «Facturación». El formulario de Nuevo ítem (y el de edición) tiene solo los siete datos de la planilla de Administración (RN-024), en este orden: cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo (el tipo de soporte). El mes de un ítem nuevo es el que está elegido en la lista. Los demás datos del ítem dejan de cargarse desde la pantalla: los ítems que ya los tienen los conservan, y el alta se simplifica a lo que pide Administración. La lista de ítems muestra solo esas siete columnas. Los costos incluidos y su detalle se escriben en el ítem y no tocan el módulo de costos ni la rentabilidad (HU-043, HU-063).
 - **Criterios de aceptación:**
   1. Dado un ítem sin ningún dato, cuando se guarda, entonces se acepta.
   2. Dado un ítem nuevo, cuando se crea, entonces el mes de facturación es el mes actual y puede cambiarse.
   3. Dado un cliente elegido, cuando se carga, entonces el CUIT se precarga desde el cliente y puede editarse en el ítem sin modificar al cliente.
   4. Dado un ítem vinculado a una campaña, cuando se vincula, entonces cliente, marca y soporte se precargan desde ella.
   5. Dado un ítem sin campaña, cuando se carga, entonces todos sus datos se completan a mano.
+  6. Dado el formulario de Nuevo ítem, cuando se abre, entonces muestra solo cliente, importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo, en ese orden.
+  7. Dado un ítem con costos incluidos y detalle del costo escritos a mano, cuando se guarda, entonces se conservan tal cual y no se crea ni cambia ningún costo del módulo de costos.
+  8. Dada la lista de ítems, cuando se muestra, entonces sus columnas son solo cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo.
 
 ### HU-061 Cálculo de importes e IVA
 
@@ -978,6 +999,21 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   4. Dado un ítem reabierto y corregido, cuando se vuelve a enviar, entonces regresa a Enviado a facturar y queda marcado como reenviado.
   5. Dado un ítem Facturado, cuando se anula, entonces se pide un motivo, queda registrado quién, cuándo y por qué, conserva su número de factura, sale del resumen del mes y Administración recibe un aviso (RN-026).
   6. Dado un ítem Facturado, cuando se intenta reabrir o editar, entonces el sistema lo impide (RN-026).
+
+### HU-070 Descargar la planilla de facturación sin enviar
+
+- **Actor:** Operativo
+- **Descripción:** Como operador comercial, quiero descargar en Excel los ítems de la lista de Facturación cuando quiera, para pasárselos a Administración sin tener que enviar el mes a facturar.
+- **Prioridad:** Must
+- **Complejidad:** S
+- **Precondición:** HU-060 completa.
+- **Regla de negocio:** La pantalla Facturación tiene un botón «Descargar Excel» que baja un .xlsx con los ítems que muestra la lista según los filtros (por ejemplo, el mes), sin los anulados. Lleva solo las siete columnas de la planilla de Administración, en su orden (RN-024): cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo, con los costos incluidos y el detalle escritos en el ítem (HU-060). Descargar no cambia el estado de ningún ítem. «Enviar a facturar» (HU-066) sigue igual.
+- **Criterios de aceptación:**
+  1. Dada la lista filtrada por un mes, cuando se usa «Descargar Excel», entonces se baja un .xlsx con una fila por cada ítem de la lista, sin los anulados.
+  2. Dado el archivo descargado, cuando se abre, entonces tiene solo las siete columnas, en el orden de la planilla de Administración.
+  3. Dados ítems en Borrador, cuando se descargan, entonces siguen en Borrador.
+  4. Dada una lista sin ítems, cuando se usa «Descargar Excel», entonces se baja el archivo con los títulos de las columnas y sin filas.
+  5. Dado un usuario de Lectura, cuando entra a Facturación, entonces también puede descargar el Excel.
 
 # Supuestos y preguntas abiertas
 

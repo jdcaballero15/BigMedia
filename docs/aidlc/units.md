@@ -68,6 +68,10 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E2 Inventario de soportes | [ajuste-importacion-circuitos](units/ajuste-importacion-circuitos.md) | inventario | RN-005, HU-009, HU-015 | importacion-inventario | Gonza | feature/inventario-importacion-circuitos | mergeada |
 | E4 Campañas | [cliente-que-factura](units/cliente-que-factura.md) | campanias | HU-027 (criterio 3), RN-014 | campanias | Gonza | feature/campanias-cliente-que-factura | mergeada |
 | E5 Reservas y motor de disponibilidad | [reservas-sin-fecha-pasada](units/reservas-sin-fecha-pasada.md) | reservas | RN-012 | reservas-base, parametros-configurables | Gonza | feature/reservas-sin-fecha-pasada | mergeada |
+| E4 Campañas | [orden-de-publicidad](units/orden-de-publicidad.md) | campanias | HU-069, ADR-0011 | campanias | Juan Diego | feature/campanias-orden-de-publicidad | en revisión |
+| — (unidad técnica) | [ajuste-navegacion-lateral](units/ajuste-navegacion-lateral.md) | frontend | pedido 08/11/2026 | estilo-base | Juan Diego | feature/frontend-menu-expandible | mergeada |
+| E11 Facturación mensual | [facturacion-descarga-excel](units/facturacion-descarga-excel.md) | facturacion | HU-060 (ajuste), HU-070 (RN-024) | items-a-facturar, cierre-de-mes | Juan Diego | feature/facturacion-descarga-excel | en revisión |
+| E12 Rediseño visual | [ajuste-espaciado-detalle-campania](units/ajuste-espaciado-detalle-campania.md) | frontend | pedido de Juan Diego (2026-11-08) | pantallas-rediseno, orden-de-publicidad | Juan Diego | fix/frontend-espaciado-detalle-campania | en revisión |
 
 ## Notas
 

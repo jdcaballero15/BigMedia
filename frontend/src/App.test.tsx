@@ -13,7 +13,20 @@ async function irA(nombre: string) {
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+  localStorage.clear()
 })
+
+function sesionSinDatos() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input === '/api/auth/me/') return ok({ username: 'ale' })
+      if (input.startsWith('/api/clientes/')) return ok([])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+}
 
 test('pide iniciar sesión cuando no hay usuario', async () => {
   vi.stubGlobal(
@@ -604,15 +617,47 @@ test('la barra superior muestra la ruta de la pantalla activa y la fecha de hoy'
   }
 })
 
-test('el menú de iconos muestra el nombre de cada pantalla al pasar el mouse', async () => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: string) => {
-      if (input === '/api/auth/me/') return ok({ username: 'ale' })
-      if (input.startsWith('/api/clientes/')) return ok([])
-      throw new Error(`URL inesperada: ${input}`)
-    }),
+test('el menú arranca expandido, con el nombre de cada pantalla y de cada sección', async () => {
+  sesionSinDatos()
+  const { container } = render(<App />)
+
+  const nav = await screen.findByRole('navigation', { name: 'Navegación' })
+  expect(container.querySelector('.app-shell')?.classList.contains('menu-contraido')).toBe(false)
+  const comercial = within(nav).getByRole('group', { name: 'Comercial' })
+  expect(within(comercial).getByText('Comercial')).toBeDefined()
+  expect(within(comercial).getByText('Marcas')).toBeDefined()
+  const boton = screen.getByRole('button', { name: 'Contraer menú' })
+  expect(boton.getAttribute('aria-expanded')).toBe('true')
+  expect(screen.getByText('ale')).toBeDefined()
+
+  fireEvent.mouseEnter(within(nav).getByRole('button', { name: 'Marcas' }))
+  expect(screen.queryByRole('tooltip')).toBeNull()
+})
+
+test('contraer el menú lo deja en iconos y lo recuerda al volver a entrar', async () => {
+  sesionSinDatos()
+  const { container, unmount } = render(<App />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Contraer menú' }))
+  expect(container.querySelector('.app-shell')?.classList.contains('menu-contraido')).toBe(true)
+  const expandir = screen.getByRole('button', { name: 'Expandir menú' })
+  expect(expandir.getAttribute('aria-expanded')).toBe('false')
+  expect(localStorage.getItem('bigmedia.menu-contraido')).toBe('true')
+  unmount()
+
+  const otra = render(<App />)
+  expect(await screen.findByRole('button', { name: 'Expandir menú' })).toBeDefined()
+  expect(otra.container.querySelector('.app-shell')?.classList.contains('menu-contraido')).toBe(
+    true,
   )
+  fireEvent.click(screen.getByRole('button', { name: 'Expandir menú' }))
+  expect(localStorage.getItem('bigmedia.menu-contraido')).toBe('false')
+  expect(screen.getByRole('button', { name: 'Contraer menú' })).toBeDefined()
+})
+
+test('contraído, el menú muestra el nombre de cada pantalla al pasar el mouse', async () => {
+  localStorage.setItem('bigmedia.menu-contraido', 'true')
+  sesionSinDatos()
   render(<App />)
 
   const nav = await screen.findByRole('navigation', { name: 'Navegación' })
@@ -629,6 +674,21 @@ test('el menú de iconos muestra el nombre de cada pantalla al pasar el mouse', 
   expect(screen.getByRole('tooltip').textContent).toBe('ale')
   fireEvent.mouseLeave(screen.getByTitle('ale'))
   expect(screen.queryByRole('tooltip')).toBeNull()
+})
+
+test('si el navegador no deja guardar, el menú arranca expandido y se contrae igual', async () => {
+  vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    throw new Error('bloqueado')
+  })
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new Error('bloqueado')
+  })
+  sesionSinDatos()
+  const { container } = render(<App />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Contraer menú' }))
+  expect(container.querySelector('.app-shell')?.classList.contains('menu-contraido')).toBe(true)
+  expect(screen.getByRole('button', { name: 'Expandir menú' })).toBeDefined()
 })
 
 test('con una ficha abierta, la ruta suma el cliente y «Clientes» vuelve a la lista', async () => {

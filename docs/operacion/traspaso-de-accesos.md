@@ -32,7 +32,8 @@ bien. La columna **Hecho** se completa con la fecha y las iniciales de quien lo 
 | 6 | Superusuario de Django en staging | Quien lo creó en el primer deploy | Administrador de Big Media | Igual que el anterior, en staging | Igual que el anterior | |
 | 7 | Dominio propio, si se usa | A completar (o "no aplica") | Big Media | Transferir el dominio a una cuenta de Big Media y apuntarlo a Render (**Settings → Custom Domains**) | La URL del dominio carga la aplicación por HTTPS | |
 | 8 | Correo para avisos a Administración (HU-067), si se configura | A completar (o "no aplica") | Big Media | Cuenta de correo o de proveedor de envío a nombre de Big Media. En **Environment** de cada servicio de Render se cargan `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` y `FACTURACION_CORREO_ADMINISTRACION` | Reabrir un ítem Enviado de prueba en staging hace llegar el aviso a la dirección de Administración | |
-| 9 | Planillas e historias originales fuera de Git | Equipo de desarrollo | Carpeta compartida de Big Media | Copiar los archivos a la carpeta de Big Media | Big Media los abre desde su carpeta | |
+| 9 | Cloudflare R2: buckets `bigmedia-prod` y `bigmedia-staging` con las órdenes de publicidad (HU-069, ADR-0011) | Cuenta de Cloudflare de Juan Diego | Cuenta de Cloudflare de Big Media | Big Media crea su cuenta y sus dos buckets privados, y un token de R2 con **Object Read & Write** limitado a ellos. Se copian los objetos (por ejemplo con `rclone`) y se actualizan las variables `R2_*` de cada servicio de Render | Abrir una orden de publicidad existente desde una campaña en producción y en staging; adjuntar una nueva en staging | |
+| 10 | Planillas e historias originales fuera de Git | Equipo de desarrollo | Carpeta compartida de Big Media | Copiar los archivos a la carpeta de Big Media | Big Media los abre desde su carpeta | |
 
 ## Después del traspaso: rotar todo
 
@@ -51,6 +52,9 @@ contraseñas de Big Media y al panel donde se usa.
 - [ ] **`DJANGO_DEMO_PASSWORD`** de staging: cambiarla o dejarla vacía.
 - [ ] **`EMAIL_HOST_PASSWORD`** de los dos entornos, si el correo de avisos está configurado:
       generar una clave nueva en el proveedor de correo y reemplazarla en Render.
+- [ ] **Token de Cloudflare R2** (`R2_ACCESS_KEY_ID` y `R2_SECRET_ACCESS_KEY`) de los dos entornos:
+      crear un token nuevo en la cuenta de Big Media, reemplazarlo en Render, borrar el viejo y
+      abrir una orden de publicidad para comprobarlo.
 - [ ] **Usuarios del equipo de desarrollo** en la aplicación: inactivarlos desde **Administración ›
       Usuarios**, salvo que Big Media quiera mantener a alguien para soporte.
 - [ ] **Colaboradores de GitHub, Render y Neon**: quitar al equipo de desarrollo o bajarlo a un

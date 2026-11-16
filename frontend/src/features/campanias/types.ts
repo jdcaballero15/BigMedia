@@ -22,6 +22,21 @@ export type Campania = {
   fecha_inicio: string | null
   fecha_fin: string | null
   estado: EstadoCampania
+  ordenes_publicidad: OrdenPublicidad[]
+}
+
+/** Orden de publicidad que mandó el cliente (HU-069); el archivo se abre por su URL. */
+export type OrdenPublicidad = {
+  id: number
+  nombre: string
+  tamanio: number
+  subida_por_nombre: string
+  subida_en: string
+  activa: boolean
+}
+
+export function urlArchivoOrdenPublicidad(id: number): string {
+  return `/api/campanias/ordenes-publicidad/${id}/archivo/`
 }
 
 export type TipoInteraccion = 'reunion' | 'llamada'
