@@ -40,7 +40,7 @@ quedan libres.
    no bloquean. Se informan como hoy, con "· N tentativas" junto a la dirección, y la marca y las
    fechas van en el tooltip.
 8. **Color por marca, automático** (propuesta): una paleta fija de 12 colores con texto legible en
-   modo claro y oscuro. A cada marca le toca `marca_id mod 12`, así que siempre tiene el mismo
+   modo claro (la app no tiene modo oscuro). A cada marca le toca `marca_id mod 12`, así que siempre tiene el mismo
    color. No se agrega un campo de color a la marca. La campaña actual va con el color de acento y
    el texto "Esta campaña"; una campaña sin marca muestra "Sin marca" en gris.
 9. **Click en un slot libre** (propuesta): elige el cartel, con el mismo `Map` de selección que la
@@ -93,9 +93,9 @@ Ninguna cambia de valor.
 
 - Backend (`backend/tests/test_posiciones.py`):
   - `test_posiciones_cartel_lleno_se_incluye_marcado_lleno` (`regla("RN-005")`).
-  - `test_posiciones_reservas_sucesivas_comparten_slot` (`regla("RN-003")`).
+  - `test_repartir_reservas_sucesivas_comparten_slot` (`regla("RN-003")`).
   - `test_posiciones_pendiente_que_no_bloquea_va_a_tentativas` (`regla("RN-002")`).
-  - `test_posiciones_dia_de_borde_segun_parametro` (`regla("RN-001")`).
+  - `test_repartir_dia_de_borde_segun_parametro` (`regla("RN-001")`).
   - Tests de filtros, de la campaña actual, de "Sin marca", de los carteles fuera de servicio
     excluidos, del endpoint con parámetros inválidos y de permisos.
   - `carteles_para_tanda` sigue pasando sus tests sin cambios.
@@ -110,5 +110,16 @@ Ninguna cambia de valor.
 ## Registro de gates
 
 - Gate 1 (plan): 2026-11-16 — aprobado por Juan Diego
-- Gate 2 (verificación): pendiente
+- Gate 2 (verificación): 2026-11-16 — rama `feature/reservas-vista-de-posiciones`:
+  - `ruff format --check`: 145 files already formatted; `ruff check`: All checks passed!
+  - `mypy backend`: Success: no issues found in 145 source files
+  - `makemigrations --check --dry-run`: No changes detected
+  - `pytest --cov`: 907 passed in 1133.57s; Required test coverage of 80.0% reached. Total
+    coverage: 97.32%
+  - `pre-commit run --all-files` (incluye gitleaks): todos Passed
+  - Frontend: `format:check` OK, `lint` OK, `typecheck` OK, `test:coverage` 51 archivos y 416 tests
+    passed (sentencias 92,86 %, líneas 94,78 %), `build` OK
+  - Revisión final de la rama: 0 críticos, 2 importantes corregidos (respuestas viejas que pisaban
+    a las nuevas; tentativas fuera de vista) y 7 menores anotados para decidir.
+  - Pendiente de aprobación de Juan Diego o Gonza.
 - Gate 3 (PR): pendiente
