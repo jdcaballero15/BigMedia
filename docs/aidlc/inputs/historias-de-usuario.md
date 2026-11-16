@@ -34,7 +34,7 @@ Este documento define 70 historias de usuario, agrupadas en 12 épicas, que cubr
 | E7 | Costos y rentabilidad | HU-043 a HU-046 |
 | E8 | Reportes y paneles | HU-047 a HU-052 |
 | E9 | Entrega y traspaso | HU-053 a HU-054 |
-| E10 | Armado de campañas y reserva masiva | HU-055 a HU-059 |
+| E10 | Armado de campañas y reserva masiva | HU-055 a HU-059 y HU-071 |
 | E11 | Facturación mensual | HU-060 a HU-067 y HU-070 |
 
 La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta alrededor de ella y nunca adentro.
@@ -876,6 +876,21 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   4. Dadas dos campañas que confirman a la vez el último cupo del mismo cartel, cuando se procesan, entonces una queda Confirmada y la otra Pendiente con su conflicto.
   5. Dados los conflictos ya resueltos, cuando se vuelve a usar "Confirmar reservas", entonces solo se procesan las que siguen Pendientes.
   6. Dado el recorrido completo, cuando el operador crea una campaña vacía, le agrega dos líneas de formato (100 y 100), reserva las 200 posiciones sin cargar ninguna a mano, completa cliente y marca y confirma las libres, entonces lo logra en menos de 5 minutos.
+
+### HU-071 Ver y asignar posiciones como en la planilla
+
+- **Actor:** Operativo
+- **Descripción:** Como operador comercial, quiero ver en "Agregar carteles" los carteles del formato como en la planilla de posiciones, una fila por dirección con un casillero por slot y la marca que ocupa cada uno, para elegir dónde ubicar la campaña mirando cuántos slots quedan libres, sin abrir el Excel.
+- **Prioridad:** Should
+- **Complejidad:** M
+- **Precondición:** HU-056 y HU-057 completas.
+- **Regla de negocio:** Es otra forma de ver la misma lista de "Agregar carteles": las fechas, los filtros, la selección, el contador y "Crear reservas" son los de HU-056 y HU-057. Lo que decide es cuántos slots quedan libres; el slot es genérico (RN-005), así que el sistema no guarda en qué slot físico va cada marca. Un slot está ocupado con el mismo criterio que la validación dura (RN-001, RN-002, RN-003). La vista muestra también los carteles llenos, que no se pueden elegir. Cada marca tiene siempre el mismo color, asignado por el sistema. Quedan fuera de alcance la posición física del slot, las anotaciones de la planilla ("esquina", "mala visual") y la vista como consulta suelta fuera de una campaña.
+- **Criterios de aceptación:**
+  1. Dada una línea de formato abierta en "Agregar carteles", cuando se elige la vista Posiciones, entonces se ve una fila por cartel con su dirección, departamento y cantidad de slots, y tantos casilleros como slots tiene.
+  2. Dado un cartel con slots ocupados en el rango, cuando se muestra, entonces cada slot ocupado lleva la marca de la campaña que lo ocupa, con el color de esa marca; los de la campaña actual se distinguen, y los libres quedan vacíos.
+  3. Dado un cartel sin slots libres en el rango, cuando se muestra, entonces aparece atenuado y no se puede elegir.
+  4. Dado un slot libre, cuando se hace click, entonces el cartel queda seleccionado igual que con la casilla de la tabla, y el slot muestra la campaña actual; un segundo click lo libera.
+  5. Dada una selección, cuando se cambia entre Tabla y Posiciones, entonces la selección, los filtros y las fechas se conservan.
 
 # E11 - Facturación mensual
 

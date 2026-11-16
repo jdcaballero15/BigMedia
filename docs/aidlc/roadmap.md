@@ -61,7 +61,8 @@ Definidas por Gonza el 27/10/2026.
 
 ## En curso
 
-—
+- **E10 Armado de campañas, vista de posiciones** — «Agregar carteles» muestra los carteles como
+  en la planilla de posiciones de Seba, para asignar slots desde ahí (HU-071).
 
 ## Próximas
 
@@ -97,3 +98,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-11-07 | La orden de publicidad de la campaña (HU-069) queda como próxima | Los clientes la mandan como parte de la campaña; Juan Diego eligió guardarla en Cloudflare R2 |
 | 2026-11-09 | El ajuste de Facturación (HU-060 y HU-070) queda como próxima | Juan Diego quiere que Seba descargue en Excel los ítems a facturar sin enviar el mes |
 | 2026-11-16 | La orden de publicidad (HU-069), el ajuste de Facturación (HU-060 y HU-070) y los ajustes de E12 pasan a Hecho; Facturación pierde estados y envío; las próximas quedan a definir | Quedaron mergeados los PR #124, #125, #128, #129, #132, #134 y #135 |
+| 2026-11-16 | E10 vuelve a En curso con la vista de posiciones (HU-071) | Seba asigna lugares mirando la planilla de posiciones; Juan Diego pidió llevarla a «Agregar carteles» |
