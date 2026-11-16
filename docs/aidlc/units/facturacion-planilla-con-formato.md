@@ -1,6 +1,6 @@
 # Unidad: facturacion-planilla-con-formato
 
-- **Estado:** en curso · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
+- **Estado:** mergeada · **Épica:** E11 Facturación mensual · **App dueña:** `facturacion`
 - **Origen:** pedido de Juan Diego (2026-11-16), HU-070 y RN-024 ajustadas en el PR de historias
   `docs/historias-facturacion-sin-estados` · **Rama:** `feature/facturacion-planilla-con-formato`
 
@@ -69,4 +69,4 @@ Ninguna.
   - `pre-commit run --all-files`: todos `Passed`, incluido gitleaks.
   - Frontend sin cambios: no se volvió a correr localmente; lo corre el CI.
   - Prueba visual: Juan Diego abrió un Excel de ejemplo (datos inventados) y lo aprobó.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #134 (2026-11-16), pedido por Juan Diego; mergeado el mismo día

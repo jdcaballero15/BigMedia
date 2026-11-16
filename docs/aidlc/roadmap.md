@@ -49,7 +49,15 @@ Definidas por Gonza el 27/10/2026.
 
 - **E12 Rediseño visual** — estilo nuevo en toda la aplicación (azul marino con superficies
   celestes, primera columna destacada) y reorden de Panel, ficha de cliente, reportes, ítems a
-  facturar, disponibilidad y parámetros (unidades `estilo-base` y `pantallas-rediseno`).
+  facturar, disponibilidad y parámetros (unidades `estilo-base` y `pantallas-rediseno`); menú
+  expandible, espaciado del detalle de campaña y Parámetros y Auditoría fuera del menú (unidades
+  `ajuste-espaciado-detalle-campania` y `ajuste-barra-lateral`).
+- **E4 Campañas, orden de publicidad** — la campaña guarda sus órdenes de publicidad en Cloudflare
+  R2 (HU-069, [ADR-0011](../adr/0011-orden-de-publicidad-en-cloudflare-r2.md)).
+- **E11 Facturación, simplificada** — la pantalla se llama «Facturación», el ítem lleva costos
+  escritos a mano, «Descargar Excel» baja la planilla con el formato de Administración y el ítem
+  ya no tiene estados ni envío: se edita siempre y se da de baja sin borrarse (HU-060, HU-070;
+  HU-065, HU-066 y HU-067 retiradas).
 
 ## En curso
 
@@ -57,11 +65,7 @@ Definidas por Gonza el 27/10/2026.
 
 ## Próximas
 
-- **E4 Campañas** — orden de publicidad de la campaña, guardada en Cloudflare R2 (HU-069,
-  [ADR-0011](../adr/0011-orden-de-publicidad-en-cloudflare-r2.md)).
-- **E11 Facturación mensual** — la pantalla pasa a llamarse «Facturación», el ítem suma costos
-  incluidos y detalle del costo escritos a mano, y «Descargar Excel» baja la lista con las siete
-  columnas de la planilla sin enviarla (ajuste de HU-060 y HU-070).
+—
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
@@ -92,3 +96,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-11-04 | El bloqueo de reservas con fecha pasada (RN-012) pasa a Hecho dentro de E5 | Unidad `reservas-sin-fecha-pasada` (PR #118) |
 | 2026-11-07 | La orden de publicidad de la campaña (HU-069) queda como próxima | Los clientes la mandan como parte de la campaña; Juan Diego eligió guardarla en Cloudflare R2 |
 | 2026-11-09 | El ajuste de Facturación (HU-060 y HU-070) queda como próxima | Juan Diego quiere que Seba descargue en Excel los ítems a facturar sin enviar el mes |
+| 2026-11-16 | La orden de publicidad (HU-069), el ajuste de Facturación (HU-060 y HU-070) y los ajustes de E12 pasan a Hecho; Facturación pierde estados y envío; las próximas quedan a definir | Quedaron mergeados los PR #124, #125, #128, #129, #132, #134 y #135 |

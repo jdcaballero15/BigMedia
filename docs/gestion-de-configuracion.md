@@ -55,9 +55,8 @@ Para una emergencia en producción: rama `hotfix/<descripcion>` desde `main`, PR
 | --- | --- | --- |
 | Local | PostgreSQL con Docker Compose (`docker compose up -d --wait db`) y variables en `backend/.env` | Desarrollo. Pasos en [desarrollo local](operacion/desarrollo-local.md). |
 | CI | PostgreSQL 17 como service container de GitHub Actions | PRs y pushes a `develop` y `main` |
+| Staging | Render (`bigmedia-web-staging`), desde `develop`, con `render.yaml` y base en Neon ([ADR-0005](adr/0005-base-de-staging-en-neon.md)) | Cada integración a `develop` con CI en verde (`autoDeployTrigger: checksPass`) |
 | Producción | Render, desde `main`, con `render.yaml`. Pasos en [despliegue en Render](operacion/despliegue-render.md) | Cada integración a `main` con CI en verde (`autoDeployTrigger: checksPass`) |
-
-**Staging no existe.** Queda documentado en ADR-0002 como el siguiente paso, sin implementar: [ADR-0002](adr/0002-gitflow-con-develop.md).
 
 ## 4. Credenciales
 

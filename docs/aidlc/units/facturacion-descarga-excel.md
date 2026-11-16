@@ -1,6 +1,6 @@
 # Unidad: Facturación con descarga en Excel
 
-- **Estado:** en revisión · **Épica:** E11 Facturación mensual · **App dueña:** facturacion
+- **Estado:** mergeada · **Épica:** E11 Facturación mensual · **App dueña:** facturacion
 - **Origen:** HU-060 (ajuste) y HU-070, del PR `docs/historias-facturacion-planilla` · **Rama:** `feature/facturacion-descarga-excel`
 
 ## Objetivo
