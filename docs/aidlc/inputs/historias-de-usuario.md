@@ -48,7 +48,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** El administrador tiene sesión iniciada con permiso de configuración.
-- **Regla de negocio:** Hay dos parámetros: "la tentativa ocupa cupo" (sí o no) y "día de borde inclusivo" (sí o no; con inclusivo, si una reserva termina el 15 y otra empieza el 15, se pisan). Defaults provisorios hasta que Seba responda: la tentativa ocupa cupo visualmente y el borde es inclusivo.
+- **Regla de negocio:** Hay dos parámetros: "la tentativa ocupa cupo" (sí o no) y "día de borde inclusivo" (sí o no; con inclusivo, si una reserva termina el 15 y otra empieza el 15, se pisan). Defaults provisorios hasta que Seba responda: la tentativa ocupa cupo visualmente y el borde es inclusivo. Desde el 2026-11-16 la pantalla Parámetros no aparece en el menú lateral: los parámetros quedan con los valores que tienen y el código de la pantalla se conserva para volver a mostrarla si hace falta cambiarlos.
 - **Criterios de aceptación:**
   1. Dada la pantalla de configuración, cuando el administrador cambia un parámetro y guarda, entonces la validación de disponibilidad usa el nuevo valor de inmediato, sin reiniciar nada.
   2. Dado un usuario sin rol de administrador, cuando intenta abrir la configuración, entonces no tiene acceso.
@@ -131,7 +131,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Should
 - **Complejidad:** M
 - **Precondición:** HU-003 completa.
-- **Regla de negocio:** Se audita como mínimo, en Reserva: fechas de inicio y fin, estado, cartel y los tres precios. También cambios de estado de campaña, cambios de tarifa de lista de un cartel y cambios de configuración. El registro de auditoría no se puede editar ni borrar desde la aplicación.
+- **Regla de negocio:** Se audita como mínimo, en Reserva: fechas de inicio y fin, estado, cartel y los tres precios. También cambios de estado de campaña, cambios de tarifa de lista de un cartel y cambios de configuración. El registro de auditoría no se puede editar ni borrar desde la aplicación. Desde el 2026-11-16 la pantalla Auditoría no aparece en el menú lateral: el servidor sigue registrando cada cambio y el código de la pantalla se conserva para volver a mostrarla cuando gerencia necesite consultarla.
 - **Criterios de aceptación:**
   1. Dada una reserva con cambios, cuando se abre su historial, entonces se ve usuario, fecha y hora, valor anterior y valor nuevo de cada campo.
   2. Dado un cambio hecho por un proceso automático o una importación, cuando ocurre, entonces queda auditado con el origen.
