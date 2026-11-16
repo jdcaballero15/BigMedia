@@ -70,4 +70,4 @@ Ninguna cambia de valor. RN-001, RN-002 y RN-012 conservan el valor guardado hoy
     94,79 %), `build` `✓ built in 2.00s`.
   - `pre-commit run --all-files`: todos `Passed`, incluido gitleaks.
   - Backend sin cambios: ruff, mypy y pytest no se volvieron a correr localmente; los corre el CI.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #132 (2026-11-16), pedido por Juan Diego
