@@ -44,7 +44,7 @@ def _datos(cliente: Cliente, **extra: Any) -> dict[str, Any]:
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("campo", ["asunto", "fecha", "cliente", "tipo"])
+@pytest.mark.parametrize("campo", ["fecha", "cliente", "tipo"])
 def test_interaccion_sin_campo_obligatorio_se_rechaza(operativo_client, campo):
     datos = _datos(_cliente())
     datos.pop(campo)
@@ -55,10 +55,19 @@ def test_interaccion_sin_campo_obligatorio_se_rechaza(operativo_client, campo):
 
 
 @pytest.mark.django_db
-def test_interaccion_con_asunto_en_blanco_se_rechaza(operativo_client):
+def test_interaccion_con_asunto_en_blanco_se_guarda(operativo_client):
     respuesta = _post(operativo_client, _datos(_cliente(), asunto="   "))
-    assert respuesta.status_code == 400
-    assert "asunto" in respuesta.json()
+    assert respuesta.status_code == 201
+    assert respuesta.json()["asunto"] == ""
+
+
+@pytest.mark.django_db
+def test_interaccion_sin_asunto_se_guarda(operativo_client):
+    datos = _datos(_cliente())
+    datos.pop("asunto")
+    respuesta = _post(operativo_client, datos)
+    assert respuesta.status_code == 201
+    assert respuesta.json()["asunto"] == ""
 
 
 @pytest.mark.django_db

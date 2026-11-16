@@ -3,6 +3,7 @@ import { apiGet } from '../../shared/api'
 import { formatearFecha } from '../../shared/fechas'
 import type { Proveedor } from '../inventario/types'
 import type { CostoListado, TipoCosto } from './types'
+import { formatearMonto } from '../facturacion/montos'
 import { TIPOS_COSTO } from './types'
 import { sumarMontos } from './montos'
 
@@ -85,7 +86,7 @@ export default function CostosPage() {
           </select>
         </label>
         <p className="costos-total">
-          Total vigente <strong>{total}</strong>
+          Total vigente <strong>{formatearMonto(total)}</strong>
         </p>
       </div>
       {error && (
@@ -114,7 +115,7 @@ export default function CostosPage() {
                 <td>{costo.cartel_nombre}</td>
                 <td>{costo.tipo_nombre}</td>
                 <td>{costo.proveedor_nombre ?? '—'}</td>
-                <td>{costo.monto}</td>
+                <td>{formatearMonto(costo.monto)}</td>
                 <td>
                   {costo.anulado ? 'Anulado' : 'Vigente'}
                   {costo.anulado && costo.motivo_anulacion && (

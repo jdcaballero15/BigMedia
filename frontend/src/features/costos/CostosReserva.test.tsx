@@ -37,14 +37,14 @@ afterEach(() => {
 test('muestra el margen y los costos de la reserva', async () => {
   stubFetch()
   render(<CostosReserva reservaId={5} />)
-  expect(await screen.findByText(/Margen 400.00/)).toBeDefined()
-  expect(screen.getByText(/Impresión: 600.00/)).toBeDefined()
+  expect(await screen.findByText(/Margen \$400,00/)).toBeDefined()
+  expect(screen.getByText(/Impresión: \$600,00/)).toBeDefined()
 })
 
 test('agrega un costo', async () => {
   const fetchMock = stubFetch()
   render(<CostosReserva reservaId={5} />)
-  await screen.findByText(/Margen 400.00/)
+  await screen.findByText(/Margen \$400,00/)
   const form = screen.getByRole('form', { name: 'Agregar costo' })
   fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '200' } })
   fireEvent.submit(form)

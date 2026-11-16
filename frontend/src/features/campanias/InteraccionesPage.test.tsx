@@ -81,6 +81,16 @@ test('lista las interacciones y filtra por cliente', async () => {
   )
 })
 
+test('muestra Sin asunto para una interacción sin título', async () => {
+  mockFetch((url) => {
+    if (url.startsWith('/api/clientes/clientes/')) return ok(clientes)
+    if (url === '/api/campanias/interacciones/') return ok([{ ...llamada, asunto: '' }])
+    return undefined
+  })
+  render(<InteraccionesPage />)
+  expect(await screen.findByText('Sin asunto')).toBeDefined()
+})
+
 test('crea una interacción con POST y vuelve a cargar la lista', async () => {
   let creada = false
   const fetchMock = mockFetch((url, options) => {
@@ -99,7 +109,7 @@ test('crea una interacción con POST y vuelve a cargar la lista', async () => {
   const form = screen.getByRole('form', { name: 'Formulario de interacción' })
   await within(form).findByRole('option', { name: 'Bodega Norte' })
   fireEvent.change(within(form).getByLabelText('Cliente'), { target: { value: '2' } })
-  fireEvent.change(within(form).getByLabelText('Asunto'), {
+  fireEvent.change(within(form).getByLabelText('Asunto (opcional)'), {
     target: { value: 'Renovación de pauta' },
   })
   fireEvent.click(within(form).getByRole('button', { name: 'Guardar interacción' }))

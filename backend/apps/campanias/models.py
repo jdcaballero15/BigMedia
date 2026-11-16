@@ -101,7 +101,7 @@ class Interaccion(models.Model):
         LLAMADA = "llamada", "Llamada"
 
     tipo = models.CharField(max_length=12, choices=Tipo.choices)
-    asunto = models.CharField(max_length=200)
+    asunto = models.CharField(max_length=200, blank=True)
     fecha = models.DateField()
     notas = models.TextField(blank=True)
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name="interacciones")
@@ -131,7 +131,7 @@ class Interaccion(models.Model):
         verbose_name_plural = "interacciones"
 
     def __str__(self) -> str:
-        return f"{self.fecha} · {self.asunto}"
+        return f"{self.fecha} · {self.asunto or 'Sin asunto'}"
 
 
 def ruta_orden_publicidad(instancia: "OrdenPublicidad", _nombre: str) -> str:
