@@ -40,4 +40,4 @@ Ninguna nueva. HU-020 debe actualizarse en el PR de historias previo. HU-042 ya 
 
 - Gate 1 (plan): 2026-11-16 — aprobado por Juan Diego en esta conversación
 - Gate 2 (verificación): 2026-11-16 — `ruff format --check`: 144 archivos formateados; `ruff check`: All checks passed; `mypy backend`: Success, no issues found in 144 source files; `makemigrations --check --dry-run`: No changes detected; `pytest --cov`: 890 passed, 0 skipped, cobertura total 97,30 % (mínimo 80 %); `pre-commit run --all-files`: 13 hooks Passed, incluido gitleaks de los cambios preparados; frontend `format:check`, `lint`, `typecheck` y `build`: exit 0; `test:coverage`: 397 passed, 50 archivos, sentencias 92,72 %, ramas 84,06 %, líneas 94,8 %. `gitleaks detect --source . --no-git --redact` local (v8.30.1): exit 1, tres hallazgos preexistentes ajenos al diff (dos en `backend/.env` ignorado y uno en `backend/tests/test_asegurar_admin.py:10`); CI fija v8.21.2. Build: warning de chunk >500 kB.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #139 a `develop` (depende del PR de historias #138)
