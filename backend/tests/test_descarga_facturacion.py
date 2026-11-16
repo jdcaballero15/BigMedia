@@ -218,3 +218,83 @@ def test_lista_de_items_trae_la_razon_social_del_cliente_o_su_nombre(lector_clie
         "Sin razón",
         "Zeta SA",
     ]
+
+
+# --- Formato de la planilla real de Administración (HU-070, RN-024) ---
+
+FORMATO_PESOS = '"$" #,##0'
+
+
+def _hoja(client: Client, consulta: str = "") -> Any:
+    respuesta = client.get(f"{PLANILLA}{consulta}")
+    assert respuesta.status_code == 200
+    return load_workbook(io.BytesIO(respuesta.content)).active
+
+
+def _color(celda: Any) -> str:
+    return str(celda.fill.fgColor.rgb)[-6:]
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-024")
+def test_descarga_periodo_y_titulo_con_los_colores_de_la_planilla(operativo_client):
+    hoja = _hoja(operativo_client, "?mes=2026-11")
+    assert [_color(hoja["A1"]), _color(hoja["B1"])] == ["FFC000", "FFC000"]
+    assert hoja["A1"].font.b
+    assert hoja["B1"].font.b
+    assert "A2:G2" in {str(rango) for rango in hoja.merged_cells.ranges}
+    assert _color(hoja["A2"]) == "92D050"
+    assert hoja["A2"].font.b
+    assert hoja["A2"].alignment.horizontal == "center"
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-024")
+def test_descarga_titulos_de_columna_en_negrita_centrados_y_amarillos(operativo_client):
+    hoja = _hoja(operativo_client, "?mes=2026-11")
+    for celda in hoja[3]:
+        assert celda.font.b
+        assert celda.alignment.horizontal == "center"
+        assert celda.alignment.wrap_text
+        assert _color(celda) == "FFF2CC"
+    assert hoja.column_dimensions["A"].width == 30
+    assert hoja.column_dimensions["G"].width == 50
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-024")
+def test_descarga_importes_con_formato_de_pesos_sin_decimales(operativo_client):
+    _item("Alfa", neto=Decimal("450000.50"), costos_incluidos=Decimal("68700"))
+    hoja = _hoja(operativo_client, "?mes=2026-11")
+    fila, totales, neto = 4, 5, 7
+    assert hoja.cell(fila, 2).value == 450000.5
+    for numero in (fila, totales):
+        assert hoja.cell(numero, 2).number_format == FORMATO_PESOS
+        assert hoja.cell(numero, 3).number_format == FORMATO_PESOS
+    assert hoja.cell(neto, 1).value == "Neto"
+    assert hoja.cell(neto, 2).number_format == FORMATO_PESOS
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-024")
+def test_descarga_tabla_con_bordes_y_totales_en_durazno(operativo_client):
+    _item("Alfa", neto=Decimal("1000"))
+    _item("Beta", neto=Decimal("500"))
+    hoja = _hoja(operativo_client, "?mes=2026-11")
+    totales = 6
+    for numero in range(3, totales + 1):
+        for celda in hoja[numero][:7]:
+            lados = (celda.border.left, celda.border.right, celda.border.top, celda.border.bottom)
+            assert all(lado.style == "thin" for lado in lados), celda.coordinate
+    assert all(_color(celda) == "FCE4D6" for celda in hoja[totales][:7])
+    assert hoja.cell(totales, 2).font.b
+    assert hoja.cell(totales, 3).font.b
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-024")
+def test_descarga_sin_mes_tiene_el_titulo_en_la_primera_fila(operativo_client):
+    hoja = _hoja(operativo_client)
+    assert hoja["A1"].value == "CARTELERIA"
+    assert "A1:G1" in {str(rango) for rango in hoja.merged_cells.ranges}
+    assert all(_color(celda) == "FFF2CC" for celda in hoja[2])
