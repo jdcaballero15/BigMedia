@@ -12,10 +12,8 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
-  ScrollText,
   Settings,
   Signpost,
-  SlidersHorizontal,
   Tags,
   TrendingUp,
   Truck,
@@ -40,8 +38,6 @@ import ReporteIngresosPage from './features/facturacion/ReporteIngresos'
 import PorRubroPage from './features/facturacion/PorRubro'
 import ItemsPage from './features/facturacion/ItemsPage'
 import PanelPrincipal from './features/panel/PanelPrincipal'
-import AuditoriaPage from './features/auditoria/Auditoria'
-import ParametrosPage from './features/reservas/ParametrosPage'
 import ReporteOcupacionPage from './features/reservas/ReporteOcupacion'
 import DefinirClave from './features/usuarios/DefinirClave'
 import UsuariosPage from './features/usuarios/UsuariosPage'
@@ -76,8 +72,6 @@ type Page =
   | 'ocupacion'
   | 'formatos'
   | 'catalogos'
-  | 'parametros'
-  | 'auditoria'
   | 'usuarios'
 
 type Item = {
@@ -196,25 +190,11 @@ const sections: { title: string; items: Item[] }[] = [
     title: 'Configuración',
     items: [
       { id: 'catalogos', label: 'Catálogos', icon: Settings, render: () => <CatalogosPage /> },
-      {
-        id: 'parametros',
-        label: 'Parámetros',
-        icon: SlidersHorizontal,
-        render: () => <ParametrosPage />,
-        soloAdministrador: true,
-      },
     ],
   },
   {
     title: 'Administración',
     items: [
-      {
-        id: 'auditoria',
-        label: 'Auditoría',
-        icon: ScrollText,
-        render: () => <AuditoriaPage />,
-        soloGerencia: true,
-      },
       {
         id: 'usuarios',
         label: 'Usuarios',

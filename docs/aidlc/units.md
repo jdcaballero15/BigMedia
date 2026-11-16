@@ -72,6 +72,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | — (unidad técnica) | [ajuste-navegacion-lateral](units/ajuste-navegacion-lateral.md) | frontend | pedido 08/11/2026 | estilo-base | Juan Diego | feature/frontend-menu-expandible | mergeada |
 | E11 Facturación mensual | [facturacion-descarga-excel](units/facturacion-descarga-excel.md) | facturacion | HU-060 (ajuste), HU-070 (RN-024) | items-a-facturar, cierre-de-mes | Juan Diego | feature/facturacion-descarga-excel | en revisión |
 | E12 Rediseño visual | [ajuste-espaciado-detalle-campania](units/ajuste-espaciado-detalle-campania.md) | frontend | pedido de Juan Diego (2026-11-08) | pantallas-rediseno, orden-de-publicidad | Juan Diego | fix/frontend-espaciado-detalle-campania | en revisión |
+| E12 Rediseño visual | [ajuste-barra-lateral](units/ajuste-barra-lateral.md) | frontend | pedido de Juan Diego (2026-11-16), HU-001, HU-007 | pantallas-rediseno | Juan Diego | fix/frontend-ocultar-parametros-auditoria | en revisión |
 
 ## Notas
 
