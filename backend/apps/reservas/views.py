@@ -310,30 +310,42 @@ def _fecha_requerida(valor: str | None, campo: str) -> date:
         raise ValidationError({campo: "Formato de fecha inválido (AAAA-MM-DD)."}) from error
 
 
+def _parametros_de_tanda(
+    request: Request,
+) -> tuple[Campania, Formato, date, date, dict[str, Any]]:
+    """Campaña, formato, rango y filtros de "Agregar carteles", validados (HU-056, HU-071)."""
+    params = request.query_params
+    campania = get_object_or_404(Campania, pk=_id_positivo(params.get("campania", ""), "campania"))
+    formato = get_object_or_404(Formato, pk=_id_positivo(params.get("formato", ""), "formato"))
+    desde = _fecha_requerida(params.get("desde"), "desde")
+    hasta = _fecha_requerida(params.get("hasta"), "hasta")
+    if hasta < desde:
+        raise ValidationError({"hasta": "La fecha de fin no puede ser anterior a la de inicio."})
+    filtros: dict[str, Any] = {
+        campo: _id_positivo(params[campo], campo)
+        for campo in ("zona", "proveedor")
+        if params.get(campo)
+    }
+    filtros["direccion"] = params.get("q", "")
+    return campania, formato, desde, hasta, filtros
+
+
 class CartelesParaTandaView(APIView):
     """Carteles de un formato con cupo libre en el rango, para "Agregar carteles" (HU-056)."""
 
     permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
 
     def get(self, request: Request) -> Response:
-        params = request.query_params
-        campania = get_object_or_404(
-            Campania, pk=_id_positivo(params.get("campania", ""), "campania")
-        )
-        formato = get_object_or_404(Formato, pk=_id_positivo(params.get("formato", ""), "formato"))
-        desde = _fecha_requerida(params.get("desde"), "desde")
-        hasta = _fecha_requerida(params.get("hasta"), "hasta")
-        if hasta < desde:
-            raise ValidationError(
-                {"hasta": "La fecha de fin no puede ser anterior a la de inicio."}
-            )
-        filtros: dict[str, Any] = {
-            campo: _id_positivo(params[campo], campo)
-            for campo in ("zona", "proveedor")
-            if params.get(campo)
-        }
-        filtros["direccion"] = params.get("q", "")
-        return Response(services.carteles_para_tanda(campania, formato, desde, hasta, filtros))
+        return Response(services.carteles_para_tanda(*_parametros_de_tanda(request)))
+
+
+class PosicionesView(APIView):
+    """Carteles de un formato con sus casilleros por slot, para la vista Posiciones (HU-071)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, request: Request) -> Response:
+        return Response(services.posiciones_de_formato(*_parametros_de_tanda(request)))
 
 
 class SeguimientoView(APIView):

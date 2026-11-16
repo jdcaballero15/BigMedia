@@ -5,6 +5,9 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
+from django.db import connection
+from django.test import Client
+from django.test.utils import CaptureQueriesContext
 
 from apps.campanias.models import Campania
 from apps.clientes.models import Cliente, Marca
@@ -12,6 +15,7 @@ from apps.inventario.models import Cartel, EstadoCartel, Formato, Proveedor, Zon
 from apps.reservas.models import ParametrosDisponibilidad, Reserva
 from apps.reservas.services import posiciones_de_formato, repartir_en_slots
 
+URL = "/api/reservas/posiciones/"
 DESDE = date(2026, 11, 1)
 HASTA = date(2026, 11, 30)
 
@@ -214,3 +218,81 @@ def test_posiciones_ordena_por_zona_y_direccion(formato):
     z = _cartel(formato, "Z Calle 1", zona=godoy)
 
     assert [fila["id"] for fila in _posiciones(_campania(), formato)] == [z.pk, a.pk, b.pk]
+
+
+# --- Endpoint ---
+
+
+def _get(client: Client, campania: Campania, formato: Formato, **extra: Any) -> Any:
+    params = {"campania": campania.pk, "formato": formato.pk, "desde": "2026-11-01"}
+    return client.get(URL, {**params, "hasta": "2026-11-30", **extra})
+
+
+@pytest.mark.django_db
+def test_endpoint_posiciones_devuelve_filas_filtradas(operativo_client, formato):
+    norte = Zona.objects.create(nombre="Zona Norte Prueba")
+    buscado = _cartel(formato, "Avenida Córdoba 500", capacidad=2, zona=norte)
+    _cartel(formato, "Avenida Córdoba 600")
+    _reserva(buscado, "2026-11-01", "2026-11-30", campania=_campania("Fravega"))
+
+    respuesta = _get(operativo_client, _campania(), formato, zona=norte.pk, q="cordoba")
+
+    assert respuesta.status_code == 200
+    [fila] = respuesta.json()
+    assert fila["id"] == buscado.pk
+    assert [[o["marca_nombre"] for o in slot] for slot in fila["slots"]] == [["Fravega"], []]
+
+
+@pytest.mark.django_db
+def test_endpoint_posiciones_fechas_faltantes_o_invertidas_dan_400(operativo_client, formato):
+    campania = _campania()
+    sin_hasta = operativo_client.get(
+        URL, {"campania": campania.pk, "formato": formato.pk, "desde": "2026-11-01"}
+    )
+    assert sin_hasta.status_code == 400
+    assert "hasta" in sin_hasta.json()
+    invertidas = _get(operativo_client, campania, formato, desde="2026-12-01")
+    assert invertidas.status_code == 400
+    assert "hasta" in invertidas.json()
+
+
+@pytest.mark.django_db
+def test_endpoint_posiciones_ids_invalidos_dan_400_e_inexistentes_404(operativo_client, formato):
+    campania = _campania()
+    invalido = operativo_client.get(
+        URL, {"campania": "x", "formato": formato.pk, "desde": "2026-11-01", "hasta": "2026-11-30"}
+    )
+    assert invalido.status_code == 400
+    assert "campania" in invalido.json()
+    inexistente = operativo_client.get(
+        URL,
+        {"campania": campania.pk, "formato": 999999, "desde": "2026-11-01", "hasta": "2026-11-30"},
+    )
+    assert inexistente.status_code == 404
+
+
+@pytest.mark.django_db
+def test_endpoint_posiciones_lector_puede_ver(lector_client, formato):
+    _cartel(formato, "Av. Lectura 1")
+    respuesta = _get(lector_client, _campania(), formato)
+    assert respuesta.status_code == 200
+    assert len(respuesta.json()) == 1
+
+
+@pytest.mark.django_db
+def test_endpoint_posiciones_sin_sesion_da_403(client, formato):
+    assert _get(client, _campania(), formato).status_code in (401, 403)
+
+
+@pytest.mark.django_db
+def test_endpoint_posiciones_consultas_no_crecen_con_los_carteles(operativo_client, formato):
+    campania = _campania()
+    _reserva(_cartel(formato, "Av. Uno 1", capacidad=3), "2026-11-01", "2026-11-30")
+    with CaptureQueriesContext(connection) as uno:
+        assert _get(operativo_client, campania, formato).status_code == 200
+    for numero in range(2, 7):
+        cartel = _cartel(formato, f"Av. Muchos {numero}", capacidad=3)
+        _reserva(cartel, "2026-11-01", "2026-11-30", campania=_campania(f"Marca {numero}"))
+    with CaptureQueriesContext(connection) as muchos:
+        assert len(_get(operativo_client, campania, formato).json()) == 6
+    assert len(muchos.captured_queries) == len(uno.captured_queries)

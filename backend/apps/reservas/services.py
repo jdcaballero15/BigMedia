@@ -237,7 +237,7 @@ def calendario_disponibilidad(
         estado__in=Reserva.ESTADOS_QUE_OCUPAN,
         fecha_inicio__lte=hasta,
         fecha_fin__gte=desde,
-    ).select_related("campania__marca")
+    )
     por_cartel: dict[int, list[Reserva]] = {}
     for reserva in reservas:
         por_cartel.setdefault(reserva.cartel_id, []).append(reserva)
@@ -590,7 +590,7 @@ def _reservas_por_cartel(
         estado__in=Reserva.ESTADOS_QUE_OCUPAN,
         fecha_inicio__lte=hasta,
         fecha_fin__gte=desde,
-    )
+    ).select_related("campania__marca")
     por_cartel: dict[int, list[Reserva]] = {}
     for reserva in reservas:
         por_cartel.setdefault(reserva.cartel_id, []).append(reserva)
