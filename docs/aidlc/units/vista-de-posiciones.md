@@ -1,6 +1,6 @@
 # Unidad: Vista de posiciones
 
-- **Estado:** en curso · **Épica:** E10 Armado de campañas y reserva masiva · **App dueña:** `reservas`
+- **Estado:** en revisión · **Épica:** E10 Armado de campañas y reserva masiva · **App dueña:** `reservas`
 - **Origen:** HU-071 · **Rama:** `feature/reservas-vista-de-posiciones`
 
 ## Objetivo
@@ -121,5 +121,9 @@ Ninguna cambia de valor.
     passed (sentencias 92,86 %, líneas 94,78 %), `build` OK
   - Revisión final de la rama: 0 críticos, 2 importantes corregidos (respuestas viejas que pisaban
     a las nuevas; tentativas fuera de vista) y 7 menores anotados para decidir.
-  - Pendiente de aprobación de Juan Diego o Gonza.
-- Gate 3 (PR): pendiente
+  - Aprobado por Juan Diego el 2026-11-17, después de probarla en local.
+  - Tras rebasear sobre `develop` (PRs #138 y #139): frontend `format:check`, `lint` y
+    `typecheck` OK, 51 archivos y 419 tests passed; `ruff` OK; `test_posiciones`,
+    `test_carteles_para_tanda` y `test_reservas_en_bloque`: 41 passed. La suite completa del
+    backend corre en CI.
+- Gate 3 (PR): 2026-11-17, pedido por Juan Diego
