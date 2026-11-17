@@ -177,7 +177,7 @@ export default function InteraccionForm({ interaccion, clientes, onSave, onCance
           <FieldErrors messages={errors.fecha} />
         </label>
         <label>
-          Asunto
+          Asunto (opcional)
           <input value={asunto} onChange={(event) => setAsunto(event.target.value)} />
           <FieldErrors messages={errors.asunto} />
         </label>

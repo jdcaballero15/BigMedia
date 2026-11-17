@@ -128,6 +128,9 @@ class LineaFormatoSerializer(serializers.ModelSerializer[LineaFormato]):
 
 
 class InteraccionSerializer(serializers.ModelSerializer[Interaccion]):
+    asunto = serializers.CharField(
+        required=False, allow_blank=True, default="", trim_whitespace=True
+    )
     cliente_nombre = serializers.CharField(source="cliente.nombre_visible", read_only=True)
     contacto_nombre = serializers.CharField(source="contacto.nombre", read_only=True, default=None)
     campania_nombre = serializers.SerializerMethodField()

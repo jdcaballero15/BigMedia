@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { apiGet } from '../../shared/api'
 import { formatearFecha } from '../../shared/fechas'
@@ -11,6 +11,7 @@ type Reserva = {
   campania_nombre: string
   fecha_inicio: string
   fecha_fin: string
+  estado: string
 }
 
 type CeldaElegida = { cartel: FilaCalendario; periodo: string } | null
@@ -20,6 +21,17 @@ function porcentaje(ocupados: number, capacidad: number): number {
   return capacidad === 0 ? 0 : Math.min(100, Math.round((ocupados * 100) / capacidad))
 }
 
+function sumarMeses(mes: string, cantidad: number): string {
+  const [anio, numero] = mes.split('-').map(Number)
+  const fecha = new Date(anio, numero - 1 + cantidad, 1)
+  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`
+}
+
+function finDeMes(mes: string): string {
+  const [anio, numero] = mes.split('-').map(Number)
+  return `${mes}-${new Date(anio, numero, 0).getDate()}`
+}
+
 export default function CalendarioDisponibilidad({ pestanias }: { pestanias?: ReactNode }) {
   const [calendario, setCalendario] = useState<Calendario>({ periodos: [], carteles: [] })
   const [zonas, setZonas] = useState<Catalogo[]>([])
@@ -27,10 +39,16 @@ export default function CalendarioDisponibilidad({ pestanias }: { pestanias?: Re
   const [zona, setZona] = useState('')
   const [formato, setFormato] = useState('')
   const [modalidad, setModalidad] = useState('')
+  const [desde, setDesde] = useState(() => {
+    const hoy = new Date()
+    return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
+  })
+  const [hasta, setHasta] = useState(() => sumarMeses(desde, 2))
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [elegida, setElegida] = useState<CeldaElegida>(null)
   const [detalle, setDetalle] = useState<Reserva[]>([])
+  const consultaDetalle = useRef(0)
 
   useEffect(() => {
     let active = true
@@ -58,6 +76,8 @@ export default function CalendarioDisponibilidad({ pestanias }: { pestanias?: Re
     if (zona) params.set('zona', zona)
     if (formato) params.set('formato', formato)
     if (modalidad) params.set('modalidad', modalidad)
+    params.set('desde', `${desde}-01`)
+    params.set('hasta', finDeMes(hasta))
     const suffix = params.toString() ? `?${params}` : ''
     void apiGet<Calendario>(`/api/reservas/calendario/${suffix}`)
       .then((data) => {
@@ -75,24 +95,41 @@ export default function CalendarioDisponibilidad({ pestanias }: { pestanias?: Re
     return () => {
       active = false
     }
-  }, [zona, formato, modalidad])
+  }, [zona, formato, modalidad, desde, hasta])
 
   function cambiar(apply: () => void) {
     setLoading(true)
+    setElegida(null)
+    consultaDetalle.current += 1
     apply()
+  }
+
+  function cambiarDesde(nuevo: string) {
+    cambiar(() => {
+      setDesde(nuevo)
+      if (hasta < nuevo || hasta > sumarMeses(nuevo, 11)) setHasta(sumarMeses(nuevo, 2))
+    })
   }
 
   function verCelda(cartel: FilaCalendario, periodo: string, ocupados: number) {
     if (ocupados === 0) return
+    const consulta = ++consultaDetalle.current
     setElegida({ cartel, periodo })
+    setDetalle([])
     const desde = `${periodo}-01`
     void apiGet<Reserva[]>(`/api/reservas/reservas/?cartel=${cartel.id}`)
-      .then((reservas) =>
+      .then((reservas) => {
+        if (consulta !== consultaDetalle.current) return
         setDetalle(
-          reservas.filter((r) => r.fecha_fin >= desde && r.fecha_inicio <= `${periodo}-31`),
-        ),
-      )
-      .catch(() => setDetalle([]))
+          reservas.filter(
+            (r) =>
+              r.estado !== 'cancelada' && r.fecha_fin >= desde && r.fecha_inicio <= `${periodo}-31`,
+          ),
+        )
+      })
+      .catch(() => {
+        if (consulta === consultaDetalle.current) setDetalle([])
+      })
   }
 
   return (
@@ -108,6 +145,24 @@ export default function CalendarioDisponibilidad({ pestanias }: { pestanias?: Re
         {pestanias}
       </div>
       <div className="filters card">
+        <label>
+          Mes desde
+          <input
+            type="month"
+            value={desde}
+            onChange={(event) => cambiarDesde(event.target.value)}
+          />
+        </label>
+        <label>
+          Mes hasta
+          <input
+            type="month"
+            min={desde}
+            max={sumarMeses(desde, 11)}
+            value={hasta}
+            onChange={(event) => cambiar(() => setHasta(event.target.value))}
+          />
+        </label>
         <label>
           Departamento
           <select value={zona} onChange={(event) => cambiar(() => setZona(event.target.value))}>
@@ -167,60 +222,70 @@ export default function CalendarioDisponibilidad({ pestanias }: { pestanias?: Re
             </thead>
             <tbody>
               {calendario.carteles.map((cartel) => (
-                <tr key={cartel.id}>
-                  <td className="primary-cell">{cartel.nombre_visible}</td>
-                  {cartel.celdas.map((celda) => {
-                    const lleno = celda.ocupados >= cartel.capacidad
-                    const estado = celda.ocupados === 0 ? 'libre' : lleno ? 'lleno' : 'parcial'
-                    return (
-                      <td key={celda.periodo}>
-                        <button
-                          className={`celda celda-${estado}`}
-                          disabled={celda.ocupados === 0}
-                          aria-label={`${cartel.nombre_visible} ${celda.periodo}: ${celda.ocupados} de ${cartel.capacidad}`}
-                          onClick={() => verCelda(cartel, celda.periodo, celda.ocupados)}
-                        >
-                          <span
-                            className="celda-barra"
-                            style={{ width: `${porcentaje(celda.ocupados, cartel.capacidad)}%` }}
-                          />
-                          <span className="celda-texto">
-                            {celda.ocupados}/{cartel.capacidad}
-                          </span>
-                        </button>
+                <Fragment key={cartel.id}>
+                  <tr>
+                    <td className="primary-cell">{cartel.nombre_visible}</td>
+                    {cartel.celdas.map((celda) => {
+                      const lleno = celda.ocupados >= cartel.capacidad
+                      const estado = celda.ocupados === 0 ? 'libre' : lleno ? 'lleno' : 'parcial'
+                      return (
+                        <td key={celda.periodo}>
+                          <button
+                            className={`celda celda-${estado}`}
+                            disabled={celda.ocupados === 0}
+                            aria-expanded={
+                              elegida?.cartel.id === cartel.id && elegida.periodo === celda.periodo
+                            }
+                            aria-label={`${cartel.nombre_visible} ${celda.periodo}: ${celda.ocupados} de ${cartel.capacidad}`}
+                            onClick={() => verCelda(cartel, celda.periodo, celda.ocupados)}
+                          >
+                            <span
+                              className="celda-barra"
+                              style={{ width: `${porcentaje(celda.ocupados, cartel.capacidad)}%` }}
+                            />
+                            <span className="celda-texto">
+                              {celda.ocupados}/{cartel.capacidad}
+                            </span>
+                          </button>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                  {elegida?.cartel.id === cartel.id && (
+                    <tr>
+                      <td colSpan={calendario.periodos.length + 1}>
+                        <div className="card" aria-label={`Detalle de ${cartel.nombre_visible}`}>
+                          <div className="form-heading">
+                            <h3>
+                              {cartel.nombre_visible} · {elegida.periodo}
+                            </h3>
+                            <button className="button-ghost" onClick={() => setElegida(null)}>
+                              Cerrar
+                            </button>
+                          </div>
+                          {detalle.length === 0 ? (
+                            <p className="empty">Sin reservas en el período.</p>
+                          ) : (
+                            <ul>
+                              {detalle.map((reserva) => (
+                                <li key={reserva.id}>
+                                  {reserva.campania_nombre} — {reserva.nombre} (
+                                  {formatearFecha(reserva.fecha_inicio)} →{' '}
+                                  {formatearFecha(reserva.fecha_fin)})
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
                       </td>
-                    )
-                  })}
-                </tr>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>
         )}
       </div>
-      {elegida && (
-        <div className="card section-gap">
-          <div className="form-heading">
-            <h3>
-              {elegida.cartel.nombre_visible} · {elegida.periodo}
-            </h3>
-            <button className="button-ghost" onClick={() => setElegida(null)}>
-              Cerrar
-            </button>
-          </div>
-          {detalle.length === 0 ? (
-            <p className="empty">Sin reservas en el período.</p>
-          ) : (
-            <ul>
-              {detalle.map((reserva) => (
-                <li key={reserva.id}>
-                  {reserva.campania_nombre} — {reserva.nombre} (
-                  {formatearFecha(reserva.fecha_inicio)} → {formatearFecha(reserva.fecha_fin)})
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
     </>
   )
 }

@@ -85,7 +85,7 @@ export function TablaInteracciones({ filas, ocultar, onEditar }: TablaProps) {
           <tr key={fila.id}>
             <td>{fila.fecha}</td>
             <td>{etiquetaTipoInteraccion(fila.tipo)}</td>
-            <td className="primary-cell">{fila.asunto}</td>
+            <td className="primary-cell">{fila.asunto || 'Sin asunto'}</td>
             {ocultar !== 'cliente' && <td>{fila.cliente_nombre}</td>}
             <td>{fila.contacto_nombre ?? '—'}</td>
             {ocultar !== 'campania' && <td>{fila.campania_nombre ?? '—'}</td>}

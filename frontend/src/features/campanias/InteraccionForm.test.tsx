@@ -86,7 +86,9 @@ test('con un intermediario formal ofrece sus contactos activos y sus campañas, 
   fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: '1' } })
   fireEvent.change(screen.getByLabelText('Tipo'), { target: { value: 'reunion' } })
   fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2026-10-20' } })
-  fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: '  Renovación  ' } })
+  fireEvent.change(screen.getByLabelText('Asunto (opcional)'), {
+    target: { value: '  Renovación  ' },
+  })
   fireEvent.change(screen.getByLabelText('Notas'), { target: { value: 'Pidió cotizar.' } })
   expect(await screen.findByRole('option', { name: 'Ana Prueba' })).toBeDefined()
   expect(await screen.findByRole('option', { name: 'Verano 2027' })).toBeDefined()
@@ -119,7 +121,7 @@ test('un cliente directo no ofrece contactos y cambiar de cliente limpia la camp
   await screen.findByRole('option', { name: 'Verano 2027' })
   fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: '2' } })
   expect(screen.queryByLabelText('Contacto')).toBeNull()
-  fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: 'Llamado' } })
+  fireEvent.change(screen.getByLabelText('Asunto (opcional)'), { target: { value: 'Llamado' } })
   fireEvent.click(within(formulario()).getByRole('button', { name: 'Guardar interacción' }))
   await waitFor(() =>
     expect(onSave).toHaveBeenCalledWith(
@@ -170,7 +172,9 @@ test('con una marca y sin campaña envía la marca (RN-018)', async () => {
   fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: '1' } })
   await screen.findByRole('option', { name: 'Marca Sol' })
   fireEvent.change(screen.getByLabelText('Marca (opcional)'), { target: { value: '31' } })
-  fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: 'Antes de la campaña' } })
+  fireEvent.change(screen.getByLabelText('Asunto (opcional)'), {
+    target: { value: 'Antes de la campaña' },
+  })
   fireEvent.click(within(formulario()).getByRole('button', { name: 'Guardar interacción' }))
   await waitFor(() =>
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ marca: 31, campania: null })),

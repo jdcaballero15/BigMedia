@@ -81,7 +81,8 @@ test('lista todos los costos con campaña y cartel, y suma solo los vigentes', a
   expect(screen.getByText('Belgrano 50')).toBeDefined()
   expect(screen.getByText('Anulado')).toBeDefined()
   expect(screen.getByText('Cargado dos veces')).toBeDefined()
-  expect(screen.getByText('300.05')).toBeDefined()
+  expect(screen.getByText('$300,05')).toBeDefined()
+  expect(screen.getByText('$200,10')).toBeDefined()
 })
 
 test('filtra por tipo y proveedor en la consulta', async () => {
