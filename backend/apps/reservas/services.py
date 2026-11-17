@@ -590,7 +590,7 @@ def _reservas_por_cartel(
         estado__in=Reserva.ESTADOS_QUE_OCUPAN,
         fecha_inicio__lte=hasta,
         fecha_fin__gte=desde,
-    )
+    ).select_related("campania__marca")
     por_cartel: dict[int, list[Reserva]] = {}
     for reserva in reservas:
         por_cartel.setdefault(reserva.cartel_id, []).append(reserva)
@@ -627,6 +627,29 @@ def _fila_tanda(
     }
 
 
+def _carteles_filtrados(formato: Formato, filtros: dict[str, Any]) -> QuerySet[Cartel]:
+    """Carteles operativos del formato que cumplen los filtros de "Agregar carteles"."""
+    carteles = Cartel.objects.filter(formato=formato, estado__operativo=True, estado__es_baja=False)
+    for campo in ("zona", "proveedor"):
+        if filtros.get(campo) is not None:
+            carteles = carteles.filter(**{f"{campo}_id": filtros[campo]})
+    if filtros.get("direccion"):
+        buscado = normalizar_busqueda(str(filtros["direccion"]).strip())
+        carteles = carteles.filter(direccion_busqueda__icontains=buscado)
+    return carteles
+
+
+def _solapadas_en_rango(
+    reservas: list[Reserva], desde: date, fin: date, borde_inclusivo: bool
+) -> list[Reserva]:
+    """Reservas que ocupan algún día de [desde, fin] según el día de borde (RN-001)."""
+    return [
+        r
+        for r in reservas
+        if r.fecha_inicio <= fin and desde <= _fin_efectivo(r.fecha_fin, borde_inclusivo)
+    ]
+
+
 def carteles_para_tanda(
     campania: Campania,
     formato: Formato,
@@ -641,30 +664,118 @@ def carteles_para_tanda(
     bloquean se informan como `tentativas`; `en_campania` marca los que la campaña ya reservó.
     `filtros` admite `zona`, `proveedor` (IDs) y `direccion` (parcial, sin tildes).
     """
-    filtros = filtros or {}
     parametros = parametros_disponibilidad()
     fin = _fin_efectivo(hasta, parametros.borde_inclusivo)
-    carteles = Cartel.objects.filter(formato=formato, estado__operativo=True, estado__es_baja=False)
-    for campo in ("zona", "proveedor"):
-        if filtros.get(campo) is not None:
-            carteles = carteles.filter(**{f"{campo}_id": filtros[campo]})
-    if filtros.get("direccion"):
-        buscado = normalizar_busqueda(str(filtros["direccion"]).strip())
-        carteles = carteles.filter(direccion_busqueda__icontains=buscado)
+    carteles = _carteles_filtrados(formato, filtros or {})
     por_cartel = _reservas_por_cartel(carteles, desde, hasta)
     filas = []
     for cartel in carteles.select_related("formato", "zona", "proveedor").order_by(
         "direccion", "id"
     ):
-        solapadas = [
-            r
-            for r in por_cartel.get(cartel.pk, [])
-            if r.fecha_inicio <= fin
-            and desde <= _fin_efectivo(r.fecha_fin, parametros.borde_inclusivo)
-        ]
+        solapadas = _solapadas_en_rango(
+            por_cartel.get(cartel.pk, []), desde, fin, parametros.borde_inclusivo
+        )
         fila = _fila_tanda(cartel, solapadas, campania, (desde, fin), parametros)
         if fila is not None:
             filas.append(fila)
+    return filas
+
+
+def repartir_en_slots(
+    reservas: list[Reserva], capacidad: int, borde_inclusivo: bool
+) -> list[list[Reserva]]:
+    """Reparte reservas en `capacidad` casilleros con partición de intervalos (HU-071).
+
+    Ordenadas por inicio, cada reserva va al primer casillero que ya se liberó: reservas que se
+    suceden comparten casillero y se usan exactamente tantos como el pico diario (RN-003). Si hay
+    más solapadas que casilleros (sobreventa anterior a la validación), el resto va al último
+    casillero para no esconder ninguna.
+    """
+    slots: list[list[Reserva]] = [[] for _ in range(capacidad)]
+    for reserva in sorted(reservas, key=lambda r: (r.fecha_inicio, r.pk)):
+        destino = next(
+            (
+                slot
+                for slot in slots
+                if not slot
+                or _fin_efectivo(slot[-1].fecha_fin, borde_inclusivo) < reserva.fecha_inicio
+            ),
+            slots[-1],
+        )
+        destino.append(reserva)
+    return slots
+
+
+def _ocupante(reserva: Reserva, campania: Campania) -> dict[str, Any]:
+    """Datos de una reserva para un casillero o una tentativa de la vista Posiciones."""
+    marca = reserva.campania.marca
+    return {
+        "reserva_id": reserva.pk,
+        "marca_id": marca.pk if marca else None,
+        "marca_nombre": marca.nombre if marca else None,
+        "campania_id": reserva.campania_id,
+        "campania_nombre": reserva.campania.nombre,
+        "es_esta_campania": reserva.campania_id == campania.pk,
+        "estado": reserva.estado,
+        "fecha_inicio": reserva.fecha_inicio.isoformat(),
+        "fecha_fin": reserva.fecha_fin.isoformat(),
+    }
+
+
+def _fila_posiciones(
+    cartel: Cartel,
+    solapadas: list[Reserva],
+    campania: Campania,
+    rango: tuple[date, date],
+    parametros: ParametrosDisponibilidad,
+) -> dict[str, Any]:
+    """Fila de la vista Posiciones: la de la tabla más los casilleros y las tentativas."""
+    bloquean = _estados_que_bloquean(parametros.tentativa_bloquea)
+    que_bloquean = [r for r in solapadas if r.estado in bloquean]
+    ocupados = _pico_en_rango(que_bloquean, *rango, parametros.borde_inclusivo)
+    slots = repartir_en_slots(que_bloquean, cartel.capacidad, parametros.borde_inclusivo)
+    tentativas = [r for r in solapadas if r.estado not in bloquean]
+    return {
+        "id": cartel.pk,
+        "nombre_visible": cartel.nombre_visible,
+        "direccion": cartel.direccion,
+        "zona_nombre": cartel.zona.nombre,
+        "proveedor_nombre": cartel.proveedor.nombre if cartel.proveedor else None,
+        "tarifa_lista": str(cartel.tarifa_lista) if cartel.tarifa_lista is not None else None,
+        "capacidad": cartel.capacidad,
+        "ocupados": ocupados,
+        "lleno": ocupados >= cartel.capacidad,
+        "tentativas": sum(1 for r in tentativas if r.campania_id != campania.pk),
+        "en_campania": any(r.campania_id == campania.pk for r in solapadas),
+        "slots": [[_ocupante(r, campania) for r in slot] for slot in slots],
+        "tentativas_detalle": [_ocupante(r, campania) for r in tentativas],
+    }
+
+
+def posiciones_de_formato(
+    campania: Campania,
+    formato: Formato,
+    desde: date,
+    hasta: date,
+    filtros: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Carteles del formato, llenos incluidos, con sus casilleros por slot (HU-071).
+
+    Mismo criterio de ocupado y mismos filtros que `carteles_para_tanda`; ordenados por zona y
+    dirección, como la planilla de posiciones.
+    """
+    parametros = parametros_disponibilidad()
+    fin = _fin_efectivo(hasta, parametros.borde_inclusivo)
+    carteles = _carteles_filtrados(formato, filtros or {})
+    por_cartel = _reservas_por_cartel(carteles, desde, hasta)
+    filas = []
+    for cartel in carteles.select_related("formato", "zona", "proveedor").order_by(
+        "zona__nombre", "direccion", "id"
+    ):
+        solapadas = _solapadas_en_rango(
+            por_cartel.get(cartel.pk, []), desde, fin, parametros.borde_inclusivo
+        )
+        filas.append(_fila_posiciones(cartel, solapadas, campania, (desde, fin), parametros))
     return filas
 
 

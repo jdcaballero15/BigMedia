@@ -1527,3 +1527,89 @@ td.row-actions > .menu-fila {
   margin: 0;
   color: var(--texto-2);
 }
+
+/* Vista Posiciones de "Agregar carteles" (HU-071): aspecto de la planilla de posiciones. */
+.posiciones-tabla {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.posiciones-tabla tr.lleno > td {
+  opacity: 0.55;
+}
+
+.posiciones-scroll {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  max-width: 70vw;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.posiciones-slot {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  min-height: 2.2rem;
+  padding: 2px 6px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--blanco);
+  color: var(--texto);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+button.posiciones-slot {
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+button.posiciones-slot.libre:hover,
+button.posiciones-slot.libre:focus-visible {
+  border-color: var(--azul-2);
+  background: var(--celeste);
+}
+
+.posiciones-slot.es-propia {
+  border-color: var(--azul);
+  background: var(--azul);
+  color: var(--blanco);
+}
+
+.posiciones-slot.es-seleccion {
+  border: 2px dashed var(--azul);
+  background: var(--celeste);
+  color: var(--azul);
+}
+
+.posiciones-chip {
+  display: inline-block;
+  margin-left: 6px;
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border: 1px dashed var(--ambar);
+  border-radius: 999px;
+  background: var(--ambar-suave);
+  color: var(--ambar);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.posiciones-chip.es-propia {
+  border-color: var(--azul);
+  background: var(--celeste);
+  color: var(--azul);
+}
+
+.posiciones-lleno {
+  margin-left: 6px;
+}

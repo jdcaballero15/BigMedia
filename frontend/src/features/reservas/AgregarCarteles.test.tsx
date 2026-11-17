@@ -2,7 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import AgregarCarteles, { TAMANO_LOTE } from './AgregarCarteles'
 import type { LineaTanda } from './AgregarCarteles'
-import type { CartelTanda, ResultadoTanda } from './types'
+import type { CartelTanda, FilaPosiciones, ResultadoTanda } from './types'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 
@@ -78,6 +78,7 @@ const elegir = (id: number) =>
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  localStorage.clear()
 })
 
 test('abre con las fechas de la campaña y lista los carteles libres del formato', async () => {
@@ -300,4 +301,144 @@ test('si fallan los filtros lo avisa', async () => {
   )
   renderizar()
   expect(await screen.findByText('No se pudieron cargar los filtros.')).toBeDefined()
+})
+
+// --- Vista Posiciones (HU-071) ---
+
+function posicion(id: number, extra: Partial<FilaPosiciones> = {}): FilaPosiciones {
+  return {
+    ...cartel(id, { nombre_visible: `Av. Prueba ${id} · 2 slots`, capacidad: 2 }),
+    direccion: `Av. Prueba ${id}`,
+    lleno: false,
+    slots: [[], []],
+    tentativas_detalle: [],
+    ...extra,
+  }
+}
+
+function conPosiciones(filas: FilaPosiciones[]): Overrides {
+  return (input) => (input.includes('/reservas/posiciones/') ? ok(filas) : undefined)
+}
+
+const verPosiciones = () => fireEvent.click(screen.getByRole('button', { name: 'Posiciones' }))
+const elegirSlot = (id: number) =>
+  fireEvent.click(screen.getAllByLabelText(`Elegir slot libre en Av. Prueba ${id} · 2 slots`)[0])
+
+test('arranca en Tabla y cambia a Posiciones pidiendo el endpoint nuevo', async () => {
+  const fetchMock = stubFetch([cartel(1)], conPosiciones([posicion(1)]))
+  renderizar()
+  await screen.findByText('Av. Prueba 1 · 8x3')
+  expect(screen.getByRole('button', { name: 'Tabla' }).getAttribute('aria-pressed')).toBe('true')
+  expect(pedidos(fetchMock, '/reservas/posiciones/')).toHaveLength(0)
+
+  verPosiciones()
+
+  expect(await screen.findByRole('table', { name: 'Posiciones' })).toBeDefined()
+  const url = String(pedidos(fetchMock, '/reservas/posiciones/')[0][0])
+  expect(url).toContain('campania=5&formato=10&desde=2026-11-01&hasta=2026-11-30')
+})
+
+test('la selección y los filtros se conservan al cambiar de vista', async () => {
+  const fetchMock = stubFetch([cartel(1)], conPosiciones([posicion(1)]))
+  renderizar()
+  await screen.findByText('Av. Prueba 1 · 8x3')
+  fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'prueba' } })
+  elegir(1)
+  expect(screen.getByText('Gran Formato 2 de 4')).toBeDefined()
+
+  verPosiciones()
+
+  expect(await screen.findByText('Esta campaña')).toBeDefined()
+  expect(screen.getByText('Gran Formato 2 de 4')).toBeDefined()
+  expect(String(pedidos(fetchMock, '/reservas/posiciones/').at(-1)?.[0])).toContain('q=prueba')
+})
+
+test('recuerda la última vista elegida', async () => {
+  stubFetch([cartel(1)], conPosiciones([posicion(1)]))
+  renderizar()
+  await screen.findByText('Av. Prueba 1 · 8x3')
+  verPosiciones()
+  await screen.findByRole('table', { name: 'Posiciones' })
+  cleanup()
+
+  const fetchMock = stubFetch([cartel(1)], conPosiciones([posicion(1)]))
+  renderizar()
+
+  expect(await screen.findByRole('table', { name: 'Posiciones' })).toBeDefined()
+  expect(pedidos(fetchMock, '/carteles-para-tanda/')).toHaveLength(0)
+})
+
+test('cambiar las fechas en Posiciones vacía la selección y recarga posiciones', async () => {
+  const fetchMock = stubFetch([cartel(1)], conPosiciones([posicion(1)]))
+  renderizar()
+  await screen.findByText('Av. Prueba 1 · 8x3')
+  verPosiciones()
+  await screen.findByRole('table', { name: 'Posiciones' })
+  elegirSlot(1)
+  expect(screen.getByText('Gran Formato 2 de 4')).toBeDefined()
+
+  fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '15/11/2026' } })
+
+  expect(await screen.findByText('Gran Formato 1 de 4')).toBeDefined()
+  await waitFor(() =>
+    expect(String(pedidos(fetchMock, '/reservas/posiciones/').at(-1)?.[0])).toContain(
+      'hasta=2026-11-15',
+    ),
+  )
+})
+
+test('crear reservas desde Posiciones manda los carteles elegidos', async () => {
+  const filas = [posicion(1), posicion(2), posicion(3)]
+  const fetchMock = stubFetch([cartel(1)], conPosiciones(filas))
+  const { onCreadas } = renderizar()
+  await screen.findByText('Av. Prueba 1 · 8x3')
+  verPosiciones()
+  await screen.findByRole('table', { name: 'Posiciones' })
+  elegirSlot(1)
+  elegirSlot(2)
+  elegirSlot(3)
+
+  fireEvent.click(screen.getByRole('button', { name: 'Crear reservas' }))
+
+  await waitFor(() => expect(onCreadas).toHaveBeenCalled())
+  expect(cuerposEnBloque(fetchMock)[0].carteles).toEqual([1, 2, 3])
+})
+
+test('seleccionar todos los filtrados en Posiciones ignora llenos y ya en la campaña', async () => {
+  const filas = [
+    posicion(1),
+    posicion(2, { lleno: true, ocupados: 2 }),
+    posicion(3, { en_campania: true }),
+  ]
+  stubFetch([cartel(1)], conPosiciones(filas))
+  renderizar()
+  await screen.findByText('Av. Prueba 1 · 8x3')
+  verPosiciones()
+  await screen.findByRole('table', { name: 'Posiciones' })
+
+  fireEvent.click(screen.getByRole('button', { name: 'Seleccionar todos los filtrados' }))
+
+  expect(screen.getByText('Gran Formato 2 de 4')).toBeDefined()
+  expect(screen.getByRole('button', { name: 'Quitar Av. Prueba 1 · 2 slots' })).toBeDefined()
+})
+
+test('una respuesta vieja que llega tarde no pisa a la más nueva', async () => {
+  let soltarVieja: (valor: unknown) => void = () => {}
+  const vieja = new Promise((resolver) => {
+    soltarVieja = resolver
+  })
+  stubFetch([cartel(2)], (input) => {
+    if (input.includes('/carteles-para-tanda/') && !input.includes('q=')) return vieja
+    return undefined
+  })
+  renderizar()
+  fireEvent.change(screen.getByLabelText('Dirección'), { target: { value: 'nueva' } })
+  expect(await screen.findByText('Av. Prueba 2 · 8x3')).toBeDefined()
+
+  soltarVieja(ok([cartel(1)]))
+  await vieja
+  await new Promise((resolver) => setTimeout(resolver, 0))
+
+  expect(screen.queryByText('Av. Prueba 1 · 8x3')).toBeNull()
+  expect(screen.getByText('Av. Prueba 2 · 8x3')).toBeDefined()
 })
