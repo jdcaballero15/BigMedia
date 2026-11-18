@@ -33,10 +33,8 @@ function fila(id: number, extra: Partial<FilaPosiciones> = {}): FilaPosiciones {
     capacidad,
     ocupados: 0,
     lleno: false,
-    tentativas: 0,
     en_campania: false,
     slots: Array.from({ length: capacidad }, () => []),
-    tentativas_detalle: [],
     ...extra,
   }
 }
@@ -130,18 +128,11 @@ test('un cartel elegido muestra Esta campaña en el primer libre y se puede quit
 })
 
 test('un cartel ya en la campaña no se puede elegir', () => {
-  const pendiente = ocupante('Propia', { es_esta_campania: true, estado: 'pendiente' })
-  renderizar([fila(1, { en_campania: true, tentativas_detalle: [pendiente] })])
+  const propia = ocupante('Propia', { es_esta_campania: true })
+  renderizar([fila(1, { ocupados: 1, en_campania: true, slots: [[propia], []] })])
   const fila1 = filaDe('Av. Prueba 1')
   expect(within(fila1).queryByRole('button')).toBeNull()
-  expect(within(fila1).getByText('Esta campaña (pendiente)')).toBeTruthy()
-})
-
-test('las tentativas de otras campañas se muestran como chip con su marca', () => {
-  const tentativa = ocupante('Kamet', { estado: 'pendiente' })
-  renderizar([fila(1, { tentativas: 1, tentativas_detalle: [tentativa] })])
-  const chip = within(filaDe('Av. Prueba 1')).getByText('· 1 tentativas')
-  expect(chip.getAttribute('title')).toContain('Kamet')
+  expect(within(fila1).getByText('Esta campaña')).toBeTruthy()
 })
 
 test('doce slots se renderizan dentro del contenedor con scroll', () => {
@@ -158,17 +149,4 @@ test('mientras carga o sin carteles lo avisa', () => {
   cleanup()
   renderizar([])
   expect(screen.getByText('No hay carteles con estos filtros.')).toBeTruthy()
-})
-
-test('las tentativas van junto a la dirección, fuera de la tira de slots', () => {
-  const tentativa = ocupante('Kamet', { estado: 'pendiente' })
-  const propia = ocupante('Propia', { es_esta_campania: true, estado: 'pendiente' })
-  renderizar([
-    fila(1, { capacidad: 12, tentativas: 1, tentativas_detalle: [tentativa] }),
-    fila(2, { capacidad: 12, en_campania: true, tentativas_detalle: [propia] }),
-  ])
-  const direccion1 = within(filaDe('Av. Prueba 1')).getAllByRole('cell')[0]
-  expect(within(direccion1).getByText('· 1 tentativas')).toBeTruthy()
-  const direccion2 = within(filaDe('Av. Prueba 2')).getAllByRole('cell')[0]
-  expect(within(direccion2).getByText('Esta campaña (pendiente)')).toBeTruthy()
 })

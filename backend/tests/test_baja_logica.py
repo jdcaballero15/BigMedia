@@ -103,7 +103,12 @@ def test_campania_con_inactivo_nuevo_rechaza(operativo_client, campo):
 @pytest.mark.django_db
 def test_campania_con_marca_que_se_inactivo_despues_permite_editar(operativo_client):
     original = marca()
-    camp = Campania.objects.create(marca=original, cliente_facturacion=original.cliente)
+    camp = Campania.objects.create(
+        marca=original,
+        cliente_facturacion=original.cliente,
+        fecha_inicio=date(2026, 11, 1),
+        fecha_fin=date(2026, 11, 30),
+    )
     Marca.objects.filter(pk=original.pk).update(activo=False)
     Cliente.objects.filter(pk=original.cliente_id).update(activo=False)
 

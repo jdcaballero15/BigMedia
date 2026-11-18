@@ -1,6 +1,6 @@
 # Unidad: Campaña siempre confirmada
 
-- **Estado:** en curso · **Épica:** E10 Armado de campañas y reserva masiva · **Apps:** `reservas`,
+- **Estado:** en revisión · **Épica:** E10 Armado de campañas y reserva masiva · **Apps:** `reservas`,
   `campanias`, frontend
 - **Origen:** PR de historias #142 (HU-024, HU-035, HU-037, HU-057, HU-058, HU-071; HU-059
   retirada; RN-002, RN-006, RN-011) · **Rama:** `feature/reservas-campania-siempre-confirmada`
@@ -146,6 +146,18 @@ Las decisiones de negocio están en #142 (Juan Diego, 17/11/2026). Las técnicas
 
 ## Registro de gates
 
-- Gate 1 (plan): pendiente
-- Gate 2 (verificación): pendiente
-- Gate 3 (PR): pendiente
+- Gate 1 (plan): 2026-11-18 — aprobado por Juan Diego
+- Gate 2 (verificación): 2026-11-18 — rama `feature/reservas-campania-siempre-confirmada`:
+  - `ruff format --check` y `ruff check`: All checks passed!
+  - `mypy backend`: Success: no issues found in 144 source files
+  - `makemigrations --check --dry-run`: No changes detected
+  - `pytest --cov`: 873 passed in 1512.38s; Required test coverage of 80.0% reached. Total
+    coverage: 97.42%
+  - `pre-commit run --all-files` (incluye gitleaks): todos Passed
+  - Frontend: `format:check` OK, `lint` OK, `typecheck` OK, `test:coverage` 50 archivos y 417
+    tests passed (líneas 94,88 %), `build` OK
+  - La primera corrida dio 869 passed y 4 errores de setup en tests transaccionales: el test
+    nuevo de concurrencia usaba `transaction=True` sin `serialized_rollback=True` y dejaba la base
+    vacía. Se corrigió y la segunda corrida es la de arriba.
+  - Aprobado por Juan Diego el 2026-11-18, después de probarlo en local.
+- Gate 3 (PR): 2026-11-18, pedido por Juan Diego

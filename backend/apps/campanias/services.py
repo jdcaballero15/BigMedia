@@ -20,18 +20,22 @@ from .models import Campania, LineaFormato, OrdenPublicidad
 CAMPO_AUDITORIA_OP = "orden_publicidad"
 
 
-def validar_confirmacion(campania: Campania) -> None:
-    """Para confirmar se exigen marca, cliente que factura y ambas fechas (RN-011)."""
-    faltantes = []
+def validar_campania_completa(campania: Campania) -> None:
+    """La campaña nace Confirmada: marca, cliente que factura y fechas son obligatorios (RN-011).
+
+    Corre al crearla y al editarla. Cada dato que falta se informa en su propio campo.
+    """
+    errores: dict[str, str] = {}
     if campania.marca_id is None:
-        faltantes.append("la marca")
+        errores["marca"] = "Elegí la marca."
     if campania.cliente_factura is None:
-        faltantes.append("el cliente que factura")
-    if campania.fecha_inicio is None or campania.fecha_fin is None:
-        faltantes.append("las fechas")
-    if faltantes:
-        detalle = ", ".join(faltantes)
-        raise ValidationError({"estado": f"Para confirmar falta cargar {detalle}."})
+        errores["cliente_facturacion"] = "Elegí el cliente que factura o una marca con cliente."
+    if campania.fecha_inicio is None:
+        errores["fecha_inicio"] = "Cargá la fecha de inicio."
+    if campania.fecha_fin is None:
+        errores["fecha_fin"] = "Cargá la fecha de fin."
+    if errores:
+        raise ValidationError(errores)
 
 
 def estampar_cliente_anterior(marca: Marca, cliente_anterior: Cliente) -> None:

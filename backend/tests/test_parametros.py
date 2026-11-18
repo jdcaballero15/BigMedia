@@ -43,11 +43,17 @@ def reserva(car: Cartel, inicio: str, fin: str, estado: str = "confirmada") -> R
 
 
 def confirmar(client: Client, car: Cartel, inicio: str, fin: str) -> Any:
-    """Crea una reserva pendiente y la confirma por la API; devuelve la respuesta del confirmar."""
-    pendiente = reserva(car, inicio, fin, estado="pendiente")
-    return client.patch(
-        f"{URL_RESERVAS}{pendiente.pk}/",
-        data=json.dumps({"estado": "confirmada"}),
+    """Crea por la API una reserva, que nace Confirmada y valida el cupo; devuelve la respuesta."""
+    return client.post(
+        URL_RESERVAS,
+        data=json.dumps(
+            {
+                "campania": Campania.objects.create().pk,
+                "cartel": car.pk,
+                "fecha_inicio": inicio,
+                "fecha_fin": fin,
+            }
+        ),
         content_type="application/json",
     )
 
@@ -80,7 +86,6 @@ def test_parametros_fila_inicial_tiene_los_valores_provisorios(admin_client):
     assert respuesta.status_code == 200
     assert respuesta.json() == {
         "borde_inclusivo": True,
-        "tentativa_bloquea": False,
         "permitir_fecha_pasada": False,
     }
     assert ParametrosDisponibilidad.objects.count() == 1
@@ -95,22 +100,7 @@ def test_parametros_cambio_de_borde_rige_en_la_siguiente_validacion(admin_client
 
     assert _patch(admin_client, {"borde_inclusivo": False}).status_code == 200
 
-    assert confirmar(operativo_client, car, "2026-11-15", "2026-11-30").status_code == 200
-
-
-@pytest.mark.django_db
-@pytest.mark.regla("RN-002")
-def test_parametros_tentativa_bloquea_rige_en_la_siguiente_validacion(
-    admin_client, operativo_client
-):
-    car = cartel(capacidad=1)
-    reserva(car, "2026-11-01", "2026-11-15", estado="pendiente")
-    reserva(car, "2026-12-01", "2026-12-15", estado="pendiente")
-    assert confirmar(operativo_client, car, "2026-11-01", "2026-11-15").status_code == 200
-
-    assert _patch(admin_client, {"tentativa_bloquea": True}).status_code == 200
-
-    assert confirmar(operativo_client, car, "2026-12-01", "2026-12-15").status_code == 400
+    assert confirmar(operativo_client, car, "2026-11-15", "2026-11-30").status_code == 201
 
 
 @pytest.mark.django_db
@@ -132,10 +122,10 @@ def test_parametros_sin_sesion_no_accede():
 
 @pytest.mark.django_db
 def test_parametros_cambio_queda_auditado_con_usuario(admin_client):
-    assert _patch(admin_client, {"tentativa_bloquea": True}).status_code == 200
+    assert _patch(admin_client, {"borde_inclusivo": False}).status_code == 200
     registro = RegistroAuditoria.objects.get(entidad="parametros")
-    assert registro.campo == "tentativa_bloquea"
-    assert (registro.valor_anterior, registro.valor_nuevo) == ("False", "True")
+    assert registro.campo == "borde_inclusivo"
+    assert (registro.valor_anterior, registro.valor_nuevo) == ("True", "False")
     assert registro.usuario is not None
     assert registro.usuario.username == "admin"
 

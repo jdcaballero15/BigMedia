@@ -44,7 +44,8 @@ class CampaniaSerializer(serializers.ModelSerializer[Campania]):
             "creado_en",
             "actualizado_en",
         ]
-        read_only_fields = ["creado_en", "actualizado_en"]
+        # El estado no se edita: la campaña nace Confirmada y se cancela con su propia acción.
+        read_only_fields = ["estado", "creado_en", "actualizado_en"]
 
     def get_cliente_factura(self, campania: Campania) -> int | None:
         cliente = campania.cliente_factura
@@ -68,12 +69,11 @@ class CampaniaSerializer(serializers.ModelSerializer[Campania]):
             )
             if valor is not None and not valor.activo and not sin_cambios:
                 raise serializers.ValidationError({campo: mensaje})
-        if attrs.get("estado") == Campania.Estado.CONFIRMADA:
-            futura = Campania(**{**self._estado_actual(), **attrs})
-            try:
-                services.validar_confirmacion(futura)
-            except DjangoValidationError as error:
-                raise serializers.ValidationError(error.message_dict) from error
+        futura = Campania(**{**self._estado_actual(), **attrs})
+        try:
+            services.validar_campania_completa(futura)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.message_dict) from error
         return attrs
 
     def _estado_actual(self) -> dict[str, Any]:

@@ -12,10 +12,9 @@ from config.texto import normalizar_busqueda
 
 class Campania(models.Model):
     class Estado(models.TextChoices):
-        COTIZADA = "cotizada", "Cotizada"
+        # La campaña nace Confirmada y solo puede pasar a Cancelada (HU-024).
         CONFIRMADA = "confirmada", "Confirmada"
         CANCELADA = "cancelada", "Cancelada"
-        PERDIDA = "perdida", "Perdida"
 
     nombre = models.CharField(max_length=200, blank=True)
     marca = models.ForeignKey(
@@ -30,7 +29,7 @@ class Campania(models.Model):
     )
     fecha_inicio = models.DateField(null=True, blank=True)
     fecha_fin = models.DateField(null=True, blank=True)
-    estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.COTIZADA)
+    estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.CONFIRMADA)
     nombre_busqueda = models.CharField(max_length=200, editable=False, db_index=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)

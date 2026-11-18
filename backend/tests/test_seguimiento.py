@@ -19,7 +19,7 @@ def _formato(nombre: str) -> Formato:
 
 
 def _reservas(
-    campania: Campania, formato: Formato, cantidad: int, estado: str = "pendiente"
+    campania: Campania, formato: Formato, cantidad: int, estado: str = "confirmada"
 ) -> None:
     for _ in range(cantidad):
         cartel = Cartel.objects.create(
@@ -50,8 +50,7 @@ def test_seguimiento_con_100_solicitadas_y_60_reservadas_faltan_40(operativo_cli
     campania = Campania.objects.create()
     formato = _formato("Gran Formato Prueba")
     linea = LineaFormato.objects.create(campania=campania, formato=formato, cantidad=100)
-    _reservas(campania, formato, 30, estado="pendiente")
-    _reservas(campania, formato, 25, estado="confirmada")
+    _reservas(campania, formato, 55, estado="confirmada")
     _reservas(campania, formato, 5, estado="finalizada")
     assert _seguimiento(operativo_client, campania) == [
         {

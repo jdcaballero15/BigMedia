@@ -1,6 +1,7 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import AgregarCarteles, { TAMANO_LOTE } from './AgregarCarteles'
+import AgregarCarteles from './AgregarCarteles'
+import { TAMANO_LOTE } from './tandas'
 import type { LineaTanda } from './AgregarCarteles'
 import type { CartelTanda, FilaPosiciones, ResultadoTanda } from './types'
 
@@ -15,7 +16,6 @@ function cartel(id: number, extra: Partial<CartelTanda> = {}): CartelTanda {
     tarifa_lista: '1000.50',
     capacidad: 1,
     ocupados: 0,
-    tentativas: 0,
     en_campania: false,
     ...extra,
   }
@@ -82,11 +82,10 @@ afterEach(() => {
 })
 
 test('abre con las fechas de la campaña y lista los carteles libres del formato', async () => {
-  const fetchMock = stubFetch([cartel(1, { tentativas: 2, proveedor_nombre: 'Prov' })])
+  const fetchMock = stubFetch([cartel(1, { proveedor_nombre: 'Prov' })])
   renderizar()
   expect(await screen.findByText('Av. Prueba 1 · 8x3')).toBeDefined()
   expect((screen.getByLabelText('Desde') as HTMLInputElement).value).toBe('01/11/2026')
-  expect(screen.getByText('· 2 tentativas')).toBeDefined()
   expect(screen.getByText('$1.000,50')).toBeDefined()
   const url = String(pedidos(fetchMock, '/carteles-para-tanda/')[0][0])
   expect(url).toContain('campania=5&formato=10&desde=2026-11-01&hasta=2026-11-30')
@@ -311,7 +310,6 @@ function posicion(id: number, extra: Partial<FilaPosiciones> = {}): FilaPosicion
     direccion: `Av. Prueba ${id}`,
     lleno: false,
     slots: [[], []],
-    tentativas_detalle: [],
     ...extra,
   }
 }
@@ -441,4 +439,57 @@ test('una respuesta vieja que llega tarde no pisa a la más nueva', async () => 
 
   expect(screen.queryByText('Av. Prueba 1 · 8x3')).toBeNull()
   expect(screen.getByText('Av. Prueba 2 · 8x3')).toBeDefined()
+})
+
+test('en el alta (sin campaña) lista sin el parámetro campania', async () => {
+  const fetchMock = stubFetch([cartel(1)])
+  renderizar({ campaniaId: null, onElegir: vi.fn(), onCreadas: undefined })
+  await screen.findByLabelText('Elegir Av. Prueba 1 · 8x3')
+  const [url] = pedidos(fetchMock, '/carteles-para-tanda/')[0] ?? []
+  expect(String(url)).toContain('formato=10')
+  expect(String(url)).not.toContain('campania=')
+})
+
+test('en modo solo elegir devuelve la selección y no crea reservas', async () => {
+  const fetchMock = stubFetch([cartel(1), cartel(2), cartel(3)])
+  const onElegir = vi.fn()
+  renderizar({
+    campaniaId: null,
+    onElegir,
+    onCreadas: undefined,
+    linea: { ...linea, solicitadas: 2, reservadas: 0 },
+  })
+  await screen.findByLabelText('Elegir Av. Prueba 1 · 8x3')
+  elegir(1)
+  elegir(3)
+  fireEvent.click(screen.getByRole('button', { name: 'Usar selección' }))
+  expect(onElegir).toHaveBeenCalledWith({
+    carteles: [cartel(1), cartel(3)],
+    desde: '2026-11-01',
+    hasta: '2026-11-30',
+  })
+  expect(pedidos(fetchMock, '/en-bloque/')).toHaveLength(0)
+})
+
+test('en modo solo elegir avisa si no coincide con lo solicitado y permite usarla igual', async () => {
+  stubFetch([cartel(1), cartel(2)])
+  const onElegir = vi.fn()
+  renderizar({ campaniaId: null, onElegir, linea: { ...linea, solicitadas: 2, reservadas: 0 } })
+  await screen.findByLabelText('Elegir Av. Prueba 1 · 8x3')
+  elegir(1)
+  fireEvent.click(screen.getByRole('button', { name: 'Usar selección' }))
+  expect(onElegir).not.toHaveBeenCalled()
+  expect(screen.getByRole('alert').textContent).toContain('Podés usarla igual')
+  fireEvent.click(screen.getByRole('button', { name: 'Usar igual' }))
+  expect(onElegir).toHaveBeenCalledTimes(1)
+})
+
+test('en modo solo elegir arranca con la selección anterior', async () => {
+  stubFetch([cartel(1), cartel(2)])
+  renderizar({ campaniaId: null, onElegir: vi.fn(), seleccionInicial: [cartel(2)] })
+  const elegido = (await screen.findByLabelText('Elegir Av. Prueba 2 · 8x3')) as HTMLInputElement
+  expect(elegido.checked).toBe(true)
+  expect((screen.getByLabelText('Elegir Av. Prueba 1 · 8x3') as HTMLInputElement).checked).toBe(
+    false,
+  )
 })

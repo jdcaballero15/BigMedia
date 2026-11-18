@@ -1656,25 +1656,6 @@ button.posiciones-slot.libre:focus-visible {
   color: var(--azul);
 }
 
-.posiciones-chip {
-  display: inline-block;
-  margin-left: 6px;
-  flex: 0 0 auto;
-  padding: 2px 8px;
-  border: 1px dashed var(--ambar);
-  border-radius: 999px;
-  background: var(--ambar-suave);
-  color: var(--ambar);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.posiciones-chip.es-propia {
-  border-color: var(--azul);
-  background: var(--celeste);
-  color: var(--azul);
-}
-
 .posiciones-lleno {
   margin-left: 6px;
 }

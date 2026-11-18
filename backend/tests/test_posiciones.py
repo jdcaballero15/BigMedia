@@ -12,7 +12,7 @@ from django.test.utils import CaptureQueriesContext
 from apps.campanias.models import Campania
 from apps.clientes.models import Cliente, Marca
 from apps.inventario.models import Cartel, EstadoCartel, Formato, Proveedor, Zona
-from apps.reservas.models import ParametrosDisponibilidad, Reserva
+from apps.reservas.models import Reserva
 from apps.reservas.services import posiciones_de_formato, repartir_en_slots
 
 URL = "/api/reservas/posiciones/"
@@ -130,36 +130,6 @@ def test_posiciones_slots_tiene_largo_capacidad_y_ocupados_es_el_pico(formato):
     assert fila["ocupados"] == 3
     assert fila["lleno"] is False
     assert sum(1 for slot in fila["slots"] if not slot) == 5
-
-
-@pytest.mark.django_db
-@pytest.mark.regla("RN-002")
-def test_posiciones_pendiente_que_no_bloquea_va_a_tentativas(formato):
-    cartel = _cartel(formato, "Av. Tentativa 1", capacidad=2)
-    _reserva(cartel, "2026-11-01", "2026-11-30", estado="pendiente", campania=_campania("Kamet"))
-    campania = _campania()
-
-    [fila] = _posiciones(campania, formato)
-    assert fila["tentativas"] == 1
-    assert [t["marca_nombre"] for t in fila["tentativas_detalle"]] == ["Kamet"]
-    assert fila["slots"] == [[], []]
-
-    ParametrosDisponibilidad.objects.filter(pk=1).update(tentativa_bloquea=True)
-    [fila] = _posiciones(campania, formato)
-    assert fila["tentativas_detalle"] == []
-    assert fila["slots"][0][0]["marca_nombre"] == "Kamet"
-
-
-@pytest.mark.django_db
-def test_posiciones_pendiente_propia_no_bloqueante_va_a_tentativas_marcada(formato):
-    campania = _campania("Propia")
-    cartel = _cartel(formato, "Av. Propia 1", capacidad=2)
-    _reserva(cartel, "2026-11-01", "2026-11-30", estado="pendiente", campania=campania)
-
-    [fila] = _posiciones(campania, formato)
-
-    assert (fila["en_campania"], fila["tentativas"]) == (True, 0)
-    assert fila["tentativas_detalle"][0]["es_esta_campania"] is True
 
 
 @pytest.mark.django_db
@@ -296,3 +266,19 @@ def test_endpoint_posiciones_consultas_no_crecen_con_los_carteles(operativo_clie
     with CaptureQueriesContext(connection) as muchos:
         assert len(_get(operativo_client, campania, formato).json()) == 6
     assert len(muchos.captured_queries) == len(uno.captured_queries)
+
+
+@pytest.mark.django_db
+def test_endpoint_posiciones_sin_campania_no_marca_ninguna_como_propia(operativo_client, formato):
+    cartel = _cartel(formato, "Avenida Alta 700", capacidad=2)
+    _reserva(cartel, "2026-11-01", "2026-11-30", campania=_campania("Fravega"))
+
+    respuesta = operativo_client.get(
+        URL, {"formato": formato.pk, "desde": "2026-11-01", "hasta": "2026-11-30"}
+    )
+
+    assert respuesta.status_code == 200
+    [fila] = respuesta.json()
+    assert fila["en_campania"] is False
+    assert fila["slots"][0][0]["es_esta_campania"] is False
+    assert fila["slots"][0][0]["marca_nombre"] == "Fravega"

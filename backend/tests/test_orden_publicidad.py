@@ -32,8 +32,13 @@ def _pdf(nombre: str = "orden.pdf", contenido: bytes = PDF) -> SimpleUploadedFil
     return SimpleUploadedFile(nombre, contenido, content_type="application/pdf")
 
 
+def _completa() -> dict[str, Any]:
+    """Lo que exige toda campaña al crearla, porque nace Confirmada (RN-011)."""
+    return {"marca": _marca().pk, "fecha_inicio": "2026-12-01", "fecha_fin": "2026-12-31"}
+
+
 def _crear(client: Client, archivos: list[SimpleUploadedFile], **campos: Any) -> Any:
-    return client.post(URL, data={**campos, "ordenes_publicidad": archivos})
+    return client.post(URL, data={**_completa(), **campos, "ordenes_publicidad": archivos})
 
 
 def _editar(client: Client, pk: int, archivos: list[SimpleUploadedFile], **campos: Any) -> Any:
@@ -43,8 +48,9 @@ def _editar(client: Client, pk: int, archivos: list[SimpleUploadedFile], **campo
 
 
 def _marca() -> Marca:
-    cliente = Cliente.objects.create(nombre="Coca Cola", razon_social="Coca Cola S.A.")
-    return Marca.objects.create(nombre="Sprite", cliente=cliente)
+    numero = Marca.objects.count() + 1
+    cliente = Cliente.objects.create(nombre=f"Coca Cola {numero}", razon_social="Coca Cola S.A.")
+    return Marca.objects.create(nombre=f"Sprite {numero}", cliente=cliente)
 
 
 # --- Criterio 1: Nueva campaña con PDF ---
@@ -67,11 +73,14 @@ def test_crear_campania_con_pdf_guarda_la_orden(operativo_client):
 
 
 @pytest.mark.django_db
-def test_crear_campania_multipart_con_campos_vacios_los_guarda_nulos(operativo_client):
+def test_crear_campania_multipart_sin_marca_ni_fecha_rechaza_y_no_guarda_la_orden(
+    operativo_client,
+):
     respuesta = _crear(operativo_client, [_pdf()], nombre="", marca="", fecha_inicio="")
-    assert respuesta.status_code == 201, respuesta.content
-    campania = Campania.objects.get()
-    assert (campania.marca, campania.fecha_inicio) == (None, None)
+    assert respuesta.status_code == 400, respuesta.content
+    assert {"marca", "fecha_inicio"} <= set(respuesta.json())
+    assert not Campania.objects.exists()
+    assert not OrdenPublicidad.objects.exists()
 
 
 # --- Criterio 2: la campaña muestra sus órdenes ---
@@ -252,24 +261,12 @@ def test_archivo_sin_sesion_se_niega(operativo_client):
 
 
 @pytest.mark.django_db
-def test_crear_y_confirmar_campania_sin_orden_se_acepta(operativo_client):
-    marca = _marca()
+def test_crear_campania_sin_orden_se_acepta(operativo_client):
     creada = operativo_client.post(
-        URL, data=json.dumps({"nombre": "Verano"}), content_type="application/json"
-    )
-    assert creada.status_code == 201
-    assert creada.json()["ordenes_publicidad"] == []
-    confirmada = operativo_client.patch(
-        f"{URL}{creada.json()['id']}/",
-        data=json.dumps(
-            {
-                "marca": marca.pk,
-                "fecha_inicio": "2026-12-01",
-                "fecha_fin": "2026-12-31",
-                "estado": "confirmada",
-            }
-        ),
+        URL,
+        data=json.dumps({"nombre": "Verano", **_completa()}),
         content_type="application/json",
     )
-    assert confirmada.status_code == 200, confirmada.content
+    assert creada.status_code == 201, creada.content
+    assert creada.json()["ordenes_publicidad"] == []
     assert Campania.objects.get().estado == "confirmada"

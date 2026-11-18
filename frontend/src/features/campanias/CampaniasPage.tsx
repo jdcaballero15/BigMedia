@@ -1,27 +1,21 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { apiGet, apiUpload, apiWrite } from '../../shared/api'
 import type { Cliente, Marca, Rubro } from '../clientes/types'
 import type { MarcaInput } from '../clientes/MarcaForm'
 import CampaniaForm from './CampaniaForm'
 import type { CampaniaInput } from './CampaniaForm'
 import CampaniaDetalle from './CampaniaDetalle'
-import MoverPendientes from '../reservas/MoverPendientes'
+import { crearLineasYReservas } from './altaConPosiciones'
+import type { ResultadoAlta } from './altaConPosiciones'
+import ResumenAlta from './ResumenAlta'
 import type { Campania } from './types'
 import { ESTADOS_CAMPANIA, etiquetaEstado } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
 import MenuFila from '../../shared/MenuFila'
 
-type CambioDeFechas = {
-  campaniaId: number
-  inicioAnterior: string
-  finAnterior: string
-  inicioNuevo: string
-  finNuevo: string
-}
-
 /** Multipart de la campaña: un valor vacío va como "" y el servidor lo toma como nulo. */
 function formularioCampania(
-  datos: Omit<CampaniaInput, 'ordenes_publicidad'>,
+  datos: Omit<CampaniaInput, 'ordenes_publicidad' | 'lineas'>,
   archivos: File[],
 ): FormData {
   const form = new FormData()
@@ -30,15 +24,6 @@ function formularioCampania(
   }
   for (const archivo of archivos) form.append('ordenes_publicidad', archivo)
   return form
-}
-
-/** Cambio de fechas que puede arrastrar Pendientes (HU-058): ambas fechas, antes y después. */
-function detectarCambioDeFechas(anterior: Campania, guardada: Campania): CambioDeFechas | null {
-  const { fecha_inicio: inicioAnterior, fecha_fin: finAnterior } = anterior
-  const { fecha_inicio: inicioNuevo, fecha_fin: finNuevo } = guardada
-  if (!inicioAnterior || !finAnterior || !inicioNuevo || !finNuevo) return null
-  if (inicioAnterior === inicioNuevo && finAnterior === finNuevo) return null
-  return { campaniaId: guardada.id, inicioAnterior, finAnterior, inicioNuevo, finNuevo }
 }
 
 export default function CampaniasPage() {
@@ -55,8 +40,7 @@ export default function CampaniasPage() {
   const [editing, setEditing] = useState<Campania | 'new' | null>(null)
   const [viendo, setViendo] = useState<Campania | null>(null)
   const [revision, setRevision] = useState(0)
-  const [cambioDeFechas, setCambioDeFechas] = useState<CambioDeFechas | null>(null)
-  const terminarCambioDeFechas = useCallback(() => setCambioDeFechas(null), [])
+  const [resultadoAlta, setResultadoAlta] = useState<ResultadoAlta | null>(null)
 
   useEffect(() => {
     let active = true
@@ -108,13 +92,14 @@ export default function CampaniasPage() {
     const path =
       editing === 'new' ? '/api/campanias/campanias/' : `/api/campanias/campanias/${editing.id}/`
     const metodo = editing === 'new' ? 'POST' : 'PATCH'
-    const { ordenes_publicidad: archivos, ...datos } = input
+    const { ordenes_publicidad: archivos, lineas, ...datos } = input
     // Con PDF adjuntos, la campaña y sus órdenes van en un solo pedido (HU-069, criterio 4).
     const guardada =
       archivos.length > 0
         ? await apiUpload<Campania>(path, formularioCampania(datos, archivos), metodo)
         : await apiWrite<Campania>(path, metodo, datos)
-    if (editing !== 'new') setCambioDeFechas(detectarCambioDeFechas(editing, guardada))
+    // Las líneas y los carteles elegidos en el alta se crean ya con la campaña guardada (HU-056).
+    setResultadoAlta(lineas.length > 0 ? await crearLineasYReservas(guardada, lineas) : null)
     setEditing(null)
     setRevision((current) => current + 1)
   }
@@ -157,6 +142,9 @@ export default function CampaniasPage() {
           </button>
         )}
       </div>
+      {resultadoAlta && (
+        <ResumenAlta resultado={resultadoAlta} onCerrar={() => setResultadoAlta(null)} />
+      )}
       {editing !== null && (
         <CampaniaForm
           key={editing === 'new' ? 'new' : editing.id}
@@ -167,13 +155,6 @@ export default function CampaniasPage() {
           onSave={saveCampania}
           onCrearMarca={crearMarca}
           onCancel={() => setEditing(null)}
-        />
-      )}
-      {cambioDeFechas && (
-        <MoverPendientes
-          key={`${cambioDeFechas.campaniaId}-${cambioDeFechas.inicioNuevo}-${cambioDeFechas.finNuevo}`}
-          {...cambioDeFechas}
-          onListo={terminarCambioDeFechas}
         />
       )}
       <div className="filters card" role="search" aria-label="Filtros de campañas">
