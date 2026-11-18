@@ -38,8 +38,9 @@ Definidas por Gonza el 27/10/2026.
   de reservas, campañas y tarifas con su pantalla (HU-007), expiración de sesión por inactividad
   (HU-003 criterio 4), bloqueo temporal por intentos fallidos (HU-003 criterio 3), roles Operativo,
   Administrador y Lectura (HU-004), gestión de usuarios (HU-005) y baja lógica (HU-006).
-- **E10 Armado de campañas y reserva masiva** — posiciones por formato, reserva masiva y
-  confirmación en bloque (HU-055 a HU-059).
+- **E10 Armado de campañas y reserva masiva** — posiciones por formato, reserva masiva,
+  confirmación en bloque (HU-055 a HU-059; HU-059 retirada el 2026-11-17) y vista de posiciones
+  como en la planilla (HU-071).
 - **E11 Facturación mensual, Must** — ítems a facturar con importes, IVA y estados, y cierre de
   mes con la planilla para Administración (HU-060, HU-061, HU-065, HU-066).
 - **E9 Entrega y traspaso** — documentación de traspaso, modelo de datos, manual de usuario y
@@ -61,8 +62,9 @@ Definidas por Gonza el 27/10/2026.
 
 ## En curso
 
-- **E10 Armado de campañas, vista de posiciones** — «Agregar carteles» muestra los carteles como
-  en la planilla de posiciones de Seba, para asignar slots desde ahí (HU-071).
+- **E10 Armado de campañas, campaña siempre confirmada** — la campaña nace Confirmada y sus
+  reservas también; se sacan Cotizada, Perdida, Pendiente y «Confirmar reservas» (HU-024,
+  HU-035, HU-037, HU-057; HU-059 retirada).
 
 ## Próximas
 
@@ -99,3 +101,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-11-09 | El ajuste de Facturación (HU-060 y HU-070) queda como próxima | Juan Diego quiere que Seba descargue en Excel los ítems a facturar sin enviar el mes |
 | 2026-11-16 | La orden de publicidad (HU-069), el ajuste de Facturación (HU-060 y HU-070) y los ajustes de E12 pasan a Hecho; Facturación pierde estados y envío; las próximas quedan a definir | Quedaron mergeados los PR #124, #125, #128, #129, #132, #134 y #135 |
 | 2026-11-16 | E10 vuelve a En curso con la vista de posiciones (HU-071) | Seba asigna lugares mirando la planilla de posiciones; Juan Diego pidió llevarla a «Agregar carteles» |
+| 2026-11-17 | La vista de posiciones pasa a Hecho; E10 sigue En curso con la campaña siempre confirmada | Quedaron mergeados los PR #140 y #141; Seba carga la campaña cuando el cliente ya la confirmó y Juan Diego pidió sacar los pasos de confirmación |

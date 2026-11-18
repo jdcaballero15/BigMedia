@@ -29,16 +29,16 @@ Las historias citan "preguntas" numeradas (por ejemplo, "pregunta 10"). Esa list
 | ID | Regla | Estado | Valor actual | Origen | HUs | Dónde vive |
 | --- | --- | --- | --- | --- | --- | --- |
 | RN-001 | Día límite entre reservas | `provisoria` | Inclusivo: el día compartido se pisa | Documento de historias (decisión D-01 del 15/10/2026) | HU-001, HU-031, HU-033, HU-040, HU-042, HU-051 | Servicio `apps/reservas/services.py` (fin efectivo), modelo `ParametrosDisponibilidad.borde_inclusivo` (pantalla Parámetros, fuera del menú), `backend/tests/test_disponibilidad.py`, `backend/tests/test_parametros.py`; lista de "Agregar carteles" `apps/reservas/services.py::carteles_para_tanda`, `backend/tests/test_carteles_para_tanda.py`; vista Posiciones `posiciones_de_formato` y `repartir_en_slots`, `backend/tests/test_posiciones.py` |
-| RN-002 | ¿Una reserva Pendiente bloquea a otras? | `provisoria` | Ocupa cupo solo visualmente; bloqueo duro al confirmar | Documento de historias (decisión D-02 del 15/10/2026) | HU-001, HU-031, HU-033, HU-041, HU-042, HU-056, HU-059 | Servicio `apps/reservas/services.py` (estados que bloquean), modelo `ParametrosDisponibilidad.tentativa_bloquea` (pantalla Parámetros, fuera del menú), `backend/tests/test_disponibilidad.py`, `backend/tests/test_parametros.py`; lista de "Agregar carteles" `carteles_para_tanda` y creación en bloque `crear_reservas_en_bloque` (no valida cupo al crear Pendientes), `backend/tests/test_carteles_para_tanda.py`, `backend/tests/test_reservas_en_bloque.py`; vista Posiciones `posiciones_de_formato` (tentativas), `backend/tests/test_posiciones.py` |
+| RN-002 | ¿Una reserva Pendiente bloquea a otras? | `provisoria` | Sin efecto desde 2026-11-17: no hay reservas Pendientes, porque la campaña nace Confirmada (HU-024); el parámetro `tentativa_bloquea` queda sin uso | Documento de historias (decisión D-02 del 15/10/2026) | HU-001, HU-031, HU-033, HU-041, HU-042, HU-056, HU-059, HU-024, HU-057 | Servicio `apps/reservas/services.py` (estados que bloquean), modelo `ParametrosDisponibilidad.tentativa_bloquea` (pantalla Parámetros, fuera del menú), `backend/tests/test_disponibilidad.py`, `backend/tests/test_parametros.py`; lista de "Agregar carteles" `carteles_para_tanda` y creación en bloque `crear_reservas_en_bloque` (no valida cupo al crear Pendientes), `backend/tests/test_carteles_para_tanda.py`, `backend/tests/test_reservas_en_bloque.py`; vista Posiciones `posiciones_de_formato` (tentativas), `backend/tests/test_posiciones.py` |
 | RN-003 | Cómo se cuentan los cupos dentro de un rango | `provisoria` | Pico diario: ocupación máxima por tramo del rango | Juan Diego (2026-10-19), sobre la decisión D-03 del 15/10/2026 | HU-031, HU-032, HU-034, HU-040, HU-042, HU-056 | Servicio `apps/reservas/services.py::conflictos_de` (pico diario, que usan `validar_disponibilidad` y `confirmar_reservas_de_campania`), `backend/tests/test_disponibilidad.py`, `backend/tests/test_confirmacion_en_bloque.py`; lista de "Agregar carteles" `carteles_para_tanda` (reusa `_pico_en_rango`), `backend/tests/test_carteles_para_tanda.py`; vista Posiciones `posiciones_de_formato` (pico) y `repartir_en_slots` (un casillero por cupo del pico), `backend/tests/test_posiciones.py` |
 | RN-004 | Cupos de los LED | `provisoria` | Capacidad editable por cartel; una reserva = un cupo | Documento de historias (decisión D-04 del 15/10/2026) | HU-011, HU-028, HU-031, HU-034, HU-040, HU-048, HU-057 | `Formato.capacidad_predeterminada`, `Cartel.capacidad`, `backend/tests/test_carteles.py` |
 | RN-005 | Slots de los séxtuples | `provisoria` | Capacidad = slots relevados; una reserva = un slot genérico. En la importación, Banderolas y PPL también toman la capacidad de la cantidad relevada | Documento de historias (decisión D-05 del 15/10/2026) | HU-010, HU-011, HU-015, HU-030, HU-031, HU-057, HU-071 | `Formato.capacidad_predeterminada`, `Formato.por_cantidad` (circuitos), `Cartel.capacidad`, `apps/inventario/services.py::importar_carteles`, `backend/tests/test_carteles.py`, `backend/tests/test_importacion_circuitos.py`; vista Posiciones `apps/reservas/services.py::posiciones_de_formato` (un casillero por slot), `backend/tests/test_posiciones.py` |
-| RN-006 | Reglas de cancelación | `provisoria` | Cancelar siempre se permite y libera el cupo | Documento de historias (decisión D-06 del 15/10/2026) | HU-024, HU-035, HU-037, HU-045, HU-051, HU-058, HU-060 | Sin implementar |
+| RN-006 | Reglas de cancelación | `provisoria` | Cancelar siempre se permite y libera el cupo; una reserva en exhibición no se cancela, termina ese día; cancelar la campaña cancela sus reservas futuras y termina ese día las que están en exhibición; una campaña o reserva cancelada no se reactiva | Documento de historias (decisión D-06 del 15/10/2026) | HU-024, HU-035, HU-037, HU-045, HU-051, HU-058, HU-060 | Sin implementar |
 | RN-007 | Propiedad de los carteles | `confirmada` | Todos los carteles son de Big Media. Si para un proyecto se alquila un cartel a otra empresa, se da de alta con ese proveedor y se carga un costo «Alquiler» con lo que cobran; el margen ya lo descuenta. Sin campo de propiedad ni reporte por proveedor | Documento de historias (decisión D-07 del 15/10/2026); Gonza (2026-11-04) | HU-010, HU-015, HU-043, HU-044, HU-046 | Modelo `Costo` (tipo `alquiler` con proveedor) y margen en `apps/costos/` |
 | RN-008 | Lista de zonas (departamentos) | `confirmada` | Los nueve departamentos (Ciudad, Godoy Cruz, Maipú, Luján de Cuyo, Guaymallén, Las Heras, San Martín, Rivadavia, San Carlos) | Juan Diego, 15/10/2026, diseño de inventario | HU-010, HU-013, HU-014, HU-015, HU-048 | Migración `inventario/0002_catalogos_iniciales`, catálogo editable |
 | RN-009 | Contenido real de los relevamientos | `provisoria` | Listado del 2026-11-02: Séxtuples (54 direcciones, 226 slots, todas con departamento) y Gran Formato con los medianos mezclados (43 filas, 60 unidades), sin tarifa, proveedor ni foto. Departamentos normalizados; en Gran Formato cada fila es un cartel con capacidad = Unidades; todo se carga como Gran Formato, también los medianos (Gonza, 2026-11-04); Mediano Formato no se usa por ahora | Documento de historias (decisión D-09 del 15/10/2026); planilla de Séxtuples (Gonza, 2026-10-29); listado de carteles y decisiones de Gonza (2026-11-02) | HU-015 | Importador `apps/inventario/services.py::importar_carteles` (zona obligatoria y comparada sin tildes ni mayúsculas, capacidad = slots), `backend/tests/test_importacion_carteles.py`; la conversión de la planilla visual al CSV se hace fuera del repositorio |
 | RN-010 | Estados físicos y carteles fuera de servicio | `provisoria` | Alertar y bloquear reservas nuevas | Documento de historias (decisión D-10 del 15/10/2026) | HU-012, HU-039 | Modelo `EstadoCartel`, migración `0002_catalogos_iniciales` (los cinco estados); `validar_cartel_reservable` y `filtrar_vigentes` en `apps/reservas/services.py`, revalidado con el cartel bloqueado en `ReservaViewSet._guardar_con_disponibilidad`; aviso `ReservasAfectadas` en el frontend. Tests en `backend/tests/test_cartel_fuera_de_servicio.py` |
-| RN-011 | ¿Se puede confirmar una campaña incompleta? | `provisoria` | Se exigen cliente, marca y fechas | Documento de historias (decisión D-11 del 15/10/2026) | HU-024, HU-030, HU-049, HU-059 | `apps/campanias/services.py::validar_confirmacion` y su test `test_confirmar_exige_marca_cliente_y_fechas`; la confirmación en bloque de reservas exige la campaña Confirmada: `apps/reservas/services.py::confirmar_reservas_de_campania`, `backend/tests/test_confirmacion_en_bloque.py` |
+| RN-011 | ¿Se puede confirmar una campaña incompleta? | `provisoria` | La campaña nace Confirmada y se exigen cliente, marca y fechas al crearla | Documento de historias (decisión D-11 del 15/10/2026) | HU-024, HU-030, HU-049, HU-059 | `apps/campanias/services.py::validar_confirmacion` y su test `test_confirmar_exige_marca_cliente_y_fechas`; la confirmación en bloque de reservas exige la campaña Confirmada: `apps/reservas/services.py::confirmar_reservas_de_campania`, `backend/tests/test_confirmacion_en_bloque.py` |
 | RN-012 | Reservas con fechas pasadas | `provisoria` | No se permite crear a mano una reserva con fecha pasada. No hay histórico para importar | Documento de historias (decisión D-12 del 15/10/2026); Gonza (2026-11-04) | HU-038, HU-048, HU-049 | `apps/reservas/services.py::validar_fecha_no_pasada` (fin anterior a `hoy()`), usado en `ReservaSerializer` (alta y cambio de fin), `ReservasEnBloqueSerializer` y `mover_pendientes`; modelo `ParametrosDisponibilidad.permitir_fecha_pasada` (pantalla Parámetros, fuera del menú); `backend/tests/test_reservas_fecha_pasada.py` |
 | RN-013 | Vista de disponibilidad a futuro | `provisoria` | Se construye como Should | Documento de historias (decisión D-13 del 15/10/2026) | HU-041, HU-042 | Sin implementar |
 | RN-014 | Cambio de pagador de una marca | `provisoria` | La campaña puede llevar un cliente que factura propio que reemplaza la deducción desde la marca; HU-027 sigue viva | Seba (2026-10-19), sobre la decisión D-14 del 15/10/2026 | HU-027 | Modelo `Campania.cliente_facturacion` y propiedad `cliente_factura` (unidad campanias); al cambiar el cliente de una marca, `apps/clientes/services.py::actualizar_marca` emite `cliente_de_marca_cambiado` y `apps/campanias/services.py::estampar_cliente_anterior` estampa el anterior (ADR-0010), `backend/tests/test_cliente_que_factura.py` |
@@ -111,7 +111,10 @@ Aunque sea configurable, la respuesta define el valor inicial con el que se carg
 - Confirmación en bloque (HU-059): define qué campaña se queda el cupo.
 - Calendario y vista actual (HU-041, HU-042): cómo se dibuja una Pendiente.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** sin efecto. Seba carga la campaña cuando el cliente ya la confirmó, así que la campaña
+nace Confirmada y sus reservas también: no hay reservas Pendientes que bloqueen o no (HU-024,
+HU-057). · **Fecha:** 2026-11-17 · **Quién respondió:** Seba (cómo carga las campañas) y Juan Diego
+(sacar Cotizada y Pendiente)
 
 ### RN-003 Cómo se cuentan los cupos dentro de un rango (D-03)
 
@@ -215,7 +218,16 @@ Hoy las historias dicen que cancelar siempre se permite, no borra y libera el cu
 - Seguimiento de solicitado, reservado y faltante (HU-058).
 - Vínculo con los ítems a facturar (HU-060), si una cancelación genera seña.
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta (parcial, provisoria hasta que Seba la confirme):**
+
+1. No hay campañas Perdidas: la campaña nace Confirmada y solo puede pasar a Cancelada (HU-024).
+2. Sí: al cancelar la campaña se cancelan sus reservas que todavía no empezaron.
+3. Una reserva en exhibición no se cancela entera: termina el día en que se cancela, para conservar
+   en los reportes los días exhibidos. Vale para cancelar la campaña y para quitar un cartel (HU-037).
+8. No se reactiva: ni una reserva ni una campaña cancelada vuelven a Confirmada. Se agrega el cartel
+   de nuevo o se crea otra campaña.
+
+Las preguntas 4 a 7 siguen pendientes. · **Fecha:** 2026-11-17 · **Quién respondió:** Juan Diego
 
 ### RN-007 Propiedad de los carteles (D-07)
 
@@ -362,7 +374,10 @@ decisiones de Gonza
 
 **Bloquea.** Confirmación de campaña (HU-024, HU-059), nombre de las reservas "Sin marca" (HU-030) y reportes por cliente y marca (HU-049).
 
-**Respuesta:** _pendiente_ · **Fecha:** · **Quién respondió:**
+**Respuesta:** Seba carga la campaña cuando el cliente ya la confirmó, así que nunca confirma una
+campaña sin marca ni cliente. La campaña nace Confirmada y cliente que factura, marca y fechas se
+exigen al crearla; sigue provisoria hasta que Seba vea la exigencia en uso. · **Fecha:** 2026-11-17 ·
+**Quién respondió:** Seba (dato) y Juan Diego (exigirlo al crear)
 
 ### RN-012 Reservas con fechas pasadas (preguntas 8 y 11) (D-12)
 

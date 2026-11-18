@@ -48,7 +48,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** El administrador tiene sesión iniciada con permiso de configuración.
-- **Regla de negocio:** Hay dos parámetros: "la tentativa ocupa cupo" (sí o no) y "día de borde inclusivo" (sí o no; con inclusivo, si una reserva termina el 15 y otra empieza el 15, se pisan). Defaults provisorios hasta que Seba responda: la tentativa ocupa cupo visualmente y el borde es inclusivo. Desde el 2026-11-16 la pantalla Parámetros no aparece en el menú lateral: los parámetros quedan con los valores que tienen y el código de la pantalla se conserva para volver a mostrarla si hace falta cambiarlos.
+- **Regla de negocio:** Hay dos parámetros: "la tentativa ocupa cupo" (sí o no) y "día de borde inclusivo" (sí o no; con inclusivo, si una reserva termina el 15 y otra empieza el 15, se pisan). Defaults provisorios hasta que Seba responda: la tentativa ocupa cupo visualmente y el borde es inclusivo. Desde el 2026-11-16 la pantalla Parámetros no aparece en el menú lateral: los parámetros quedan con los valores que tienen y el código de la pantalla se conserva para volver a mostrarla si hace falta cambiarlos. Desde el 2026-11-17 no hay reservas tentativas (la campaña nace Confirmada, HU-024), así que el parámetro "la tentativa ocupa cupo" queda sin efecto (RN-002).
 - **Criterios de aceptación:**
   1. Dada la pantalla de configuración, cuando el administrador cambia un parámetro y guarda, entonces la validación de disponibilidad usa el nuevo valor de inmediato, sin reiniciar nada.
   2. Dado un usuario sin rol de administrador, cuando intenta abrir la configuración, entonces no tiene acceso.
@@ -377,15 +377,18 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 ### HU-024 Estados de campaña
 
 - **Actor:** Operativo
-- **Descripción:** Como operativo, quiero mover la campaña entre cotizada, confirmada, cancelada y perdida, para reflejar su situación comercial.
+- **Descripción:** Como operativo, quiero que la campaña quede Confirmada desde que la creo y poder cancelarla, para reflejar su situación comercial sin pasos extra.
 - **Prioridad:** Must
 - **Complejidad:** S
 - **Precondición:** HU-023 completa.
-- **Regla de negocio:** "Perdida" es una cotización que nunca cerró (nunca fue plata real); "cancelada" es una confirmada que se cayó y quizás facturó seña. Se distinguen por defecto hasta que Seba responda la pregunta 6. "Campaña activa" significa estado Confirmada, sin filtrar por fecha: mide compromiso comercial, no ocupación del día. Para pasar a Confirmada se exigen cliente que factura, marca y fechas (HU-059).
+- **Regla de negocio:** Seba carga la campaña cuando el cliente ya la confirmó (2026-11-17), así que la campaña tiene dos estados: Confirmada, con el que nace, y Cancelada. No existen Cotizada ni Perdida. Para crearla se exigen cliente que factura, marca y fechas (RN-011). Al cancelarla, sus reservas que todavía no empezaron se cancelan, las que están en exhibición terminan ese día y las que ya terminaron no cambian (RN-006). Una campaña Cancelada no vuelve a Confirmada: se crea una nueva. "Campaña activa" significa estado Confirmada, sin filtrar por fecha: mide compromiso comercial, no ocupación del día.
 - **Criterios de aceptación:**
-  1. Dado el selector de estado, cuando se despliega, entonces ofrece los cuatro valores.
-  2. Dado un panel que cuenta campañas activas, cuando se calcula, entonces cuenta las Confirmadas sin importar sus fechas.
-  3. Dada una campaña cancelada o perdida, cuando se consulta, entonces sigue visible en el histórico.
+  1. Dada una campaña nueva, cuando se guarda, entonces queda Confirmada sin elegir un estado.
+  2. Dada una campaña nueva sin cliente que factura, marca o fechas, cuando se guarda, entonces se rechaza indicando qué falta.
+  3. Dada una campaña Confirmada con reservas futuras, en exhibición y terminadas, cuando se cancela, entonces las futuras quedan Canceladas, las que están en exhibición terminan ese día y las terminadas no cambian.
+  4. Dada una campaña Cancelada, cuando se intenta volver a Confirmada, entonces el sistema lo impide.
+  5. Dado un panel que cuenta campañas activas, cuando se calcula, entonces cuenta las Confirmadas sin importar sus fechas.
+  6. Dada una campaña Cancelada, cuando se consulta, entonces sigue visible en el histórico.
 
 ### HU-025 Monto y cantidad de reservas de la campaña
 
@@ -444,7 +447,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-010 y HU-023 completas.
-- **Regla de negocio:** La reserva es la intersección entre Campaña y Cartel y lleva sus propias fechas (nunca en la campaña). Cartel, fecha de inicio y fecha de fin son obligatorios siempre: no hay contratos abiertos. La fecha de fin no puede ser anterior a la de inicio. Una reserva bloquea cupo en las vistas de disponibilidad desde que tiene fecha de inicio y su estado no es Cancelada; Pendiente y Confirmada bloquean igual visualmente.
+- **Regla de negocio:** La reserva es la intersección entre Campaña y Cartel y lleva sus propias fechas (nunca en la campaña). Cartel, fecha de inicio y fecha de fin son obligatorios siempre: no hay contratos abiertos. La fecha de fin no puede ser anterior a la de inicio. Una reserva bloquea cupo en las vistas de disponibilidad desde que tiene fecha de inicio y su estado no es Cancelada; Toda reserva que no está Cancelada bloquea el cupo, en las vistas y en la validación (HU-031).
 - **Criterios de aceptación:**
   1. Dada una reserva sin cartel, sin fecha de inicio o sin fecha de fin, cuando se guarda por cualquier vía, entonces se rechaza.
   2. Dada una fecha de fin anterior a la de inicio, cuando se guarda, entonces se rechaza con un mensaje claro.
@@ -485,7 +488,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** XL
 - **Precondición:** HU-011 y HU-028 completas.
-- **Regla de negocio:** Es el objetivo central del proyecto y se valida siempre en el servidor, dentro de la misma operación que guarda la reserva, de modo que ninguna vía de entrada (pantalla, importación o API) pueda saltearla. La validación dura corre al pasar la reserva a Confirmada y cada vez que se edita una Confirmada (fechas, cartel o estado); no corre en Pendiente. Una reserva Cancelada libera el cupo y no valida. Se cuentan las reservas del mismo cartel, excluyendo la actual, que se solapen con el rango y cuyo estado ocupe cupo; si esa cantidad es igual o mayor a la capacidad del cartel, se bloquea.
+- **Regla de negocio:** Es el objetivo central del proyecto y se valida siempre en el servidor, dentro de la misma operación que guarda la reserva, de modo que ninguna vía de entrada (pantalla, importación o API) pueda saltearla. La validación dura corre al crear la reserva, que nace Confirmada (HU-057), y cada vez que se editan sus fechas o su cartel. Una reserva Cancelada libera el cupo y no valida. Se cuentan las reservas del mismo cartel, excluyendo la actual, que se solapen con el rango y cuyo estado ocupe cupo; si esa cantidad es igual o mayor a la capacidad del cartel, se bloquea.
 - **Criterios de aceptación:**
   1. Dado un cartel de capacidad 1 con una reserva confirmada, cuando se confirma otra con rango idéntico, contenido, contenedor o con solapamiento parcial por izquierda o derecha, entonces se bloquea.
   2. Dado un cartel digital con 12 de 20 cupos ocupados, cuando se confirma otra reserva, entonces se permite; con 20 de 20, se bloquea.
@@ -514,7 +517,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** HU-001 y HU-031 completas.
-- **Regla de negocio:** Con borde inclusivo el día 15 se pisa; con exclusivo, no. La tentativa siempre ocupa cupo visualmente; que también cuente para el bloqueo duro depende del parámetro.
+- **Regla de negocio:** Con borde inclusivo el día 15 se pisa; con exclusivo, no. La tentativa siempre ocupa cupo visualmente; que también cuente para el bloqueo duro depende del parámetro. Desde el 2026-11-17 no hay reservas tentativas, así que la parte de la tentativa queda sin efecto (RN-002).
 - **Criterios de aceptación:**
   1. Dado el borde inclusivo, cuando una reserva termina el 15 y otra empieza el 15 en un cartel de capacidad 1, entonces se bloquea; con exclusivo, se permite.
   2. Dado que la tentativa no cuenta para el bloqueo, cuando existe solo una tentativa en el rango, entonces no impide confirmar otra reserva.
@@ -536,15 +539,15 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 ### HU-035 Ciclo de vida de la reserva
 
 - **Actor:** Operativo
-- **Descripción:** Como operativo, quiero mover la reserva entre pendiente, confirmada, finalizada y cancelada solo por transiciones válidas, para no dejar datos incoherentes.
+- **Descripción:** Como operativo, quiero que el estado de la reserva lo lleve el sistema a partir de la campaña y de las fechas, para no cambiarlo a mano ni dejar datos incoherentes.
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-031 completa.
-- **Regla de negocio:** Transiciones válidas: pendiente a confirmada o cancelada; confirmada a finalizada o cancelada. Una cancelada solo vuelve a confirmada revalidando el cupo. Una finalizada no vuelve a un estado activo. Si una confirmada se reprograma o se cancela y recrea es una decisión abierta (pregunta 10).
+- **Regla de negocio:** La reserva tiene tres estados: Confirmada, Finalizada y Cancelada; no existe Pendiente (2026-11-17). Nace Confirmada (HU-057), pasa a Finalizada cuando su fecha de fin ya pasó (HU-036) y pasa a Cancelada al quitarla de la campaña (HU-037) o al cancelar la campaña (HU-024). Nadie edita el estado a mano, por ninguna vía. Una Cancelada no vuelve a Confirmada: si hace falta, se agrega el cartel de nuevo, con la validación de solapamiento. Una Finalizada no vuelve a un estado activo. Si una confirmada se reprograma o se cancela y recrea es una decisión abierta (pregunta 10).
 - **Criterios de aceptación:**
-  1. Dada una reserva cancelada, cuando se intenta confirmar, entonces se ejecuta la validación de solapamiento antes de permitirlo.
+  1. Dada una reserva, cuando se edita por cualquier vía, entonces su estado no se puede cambiar a mano.
   2. Dada una reserva finalizada, cuando se intenta reactivar, entonces el sistema lo impide.
-  3. Dada una transición inválida, cuando se intenta por cualquier vía, entonces se rechaza con un mensaje claro.
+  3. Dada una reserva cancelada, cuando se intenta volver a confirmar, entonces se rechaza con un mensaje claro.
 
 ### HU-036 Finalizar reservas vencidas automáticamente
 
@@ -556,7 +559,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Regla de negocio:** Una tarea programada diaria, de madrugada en horario de Argentina, pasa a Finalizada las reservas confirmadas cuya fecha de fin es anterior a hoy.
 - **Criterios de aceptación:**
   1. Dada una reserva confirmada con fecha de fin de ayer, cuando corre la tarea, entonces pasa a Finalizada.
-  2. Dada una reserva pendiente o cancelada, cuando corre la tarea, entonces no cambia.
+  2. Dada una reserva cancelada, cuando corre la tarea, entonces no cambia.
   3. Dado un fallo de la tarea, cuando ocurre, entonces queda registrado, se notifica al administrador y se reintenta en la próxima corrida.
   4. Dada una tarea ejecutada dos veces el mismo día, cuando termina, entonces el resultado es el mismo.
 
@@ -567,11 +570,12 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** S
 - **Precondición:** HU-035 completa.
-- **Regla de negocio:** Cancelar cambia el estado, nunca borra, y conserva el historial. Cancelar siempre se permite.
+- **Regla de negocio:** En la campaña la acción se llama "Quitar" y es lo único que se hace a mano sobre una reserva suelta (HU-035). Cancelar cambia el estado, nunca borra, y conserva el historial. Cancelar siempre se permite. Si la reserva ya está en exhibición, no se cancela: termina ese día, para conservar los días exhibidos (RN-006).
 - **Criterios de aceptación:**
   1. Dada una reserva confirmada, cuando se cancela, entonces el registro persiste con estado Cancelada.
   2. Dado el cupo recién liberado, cuando se crea otra reserva en el mismo rango, entonces se permite.
   3. Dado un operativo, cuando mira la reserva, entonces no existe una acción de eliminar.
+  4. Dada una reserva en exhibición, cuando se quita, entonces termina ese día, libera el cupo desde el día siguiente y conserva los días ya exhibidos.
 
 ### HU-038 Cargar reservas con fechas pasadas (retirada 2026-11-04: no hay histórico para importar, RN-012)
 
@@ -839,9 +843,9 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** XL
 - **Precondición:** HU-029, HU-030 y HU-056 completas.
-- **Regla de negocio:** Cada reserva se crea en estado Pendiente con cartel, fecha de inicio y fecha de fin (obligatorios siempre) y el precio de alquiler tomado de la tarifa de lista, editable después. El nombre se autogenera ("Marca - Cartel - Mes"; "Sin marca" si la campaña aún no la tiene, y se corrige solo al cargarla). El operativo nunca carga número ni código de reserva. La operación debe ser idempotente: reintentar no duplica lo ya creado. Queda fuera de alcance la edición masiva de reservas ya creadas.
+- **Regla de negocio:** Cada reserva se crea en estado Confirmada, con la validación de solapamiento en el servidor (HU-031): la que no entra falla con su motivo y no se crea. Lleva cartel, fecha de inicio y fecha de fin (obligatorios siempre) y el precio de alquiler tomado de la tarifa de lista, editable después. El nombre se autogenera ("Marca - Cartel - Mes"; "Sin marca" si la campaña aún no la tiene, y se corrige solo al cargarla). El operativo nunca carga número ni código de reserva. La operación debe ser idempotente: reintentar no duplica lo ya creado. Queda fuera de alcance la edición masiva de reservas ya creadas.
 - **Criterios de aceptación:**
-  1. Dada una selección de 200 posiciones, cuando se confirma, entonces se crean 200 reservas Pendientes en menos de 1 minuto (objetivo a validar), con progreso visible.
+  1. Dada una selección de 200 posiciones con cupo, cuando se confirma, entonces se crean 200 reservas Confirmadas en menos de 1 minuto (objetivo a validar), con progreso visible.
   2. Dada una reserva creada, cuando se abre, entonces tiene el precio de la tarifa de lista y un nombre autogenerado, sin que el operativo haya cargado nada más.
   3. Dada una tanda con fallos, cuando termina, entonces un resumen muestra cuántas se crearon y cuáles fallaron, con el motivo de cada una.
   4. Dadas las fallidas, cuando se reintentan, entonces solo se crean esas y no se duplican las ya creadas.
@@ -854,14 +858,14 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** M
 - **Precondición:** HU-055 y HU-057 completas.
-- **Regla de negocio:** Las reservas Canceladas no cuentan como reservadas. Si se cambian las fechas de la campaña y hay reservas Pendientes, el sistema pregunta si actualizarlas. Las reservas Confirmadas no se tocan sin pasar por la validación de solapamiento (HU-031).
+- **Regla de negocio:** Las reservas Canceladas no cuentan como reservadas. Cambiar las fechas de la campaña no cambia las de sus reservas: son Confirmadas y no se tocan sin pasar por la validación de solapamiento (HU-031). Hasta el 2026-11-17 se ofrecía actualizar las reservas Pendientes; ya no hay Pendientes.
 - **Criterios de aceptación:**
   1. Dada una campaña con una línea de 100 posiciones y 60 reservas activas, cuando se abre, entonces muestra 100 solicitadas, 60 reservadas y 40 faltantes.
   2. Dada una línea sin cantidad, cuando se abre, entonces muestra solo las reservadas.
-  3. Dado un cambio de fechas de la campaña con reservas Pendientes, cuando se guarda, entonces pregunta si se actualizan; si se acepta, se actualizan solo las Pendientes.
+  3. Dado un cambio de fechas de la campaña, cuando se guarda, entonces las fechas de sus reservas no cambian.
   4. Dado un cambio de fechas con reservas Confirmadas, cuando se guarda, entonces esas reservas no se modifican.
 
-### HU-059 Confirmar la campaña y sus reservas en bloque
+### HU-059 Confirmar la campaña y sus reservas en bloque (retirada 2026-11-17: la campaña nace Confirmada y cada reserva se confirma al crearla (HU-024, HU-057); no hay reservas Pendientes que confirmar)
 
 - **Actor:** Operativo
 - **Descripción:** Como operador comercial, quiero confirmar la campaña y luego todas sus reservas pendientes de una vez, viendo los conflictos, para cerrar el armado de la campaña en un solo paso.
@@ -884,7 +888,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** M
 - **Precondición:** HU-056 y HU-057 completas.
-- **Regla de negocio:** Es otra forma de ver la misma lista de "Agregar carteles": las fechas, los filtros, la selección, el contador y "Crear reservas" son los de HU-056 y HU-057. Lo que decide es cuántos slots quedan libres; el slot es genérico (RN-005), así que el sistema no guarda en qué slot físico va cada marca. Un slot está ocupado con el mismo criterio que la validación dura (RN-001, RN-002, RN-003). La vista muestra también los carteles llenos, que no se pueden elegir. Cada marca tiene siempre el mismo color, asignado por el sistema. Quedan fuera de alcance la posición física del slot, las anotaciones de la planilla ("esquina", "mala visual") y la vista como consulta suelta fuera de una campaña.
+- **Regla de negocio:** Es otra forma de ver la misma lista de "Agregar carteles": las fechas, los filtros, la selección, el contador y "Crear reservas" son los de HU-056 y HU-057. Lo que decide es cuántos slots quedan libres; el slot es genérico (RN-005), así que el sistema no guarda en qué slot físico va cada marca. Un slot está ocupado con el mismo criterio que la validación dura (RN-001, RN-003). Desde el 2026-11-17 no hay reservas Pendientes, así que la vista no muestra tentativas. La vista muestra también los carteles llenos, que no se pueden elegir. Cada marca tiene siempre el mismo color, asignado por el sistema. Quedan fuera de alcance la posición física del slot, las anotaciones de la planilla ("esquina", "mala visual") y la vista como consulta suelta fuera de una campaña.
 - **Criterios de aceptación:**
   1. Dada una línea de formato abierta en "Agregar carteles", cuando se elige la vista Posiciones, entonces se ve una fila por cartel con su dirección, departamento y cantidad de slots, y tantos casilleros como slots tiene.
   2. Dado un cartel con slots ocupados en el rango, cuando se muestra, entonces cada slot ocupado lleva la marca de la campaña que lo ocupa, con el color de esa marca; los de la campaña actual se distinguen, y los libres quedan vacíos.
@@ -1039,10 +1043,10 @@ Hay 12 decisiones del negocio que condicionan historias concretas. Hasta que se 
 | Tema | Historias afectadas | Quién responde | Default mientras tanto |
 | --- | --- | --- | --- |
 | Día de borde: ¿el 15 se pisa? | HU-001, HU-033 | Seba | Inclusivo (se pisa) |
-| ¿La tentativa cuenta para el bloqueo duro? | HU-001, HU-033 | Seba | Ocupa cupo visual; bloqueo duro solo al confirmar |
+| ¿La tentativa cuenta para el bloqueo duro? | HU-001, HU-033 | Seba | Sin efecto desde 2026-11-17: no hay tentativas (RN-002) |
 | Estados físicos del cartel y qué hacer con reservas activas si se rompe | HU-012, HU-039 | Seba | Alertar y bloquear reservas nuevas |
 | Listado de los 9 departamentos | HU-013 | Seba | Lista de zonas vacía y administrable |
-| ¿Se puede confirmar una campaña incompleta, o se exigen cliente, marca y fechas al confirmar? | HU-059 | Seba | Se exigen cliente, marca y fechas (propuesta) |
+| ¿Se puede confirmar una campaña incompleta, o se exigen cliente, marca y fechas al confirmar? | HU-024 | Seba | La campaña nace Confirmada y se exigen cliente, marca y fechas al crearla (RN-011) |
 | ¿Cambia el pagador de una marca, o una marca se compra por dos clientes? | HU-027 | Seba | Sin cliente propio en la campaña |
 | ¿Big Media es dueña de los carteles o revende? | HU-043, HU-046 | Gonzalo y Diego | Costos solo de impresión y fijación |
 | ¿Alcanza la vista de estado actual o hace falta ver a futuro? | HU-042 | Seba | Se construye como Should |
@@ -1073,7 +1077,7 @@ Casos que deben quedar cubiertos por pruebas automatizadas.
 | 6 | Rangos adyacentes (termina el 15, empieza el 15) | Según la configuración de día de borde |
 | 7 | Rangos separados por un día | Permite |
 | 8 | Conflicto con una reserva cancelada | Permite |
-| 9 | Conflicto con una reserva tentativa | Según la configuración de tentativa |
+| 9 | Conflicto con una reserva tentativa | Sin efecto desde 2026-11-17: no hay tentativas |
 | 10 | Cartel digital con 12 de 20 cupos ocupados | Permite |
 | 11 | Cartel digital con 20 de 20 cupos ocupados | Bloquea |
 | 12 | Edición que mueve las fechas a un rango ocupado | Bloquea |
