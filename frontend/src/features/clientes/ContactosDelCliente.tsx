@@ -16,7 +16,21 @@ function estadoDe(contacto: Contacto): string {
   return contacto.principal ? 'Principal' : 'Activo'
 }
 
-/** Contactos de un intermediario formal, en su ficha (HU-068). */
+function ordenarContactos(contactos: Contacto[]): Contacto[] {
+  const planificadores = contactos
+    .filter((contacto) => contacto.rol !== 'asistente')
+    .sort((a, b) => Number(b.principal) - Number(a.principal))
+  const asistentes = contactos.filter((contacto) => contacto.rol === 'asistente')
+  const vinculados = new Set<number>()
+  const ordenados = planificadores.flatMap((planificador) => {
+    const propios = asistentes.filter((asistente) => asistente.planificador === planificador.id)
+    propios.forEach((asistente) => vinculados.add(asistente.id))
+    return [planificador, ...propios]
+  })
+  return [...ordenados, ...asistentes.filter((asistente) => !vinculados.has(asistente.id))]
+}
+
+/** Planificadores y asistentes de una central de medios. */
 export default function ContactosDelCliente({
   cliente,
   onCargados,
@@ -80,6 +94,7 @@ export default function ContactosDelCliente({
         <ContactoForm
           key={editing === 'new' ? 'nuevo' : editing.id}
           contacto={editing === 'new' ? null : editing}
+          planificadores={carga.contactos.filter((contacto) => contacto.rol !== 'asistente')}
           onSave={guardar}
           onCancel={() => setEditing(null)}
         />
@@ -99,13 +114,24 @@ export default function ContactosDelCliente({
         <p className="empty">Este cliente todavía no tiene contactos.</p>
       ) : (
         <ul className="lista-contactos" aria-label="Contactos">
-          {carga.contactos.map((contacto) => (
-            <li key={contacto.id} className={contacto.activo ? '' : 'inactivo'}>
+          {ordenarContactos(carga.contactos).map((contacto) => (
+            <li
+              key={contacto.id}
+              className={[
+                contacto.rol === 'asistente' ? 'asistente' : '',
+                contacto.activo ? '' : 'inactivo',
+              ].join(' ')}
+            >
               <span className="avatar" aria-hidden="true">
                 {iniciales(contacto.nombre)}
               </span>
               <div className="lista-contactos-datos">
                 <strong>{contacto.nombre}</strong>
+                <small>
+                  {contacto.rol === 'asistente'
+                    ? `Asistente de ${carga.contactos.find((item) => item.id === contacto.planificador)?.nombre ?? 'planificador inactivo'}`
+                    : 'Planificador'}
+                </small>
                 <small>{contacto.cargo || '—'}</small>
                 <small>
                   {[contacto.correo, contacto.telefono].filter(Boolean).join(' · ') || '—'}
@@ -121,7 +147,8 @@ export default function ContactosDelCliente({
                   </button>
                   <MenuFila
                     acciones={[
-                      contacto.activo &&
+                      contacto.rol !== 'asistente' &&
+                        contacto.activo &&
                         !contacto.principal && {
                           etiqueta: 'Marcar como principal',
                           onClick: () => void cambiar(contacto, { principal: true }),

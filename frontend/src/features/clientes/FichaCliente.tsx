@@ -111,7 +111,7 @@ export default function FichaCliente({ ficha, revision, onVolver, onEditar }: Pr
     contactos: null,
   })
   useDetalleRuta(cliente.nombre_visible, onVolver)
-  // Solo el intermediario formal tiene contactos múltiples (HU-068, RN-015).
+  // Solo la central de medios tiene contactos múltiples (HU-068, RN-015).
   const conContactos = cliente.tipo === 'intermediario_formal'
 
   // Estables: las listas vuelven a cargar si su callback cambia.

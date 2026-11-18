@@ -1400,6 +1400,12 @@ td.row-actions > .menu-fila {
   opacity: 0.6;
 }
 
+.lista-contactos li.asistente {
+  margin-left: 1.25rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--borde);
+}
+
 .lista-contactos-datos {
   display: flex;
   flex-direction: column;

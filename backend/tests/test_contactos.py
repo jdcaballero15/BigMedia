@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection
 from django.test import Client
 
@@ -36,6 +37,91 @@ def _alta(client: Client, cliente: Cliente, **datos: Any) -> Any:
     return _post(client, URL, {"cliente": cliente.pk, "nombre": "Ana Prueba", **datos})
 
 
+@pytest.mark.django_db
+@pytest.mark.regla("RN-015")
+def test_asistente_se_vincula_a_planificador_de_su_central(operativo_client):
+    cliente = _cliente()
+    planificador = _contacto(cliente)
+    respuesta = _alta(
+        operativo_client, cliente, nombre="Beto", rol="asistente", planificador=planificador.pk
+    )
+    assert respuesta.status_code == 201
+    assert respuesta.json()["rol"] == "asistente"
+    assert respuesta.json()["planificador"] == planificador.pk
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-015")
+@pytest.mark.parametrize("caso", ["sin_planificador", "otro_cliente", "otro_asistente", "inactivo"])
+def test_asistente_con_planificador_invalido_se_rechaza(operativo_client, caso):
+    cliente = _cliente()
+    otro = _cliente() if caso == "otro_cliente" else cliente
+    planificador = _contacto(otro, activo=caso != "inactivo")
+    if caso == "otro_asistente":
+        planificador = _contacto(
+            cliente, nombre="Otra asistente", rol="asistente", planificador=planificador
+        )
+    datos: dict[str, Any] = {"rol": "asistente"}
+    if caso != "sin_planificador":
+        datos["planificador"] = planificador.pk
+    respuesta = _alta(operativo_client, cliente, **datos)
+    assert respuesta.status_code == 400
+    assert "planificador" in respuesta.json()
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-015")
+def test_planificador_con_asistente_activo_no_se_inactiva(operativo_client):
+    cliente = _cliente()
+    planificador = _contacto(cliente)
+    _contacto(cliente, nombre="Beto", rol="asistente", planificador=planificador)
+    respuesta = _patch(operativo_client, f"{URL}{planificador.pk}/", {"activo": False})
+    assert respuesta.status_code == 400
+    assert Contacto.objects.get(pk=planificador.pk).activo
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-015")
+def test_asistente_no_puede_ser_principal(operativo_client):
+    cliente = _cliente()
+    planificador = _contacto(cliente)
+    respuesta = _alta(
+        operativo_client,
+        cliente,
+        rol="asistente",
+        planificador=planificador.pk,
+        principal=True,
+    )
+    assert respuesta.status_code == 400
+    assert "principal" in respuesta.json()
+
+
+@pytest.mark.django_db
+@pytest.mark.regla("RN-015")
+def test_planificador_no_puede_ser_su_propio_asistente(operativo_client):
+    planificador = _contacto(_cliente())
+    respuesta = _patch(
+        operativo_client,
+        f"{URL}{planificador.pk}/",
+        {"rol": "asistente", "planificador": planificador.pk},
+    )
+    assert respuesta.status_code == 400
+    assert "planificador" in respuesta.json()
+
+
+@pytest.mark.django_db
+def test_modelo_rechaza_planificador_de_otra_central():
+    contacto = Contacto(
+        cliente=_cliente(),
+        nombre="Beto",
+        rol=Contacto.Rol.ASISTENTE,
+        planificador=_contacto(_cliente()),
+    )
+    with pytest.raises(ValidationError) as error:
+        contacto.full_clean()
+    assert "planificador" in error.value.message_dict
+
+
 # --- Criterio 1: varios contactos en un intermediario formal ---
 
 
@@ -60,6 +146,8 @@ def test_contacto_intermediario_formal_acepta_varios(operativo_client):
         "correo": "ana@ejemplo.test",
         "telefono": "261 555 0001",
         "notas": "Prefiere correo.",
+        "rol": "planificador",
+        "planificador": None,
         "principal": False,
         "activo": True,
     }
@@ -76,9 +164,7 @@ def test_contacto_intermediario_formal_acepta_varios(operativo_client):
 def test_contacto_en_cliente_que_no_es_intermediario_formal_se_rechaza(operativo_client, tipo):
     respuesta = _alta(operativo_client, _cliente(tipo=tipo))
     assert respuesta.status_code == 400
-    assert respuesta.json()["cliente"] == [
-        "Solo un cliente intermediario formal puede tener contactos."
-    ]
+    assert respuesta.json()["cliente"] == ["Solo una central de medios puede tener contactos."]
 
 
 @pytest.mark.django_db
