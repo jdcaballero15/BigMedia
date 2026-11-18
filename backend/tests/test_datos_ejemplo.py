@@ -156,4 +156,4 @@ def test_carga_campanias_con_reservas_confirmadas_quedan_confirmadas():
 def test_carga_campanias_confirmadas_cumplen_lo_que_exige_confirmar():
     call_command("cargar_datos_ejemplo")
     for campania in Campania.objects.filter(estado=Campania.Estado.CONFIRMADA):
-        campanias.validar_confirmacion(campania)
+        campanias.validar_campania_completa(campania)

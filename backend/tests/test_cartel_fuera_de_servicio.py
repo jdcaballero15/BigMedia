@@ -117,7 +117,7 @@ def test_crear_reserva_cartel_vuelve_a_activo_permite(operativo_client, formato)
 def test_mover_reserva_a_cartel_no_operativo_rechaza(operativo_client, formato):
     sano = _cartel(formato, "Av. Sana 1")
     roto = _cartel(formato, "Av. Rota 2", estado="vidrio_destruido")
-    reserva = _reserva(sano, date(2026, 12, 1), date(2026, 12, 31), estado="pendiente")
+    reserva = _reserva(sano, date(2026, 12, 1), date(2026, 12, 31))
     respuesta = _json(operativo_client, "patch", f"{RESERVAS}{reserva.pk}/", {"cartel": roto.pk})
     assert respuesta.status_code == 400
     assert "cartel" in respuesta.json()
@@ -127,17 +127,17 @@ def test_mover_reserva_a_cartel_no_operativo_rechaza(operativo_client, formato):
 @pytest.mark.regla("RN-010")
 def test_editar_reserva_en_cartel_no_operativo_permite(operativo_client, formato):
     cartel = _cartel(formato)
-    reserva = _reserva(cartel, date(2026, 12, 1), date(2026, 12, 31), estado="pendiente")
+    reserva = _reserva(cartel, date(2026, 12, 1), date(2026, 12, 31))
     _apagar(cartel)
     respuesta = _json(
         operativo_client,
         "patch",
         f"{RESERVAS}{reserva.pk}/",
-        {"cartel": cartel.pk, "fecha_fin": "2026-12-20", "estado": "confirmada"},
+        {"cartel": cartel.pk, "fecha_fin": "2026-12-20"},
     )
     assert respuesta.status_code == 200, respuesta.json()
     reserva.refresh_from_db()
-    assert (reserva.fecha_fin, reserva.estado) == (date(2026, 12, 20), "confirmada")
+    assert reserva.fecha_fin == date(2026, 12, 20)
 
 
 # --- Reserva masiva ---
@@ -191,7 +191,7 @@ def test_reservas_vigentes_del_cartel_devuelve_activas(formato):
     hoy = date(2026, 11, 10)
     cartel = _cartel(formato)
     termina_hoy = _reserva(cartel, hoy - timedelta(days=9), hoy)
-    futura = _reserva(cartel, hoy + timedelta(days=5), hoy + timedelta(days=20), "pendiente")
+    futura = _reserva(cartel, hoy + timedelta(days=5), hoy + timedelta(days=20))
     _reserva(cartel, hoy - timedelta(days=30), hoy - timedelta(days=1))
     _reserva(cartel, hoy, hoy + timedelta(days=3), "cancelada")
     _reserva(_cartel(formato, "Av. Otra 9"), hoy, hoy + timedelta(days=3))
@@ -263,7 +263,7 @@ def test_mover_reserva_cartel_pasa_a_no_operativo_antes_de_guardar_rechaza(
 ):
     origen = _cartel(formato, "Av. Origen 1")
     destino = _cartel(formato, "Av. Destino 2")
-    reserva = _reserva(origen, date(2026, 12, 1), date(2026, 12, 31), "pendiente")
+    reserva = _reserva(origen, date(2026, 12, 1), date(2026, 12, 31))
     _apagar_despues_de_validar(monkeypatch, destino)
 
     respuesta = _json(operativo_client, "patch", f"{RESERVAS}{reserva.pk}/", {"cartel": destino.pk})

@@ -17,7 +17,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
-from apps.auditoria import services as auditoria_services
 from config.permisos import LecturaConSesionEdicionOperativo
 from config.texto import normalizar_busqueda
 
@@ -66,18 +65,10 @@ class CampaniaViewSet(viewsets.ModelViewSet[Campania]):
     def perform_update(self, serializer: BaseSerializer[Campania]) -> None:
         archivos = self._ordenes_publicidad()
         instancia = cast(Campania, serializer.instance)
-        anterior = instancia.estado
+        # El estado no cambia por acá: cancelar es una acción de reservas, que lo audita.
         with transaction.atomic():
             serializer.save()
             services.adjuntar_ordenes_publicidad(instancia, archivos, self._usuario())
-            nuevo = cast(Campania, serializer.instance).estado
-            auditoria_services.registrar_cambios(
-                "campania",
-                instancia.pk,
-                {"estado": anterior},
-                {"estado": nuevo},
-                self.request.user,
-            )
 
     def get_queryset(self) -> QuerySet[Campania]:
         queryset = super().get_queryset()
