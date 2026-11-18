@@ -54,9 +54,15 @@ test('crea una campaña enviando los campos cargados', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Guardar campaña' }))
   await waitFor(() =>
     expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({ nombre: 'Verano 2027', marca: 10, estado: 'cotizada' }),
+      expect.objectContaining({ nombre: 'Verano 2027', marca: 10 }),
     ),
   )
+  expect(onSave.mock.calls[0]?.[0]).not.toHaveProperty('estado')
+})
+
+test('no ofrece elegir el estado: la campaña nace Confirmada (HU-024)', () => {
+  render(<CampaniaForm {...base} onSave={vi.fn()} onCrearMarca={vi.fn()} />)
+  expect(screen.queryByLabelText('Estado')).toBeNull()
 })
 
 test('envía las fechas escritas como dd/mm/aaaa en formato de la API', async () => {
@@ -81,10 +87,10 @@ test('no envía la campaña si una fecha escrita es inválida', () => {
 })
 
 test('muestra el error de campo devuelto por la API', async () => {
-  const onSave = vi.fn().mockRejectedValue(new ApiError(400, { estado: ['Para confirmar falta.'] }))
+  const onSave = vi.fn().mockRejectedValue(new ApiError(400, { marca: ['Elegí la marca.'] }))
   render(<CampaniaForm {...base} onSave={onSave} onCrearMarca={vi.fn()} />)
   fireEvent.click(screen.getByRole('button', { name: 'Guardar campaña' }))
-  await waitFor(() => expect(screen.getByText('Para confirmar falta.')).toBeDefined())
+  await waitFor(() => expect(screen.getByText('Elegí la marca.')).toBeDefined())
 })
 
 test('permite crear una marca al vuelo y la deja seleccionada', async () => {

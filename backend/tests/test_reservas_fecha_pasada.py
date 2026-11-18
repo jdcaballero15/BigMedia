@@ -139,34 +139,6 @@ def test_creacion_en_bloque_que_termina_antes_de_hoy_se_rechaza_entera(operativo
     assert not Reserva.objects.exists()
 
 
-def _mover(client: Client) -> tuple[Any, Reserva]:
-    campania = Campania.objects.create(fecha_inicio=date(2026, 6, 1), fecha_fin=date(2026, 6, 10))
-    reserva = Reserva(
-        campania=campania,
-        cartel=_cartel(),
-        fecha_inicio=date(2026, 6, 1),
-        fecha_fin=date(2026, 6, 20),
-    )
-    reserva.save()
-    datos = {
-        "campania": campania.pk,
-        "fecha_inicio_anterior": "2026-06-01",
-        "fecha_fin_anterior": "2026-06-20",
-    }
-    return _post(client, f"{URL}mover-pendientes/", datos), reserva
-
-
-@pytest.mark.django_db
-@pytest.mark.regla("RN-012")
-def test_mover_pendientes_a_una_campania_terminada_antes_de_hoy_se_rechaza(operativo_client):
-    response, reserva = _mover(operativo_client)
-
-    assert response.status_code == 400
-    assert response.json()["fecha_fin"] == [MENSAJE]
-    reserva.refresh_from_db()
-    assert reserva.fecha_fin == date(2026, 6, 20)
-
-
 @pytest.mark.django_db
 @pytest.mark.regla("RN-012")
 def test_con_el_parametro_prendido_se_permite_la_fecha_pasada(operativo_client):
@@ -183,10 +155,6 @@ def test_con_el_parametro_prendido_se_permite_la_fecha_pasada(operativo_client):
         "fecha_fin": "2026-06-14",
     }
     assert _post(operativo_client, f"{URL}en-bloque/", datos).status_code == 200
-    response, movida = _mover(operativo_client)
-    assert response.status_code == 200
-    movida.refresh_from_db()
-    assert movida.fecha_fin == date(2026, 6, 10)
 
 
 @pytest.mark.django_db

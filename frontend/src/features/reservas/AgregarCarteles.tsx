@@ -383,9 +383,6 @@ function TablaTanda({ filas, seleccion, onAlternar }: TablaProps) {
             <td className="primary-cell">
               {fila.nombre_visible}
               {fila.en_campania && <small className="muted"> · ya en la campaña</small>}
-              {fila.tentativas > 0 && (
-                <small className="notice"> · {fila.tentativas} tentativas</small>
-              )}
             </td>
             <td>{fila.zona_nombre}</td>
             <td>{fila.proveedor_nombre ?? '—'}</td>

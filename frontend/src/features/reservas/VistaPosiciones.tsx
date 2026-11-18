@@ -66,21 +66,6 @@ function Slots({ fila, elegido, onAlternar }: SlotsProps) {
   })
 }
 
-function Tentativas({ fila }: { fila: FilaPosiciones }) {
-  const ajenas = fila.tentativas_detalle.filter((t) => !t.es_esta_campania)
-  const propia = fila.tentativas_detalle.some((t) => t.es_esta_campania)
-  return (
-    <>
-      {propia && <span className="posiciones-chip es-propia">Esta campaña (pendiente)</span>}
-      {ajenas.length > 0 && (
-        <span className="posiciones-chip" title={ajenas.map(detalle).join('\n')}>
-          · {ajenas.length} tentativas
-        </span>
-      )}
-    </>
-  )
-}
-
 /** Vista Posiciones de "Agregar carteles", con el aspecto de la planilla de posiciones (HU-071). */
 export default function VistaPosiciones({ filas, seleccion, onAlternar }: Props) {
   if (filas === null) return <p className="empty">Cargando carteles…</p>
@@ -106,7 +91,6 @@ export default function VistaPosiciones({ filas, seleccion, onAlternar }: Props)
               <td className="primary-cell">
                 {fila.direccion}
                 {fila.lleno && <small className="muted posiciones-lleno">Lleno</small>}
-                <Tentativas fila={fila} />
               </td>
               <td>{fila.zona_nombre}</td>
               <td>{fila.capacidad}</td>

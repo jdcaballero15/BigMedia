@@ -90,7 +90,6 @@ def test_lista_solo_carteles_del_formato_con_cupo_libre(operativo_client, format
         "tarifa_lista": "1000.00",
         "capacidad": 1,
         "ocupados": 0,
-        "tentativas": 0,
         "en_campania": False,
     }
 
@@ -123,24 +122,6 @@ def test_lista_respeta_el_dia_de_borde(operativo_client, formato):
 
 
 @pytest.mark.django_db
-@pytest.mark.regla("RN-002")
-def test_pendientes_de_otra_campania_se_marcan_o_bloquean_segun_el_parametro(
-    operativo_client, formato
-):
-    cartel = _cartel(formato, "Av. Tentativa 1")
-    _reserva(cartel, "2026-11-05", "2026-11-25", estado="pendiente")
-    _reserva(cartel, "2026-11-05", "2026-11-25", estado="cancelada")
-    campania = Campania.objects.create()
-
-    filas = _lista(operativo_client, campania, formato)
-    assert _ids(filas) == [cartel.pk]
-    assert (filas[0]["tentativas"], filas[0]["ocupados"]) == (1, 0)
-
-    ParametrosDisponibilidad.objects.filter(pk=1).update(tentativa_bloquea=True)
-    assert _lista(operativo_client, campania, formato) == []
-
-
-@pytest.mark.django_db
 def test_carteles_de_baja_no_aparecen(operativo_client, formato):
     _cartel(formato, "Av. Baja 1", estado=EstadoCartel.objects.get(codigo="baja"))
     assert _lista(operativo_client, Campania.objects.create(), formato) == []
@@ -149,13 +130,13 @@ def test_carteles_de_baja_no_aparecen(operativo_client, formato):
 @pytest.mark.django_db
 def test_cartel_ya_reservado_por_la_campania_se_marca(operativo_client, formato):
     campania = Campania.objects.create()
-    cartel = _cartel(formato, "Av. Propia 1")
-    _reserva(cartel, "2026-11-01", "2026-11-30", estado="pendiente", campania=campania)
+    cartel = _cartel(formato, "Av. Propia 1", capacidad=2)
+    _reserva(cartel, "2026-11-01", "2026-11-30", campania=campania)
     cancelada = _cartel(formato, "Av. Propia 2")
     _reserva(cancelada, "2026-11-01", "2026-11-30", estado="cancelada", campania=campania)
 
     filas = {fila["id"]: fila for fila in _lista(operativo_client, campania, formato)}
-    assert (filas[cartel.pk]["en_campania"], filas[cartel.pk]["tentativas"]) == (True, 0)
+    assert filas[cartel.pk]["en_campania"] is True
     assert filas[cancelada.pk]["en_campania"] is False
 
 

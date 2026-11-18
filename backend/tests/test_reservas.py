@@ -11,7 +11,6 @@ from django.utils import timezone
 from apps.campanias.models import Campania
 from apps.clientes.models import Cliente, Marca
 from apps.inventario.models import Cartel, EstadoCartel, Formato, Zona
-from apps.reservas import services
 from apps.reservas.models import Reserva
 
 
@@ -70,7 +69,7 @@ def test_crear_reserva_minima(operativo_client):
     creada = crear(operativo_client, **payload(cartel, campania))
     assert creada.status_code == 201
     cuerpo = creada.json()
-    assert cuerpo["estado"] == "pendiente"
+    assert cuerpo["estado"] == "confirmada"
     assert Reserva.objects.filter(pk=cuerpo["id"]).exists()
 
 
@@ -165,38 +164,15 @@ def test_nombre_sin_marca(operativo_client):
 
 
 @pytest.mark.django_db
-def test_transiciones_de_estado(operativo_client):
-    cartel = crear_cartel()
-    campania = crear_campania()
-    reserva_id = crear(operativo_client, **payload(cartel, campania)).json()["id"]
-
-    assert editar(operativo_client, reserva_id, estado="confirmada").status_code == 200
-    assert editar(operativo_client, reserva_id, estado="finalizada").status_code == 200
-    # finalizada no vuelve a un estado activo
-    invalida = editar(operativo_client, reserva_id, estado="confirmada")
-    assert invalida.status_code == 400
-    assert "estado" in invalida.json()
-
-
-@pytest.mark.django_db
-def test_transicion_invalida_desde_pendiente(operativo_client):
-    cartel = crear_cartel()
-    campania = crear_campania()
-    reserva_id = crear(operativo_client, **payload(cartel, campania)).json()["id"]
-    invalida = editar(operativo_client, reserva_id, estado="finalizada")
-    assert invalida.status_code == 400
-    assert "estado" in invalida.json()
-
-
-@pytest.mark.django_db
 @pytest.mark.regla("RN-006")
 def test_cancelar_conserva_el_registro_y_no_hay_delete(operativo_client):
     cartel = crear_cartel()
     campania = crear_campania()
     reserva_id = crear(operativo_client, **payload(cartel, campania)).json()["id"]
-    editar(operativo_client, reserva_id, estado="confirmada")
 
-    cancelada = editar(operativo_client, reserva_id, estado="cancelada")
+    cancelada = operativo_client.post(
+        f"/api/reservas/reservas/{reserva_id}/quitar/", data="{}", content_type="application/json"
+    )
     assert cancelada.status_code == 200
     assert Reserva.objects.get(pk=reserva_id).estado == "cancelada"
     assert operativo_client.delete(f"/api/reservas/reservas/{reserva_id}/").status_code == 405
@@ -229,10 +205,9 @@ def test_filtros_de_lista(operativo_client):
     cartel = crear_cartel()
     campania = crear_campania()
     reserva_id = crear(operativo_client, **payload(cartel, campania)).json()["id"]
-    editar(operativo_client, reserva_id, estado="confirmada")
 
     por_campania = operativo_client.get(f"/api/reservas/reservas/?campania={campania.pk}").json()
-    por_estado = operativo_client.get("/api/reservas/reservas/?estado=pendiente").json()
+    por_estado = operativo_client.get("/api/reservas/reservas/?estado=cancelada").json()
     assert [fila["id"] for fila in por_campania] == [reserva_id]
     assert por_estado == []
 
@@ -299,41 +274,31 @@ def reservar_orm(cartel: Cartel, inicio: str, fin: str, estado: str = "confirmad
 
 
 @pytest.mark.django_db
-def test_alta_finalizada_cartel_ocupado_se_rechaza(operativo_client):
+def test_alta_con_estado_lo_ignora_y_valida_cupo(operativo_client):
     cartel = crear_cartel()
     reservar_orm(cartel, "2026-08-01", "2026-08-31")
     respuesta = crear(operativo_client, **payload(cartel, crear_campania(), estado="finalizada"))
     assert respuesta.status_code == 400
-    assert "estado" in respuesta.json()
+    assert "disponibilidad" in respuesta.json()
     assert Reserva.objects.filter(cartel=cartel).count() == 1
 
 
 @pytest.mark.django_db
-def test_alta_cancelada_se_rechaza(operativo_client):
+def test_alta_con_estado_cancelada_nace_confirmada(operativo_client):
     cartel = crear_cartel()
     respuesta = crear(operativo_client, **payload(cartel, crear_campania(), estado="cancelada"))
-    assert respuesta.status_code == 400
-    assert "estado" in respuesta.json()
+    assert respuesta.status_code == 201
+    assert respuesta.json()["estado"] == "confirmada"
 
 
 @pytest.mark.django_db
-def test_alta_pendiente_y_confirmada_libres_se_permiten(operativo_client):
-    campania = crear_campania()
-    for estado in ("pendiente", "confirmada"):
-        respuesta = crear(operativo_client, **payload(crear_cartel(), campania, estado=estado))
-        assert respuesta.status_code == 201
-        assert respuesta.json()["estado"] == estado
-
-
-@pytest.mark.django_db
-def test_confirmada_a_finalizada_moviendo_fechas_sobre_ocupado_se_rechaza(operativo_client):
+def test_mover_fechas_sobre_ocupado_se_rechaza(operativo_client):
     cartel = crear_cartel()
     reservar_orm(cartel, "2026-08-01", "2026-08-31")
     propia = reservar_orm(cartel, "2026-09-01", "2026-09-30")
     respuesta = editar(
         operativo_client,
         propia.pk,
-        estado="finalizada",
         fecha_inicio="2026-08-10",
         fecha_fin="2026-08-20",
     )
@@ -341,17 +306,6 @@ def test_confirmada_a_finalizada_moviendo_fechas_sobre_ocupado_se_rechaza(operat
     assert "disponibilidad" in respuesta.json()
     propia.refresh_from_db()
     assert propia.estado == "confirmada"
-
-
-@pytest.mark.django_db
-def test_confirmada_a_finalizada_sin_cambios_no_revalida(operativo_client):
-    cartel = crear_cartel()
-    # Dos confirmadas encimadas cargadas sin pasar por la API: el cupo ya está excedido.
-    reservar_orm(cartel, "2026-08-01", "2026-08-31")
-    propia = reservar_orm(cartel, "2026-08-01", "2026-08-31")
-    respuesta = editar(operativo_client, propia.pk, estado="finalizada")
-    assert respuesta.status_code == 200
-    assert respuesta.json()["estado"] == "finalizada"
 
 
 @pytest.mark.django_db
@@ -365,25 +319,3 @@ def test_finalizada_cambia_cartel_a_ocupado_se_rechaza(operativo_client):
     assert "disponibilidad" in respuesta.json()
     propia.refresh_from_db()
     assert propia.cartel_id == libre.pk
-
-
-@pytest.mark.parametrize(
-    ("anterior", "nuevo", "cambia_ocupacion", "esperado"),
-    [
-        (None, "pendiente", False, False),
-        (None, "confirmada", False, True),
-        (None, "finalizada", False, True),
-        ("pendiente", "pendiente", True, False),
-        ("pendiente", "confirmada", False, True),
-        ("cancelada", "confirmada", False, True),
-        ("confirmada", "confirmada", False, False),
-        ("confirmada", "confirmada", True, True),
-        ("confirmada", "finalizada", False, False),
-        ("confirmada", "finalizada", True, True),
-        ("finalizada", "finalizada", False, False),
-        ("finalizada", "finalizada", True, True),
-        ("confirmada", "cancelada", True, False),
-    ],
-)
-def test_necesita_validar_cupo_segun_estados_y_cambios(anterior, nuevo, cambia_ocupacion, esperado):
-    assert services.necesita_validar_cupo(anterior, nuevo, cambia_ocupacion) is esperado
