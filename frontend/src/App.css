@@ -538,6 +538,12 @@ label {
   font-weight: 600;
 }
 
+.campo-ayuda {
+  color: var(--texto-3);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
 input,
 select,
 textarea {

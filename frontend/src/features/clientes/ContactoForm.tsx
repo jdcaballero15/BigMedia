@@ -34,11 +34,19 @@ export default function ContactoForm({ contacto, planificadores, onSave, onCance
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
   const [saving, setSaving] = useState(false)
+  const hayPlanificadorActivo = planificadores.some((opcion) => opcion.activo)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setErrors({})
     setGeneralError('')
+    const planificadorDisponible = planificadores.some(
+      (opcion) => opcion.id === planificador && opcion.activo,
+    )
+    if (rol === 'asistente' && !planificadorDisponible) {
+      setErrors({ planificador: ['Primero agregá un planificador activo en esta central.'] })
+      return
+    }
     setSaving(true)
     try {
       await onSave({
@@ -77,9 +85,19 @@ export default function ContactoForm({ contacto, planificadores, onSave, onCance
           Rol
           <select value={rol} onChange={(event) => setRol(event.target.value as Contacto['rol'])}>
             <option value="planificador">Planificador</option>
-            <option value="asistente">Asistente</option>
+            <option
+              value="asistente"
+              disabled={!hayPlanificadorActivo && contacto?.rol !== 'asistente'}
+            >
+              Asistente
+            </option>
           </select>
           <FieldErrors messages={errors.rol} />
+          {!hayPlanificadorActivo && (
+            <small className="campo-ayuda">
+              Primero agregá un planificador para poder cargar asistentes.
+            </small>
+          )}
         </label>
         {rol === 'asistente' && (
           <label>
