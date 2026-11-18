@@ -79,4 +79,4 @@ cada reserva; el listado previo es solo orientativo.
   Frontend: `format:check`, `lint` (exit 0), `typecheck` y `build` en verde; `test:coverage` 434
   passed en 51 archivos, líneas 95.04 %, sentencias 93.1 %. Tests de frontend escritos después del
   código. Aprobado por Juan Diego tras probarlo.
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #145 (código) y #144 (historias), abiertos el 2026-11-18 a pedido de Juan Diego
