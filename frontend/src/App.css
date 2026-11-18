@@ -1429,6 +1429,59 @@ td.row-actions > .menu-fila {
   grid-column: 2 / -1;
 }
 
+.contacto-nombre {
+  align-self: flex-start;
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--azul);
+  text-align: left;
+  cursor: pointer;
+}
+
+.contacto-nombre:hover { text-decoration: underline; }
+
+.contacto-detalle-fondo {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 45%);
+}
+
+.contacto-detalle {
+  width: min(100%, 34rem);
+  max-height: min(90vh, 48rem);
+  overflow-y: auto;
+  padding: 1.4rem;
+  border: 1px solid var(--borde);
+  border-radius: 0.75rem;
+  background: var(--fondo, white);
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 20%);
+}
+
+.contacto-detalle .form-heading { align-items: flex-start; }
+.contacto-detalle .form-heading p { margin: 0.25rem 0 0; color: var(--texto-3); }
+
+.contacto-detalle-datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.contacto-detalle-datos > div { min-width: 0; }
+.contacto-detalle-datos dt { color: var(--texto-3); font-size: 0.8rem; }
+.contacto-detalle-datos dd { margin: 0.2rem 0 0; overflow-wrap: anywhere; }
+.contacto-detalle-datos .contacto-detalle-notas { grid-column: 1 / -1; }
+
+@media (max-width: 520px) {
+  .contacto-detalle-datos { grid-template-columns: minmax(0, 1fr); }
+}
+
 @media (max-width: 900px) {
   .ficha-cuerpo,
   .ficha-cuerpo.con-lateral {
