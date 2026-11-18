@@ -907,18 +907,20 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-016 y HU-017 completas.
-- **Regla de negocio:** Ningún campo es obligatorio para guardar el ítem, igual que en la campaña; tampoco se exigen después, porque ya no hay envío (HU-066 retirada). Campos: mes de facturación (por defecto el mes actual, editable); cliente que factura y CUIT de facturación (precargado desde el cliente, editable por ítem); marca anunciante; descripción del servicio y período del servicio (desde y hasta); cantidad, precio unitario, importe neto y alícuota de IVA; tipo de servicio (alquiler, impresión y colocación, otro); tipo de soporte, Gob/Priv y tipo de venta (F/V); costos incluidos en la factura (un importe) y detalle del costo (texto libre); notas para Administración. El ítem puede vincularse opcionalmente a una campaña; esto es necesario porque "impresión y colocación" no es una reserva. La pantalla se llama «Facturación». El formulario de Nuevo ítem (y el de edición) tiene solo los siete datos de la planilla de Administración (RN-024), en este orden: cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo (el tipo de soporte). El mes de un ítem nuevo es el que está elegido en la lista. Los demás datos del ítem dejan de cargarse desde la pantalla: los ítems que ya los tienen los conservan, y el alta se simplifica a lo que pide Administración. La lista de ítems muestra solo esas siete columnas. Los costos incluidos y su detalle se escriben en el ítem y no tocan el módulo de costos ni la rentabilidad (HU-043, HU-063). Desde el 2026-11-16 el ítem no tiene estados ni número de factura: se carga, se edita mientras haga falta y se baja en Excel (HU-070). Nunca se borra: si se cargó por error, se da de baja (HU-006).
+- **Regla de negocio:** Ningún campo es obligatorio para guardar el ítem, igual que en la campaña; tampoco se exigen después, porque ya no hay envío (HU-066 retirada). Campos: mes de facturación (por defecto el mes actual, editable); cliente que factura y CUIT de facturación (precargado desde el cliente, editable por ítem); marca anunciante; descripción del servicio y período del servicio (desde y hasta); cantidad, precio unitario, importe neto y alícuota de IVA; tipo de servicio (alquiler, impresión y colocación, otro); tipo de soporte, Gob/Priv y tipo de venta (F/V); costos incluidos en la factura (un importe) y detalle del costo (texto libre); notas para Administración. El ítem puede vincularse opcionalmente a una campaña; esto es necesario porque "impresión y colocación" no es una reserva. La pantalla se llama «Facturación». El formulario de Nuevo ítem (y el de edición) tiene solo los siete datos de la planilla de Administración (RN-024), en este orden: cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo (el tipo de soporte). El mes de un ítem nuevo es el que está elegido en la lista. Los demás datos del ítem dejan de cargarse desde la pantalla: los ítems que ya los tienen los conservan, y el alta se simplifica a lo que pide Administración. La lista de ítems muestra solo esas siete columnas. Debajo de esos siete datos, el formulario tiene dos secciones más: «Orden de publicidad», para adjuntar el PDF del ítem (HU-062), y «Costos del ítem», para elegir costos ya cargados (HU-063). Si el ítem no tiene costos elegidos, los costos incluidos y su detalle se escriben a mano en el ítem y no tocan el módulo de costos ni la rentabilidad (HU-043). Si tiene costos elegidos, los costos incluidos son la suma de sus montos y el detalle son sus tipos, sin repetir y separados por « + » (por ejemplo «Impresión + Fijación»); los dos se calculan solos y no se editan a mano, y así salen en la lista, los totales y el Excel (HU-070). Desde el 2026-11-16 el ítem no tiene estados ni número de factura: se carga, se edita mientras haga falta y se baja en Excel (HU-070). Nunca se borra: si se cargó por error, se da de baja (HU-006).
 - **Criterios de aceptación:**
   1. Dado un ítem sin ningún dato, cuando se guarda, entonces se acepta.
   2. Dado un ítem nuevo, cuando se crea, entonces el mes de facturación es el mes actual y puede cambiarse.
   3. Dado un cliente elegido, cuando se carga, entonces el CUIT se precarga desde el cliente y puede editarse en el ítem sin modificar al cliente.
   4. Dado un ítem vinculado a una campaña, cuando se vincula, entonces cliente, marca y soporte se precargan desde ella.
   5. Dado un ítem sin campaña, cuando se carga, entonces todos sus datos se completan a mano.
-  6. Dado el formulario de Nuevo ítem, cuando se abre, entonces muestra solo cliente, importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo, en ese orden.
+  6. Dado el formulario de Nuevo ítem, cuando se abre, entonces muestra cliente, importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo, en ese orden, y debajo las secciones «Orden de publicidad» y «Costos del ítem».
   7. Dado un ítem cargado, cuando se edita, entonces se puede cambiar cualquiera de sus datos: el ítem no tiene estados (HU-065 retirada).
   8. Dado un ítem dado de baja, cuando se consultan la lista, los totales y el Excel (HU-070), entonces no aparece ni se suma, pero no se borra (HU-006).
-  7. Dado un ítem con costos incluidos y detalle del costo escritos a mano, cuando se guarda, entonces se conservan tal cual y no se crea ni cambia ningún costo del módulo de costos.
-  8. Dada la lista de ítems, cuando se muestra, entonces sus columnas son solo cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo.
+  9. Dado un ítem sin costos elegidos, con costos incluidos y detalle del costo escritos a mano, cuando se guarda, entonces se conservan tal cual y no se crea ni cambia ningún costo del módulo de costos.
+  10. Dada la lista de ítems, cuando se muestra, entonces sus columnas son solo cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo.
+  11. Dado un ítem con un costo de impresión de 50000 y uno de fijación de 30000 elegidos, cuando se consulta en la lista o en el Excel, entonces los costos incluidos son 80000 y el detalle «Impresión + Fijación», y el formulario no deja escribirlos a mano.
+  12. Dado un ítem al que se le quitan todos los costos elegidos, cuando se edita, entonces los costos incluidos y el detalle vuelven a escribirse a mano.
 
 ### HU-061 Cálculo de importes e IVA
 
@@ -941,12 +943,13 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** HU-060 completa.
-- **Regla de negocio:** Por ahora la carga es manual, mirando el PDF; la lectura automática del PDF queda como mejora futura fuera de alcance. Si se carga un número de OC que ya existe, el sistema avisa de un posible duplicado, sin bloquear.
+- **Regla de negocio:** Por ahora la carga es manual, mirando el PDF; la lectura automática del PDF queda como mejora futura fuera de alcance. Si se carga un número de OC que ya existe, el sistema avisa de un posible duplicado, sin bloquear. Desde el 2026-11-18, en la pantalla el PDF del ítem se llama «Orden de publicidad»: es la orden que manda el cliente para ese ítem. Se adjunta, se reemplaza y se abre desde la sección «Orden de publicidad» del formulario del ítem (HU-060), y se abre también desde la lista. Es una por ítem y no se pide para guardar. Es independiente de las órdenes de publicidad de la campaña (HU-069): no se copia de ahí ni se manda allá. El número y la fecha de la OC no se cargan desde la pantalla (HU-060): los ítems que los tienen los conservan.
 - **Criterios de aceptación:**
   1. Dado un ítem, cuando se carga número, fecha de aprobación y PDF, entonces quedan guardados y el PDF se puede abrir desde el ítem.
   2. Dado un número de OC ya existente en otro ítem, cuando se guarda, entonces el sistema avisa e indica el ítem coincidente, y permite guardar.
   3. Dado un archivo adjunto que no es PDF o supera el tamaño máximo, cuando se intenta adjuntar, entonces se rechaza con un mensaje claro.
   4. Dado un ítem sin orden de compra, cuando se guarda, entonces se acepta.
+  5. Dado el formulario de un ítem, cuando se adjunta un PDF en «Orden de publicidad» y se guarda, entonces queda en el ítem y se abre desde el formulario y desde la lista; si se adjunta otro, reemplaza al anterior.
 
 ### HU-063 Costos del ítem y neto final
 
@@ -955,13 +958,17 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** M
 - **Precondición:** HU-043, HU-060 y HU-061 completas.
-- **Regla de negocio:** Cada ítem puede tener cero, uno o varios costos. Cada costo tiene tipo (comisión, proveedor, impresión), a quién se le paga y monto, que puede ser fijo o un porcentaje del neto (por ejemplo 15%). Son los mismos costos del módulo de costos y rentabilidad (HU-043): se cargan una sola vez y alimentan ambos usos. El ítem muestra costo total y neto final (importe neto menos costos). El total del mes se calcula solo y reemplaza las sumas manuales de la planilla actual (C15, D15 y C17).
+- **Regla de negocio:** Cada ítem puede tener cero, uno o varios costos. Cada costo tiene tipo (comisión, proveedor, impresión), a quién se le paga y monto, que puede ser fijo o un porcentaje del neto (por ejemplo 15%). Son los mismos costos del módulo de costos y rentabilidad (HU-043): se cargan una sola vez y alimentan ambos usos. El ítem muestra costo total y neto final (importe neto menos costos). El total del mes se calcula solo y reemplaza las sumas manuales de la planilla actual (C15, D15 y C17). Desde el 2026-11-18 los costos se eligen en la sección «Costos del ítem» del formulario (HU-060) entre todos los costos cargados que no están anulados ni en otro ítem, de cualquier campaña, con un buscador por campaña, cartel, tipo o a quién se le paga. Se pueden elegir varios, por ejemplo uno de impresión y uno de fijación (colocación), y se suman en los costos incluidos del ítem (HU-060). Un costo elegido se puede quitar del ítem: el costo no se borra ni se anula, solo queda libre para otro ítem, y el cambio queda registrado. Si un costo elegido se anula en el módulo de costos, deja de sumar en el ítem.
 - **Criterios de aceptación:**
   1. Dado un ítem con neto 10000 y un costo de 15% del neto, cuando se guarda, entonces el costo es 1500 y el neto final 8500.
   2. Dado un costo fijo, cuando se carga, entonces se resta tal cual del neto.
   3. Dado un cambio del neto, cuando se guarda, entonces los costos porcentuales se recalculan.
   4. Dado un ítem vinculado a una campaña, cuando se consulta la rentabilidad de la campaña, entonces cada costo se cuenta una sola vez, sin duplicarse.
   5. Dado un mes, cuando se consulta, entonces los totales de neto, costos y neto final coinciden con la suma manual de sus ítems.
+  6. Dado un costo de impresión y uno de fijación cargados en reservas de cualquier campaña, cuando se eligen en «Costos del ítem», entonces los dos quedan en el ítem y sus montos se suman en los costos incluidos (HU-060).
+  7. Dado un costo que ya está en otro ítem o está anulado, cuando se buscan costos para elegir, entonces no aparece.
+  8. Dado un costo elegido, cuando se quita del ítem, entonces deja de sumar, sigue vigente en el módulo de costos y se puede elegir en otro ítem.
+  9. Dado un costo elegido que se anula en el módulo de costos, cuando se consulta el ítem, entonces deja de sumar en sus costos incluidos.
 
 ### HU-064 Agrupar ítems en una factura y facturar a otro CUIT
 
