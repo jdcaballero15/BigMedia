@@ -101,34 +101,90 @@ export default function ContactosDelCliente({
         />
       )}
       {viendo && (
-        <div className="contacto-detalle-fondo" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setViendo(null)
-        }}>
-          <section className="contacto-detalle" role="dialog" aria-modal="true" aria-labelledby="contacto-detalle-titulo">
+        <div
+          className="contacto-detalle-fondo"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setViendo(null)
+          }}
+        >
+          <section
+            className="contacto-detalle"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contacto-detalle-titulo"
+          >
             <div className="form-heading">
               <div>
                 <h3 id="contacto-detalle-titulo">{viendo.nombre}</h3>
                 <p>{viendo.rol === 'asistente' ? 'Asistente' : 'Planificador'}</p>
               </div>
-              <button type="button" className="button-ghost" aria-label="Cerrar detalle" onClick={() => setViendo(null)}>Cerrar</button>
+              <button
+                type="button"
+                className="button-ghost"
+                aria-label="Cerrar detalle"
+                onClick={() => setViendo(null)}
+              >
+                Cerrar
+              </button>
             </div>
             <dl className="contacto-detalle-datos">
-              <div><dt>Cargo</dt><dd>{viendo.cargo || '—'}</dd></div>
-              <div><dt>Correo</dt><dd>{viendo.correo || '—'}</dd></div>
-              <div><dt>Teléfono</dt><dd>{viendo.telefono || '—'}</dd></div>
-              <div><dt>Estado</dt><dd>{estadoDe(viendo)}</dd></div>
+              <div>
+                <dt>Cargo</dt>
+                <dd>{viendo.cargo || '—'}</dd>
+              </div>
+              <div>
+                <dt>Correo</dt>
+                <dd>{viendo.correo || '—'}</dd>
+              </div>
+              <div>
+                <dt>Teléfono</dt>
+                <dd>{viendo.telefono || '—'}</dd>
+              </div>
+              <div>
+                <dt>Estado</dt>
+                <dd>{estadoDe(viendo)}</dd>
+              </div>
               {viendo.rol === 'asistente' && (
-                <div><dt>Planificador</dt><dd>{carga.contactos.find((item) => item.id === viendo.planificador)?.nombre ?? 'No disponible'}</dd></div>
+                <div>
+                  <dt>Planificador</dt>
+                  <dd>
+                    {carga.contactos.find((item) => item.id === viendo.planificador)?.nombre ??
+                      'No disponible'}
+                  </dd>
+                </div>
               )}
-              {viendo.notas && <div className="contacto-detalle-notas"><dt>Notas</dt><dd>{viendo.notas}</dd></div>}
+              {viendo.notas && (
+                <div className="contacto-detalle-notas">
+                  <dt>Notas</dt>
+                  <dd>{viendo.notas}</dd>
+                </div>
+              )}
               {viendo.rol === 'planificador' && (
                 <div className="contacto-detalle-notas">
                   <dt>Asistentes</dt>
-                  <dd>{carga.contactos.filter((item) => item.rol === 'asistente' && item.planificador === viendo.id).map((item) => item.nombre).join(', ') || 'Sin asistentes asignados'}</dd>
+                  <dd>
+                    {carga.contactos
+                      .filter((item) => item.rol === 'asistente' && item.planificador === viendo.id)
+                      .map((item) => item.nombre)
+                      .join(', ') || 'Sin asistentes asignados'}
+                  </dd>
                 </div>
               )}
             </dl>
-            {puedeEditar && <div className="form-actions"><button type="button" className="button-primary" onClick={() => { setViendo(null); setEditing(viendo) }}>Editar contacto</button></div>}
+            {puedeEditar && (
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="button-primary"
+                  onClick={() => {
+                    setViendo(null)
+                    setEditing(viendo)
+                  }}
+                >
+                  Editar contacto
+                </button>
+              </div>
+            )}
           </section>
         </div>
       )}
@@ -159,7 +215,12 @@ export default function ContactosDelCliente({
                 {iniciales(contacto.nombre)}
               </span>
               <div className="lista-contactos-datos">
-                <button type="button" className="contacto-nombre" onClick={() => setViendo(contacto)} aria-label={`Ver detalles de ${contacto.nombre}`}>
+                <button
+                  type="button"
+                  className="contacto-nombre"
+                  onClick={() => setViendo(contacto)}
+                  aria-label={`Ver detalles de ${contacto.nombre}`}
+                >
                   <strong>{contacto.nombre}</strong>
                 </button>
                 <small>
