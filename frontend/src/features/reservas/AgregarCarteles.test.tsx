@@ -15,7 +15,6 @@ function cartel(id: number, extra: Partial<CartelTanda> = {}): CartelTanda {
     tarifa_lista: '1000.50',
     capacidad: 1,
     ocupados: 0,
-    tentativas: 0,
     en_campania: false,
     ...extra,
   }
@@ -82,11 +81,10 @@ afterEach(() => {
 })
 
 test('abre con las fechas de la campaña y lista los carteles libres del formato', async () => {
-  const fetchMock = stubFetch([cartel(1, { tentativas: 2, proveedor_nombre: 'Prov' })])
+  const fetchMock = stubFetch([cartel(1, { proveedor_nombre: 'Prov' })])
   renderizar()
   expect(await screen.findByText('Av. Prueba 1 · 8x3')).toBeDefined()
   expect((screen.getByLabelText('Desde') as HTMLInputElement).value).toBe('01/11/2026')
-  expect(screen.getByText('· 2 tentativas')).toBeDefined()
   expect(screen.getByText('$1.000,50')).toBeDefined()
   const url = String(pedidos(fetchMock, '/carteles-para-tanda/')[0][0])
   expect(url).toContain('campania=5&formato=10&desde=2026-11-01&hasta=2026-11-30')
@@ -311,7 +309,6 @@ function posicion(id: number, extra: Partial<FilaPosiciones> = {}): FilaPosicion
     direccion: `Av. Prueba ${id}`,
     lleno: false,
     slots: [[], []],
-    tentativas_detalle: [],
     ...extra,
   }
 }

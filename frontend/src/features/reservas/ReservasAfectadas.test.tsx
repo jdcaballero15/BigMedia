@@ -41,7 +41,7 @@ afterEach(() => {
 })
 
 test('lista las reservas activas del cartel fuera de servicio', async () => {
-  const fetchMock = stubFetch(ok([reserva(1, 'confirmada'), reserva(2, 'pendiente')]))
+  const fetchMock = stubFetch(ok([reserva(1, 'confirmada'), reserva(2, 'confirmada')]))
   const onCerrar = renderizar()
   const aviso = await screen.findByRole('alertdialog', {
     name: 'Reservas activas del cartel fuera de servicio',
@@ -54,7 +54,6 @@ test('lista las reservas activas del cartel fuera de servicio', async () => {
   expect(tabla.textContent).toContain('Verano')
   expect(tabla.textContent).toContain('01/11/2026')
   expect(tabla.textContent).toContain('Confirmada')
-  expect(tabla.textContent).toContain('Pendiente')
   fireEvent.click(screen.getByRole('button', { name: 'Entendido' }))
   expect(onCerrar).toHaveBeenCalledTimes(1)
 })

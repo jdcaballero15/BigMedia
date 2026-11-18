@@ -363,7 +363,7 @@ test('la ficha del cliente reúne sus marcas, sus campañas y sus interacciones'
           cliente_factura_nombre: 'Agencia Andes',
           fecha_inicio: '2027-01-01',
           fecha_fin: '2027-01-31',
-          estado: 'cotizada',
+          estado: 'cancelada',
         },
       ])
     if (url === '/api/campanias/interacciones/?cliente=1')
@@ -389,7 +389,7 @@ test('la ficha del cliente reúne sus marcas, sus campañas y sus interacciones'
   fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
   const campanias = screen.getByRole('region', { name: 'Campañas de Agencia Andes' })
   expect(await within(campanias).findByText('Verano 2027')).toBeDefined()
-  expect(within(within(campanias).getByRole('list')).getByText('Cotizada')).toBeDefined()
+  expect(within(within(campanias).getByRole('list')).getByText('Cancelada')).toBeDefined()
   const cantidades = screen.getByLabelText('Cantidades')
   await waitFor(() => expect(within(cantidades).getAllByText('1')).toHaveLength(2))
   expect(within(cantidades).getByText('2')).toBeDefined()

@@ -9,8 +9,7 @@ import { vigentes } from '../../shared/opciones'
 import MarcaForm from '../clientes/MarcaForm'
 import type { MarcaInput } from '../clientes/MarcaForm'
 import type { Cliente, Marca, Rubro } from '../clientes/types'
-import type { Campania, EstadoCampania } from './types'
-import { ESTADOS_CAMPANIA } from './types'
+import type { Campania } from './types'
 
 export type CampaniaInput = {
   nombre: string
@@ -18,7 +17,6 @@ export type CampaniaInput = {
   cliente_facturacion: number | null
   fecha_inicio: string | null
   fecha_fin: string | null
-  estado: EstadoCampania
   ordenes_publicidad: File[]
 }
 
@@ -48,7 +46,6 @@ export default function CampaniaForm({
   )
   const [fechaInicio, setFechaInicio] = useState(campania?.fecha_inicio ?? '')
   const [fechaFin, setFechaFin] = useState(campania?.fecha_fin ?? '')
-  const [estado, setEstado] = useState<EstadoCampania>(campania?.estado ?? 'cotizada')
   const [marcasLocales, setMarcasLocales] = useState<Marca[]>([])
   const [creandoMarca, setCreandoMarca] = useState(false)
   const [ordenes, setOrdenes] = useState<File[]>([])
@@ -82,7 +79,6 @@ export default function CampaniaForm({
         cliente_facturacion: clienteFacturacion ? Number(clienteFacturacion) : null,
         fecha_inicio: fechaInicio || null,
         fecha_fin: fechaFin || null,
-        estado,
         ordenes_publicidad: ordenes,
       })
     } catch (cause) {
@@ -140,20 +136,6 @@ export default function CampaniaForm({
             ))}
           </select>
           <FieldErrors messages={errors.cliente_facturacion} />
-        </label>
-        <label>
-          Estado
-          <select
-            value={estado}
-            onChange={(event) => setEstado(event.target.value as EstadoCampania)}
-          >
-            {ESTADOS_CAMPANIA.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-          <FieldErrors messages={errors.estado} />
         </label>
         <CampoFecha
           label="Fecha de inicio"

@@ -15,7 +15,7 @@ const campania = {
   cliente_factura_nombre: 'Unilever',
   fecha_inicio: null,
   fecha_fin: null,
-  estado: 'cotizada',
+  estado: 'confirmada',
   ordenes_publicidad: [],
 }
 
@@ -111,20 +111,17 @@ test('crea la campaña con su orden de publicidad en un solo pedido multipart', 
     const cuerpo = llamada?.[1]?.body as FormData
     expect(cuerpo.get('nombre')).toBe('Invierno')
     expect(cuerpo.get('marca')).toBe('')
-    expect(cuerpo.get('estado')).toBe('cotizada')
+    expect(cuerpo.has('estado')).toBe(false)
     expect((cuerpo.getAll('ordenes_publicidad')[0] as File).name).toBe('op.pdf')
   })
 })
 
-test('al cambiar las fechas pregunta si mover las Pendientes', async () => {
+test('al cambiar las fechas no toca las reservas (HU-058)', async () => {
   const conFechas = { ...campania, fecha_inicio: '2026-11-01', fecha_fin: '2026-11-30' }
   const fetchMock = stubFetch((input, options) => {
     if (input.includes('/campanias/campanias/5/') && options?.method === 'PATCH')
       return ok({ ...conFechas, fecha_inicio: '2026-12-01', fecha_fin: '2026-12-31' })
     if (input.includes('/campanias/campanias/')) return ok([conFechas])
-    if (input.includes('/reservas/reservas/?campania=5&estado=pendiente'))
-      return ok([{ id: 1, fecha_inicio: '2026-11-01', fecha_fin: '2026-11-30' }])
-    if (input.includes('/mover-pendientes/')) return ok({ movidas: [1] })
     return undefined
   })
   render(<CampaniasPage />)
@@ -136,12 +133,11 @@ test('al cambiar las fechas pregunta si mover las Pendientes', async () => {
   })
   fireEvent.change(within(form).getByLabelText('Fecha de fin'), { target: { value: '31/12/2026' } })
   fireEvent.click(within(form).getByRole('button', { name: 'Guardar campaña' }))
-  await screen.findByRole('alertdialog', { name: 'Actualizar reservas Pendientes' })
-  fireEvent.click(screen.getByRole('button', { name: 'Actualizar Pendientes' }))
-  await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
-  expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/mover-pendientes/'))).toBe(
-    true,
+  await waitFor(() =>
+    expect(fetchMock.mock.calls.some(([, options]) => options?.method === 'PATCH')).toBe(true),
   )
+  expect(screen.queryByRole('alertdialog')).toBeNull()
+  expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/reservas/'))).toBe(false)
 })
 
 test('guardar sin cambiar las fechas no pregunta', async () => {
