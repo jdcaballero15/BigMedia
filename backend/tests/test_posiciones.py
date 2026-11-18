@@ -266,3 +266,19 @@ def test_endpoint_posiciones_consultas_no_crecen_con_los_carteles(operativo_clie
     with CaptureQueriesContext(connection) as muchos:
         assert len(_get(operativo_client, campania, formato).json()) == 6
     assert len(muchos.captured_queries) == len(uno.captured_queries)
+
+
+@pytest.mark.django_db
+def test_endpoint_posiciones_sin_campania_no_marca_ninguna_como_propia(operativo_client, formato):
+    cartel = _cartel(formato, "Avenida Alta 700", capacidad=2)
+    _reserva(cartel, "2026-11-01", "2026-11-30", campania=_campania("Fravega"))
+
+    respuesta = operativo_client.get(
+        URL, {"formato": formato.pk, "desde": "2026-11-01", "hasta": "2026-11-30"}
+    )
+
+    assert respuesta.status_code == 200
+    [fila] = respuesta.json()
+    assert fila["en_campania"] is False
+    assert fila["slots"][0][0]["es_esta_campania"] is False
+    assert fila["slots"][0][0]["marca_nombre"] == "Fravega"
