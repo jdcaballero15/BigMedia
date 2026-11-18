@@ -1,6 +1,6 @@
 # Unidad: Campaña siempre confirmada
 
-- **Estado:** en curso · **Épica:** E10 Armado de campañas y reserva masiva · **Apps:** `reservas`,
+- **Estado:** en revisión · **Épica:** E10 Armado de campañas y reserva masiva · **Apps:** `reservas`,
   `campanias`, frontend
 - **Origen:** PR de historias #142 (HU-024, HU-035, HU-037, HU-057, HU-058, HU-071; HU-059
   retirada; RN-002, RN-006, RN-011) · **Rama:** `feature/reservas-campania-siempre-confirmada`
@@ -159,5 +159,5 @@ Las decisiones de negocio están en #142 (Juan Diego, 17/11/2026). Las técnicas
   - La primera corrida dio 869 passed y 4 errores de setup en tests transaccionales: el test
     nuevo de concurrencia usaba `transaction=True` sin `serialized_rollback=True` y dejaba la base
     vacía. Se corrigió y la segunda corrida es la de arriba.
-  - Pendiente de aprobación de Juan Diego o Gonza.
-- Gate 3 (PR): pendiente
+  - Aprobado por Juan Diego el 2026-11-18, después de probarlo en local.
+- Gate 3 (PR): 2026-11-18, pedido por Juan Diego
