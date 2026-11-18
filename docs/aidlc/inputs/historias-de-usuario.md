@@ -819,6 +819,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   2. Dada una línea con formato y sin cantidad, cuando se guarda, entonces se acepta.
   3. Dada una campaña con una línea de un formato, cuando se intenta agregar otra del mismo formato, entonces se rechaza con un mensaje claro.
   4. Dada una línea existente, cuando se cambia su cantidad o se quita, entonces las reservas ya creadas no se alteran.
+  5. Dado el formulario de «Nueva campaña», cuando se agregan líneas antes de guardar, entonces se guardan junto con la campaña al tocar «Guardar campaña»; si se cancela el alta, no se guarda ninguna.
 
 ### HU-056 Seleccionar carteles por formato con filtros
 
@@ -827,7 +828,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** L
 - **Precondición:** HU-014, HU-040 y HU-055 completas.
-- **Regla de negocio:** La pantalla abre con la campaña precargada y bloqueada. Las fechas vienen de la campaña si las tiene; si no, la pantalla las pide para esa tanda y no se puede crear ninguna reserva sin ellas. Siempre se pueden ajustar para la tanda. Se filtra por zona, proveedor y dirección (búsqueda parcial, sin distinguir mayúsculas ni tildes). Cada cartel se identifica por Dirección + Tamaño (o Dirección + Slots en séxtuples), nunca por código interno. Seleccionar más o menos de lo solicitado genera un aviso, no un bloqueo. Queda fuera de alcance la autoselección ("completar hasta la cantidad") y la importación de la lista desde una planilla.
+- **Regla de negocio:** La pantalla abre con la campaña precargada y bloqueada. También se abre desde el formulario de «Nueva campaña», antes de guardarla: ahí solo arma la selección, que se crea junto con la campaña al guardar (HU-057), y los carteles que al guardar ya no tienen cupo fallan con su motivo sin impedir que se guarden la campaña y las demás reservas. Las fechas vienen de la campaña si las tiene; si no, la pantalla las pide para esa tanda y no se puede crear ninguna reserva sin ellas. Siempre se pueden ajustar para la tanda. Se filtra por zona, proveedor y dirección (búsqueda parcial, sin distinguir mayúsculas ni tildes). Cada cartel se identifica por Dirección + Tamaño (o Dirección + Slots en séxtuples), nunca por código interno. Seleccionar más o menos de lo solicitado genera un aviso, no un bloqueo. Queda fuera de alcance la autoselección ("completar hasta la cantidad") y la importación de la lista desde una planilla.
 - **Criterios de aceptación:**
   1. Dada una línea de formato elegida, cuando se abre la lista, entonces solo muestra carteles de ese formato con cupo libre en el rango de fechas.
   2. Dada una campaña sin fechas, cuando se abre la pantalla, entonces pide fechas para la tanda y no permite continuar sin ellas.
@@ -835,6 +836,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   4. Dada la lista filtrada, cuando el operativo usa "Seleccionar todos los filtrados" y destilda excepciones, entonces la selección refleja exactamente eso.
   5. Dada una selección, cuando cambia, entonces un contador muestra el avance por formato (por ejemplo "Gran Formato 60 de 100") y el monto estimado; si la línea no tiene cantidad, muestra solo lo seleccionado.
   6. Dada una selección mayor o menor a la solicitada, cuando se intenta confirmar, entonces el sistema avisa pero permite continuar.
+  7. Dado el formulario de «Nueva campaña» con una línea de formato, cuando se eligen carteles y se guarda la campaña, entonces se crean la campaña, la línea y una reserva por cartel elegido; si alguno ya no tiene cupo, un resumen muestra cuál y por qué, y lo demás queda guardado.
 
 ### HU-057 Crear reservas en bloque
 
