@@ -565,10 +565,15 @@ def _reservas_por_cartel(
     return por_cartel
 
 
+def _es_de(reserva: Reserva, campania: Campania | None) -> bool:
+    """Si la reserva es de la campaña; sin campaña (alta sin guardar) ninguna lo es."""
+    return campania is not None and reserva.campania_id == campania.pk
+
+
 def _fila_tanda(
     cartel: Cartel,
     solapadas: list[Reserva],
-    campania: Campania,
+    campania: Campania | None,
     rango: tuple[date, date],
     parametros: ParametrosDisponibilidad,
 ) -> dict[str, Any] | None:
@@ -584,7 +589,7 @@ def _fila_tanda(
         "tarifa_lista": str(cartel.tarifa_lista) if cartel.tarifa_lista is not None else None,
         "capacidad": cartel.capacidad,
         "ocupados": ocupados,
-        "en_campania": any(r.campania_id == campania.pk for r in solapadas),
+        "en_campania": any(_es_de(r, campania) for r in solapadas),
     }
 
 
@@ -612,7 +617,7 @@ def _solapadas_en_rango(
 
 
 def carteles_para_tanda(
-    campania: Campania,
+    campania: Campania | None,
     formato: Formato,
     desde: date,
     hasta: date,
@@ -666,7 +671,7 @@ def repartir_en_slots(
     return slots
 
 
-def _ocupante(reserva: Reserva, campania: Campania) -> dict[str, Any]:
+def _ocupante(reserva: Reserva, campania: Campania | None) -> dict[str, Any]:
     """Datos de una reserva para un casillero de la vista Posiciones."""
     marca = reserva.campania.marca
     return {
@@ -675,7 +680,7 @@ def _ocupante(reserva: Reserva, campania: Campania) -> dict[str, Any]:
         "marca_nombre": marca.nombre if marca else None,
         "campania_id": reserva.campania_id,
         "campania_nombre": reserva.campania.nombre,
-        "es_esta_campania": reserva.campania_id == campania.pk,
+        "es_esta_campania": _es_de(reserva, campania),
         "estado": reserva.estado,
         "fecha_inicio": reserva.fecha_inicio.isoformat(),
         "fecha_fin": reserva.fecha_fin.isoformat(),
@@ -685,7 +690,7 @@ def _ocupante(reserva: Reserva, campania: Campania) -> dict[str, Any]:
 def _fila_posiciones(
     cartel: Cartel,
     solapadas: list[Reserva],
-    campania: Campania,
+    campania: Campania | None,
     rango: tuple[date, date],
     parametros: ParametrosDisponibilidad,
 ) -> dict[str, Any]:
@@ -702,13 +707,13 @@ def _fila_posiciones(
         "capacidad": cartel.capacidad,
         "ocupados": ocupados,
         "lleno": ocupados >= cartel.capacidad,
-        "en_campania": any(r.campania_id == campania.pk for r in solapadas),
+        "en_campania": any(_es_de(r, campania) for r in solapadas),
         "slots": [[_ocupante(r, campania) for r in slot] for slot in slots],
     }
 
 
 def posiciones_de_formato(
-    campania: Campania,
+    campania: Campania | None,
     formato: Formato,
     desde: date,
     hasta: date,

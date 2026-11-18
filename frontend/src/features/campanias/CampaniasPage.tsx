@@ -5,6 +5,9 @@ import type { MarcaInput } from '../clientes/MarcaForm'
 import CampaniaForm from './CampaniaForm'
 import type { CampaniaInput } from './CampaniaForm'
 import CampaniaDetalle from './CampaniaDetalle'
+import { crearLineasYReservas } from './altaConPosiciones'
+import type { ResultadoAlta } from './altaConPosiciones'
+import ResumenAlta from './ResumenAlta'
 import type { Campania } from './types'
 import { ESTADOS_CAMPANIA, etiquetaEstado } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
@@ -12,7 +15,7 @@ import MenuFila from '../../shared/MenuFila'
 
 /** Multipart de la campaña: un valor vacío va como "" y el servidor lo toma como nulo. */
 function formularioCampania(
-  datos: Omit<CampaniaInput, 'ordenes_publicidad'>,
+  datos: Omit<CampaniaInput, 'ordenes_publicidad' | 'lineas'>,
   archivos: File[],
 ): FormData {
   const form = new FormData()
@@ -37,6 +40,7 @@ export default function CampaniasPage() {
   const [editing, setEditing] = useState<Campania | 'new' | null>(null)
   const [viendo, setViendo] = useState<Campania | null>(null)
   const [revision, setRevision] = useState(0)
+  const [resultadoAlta, setResultadoAlta] = useState<ResultadoAlta | null>(null)
 
   useEffect(() => {
     let active = true
@@ -88,13 +92,14 @@ export default function CampaniasPage() {
     const path =
       editing === 'new' ? '/api/campanias/campanias/' : `/api/campanias/campanias/${editing.id}/`
     const metodo = editing === 'new' ? 'POST' : 'PATCH'
-    const { ordenes_publicidad: archivos, ...datos } = input
+    const { ordenes_publicidad: archivos, lineas, ...datos } = input
     // Con PDF adjuntos, la campaña y sus órdenes van en un solo pedido (HU-069, criterio 4).
-    if (archivos.length > 0) {
-      await apiUpload<Campania>(path, formularioCampania(datos, archivos), metodo)
-    } else {
-      await apiWrite<Campania>(path, metodo, datos)
-    }
+    const guardada =
+      archivos.length > 0
+        ? await apiUpload<Campania>(path, formularioCampania(datos, archivos), metodo)
+        : await apiWrite<Campania>(path, metodo, datos)
+    // Las líneas y los carteles elegidos en el alta se crean ya con la campaña guardada (HU-056).
+    setResultadoAlta(lineas.length > 0 ? await crearLineasYReservas(guardada, lineas) : null)
     setEditing(null)
     setRevision((current) => current + 1)
   }
@@ -137,6 +142,9 @@ export default function CampaniasPage() {
           </button>
         )}
       </div>
+      {resultadoAlta && (
+        <ResumenAlta resultado={resultadoAlta} onCerrar={() => setResultadoAlta(null)} />
+      )}
       {editing !== null && (
         <CampaniaForm
           key={editing === 'new' ? 'new' : editing.id}

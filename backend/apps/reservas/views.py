@@ -304,10 +304,17 @@ def _fecha_requerida(valor: str | None, campo: str) -> date:
 
 def _parametros_de_tanda(
     request: Request,
-) -> tuple[Campania, Formato, date, date, dict[str, Any]]:
-    """Campaña, formato, rango y filtros de "Agregar carteles", validados (HU-056, HU-071)."""
+) -> tuple[Campania | None, Formato, date, date, dict[str, Any]]:
+    """Campaña, formato, rango y filtros de "Agregar carteles", validados (HU-056, HU-071).
+
+    La campaña es opcional: en el alta todavía no existe y se eligen carteles antes de guardarla.
+    """
     params = request.query_params
-    campania = get_object_or_404(Campania, pk=_id_positivo(params.get("campania", ""), "campania"))
+    campania = (
+        get_object_or_404(Campania, pk=_id_positivo(params["campania"], "campania"))
+        if "campania" in params
+        else None
+    )
     formato = get_object_or_404(Formato, pk=_id_positivo(params.get("formato", ""), "formato"))
     desde = _fecha_requerida(params.get("desde"), "desde")
     hasta = _fecha_requerida(params.get("hasta"), "hasta")

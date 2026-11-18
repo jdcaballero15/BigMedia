@@ -5,6 +5,8 @@ import CampoFecha from '../../shared/CampoFecha'
 import { erroresDeFechas } from '../../shared/fechas'
 import { FieldErrors } from '../../shared/FieldErrors'
 import OrdenesAdjuntas from './OrdenesAdjuntas'
+import PosicionesAlta from './PosicionesAlta'
+import type { LineaAlta } from './PosicionesAlta'
 import { vigentes } from '../../shared/opciones'
 import MarcaForm from '../clientes/MarcaForm'
 import type { MarcaInput } from '../clientes/MarcaForm'
@@ -18,6 +20,8 @@ export type CampaniaInput = {
   fecha_inicio: string | null
   fecha_fin: string | null
   ordenes_publicidad: File[]
+  /** Solo en el alta: líneas y carteles que se crean junto con la campaña (HU-055, HU-056). */
+  lineas: LineaAlta[]
 }
 
 type Props = {
@@ -49,6 +53,7 @@ export default function CampaniaForm({
   const [marcasLocales, setMarcasLocales] = useState<Marca[]>([])
   const [creandoMarca, setCreandoMarca] = useState(false)
   const [ordenes, setOrdenes] = useState<File[]>([])
+  const [lineas, setLineas] = useState<LineaAlta[]>([])
 
   // Las marcas creadas al vuelo se muestran aunque el padre todavía no refrescó su lista.
   const opcionesMarca = [...marcas, ...marcasLocales].filter(
@@ -80,6 +85,7 @@ export default function CampaniaForm({
         fecha_inicio: fechaInicio || null,
         fecha_fin: fechaFin || null,
         ordenes_publicidad: ordenes,
+        lineas: campania ? [] : lineas,
       })
     } catch (cause) {
       if (cause instanceof ApiError) setErrors(cause.fields)
@@ -166,6 +172,14 @@ export default function CampaniaForm({
         <button type="button" className="button-ghost" onClick={() => setCreandoMarca(true)}>
           Nueva marca
         </button>
+      )}
+      {!campania && (
+        <PosicionesAlta
+          lineas={lineas}
+          onCambio={setLineas}
+          fechaInicio={fechaInicio}
+          fechaFin={fechaFin}
+        />
       )}
       {generalError && (
         <p className="error" role="alert">

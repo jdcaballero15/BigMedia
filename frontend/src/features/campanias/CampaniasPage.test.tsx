@@ -158,3 +158,136 @@ test('guardar sin cambiar las fechas no pregunta', async () => {
   )
   expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/reservas/'))).toBe(false)
 })
+
+// --- Alta con posiciones y carteles antes de guardar (HU-055 criterio 5, HU-056 criterio 7) ---
+
+const cartelLibre = (id: number) => ({
+  id,
+  nombre_visible: `Av. Alta ${id} · 8x3`,
+  zona_nombre: 'Ciudad',
+  proveedor_nombre: null,
+  tarifa_lista: '1000.00',
+  capacidad: 1,
+  ocupados: 0,
+  en_campania: false,
+})
+
+function stubAlta(fallidas: { cartel: number; motivo: string }[] = []) {
+  return stubFetch((input, options) => {
+    if (input === '/api/campanias/campanias/' && options?.method === 'POST')
+      return ok({ ...campania, id: 9, nombre: 'Invierno' })
+    if (input.includes('/inventario/formatos/'))
+      return ok([{ id: 10, nombre: 'Gran Formato', activo: true }])
+    if (input.includes('/inventario/zonas/') || input.includes('/inventario/proveedores/'))
+      return ok([])
+    if (input.includes('/carteles-para-tanda/')) return ok([cartelLibre(1), cartelLibre(2)])
+    if (input.includes('/lineas-formato/')) return ok({ id: 70 })
+    if (input.includes('/en-bloque/')) {
+      const ids = (JSON.parse(String(options?.body)) as { carteles: number[] }).carteles
+      const fallan = new Set(fallidas.map((item) => item.cartel))
+      const creadas = ids.filter((id) => !fallan.has(id)).map((id) => ({ cartel: id, reserva: id }))
+      return ok({ creadas, existentes: [], fallidas })
+    }
+    return undefined
+  })
+}
+
+async function armarAltaConCarteles() {
+  render(<CampaniasPage />)
+  await screen.findByText('Verano 2027')
+  fireEvent.click(screen.getByRole('button', { name: 'Nueva campaña' }))
+  const form = screen.getByRole('form', { name: 'Formulario de campaña' })
+  fireEvent.change(within(form).getByLabelText('Nombre'), { target: { value: 'Invierno' } })
+  fireEvent.change(within(form).getByLabelText('Fecha de inicio'), {
+    target: { value: '01/11/2026' },
+  })
+  fireEvent.change(within(form).getByLabelText('Fecha de fin'), { target: { value: '30/11/2026' } })
+  await within(form).findByRole('option', { name: 'Gran Formato' })
+  fireEvent.change(within(form).getByLabelText('Formato'), { target: { value: '10' } })
+  fireEvent.change(within(form).getByLabelText('Cantidad'), { target: { value: '2' } })
+  fireEvent.click(within(form).getByRole('button', { name: 'Agregar línea' }))
+  fireEvent.click(within(form).getByRole('button', { name: 'Agregar carteles' }))
+  fireEvent.click(await within(form).findByLabelText('Elegir Av. Alta 1 · 8x3'))
+  fireEvent.click(within(form).getByLabelText('Elegir Av. Alta 2 · 8x3'))
+  fireEvent.click(within(form).getByRole('button', { name: 'Usar selección' }))
+  return form
+}
+
+const posts = (fetchMock: ReturnType<typeof stubFetch>) =>
+  fetchMock.mock.calls
+    .filter(([, options]) => options?.method === 'POST')
+    .map(([url, options]) => ({ url: String(url), body: JSON.parse(String(options?.body)) }))
+
+test('el alta muestra posiciones por formato y la edición no', async () => {
+  stubAlta()
+  render(<CampaniasPage />)
+  await screen.findByText('Verano 2027')
+  fireEvent.click(screen.getByRole('button', { name: 'Nueva campaña' }))
+  expect(screen.getByRole('region', { name: 'Posiciones por formato' })).toBeDefined()
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+  abrirAcciones(screen.getByText('Verano 2027').closest('tr')!)
+  fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
+  expect(screen.queryByRole('region', { name: 'Posiciones por formato' })).toBeNull()
+})
+
+test('elegir carteles en el alta no guarda nada hasta Guardar campaña', async () => {
+  const fetchMock = stubAlta()
+  const form = await armarAltaConCarteles()
+  expect(within(form).getByText('Carteles elegidos: 2')).toBeDefined()
+  expect(posts(fetchMock)).toHaveLength(0)
+  fireEvent.click(within(form).getByRole('button', { name: 'Cancelar' }))
+  expect(posts(fetchMock)).toHaveLength(0)
+})
+
+test('al guardar el alta crea la campaña, su línea y sus reservas en ese orden', async () => {
+  const fetchMock = stubAlta()
+  const form = await armarAltaConCarteles()
+  fireEvent.click(within(form).getByRole('button', { name: 'Guardar campaña' }))
+  const resumen = await screen.findByRole('status', { name: 'Resultado del alta' })
+  expect(resumen.textContent).toContain('Se creó la campaña «Invierno» con 2 reservas.')
+  const enviados = posts(fetchMock)
+  expect(enviados.map((post) => post.url)).toEqual([
+    '/api/campanias/campanias/',
+    '/api/campanias/lineas-formato/',
+    '/api/reservas/reservas/en-bloque/',
+  ])
+  expect(enviados[0]?.body).not.toHaveProperty('lineas')
+  expect(enviados[1]?.body).toEqual({ campania: 9, formato: 10, cantidad: 2 })
+  expect(enviados[2]?.body).toEqual({
+    campania: 9,
+    fecha_inicio: '2026-11-01',
+    fecha_fin: '2026-11-30',
+    carteles: [1, 2],
+  })
+  expect(screen.queryByRole('form', { name: 'Formulario de campaña' })).toBeNull()
+})
+
+test('si un cartel ya no tiene cupo al guardar, el resumen muestra cuál y por qué', async () => {
+  stubAlta([{ cartel: 2, motivo: 'El cartel no tiene cupo en esas fechas.' }])
+  const form = await armarAltaConCarteles()
+  fireEvent.click(within(form).getByRole('button', { name: 'Guardar campaña' }))
+  const resumen = await screen.findByRole('status', { name: 'Resultado del alta' })
+  expect(resumen.textContent).toContain('con 1 reserva.')
+  const fallidos = within(resumen).getByRole('list', { name: 'Carteles fallidos' })
+  expect(fallidos.textContent).toContain(
+    'Av. Alta 2 · 8x3: El cartel no tiene cupo en esas fechas.',
+  )
+  fireEvent.click(within(resumen).getByRole('button', { name: 'Cerrar' }))
+  expect(screen.queryByRole('status', { name: 'Resultado del alta' })).toBeNull()
+})
+
+test('si la línea no se puede guardar, el resumen la muestra con su motivo', async () => {
+  const base = stubAlta()
+  const original = base.getMockImplementation()!
+  base.mockImplementation(async (input: string, options?: RequestInit) =>
+    input.includes('/lineas-formato/')
+      ? { ok: false, status: 400, json: async () => ({ detail: 'Formato inactivo.' }) }
+      : original(input, options),
+  )
+  const form = await armarAltaConCarteles()
+  fireEvent.click(within(form).getByRole('button', { name: 'Guardar campaña' }))
+  const resumen = await screen.findByRole('status', { name: 'Resultado del alta' })
+  const lineas = within(resumen).getByRole('list', { name: 'Líneas fallidas' })
+  expect(lineas.textContent).toContain('Gran Formato:')
+  expect(resumen.textContent).toContain('con 2 reservas.')
+})

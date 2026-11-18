@@ -231,3 +231,24 @@ def test_consultas_no_crecen_con_la_cantidad_de_carteles(operativo_client, forma
     with CaptureQueriesContext(connection) as muchos:
         assert len(_lista(operativo_client, campania, formato)) == 11
     assert len(muchos.captured_queries) == len(uno.captured_queries)
+
+
+# --- Alta de campaña: elegir carteles antes de guardar la campaña ---
+
+
+@pytest.mark.django_db
+def test_lista_sin_campania_devuelve_carteles_libres_sin_marcar(operativo_client, formato):
+    libre = _cartel(formato, "Av. Alta 10", capacidad=2)
+    _reserva(libre, "2026-11-01", "2026-11-30")
+    ocupado = _cartel(formato, "Av. Alta 20")
+    _reserva(ocupado, "2026-11-01", "2026-11-30")
+
+    respuesta = operativo_client.get(
+        URL, {"formato": formato.pk, "desde": "2026-11-01", "hasta": "2026-11-30"}
+    )
+
+    assert respuesta.status_code == 200
+    [fila] = respuesta.json()
+    assert fila["id"] == libre.pk
+    assert fila["ocupados"] == 1
+    assert fila["en_campania"] is False
