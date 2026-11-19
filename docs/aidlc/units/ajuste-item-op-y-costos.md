@@ -106,4 +106,4 @@ actuales quedan activos.
     restricción de campaña que HU-063 quitó y ahora comprueban la regla nueva; el test de
     concurrencia lleva `serialized_rollback=True` como los demás; en la prueba local Juan Diego
     pidió el botón de guardar fijo abajo de la pantalla porque el formulario quedó largo.
-- Gate 3 (PR): 2026-11-19 — pedido por Juan Diego.
+- Gate 3 (PR): 2026-11-19 — pedido por Juan Diego; [PR #147](https://github.com/jdcaballero15/BigMedia/pull/147) (historias) y [PR #148](https://github.com/jdcaballero15/BigMedia/pull/148) (código), mergeados a `develop`.
