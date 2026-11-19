@@ -68,7 +68,8 @@ Definidas por Gonza el 27/10/2026.
 
 ## Próximas
 
-—
+- **E3 Clientes, marcas y CRM, recordatorios** — recordatorio de una interacción que sale en el
+  Panel el día indicado (HU-072).
 
 El orden sigue las dependencias entre historias. Se reordena si Seba necesita usar otra parte antes.
 
@@ -102,3 +103,4 @@ E5 es el núcleo: si hubo que recortar alcance, se recortó alrededor de ella y 
 | 2026-11-16 | La orden de publicidad (HU-069), el ajuste de Facturación (HU-060 y HU-070) y los ajustes de E12 pasan a Hecho; Facturación pierde estados y envío; las próximas quedan a definir | Quedaron mergeados los PR #124, #125, #128, #129, #132, #134 y #135 |
 | 2026-11-16 | E10 vuelve a En curso con la vista de posiciones (HU-071) | Seba asigna lugares mirando la planilla de posiciones; Juan Diego pidió llevarla a «Agregar carteles» |
 | 2026-11-17 | La vista de posiciones pasa a Hecho; E10 sigue En curso con la campaña siempre confirmada | Quedaron mergeados los PR #140 y #141; Seba carga la campaña cuando el cliente ya la confirmó y Juan Diego pidió sacar los pasos de confirmación |
+| 2026-11-19 | El recordatorio de una interacción (HU-072) queda como próxima | Gonza pidió que, si en una reunión piden presupuesto, el día indicado salga «Enviar presupuesto» |
