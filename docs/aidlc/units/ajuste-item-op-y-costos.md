@@ -91,6 +91,19 @@ actuales quedan activos.
 
 ## Registro de gates
 
-- Gate 1 (plan): pendiente
-- Gate 2 (verificación): pendiente
-- Gate 3 (PR): pendiente
+- Gate 1 (plan): 2026-11-18 — aprobado por Juan Diego
+- Gate 2 (verificación): 2026-11-19 — aprobado por Juan Diego después de probarlo en local. Rama
+  `feature/facturacion-item-op-y-costos`:
+  - `ruff format --check .`: «145 files already formatted»; `ruff check .`: «All checks passed!».
+  - `mypy backend`: «Success: no issues found in 145 source files».
+  - `pytest --cov`: «905 passed in 1531.16s»; «Required test coverage of 80.0% reached. Total
+    coverage: 97.55%»; ningún test salteado.
+  - `makemigrations --check --dry-run`: «No changes detected».
+  - `pre-commit run --all-files`: todos los hooks en Passed, gitleaks incluido.
+  - Frontend: `format:check` y `lint` sin hallazgos, `typecheck` OK, `test:coverage` «429 passed»
+    (95,01 % de líneas), `build` OK.
+  - Ajustes durante la verificación: tres tests de `test_costos_del_item.py` comprobaban la
+    restricción de campaña que HU-063 quitó y ahora comprueban la regla nueva; el test de
+    concurrencia lleva `serialized_rollback=True` como los demás; en la prueba local Juan Diego
+    pidió el botón de guardar fijo abajo de la pantalla porque el formulario quedó largo.
+- Gate 3 (PR): 2026-11-19 — pedido por Juan Diego.
