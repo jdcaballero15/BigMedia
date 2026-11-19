@@ -79,8 +79,8 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E10 Armado de campañas y reserva masiva | [vista-de-posiciones](units/vista-de-posiciones.md) | reservas | HU-071 (RN-001, RN-002, RN-003, RN-005) | reserva-masiva | Juan Diego | feature/reservas-vista-de-posiciones | mergeada |
 | E10 Armado de campañas y reserva masiva | [ajuste-campania-siempre-confirmada](units/ajuste-campania-siempre-confirmada.md) | reservas, campanias | HU-024, HU-035, HU-037, HU-057, HU-058, HU-071 (RN-006, RN-011; RN-002 sin efecto) | vista-de-posiciones | Juan Diego | feature/reservas-campania-siempre-confirmada | en revisión |
 | E10 Armado de campañas y reserva masiva | [ajuste-campania-alta-con-posiciones](units/ajuste-campania-alta-con-posiciones.md) | campanias, reservas | HU-023, HU-055, HU-056, HU-057 | ajuste-campania-siempre-confirmada | Juan Diego | feature/frontend-campania-alta-con-posiciones | en revisión |
+| E11 Facturación mensual | [ajuste-item-op-y-costos](units/ajuste-item-op-y-costos.md) | facturacion | HU-060, HU-062, HU-063 (ajuste), RN-024 | facturacion-sin-estados, costos-del-item, docs/historias-item-con-op-y-costos | Juan Diego | feature/facturacion-item-op-y-costos | mergeada |
 
 ## Notas
 
 - HU-015 (importación de inventario) quedó fuera de la unidad `inventario` hasta tener los relevamientos (RN-009); la implementa `importacion-inventario`. La carga de los datos reales no es una unidad: se hace con la pantalla de importación.
-| E11 Facturación mensual | [ajuste-item-op-y-costos](units/ajuste-item-op-y-costos.md) | facturacion | HU-060, HU-062, HU-063 (ajuste), RN-024 | facturacion-sin-estados, costos-del-item, docs/historias-item-con-op-y-costos | Juan Diego | feature/facturacion-item-op-y-costos | mergeada |
