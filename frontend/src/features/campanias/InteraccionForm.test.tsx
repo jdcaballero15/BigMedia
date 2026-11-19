@@ -35,6 +35,8 @@ const ana: Contacto = {
   correo: '',
   telefono: '',
   notas: '',
+  rol: 'planificador',
+  planificador: null,
   principal: true,
   activo: true,
 }

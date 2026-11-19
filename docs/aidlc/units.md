@@ -79,6 +79,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E10 Armado de campañas y reserva masiva | [vista-de-posiciones](units/vista-de-posiciones.md) | reservas | HU-071 (RN-001, RN-002, RN-003, RN-005) | reserva-masiva | Juan Diego | feature/reservas-vista-de-posiciones | mergeada |
 | E10 Armado de campañas y reserva masiva | [ajuste-campania-siempre-confirmada](units/ajuste-campania-siempre-confirmada.md) | reservas, campanias | HU-024, HU-035, HU-037, HU-057, HU-058, HU-071 (RN-006, RN-011; RN-002 sin efecto) | vista-de-posiciones | Juan Diego | feature/reservas-campania-siempre-confirmada | en revisión |
 | E10 Armado de campañas y reserva masiva | [ajuste-campania-alta-con-posiciones](units/ajuste-campania-alta-con-posiciones.md) | campanias, reservas | HU-023, HU-055, HU-056, HU-057 | ajuste-campania-siempre-confirmada | Juan Diego | feature/frontend-campania-alta-con-posiciones | en revisión |
+| E3 Clientes, marcas y CRM | [ajuste-tipos-cliente-y-jerarquia-contactos](units/ajuste-tipos-cliente-y-jerarquia-contactos.md) | clientes | pedido de Juan Diego (2026-11-18), HU-016, HU-068, RN-015 | contactos-intermediario | Juan Diego | feature/clientes-centrales-planificadores | en curso |
 
 ## Notas
 

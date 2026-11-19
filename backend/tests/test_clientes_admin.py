@@ -89,6 +89,8 @@ def test_admin_de_clientes_segundo_contacto_principal_se_rechaza(superusuario_cl
             "correo": "",
             "telefono": "",
             "notas": "",
+            "rol": "planificador",
+            "planificador": "",
             "principal": "on",
             "activo": "on",
         },

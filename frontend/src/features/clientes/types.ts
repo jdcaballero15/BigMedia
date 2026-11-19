@@ -1,9 +1,9 @@
 export type TipoCliente = 'directo' | 'intermediario' | 'intermediario_formal'
 
 export const TIPOS_CLIENTE: { value: TipoCliente; label: string }[] = [
-  { value: 'directo', label: 'Directo' },
-  { value: 'intermediario', label: 'Intermediario' },
-  { value: 'intermediario_formal', label: 'Intermediario formal' },
+  { value: 'directo', label: 'Cliente directo' },
+  { value: 'intermediario', label: 'Intermediario (bolsero)' },
+  { value: 'intermediario_formal', label: 'Central de medios' },
 ]
 
 export type Rubro = { id: number; nombre: string; activo: boolean }
@@ -46,6 +46,8 @@ export type Contacto = {
   correo: string
   telefono: string
   notas: string
+  rol: 'planificador' | 'asistente'
+  planificador: number | null
   principal: boolean
   activo: boolean
 }

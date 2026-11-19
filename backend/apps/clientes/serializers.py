@@ -122,7 +122,7 @@ class ClienteSerializer(serializers.ModelSerializer[Cliente]):
         return attrs
 
     def _validar_cambio_de_tipo(self, tipo: str | None) -> None:
-        """Un intermediario formal con contactos activos no cambia de tipo (HU-068, criterio 6)."""
+        """Una central de medios con contactos activos no cambia de tipo."""
         cliente = self.instance
         if cliente is None or tipo is None or tipo == cliente.tipo:
             return
@@ -220,6 +220,8 @@ class ContactoSerializer(serializers.ModelSerializer[Contacto]):
             "correo",
             "telefono",
             "notas",
+            "rol",
+            "planificador",
             "principal",
             "activo",
         ]
@@ -248,14 +250,49 @@ class ContactoSerializer(serializers.ModelSerializer[Contacto]):
                 raise serializers.ValidationError({"cliente": "Seleccioná un cliente activo."})
             if not services.acepta_contactos(cliente):
                 raise serializers.ValidationError(
-                    {"cliente": "Solo un cliente intermediario formal puede tener contactos."}
+                    {"cliente": "Solo una central de medios puede tener contactos."}
                 )
+        self._validar_jerarquia(attrs, cliente)
+        return attrs
+
+    def _validar_jerarquia(self, attrs: dict[str, Any], cliente: Cliente | None) -> None:
+        rol = attrs.get("rol", getattr(self.instance, "rol", Contacto.Rol.PLANIFICADOR))
+        planificador = attrs.get("planificador", getattr(self.instance, "planificador", None))
         activo = attrs.get("activo", getattr(self.instance, "activo", True))
+        principal = attrs.get("principal", getattr(self.instance, "principal", False))
+        contacto_cliente = cliente or (self.instance.cliente if self.instance else None)
+        if rol == Contacto.Rol.ASISTENTE:
+            if (
+                planificador is None
+                or contacto_cliente is None
+                or (self.instance is not None and planificador.pk == self.instance.pk)
+                or planificador.cliente_id != contacto_cliente.pk
+                or planificador.rol != Contacto.Rol.PLANIFICADOR
+                or not planificador.activo
+            ):
+                raise serializers.ValidationError(
+                    {"planificador": "Elegí un planificador activo de esta central."}
+                )
+            if principal:
+                raise serializers.ValidationError(
+                    {"principal": "Un asistente no puede ser el contacto principal."}
+                )
+        elif planificador is not None:
+            raise serializers.ValidationError(
+                {"planificador": "Un planificador no puede depender de otro contacto."}
+            )
+        if (
+            self.instance
+            and self.instance.asistentes.filter(activo=True).exists()
+            and (not activo or rol != Contacto.Rol.PLANIFICADOR)
+        ):
+            raise serializers.ValidationError(
+                {"rol": "Inactivá o reasigná antes sus asistentes activos."}
+            )
         if attrs.get("principal") and not activo:
             raise serializers.ValidationError(
                 {"principal": "Un contacto inactivo no puede ser el principal."}
             )
-        return attrs
 
     def create(self, validated_data: dict[str, Any]) -> Contacto:
         return services.guardar_contacto(Contacto(**validated_data))

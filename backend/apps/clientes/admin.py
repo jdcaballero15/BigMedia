@@ -72,8 +72,8 @@ class MarcaAdmin(BorradoAuditadoAdmin):
 @admin.register(Contacto)
 class ContactoAdmin(BorradoAuditadoAdmin):
     entidad = "contacto"
-    list_display = ["nombre", "cliente", "cargo", "principal", "activo"]
-    list_filter = ["activo", "principal"]
+    list_display = ["nombre", "cliente", "rol", "planificador", "cargo", "principal", "activo"]
+    list_filter = ["activo", "principal", "rol"]
     search_fields = ["nombre", "cliente__nombre"]
-    list_select_related = ["cliente"]
-    autocomplete_fields = ["cliente"]
+    list_select_related = ["cliente", "planificador"]
+    autocomplete_fields = ["cliente", "planificador"]
