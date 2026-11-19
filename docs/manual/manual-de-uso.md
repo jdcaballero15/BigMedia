@@ -17,7 +17,7 @@ Los grupos son estos:
 | --- | --- |
 | Inicio | **Panel**: ocupación de hoy, campañas activas y por vencer |
 | Reportes | **Ingresos**, **Por rubro o grupo**, **Ocupación** |
-| Comercial | **Clientes**, **Marcas**, **Campañas**, **Interacciones**, **Facturación** |
+| Comercial | **Clientes**, **Marcas**, **Campañas**, **Facturación** |
 | Inventario | **Carteles**, **Disponibilidad** |
 | Operación | **Proveedores**, **Costos**, **Formatos** |
 | Configuración | **Catálogos** |
@@ -108,10 +108,13 @@ marca puede estar en un solo grupo.
 - En **Comercial › Marcas**, **Ver ficha** abre la ficha de la marca: todas sus campañas con su
   estado, aunque las haya pagado otro cliente; sus interacciones (las que tienen la marca cargada y
   las de sus campañas), y, si la marca tiene grupo económico, las otras marcas del grupo.
-- Al registrar una interacción en **Comercial › Interacciones** podés elegir una **Marca** del
-  cliente aunque todavía no haya campaña, por ejemplo para una primera llamada sobre una marca
-  nueva. Si elegís marca, la lista de campañas muestra solo las de esa marca. **Asunto** es
-  opcional: si lo dejás vacío, la interacción aparece como «Sin asunto».
+- Las interacciones (reuniones y llamadas) se cargan desde la ficha del cliente: en
+  **Interacciones**, **Nueva interacción** abre el formulario con el cliente ya puesto, y
+  **Editar** corrige una que ya está. Podés elegir una **Marca** del cliente aunque todavía no haya
+  campaña, por ejemplo para una primera llamada sobre una marca nueva. Si elegís marca, la lista de
+  campañas muestra solo las de esa marca. **Asunto** es opcional: si lo dejás vacío, la
+  interacción aparece como «Sin asunto». En el detalle de la campaña y en la ficha de la marca las
+  interacciones se ven, pero no se cargan.
 - Para volver a la lista, tocá **← Volver** o el nombre de la pantalla en la ruta de arriba (por
   ejemplo, «Clientes» en «Big Media / Comercial / Clientes / Agencia Cordillera»).
 
