@@ -83,4 +83,4 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 ## Notas
 
 - HU-015 (importación de inventario) quedó fuera de la unidad `inventario` hasta tener los relevamientos (RN-009); la implementa `importacion-inventario`. La carga de los datos reales no es una unidad: se hace con la pantalla de importación.
-| E11 Facturación mensual | [ajuste-item-op-y-costos](units/ajuste-item-op-y-costos.md) | facturacion | HU-060, HU-062, HU-063 (ajuste), RN-024 | facturacion-sin-estados, costos-del-item, docs/historias-item-con-op-y-costos | Juan Diego | feature/facturacion-item-op-y-costos | en revisión |
+| E11 Facturación mensual | [ajuste-item-op-y-costos](units/ajuste-item-op-y-costos.md) | facturacion | HU-060, HU-062, HU-063 (ajuste), RN-024 | facturacion-sin-estados, costos-del-item, docs/historias-item-con-op-y-costos | Juan Diego | feature/facturacion-item-op-y-costos | mergeada |
