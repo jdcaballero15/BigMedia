@@ -4,9 +4,12 @@ import { ApiError } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import { vigentes } from '../../shared/opciones'
 import type { Cliente } from '../clientes/types'
-import type { CatalogosFacturacion, ItemFacturacion } from './types'
+import CostosDelItem from './CostosDelItem'
+import { detalleElegidos, sumaElegidos } from './montos'
+import OrdenPublicidadItem from './OrdenPublicidadItem'
+import type { CatalogosFacturacion, CostoElegible, ItemFacturacion } from './types'
 
-export type ItemInput = Record<string, string | number | null>
+export type ItemInput = Record<string, string | number | number[] | null>
 
 type Props = {
   item: ItemFacturacion | null
@@ -14,7 +17,8 @@ type Props = {
   mes: string
   clientes: Cliente[]
   catalogos: CatalogosFacturacion
-  onSave: (input: ItemInput) => Promise<void>
+  /** Guarda el ítem con sus costos elegidos y, si se adjuntó, el PDF de la orden de publicidad. */
+  onSave: (input: ItemInput, ordenPublicidad: File | null) => Promise<void>
   onCancel: () => void
 }
 
@@ -45,20 +49,29 @@ function conElegida(opciones: Opcion[], id: number | null | undefined, nombre?: 
   return [...opciones, { id, nombre: `${nombre ?? `#${id}`} (inactivo)` }]
 }
 
-/** Lo que viaja a la API: vacío es null en IDs e importes; un ítem nuevo lleva el mes elegido. */
-function aEntrada(datos: Datos, mesNuevo: string | null): ItemInput {
+/** Lo que viaja a la API: vacío es null en IDs e importes; un ítem nuevo lleva el mes elegido.
+ * Con costos elegidos, los costos incluidos y el detalle los calcula el servidor (HU-060). */
+function aEntrada(datos: Datos, mesNuevo: string | null, elegidos: CostoElegible[]): ItemInput {
   const entrada: ItemInput = { ...datos }
   for (const campo of CAMPOS_ID) entrada[campo] = datos[campo] ? Number(datos[campo]) : null
   for (const campo of IMPORTES) entrada[campo] = datos[campo].trim() || null
+  if (sumaElegidos(elegidos) !== null) {
+    delete entrada.costos_incluidos
+    delete entrada.detalle_costo
+  }
+  entrada.costos = elegidos.map((costo) => costo.id)
   if (mesNuevo) entrada.mes = `${mesNuevo}-01`
   return entrada
 }
 
-/** Alta y edición de un ítem: solo los siete datos de la planilla de Administración (HU-060,
- * RN-024). Lo demás que ya tenga un ítem no viaja, así que no se pisa al editarlo. */
+/** Alta y edición de un ítem: los siete datos de la planilla de Administración (HU-060, RN-024),
+ * la orden de publicidad (HU-062) y los costos elegidos (HU-063), todo en un solo guardado. Lo
+ * demás que ya tenga un ítem no viaja, así que no se pisa al editarlo. */
 export default function ItemForm(props: Props) {
   const { item, mes, clientes, catalogos, onSave, onCancel } = props
   const [datos, setDatos] = useState<Datos>(() => datosIniciales(item))
+  const [elegidos, setElegidos] = useState<CostoElegible[]>(item?.costos_elegidos ?? [])
+  const [ordenPublicidad, setOrdenPublicidad] = useState<File | null>(null)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -72,7 +85,7 @@ export default function ItemForm(props: Props) {
     setErrors({})
     setSaving(true)
     try {
-      await onSave(aEntrada(datos, item ? null : mes))
+      await onSave(aEntrada(datos, item ? null : mes, elegidos), ordenPublicidad)
     } catch (cause) {
       if (cause instanceof ApiError) setErrors(cause.fields)
       setGeneralError(cause instanceof Error ? cause.message : 'No se pudo guardar el ítem.')
@@ -89,6 +102,17 @@ export default function ItemForm(props: Props) {
         onChange={(event) => cambiar(campo, event.target.value)}
         {...extra}
       />
+      <FieldErrors messages={errors[campo]} />
+    </label>
+  )
+
+  // Con costos elegidos, se ven calculados y no se escriben (HU-060).
+  const suma = sumaElegidos(elegidos)
+  const campoCalculado = (campo: string, etiqueta: string, valor: string) => (
+    <label>
+      {etiqueta}
+      <input value={valor} readOnly aria-label={etiqueta} />
+      <small className="muted">Se calcula con los costos elegidos.</small>
       <FieldErrors messages={errors[campo]} />
     </label>
   )
@@ -130,8 +154,12 @@ export default function ItemForm(props: Props) {
           <FieldErrors messages={errors.cliente} />
         </label>
         {campoTexto('neto', 'Importe neto total', { inputMode: 'decimal' })}
-        {campoTexto('costos_incluidos', 'Costos incluidos', { inputMode: 'decimal' })}
-        {campoTexto('detalle_costo', 'Detalle costo')}
+        {suma === null
+          ? campoTexto('costos_incluidos', 'Costos incluidos', { inputMode: 'decimal' })
+          : campoCalculado('costos_incluidos', 'Costos incluidos', suma)}
+        {suma === null
+          ? campoTexto('detalle_costo', 'Detalle costo')
+          : campoCalculado('detalle_costo', 'Detalle costo', detalleElegidos(elegidos))}
         <label>
           Tipo de venta
           <select
@@ -153,14 +181,25 @@ export default function ItemForm(props: Props) {
         </label>
         {campoTexto('tipo_soporte', 'Tipo')}
       </div>
-      {generalError && (
-        <p className="error" role="alert">
-          {generalError}
-        </p>
-      )}
-      <button type="submit" className="button-primary" disabled={saving}>
-        {saving ? 'Guardando…' : 'Guardar ítem'}
-      </button>
+      <OrdenPublicidadItem
+        itemId={item?.id ?? null}
+        pdf={item?.orden_compra_pdf ?? null}
+        archivo={ordenPublicidad}
+        onElegir={setOrdenPublicidad}
+        errores={errors.orden_publicidad}
+      />
+      <CostosDelItem elegidos={elegidos} onCambiar={setElegidos} errores={errors.costos} />
+      {/* El formulario es largo: guardar queda fijo abajo de la pantalla mientras se completa. */}
+      <div className="acciones-fijas">
+        {generalError && (
+          <p className="error" role="alert">
+            {generalError}
+          </p>
+        )}
+        <button type="submit" className="button-primary" disabled={saving}>
+          {saving ? 'Guardando…' : 'Guardar ítem'}
+        </button>
+      </div>
     </form>
   )
 }

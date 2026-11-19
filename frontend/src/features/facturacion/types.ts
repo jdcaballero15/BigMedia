@@ -58,8 +58,11 @@ export type ItemFacturacion = {
   sector_nombre: string | null
   tipo_venta: number | null
   tipo_venta_nombre: string | null
+  /** Con costos elegidos, la suma y los tipos calculados por el servidor (HU-060). */
   costos_incluidos: string | null
   detalle_costo: string
+  costos_calculados: boolean
+  costos_elegidos: CostoElegible[]
   notas: string
   orden_compra_numero: string
   orden_compra_fecha: string | null
@@ -69,7 +72,7 @@ export type ItemFacturacion = {
   creado_por_nombre: string | null
 }
 
-/** PDF de la orden de compra (HU-062): la API informa nombre y tamaño, no el contenido. */
+/** PDF del ítem (HU-062), «Orden de publicidad» en pantalla: la API informa nombre y tamaño. */
 export type PdfOrdenCompra = { nombre: string; tamanio: number }
 
 /** Ítems con el mismo número de OC: el servidor avisa y guarda igual (HU-062, criterio 2). */
@@ -91,26 +94,22 @@ export type TotalesMes = {
   neto_final: string
 }
 
-/** Costo de un ítem (HU-063): propio (sin reserva) o de una reserva de su campaña, vinculado. */
-export type CostoDelItem = {
+/** Costo que se puede elegir en un ítem, o ya elegido (HU-063), con su campaña y su cartel. */
+export type CostoElegible = {
   id: number
   tipo: TipoCosto
   tipo_nombre: string
-  proveedor: number | null
-  proveedor_nombre: string | null
-  destinatario: string
-  porcentaje: string | null
   monto: string
   fecha: string
-  reserva: number | null
-  cartel_nombre: string | null
   anulado: boolean
-  motivo_anulacion: string
+  a_quien: string
+  campania_nombre: string | null
+  cartel_nombre: string | null
+  /** Propio del ítem (sin reserva): no se quita, se anula. */
+  propio: boolean
 }
 
-export function urlCostosDelItem(itemId: number): string {
-  return `/api/facturacion/items/${itemId}/costos/`
-}
+export const URL_COSTOS_ELEGIBLES = '/api/facturacion/items/costos-elegibles/'
 
 export type CatalogosFacturacion = {
   sectores: { id: number; nombre: string }[]

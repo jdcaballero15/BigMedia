@@ -30,6 +30,7 @@ from .models import (
 )
 from .serializers import (
     CostoDelItemSerializer,
+    CostoElegibleSerializer,
     GrupoFacturaSerializer,
     ItemFacturacionSerializer,
     NuevoCostoSerializer,
@@ -38,6 +39,8 @@ from .serializers import (
 # Cambios del ítem que quedan auditados (HU-007): importes y cliente. La baja se audita en
 # `services.dar_de_baja`.
 CAMPOS_AUDITADOS = ("neto", "alicuota_iva", "cliente_id")
+# Tope de resultados del buscador de costos para elegir (HU-063).
+LIMITE_ELEGIBLES = 50
 
 
 def _primer_dia(valor: str | None, por_defecto: date) -> date:
@@ -150,6 +153,7 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
             "orden_compra_pdf",
         )
         .defer("orden_compra_pdf__contenido")
+        .prefetch_related(services.prefetch_costos_elegidos())
     )
     serializer_class = ItemFacturacionSerializer
 
@@ -159,20 +163,43 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
         respuesta.data["avisos"] = {"orden_compra": services.ordenes_de_compra_duplicadas(item)}
         return respuesta
 
+    def _releido(self, respuesta: Response) -> Response:
+        """Vuelve a serializar el ítem guardado, con sus costos elegidos y su PDF actuales."""
+        item = self.get_queryset().get(pk=respuesta.data["id"])
+        respuesta.data = self.get_serializer(item).data
+        return self._con_avisos(respuesta)
+
     def create(self, request: Request, *args: object, **kwargs: object) -> Response:
-        return self._con_avisos(super().create(request, *args, **kwargs))
+        return self._releido(super().create(request, *args, **kwargs))
 
     def update(self, request: Request, *args: object, **kwargs: object) -> Response:
-        return self._con_avisos(super().update(request, *args, **kwargs))
+        return self._releido(super().update(request, *args, **kwargs))
+
+    def _guardar_extras(self, serializer: BaseSerializer[ItemFacturacion]) -> None:
+        """Costos elegidos y PDF de la orden de publicidad, en la transacción del ítem."""
+        item = cast(ItemFacturacion, serializer.instance)
+        extras = cast(ItemFacturacionSerializer, serializer)
+        usuario = _usuario(self.request)
+        try:
+            if extras.costos_pedidos is not None:
+                services.elegir_costos(item.pk, extras.costos_pedidos, usuario)
+            if extras.pdf_orden_publicidad is not None:
+                services.guardar_pdf_orden_compra(item.pk, extras.pdf_orden_publicidad, usuario)
+        except DjangoValidationError as error:
+            raise _a_drf(error) from error
 
     def perform_create(self, serializer: BaseSerializer[ItemFacturacion]) -> None:
-        serializer.save(creado_por=self.request.user)
+        # Si el PDF o un costo se rechaza, el ítem no se guarda a medias (HU-062, HU-063).
+        with transaction.atomic():
+            serializer.save(creado_por=self.request.user)
+            self._guardar_extras(serializer)
 
     def perform_update(self, serializer: BaseSerializer[ItemFacturacion]) -> None:
         anteriores = _auditables(cast(ItemFacturacion, serializer.instance))
         # El cambio y su auditoría en la misma transacción: nunca un cambio sin su registro.
         with transaction.atomic():
             item = serializer.save()
+            self._guardar_extras(serializer)
             services.recalcular_porcentuales(item)
             auditoria_services.registrar_cambios(
                 "item_facturacion", item.pk, anteriores, _auditables(item), self.request.user
@@ -240,15 +267,21 @@ class ItemFacturacionViewSet(viewsets.ModelViewSet[ItemFacturacion]):
             raise _a_drf(error) from error
         return Response(CostoDelItemSerializer(costo).data, status=201)
 
+    @action(detail=False, methods=["get"], url_path="costos-elegibles")
+    def costos_elegibles(self, request: Request) -> Response:
+        """Costos que se pueden elegir en un ítem, con buscador (HU-063, criterios 6 y 7)."""
+        costos = services.costos_elegibles(request.query_params.get("q", ""))[:LIMITE_ELEGIBLES]
+        return Response(CostoElegibleSerializer(costos, many=True).data)
+
     @action(detail=True, methods=["get"], url_path="costos/vinculables")
     def costos_vinculables(self, _request: Request, pk: str) -> Response:
-        """Costos de reservas de la campaña del ítem que se pueden vincular (HU-063)."""
+        """Costos de reservas de cualquier campaña que se pueden vincular (HU-063)."""
         costos = services.costos_vinculables(self._item_para_costos(pk))
         return Response(CostoDelItemSerializer(costos, many=True).data)
 
     @action(detail=True, methods=["post"], url_path="costos/vincular")
     def vincular_costo(self, request: Request, pk: str) -> Response:
-        """Vincula un costo de reserva de la campaña, sin copiarlo (HU-063, criterio 4)."""
+        """Vincula un costo de reserva de cualquier campaña, sin copiarlo (HU-063)."""
         item = self._item_para_costos(pk)
         costo_id = request.data.get("costo") if isinstance(request.data, dict) else None
         if not isinstance(costo_id, int) or isinstance(costo_id, bool) or costo_id < 1:
