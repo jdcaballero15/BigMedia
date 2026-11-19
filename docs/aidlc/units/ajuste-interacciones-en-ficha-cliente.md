@@ -65,6 +65,6 @@ Ninguna. HU-020 no dice desde qué pantalla se carga; sus criterios siguen valie
   `makemigrations --check --dry-run` (No changes detected); `pytest --cov` (914 passed, 97.49 %,
   ninguno salteado); `pre-commit run --all-files` con gitleaks (13 hooks Passed); frontend
   `format:check`, `lint`, `typecheck` sin errores, `test:coverage` (433 passed; sentencias
-  92.67 %, ramas 83.74 %, líneas 94.62 %) y `build` (built in 1.18s). Falta el OK de Gonza o Juan
-  Diego.
+  92.67 %, ramas 83.74 %, líneas 94.62 %) y `build` (built in 1.18s). Aprobado por Gonza
+  (2026-11-19).
 - Gate 3 (PR): pendiente
