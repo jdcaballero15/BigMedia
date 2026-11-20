@@ -1,10 +1,13 @@
-"""Interacciones comerciales (HU-020) y su contacto del intermediario formal (HU-068)."""
+"""Interacciones comerciales (HU-020), su contacto del intermediario formal (HU-068) y su
+recordatorio (HU-072)."""
 
 import json
+from datetime import timedelta
 from typing import Any
 
 import pytest
 from django.test import Client
+from django.utils import timezone
 
 from apps.campanias.models import Campania, Interaccion
 from apps.clientes.models import Cliente, Contacto, Marca
@@ -373,3 +376,144 @@ def test_listar_interacciones_por_marca_incluye_las_de_sus_campanias(operativo_c
 @pytest.mark.regla("RN-018")
 def test_listar_interacciones_con_marca_invalida_se_rechaza(operativo_client):
     assert operativo_client.get(URL, {"marca": "abc"}).status_code == 400
+
+
+# --- HU-072: recordatorio ---
+
+PENDIENTES = f"{URL}?recordatorio=pendiente"
+
+
+def _hecho(client: Client, pk: int) -> Any:
+    return client.post(f"{URL}{pk}/recordatorio-hecho/")
+
+
+def _con_recordatorio(
+    cliente: Cliente, dias: int, texto: str = "Enviar presupuesto"
+) -> Interaccion:
+    return Interaccion.objects.create(
+        tipo=Interaccion.Tipo.REUNION,
+        fecha=timezone.localdate(),
+        cliente=cliente,
+        recordatorio_fecha=timezone.localdate() + timedelta(days=dias),
+        recordatorio_texto=texto,
+    )
+
+
+@pytest.mark.django_db
+def test_recordatorio_con_fecha_y_texto_se_guarda(operativo_client):
+    datos = _datos(
+        _cliente(), recordatorio_fecha="2026-11-02", recordatorio_texto="  Enviar presupuesto  "
+    )
+    respuesta = _post(operativo_client, datos)
+    assert respuesta.status_code == 201
+    cuerpo = respuesta.json()
+    assert cuerpo["recordatorio_fecha"] == "2026-11-02"
+    assert cuerpo["recordatorio_texto"] == "Enviar presupuesto"
+    assert cuerpo["recordatorio_hecho_en"] is None
+    assert cuerpo["recordatorio_hecho_por_nombre"] is None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("extra", "campo"),
+    [
+        ({"recordatorio_fecha": "2026-11-02"}, "recordatorio_texto"),
+        ({"recordatorio_fecha": "2026-11-02", "recordatorio_texto": "   "}, "recordatorio_texto"),
+        ({"recordatorio_texto": "Enviar presupuesto"}, "recordatorio_fecha"),
+    ],
+)
+def test_recordatorio_sin_texto_o_sin_fecha_se_rechaza(operativo_client, extra, campo):
+    respuesta = _post(operativo_client, _datos(_cliente(), **extra))
+    assert respuesta.status_code == 400
+    assert campo in respuesta.json()
+    assert not Interaccion.objects.exists()
+
+
+@pytest.mark.django_db
+def test_pendientes_incluye_hoy_y_vencidos_ordenados_y_excluye_futuros_y_hechos(
+    operativo_client, django_user_model
+):
+    cliente = _cliente()
+    hoy = _con_recordatorio(cliente, 0, "Hoy")
+    vencido = _con_recordatorio(cliente, -3, "Vencido")
+    _con_recordatorio(cliente, 1, "Mañana")
+    hecho = _con_recordatorio(cliente, -1, "Hecho")
+    hecho.recordatorio_hecho_en = timezone.now()
+    hecho.save()
+    Interaccion.objects.create(tipo="llamada", fecha=timezone.localdate(), cliente=cliente)
+
+    respuesta = operativo_client.get(PENDIENTES)
+    assert respuesta.status_code == 200
+    assert [fila["id"] for fila in respuesta.json()] == [vencido.pk, hoy.pk]
+
+
+@pytest.mark.django_db
+def test_marcar_hecho_guarda_usuario_y_momento(operativo_client):
+    interaccion = _con_recordatorio(_cliente(), 0)
+    respuesta = _hecho(operativo_client, interaccion.pk)
+    assert respuesta.status_code == 200
+    assert respuesta.json()["recordatorio_hecho_por_nombre"] == "operativo"
+    interaccion.refresh_from_db()
+    assert interaccion.recordatorio_hecho_en is not None
+    assert interaccion.recordatorio_hecho_por is not None
+    assert operativo_client.get(PENDIENTES).json() == []
+
+
+@pytest.mark.django_db
+def test_marcar_hecho_sin_recordatorio_o_ya_hecho_se_rechaza(operativo_client):
+    sin = Interaccion.objects.create(tipo="llamada", fecha=timezone.localdate(), cliente=_cliente())
+    assert _hecho(operativo_client, sin.pk).status_code == 400
+    con = _con_recordatorio(_cliente("Otro"), 0)
+    assert _hecho(operativo_client, con.pk).status_code == 200
+    assert _hecho(operativo_client, con.pk).status_code == 400
+
+
+@pytest.mark.django_db
+def test_marcar_hecho_con_rol_lectura_devuelve_403(lector_client):
+    interaccion = _con_recordatorio(_cliente(), 0)
+    assert lector_client.get(PENDIENTES).status_code == 200
+    assert _hecho(lector_client, interaccion.pk).status_code == 403
+    interaccion.refresh_from_db()
+    assert interaccion.recordatorio_hecho_en is None
+
+
+@pytest.mark.django_db
+def test_editar_recordatorio_hecho_lo_vuelve_pendiente(operativo_client):
+    interaccion = _con_recordatorio(_cliente(), -1)
+    _hecho(operativo_client, interaccion.pk)
+    respuesta = _patch(
+        operativo_client, interaccion.pk, {"recordatorio_fecha": str(timezone.localdate())}
+    )
+    assert respuesta.status_code == 200
+    detalle = operativo_client.get(f"{URL}{interaccion.pk}/").json()
+    assert detalle["recordatorio_hecho_en"] is None
+    assert detalle["recordatorio_hecho_por_nombre"] is None
+    assert [fila["id"] for fila in operativo_client.get(PENDIENTES).json()] == [interaccion.pk]
+
+
+@pytest.mark.django_db
+def test_editar_otro_dato_de_un_recordatorio_hecho_lo_deja_hecho(operativo_client):
+    interaccion = _con_recordatorio(_cliente(), -1)
+    _hecho(operativo_client, interaccion.pk)
+    respuesta = _patch(operativo_client, interaccion.pk, {"notas": "Ya lo mandamos."})
+    assert respuesta.status_code == 200
+    assert respuesta.json()["recordatorio_hecho_en"] is not None
+
+
+@pytest.mark.django_db
+def test_borrar_el_recordatorio_deja_la_interaccion_sin_recordatorio(operativo_client):
+    interaccion = _con_recordatorio(_cliente(), -1)
+    _hecho(operativo_client, interaccion.pk)
+    respuesta = _patch(
+        operativo_client, interaccion.pk, {"recordatorio_fecha": None, "recordatorio_texto": ""}
+    )
+    assert respuesta.status_code == 200
+    interaccion.refresh_from_db()
+    assert interaccion.recordatorio_fecha is None
+    assert interaccion.recordatorio_hecho_en is None
+    assert interaccion.recordatorio_hecho_por is None
+
+
+@pytest.mark.django_db
+def test_filtro_recordatorio_invalido_se_rechaza(operativo_client):
+    assert operativo_client.get(f"{URL}?recordatorio=todos").status_code == 400

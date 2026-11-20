@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiWrite } from '../../shared/api'
+import { formatearFecha } from '../../shared/fechas'
 import type { Cliente } from '../clientes/types'
 import InteraccionForm from './InteraccionForm'
 import type { InteraccionInput } from './InteraccionForm'
@@ -120,6 +121,7 @@ export function TablaInteracciones({ filas, ocultar, onEditar }: TablaProps) {
           {ocultar !== 'campania' && <th>Campaña</th>}
           {ocultar !== 'marca' && <th>Marca</th>}
           <th>Notas</th>
+          <th>Recordatorio</th>
           {onEditar && <th>Acciones</th>}
         </tr>
       </thead>
@@ -134,6 +136,20 @@ export function TablaInteracciones({ filas, ocultar, onEditar }: TablaProps) {
             {ocultar !== 'campania' && <td>{fila.campania_nombre ?? '—'}</td>}
             {ocultar !== 'marca' && <td>{fila.marca_nombre ?? '—'}</td>}
             <td>{fila.notas || '—'}</td>
+            <td>
+              {fila.recordatorio_fecha ? (
+                <>
+                  {formatearFecha(fila.recordatorio_fecha)} · {fila.recordatorio_texto}{' '}
+                  <span
+                    className={fila.recordatorio_hecho_en ? 'etiqueta-azul' : 'etiqueta-alerta'}
+                  >
+                    {fila.recordatorio_hecho_en ? 'Hecho' : 'Pendiente'}
+                  </span>
+                </>
+              ) : (
+                '—'
+              )}
+            </td>
             {onEditar && (
               <td className="row-actions">
                 <button className="button-ghost" onClick={() => onEditar(fila)}>

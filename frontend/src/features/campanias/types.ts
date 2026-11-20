@@ -65,6 +65,11 @@ export type Interaccion = {
   marca: number | null
   marca_nombre: string | null
   registrada_por_nombre: string | null
+  /** Recordatorio opcional (HU-072): fecha y qué hacer van juntos. */
+  recordatorio_fecha: string | null
+  recordatorio_texto: string
+  recordatorio_hecho_en: string | null
+  recordatorio_hecho_por_nombre: string | null
 }
 
 /** Solicitado, reservado y faltante de un formato en la campaña (HU-055, HU-058). */
