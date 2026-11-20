@@ -15,9 +15,9 @@ Los grupos son estos:
 
 | Grupo | Pantallas |
 | --- | --- |
-| Inicio | **Panel**: ocupación de hoy, campañas activas y por vencer |
+| Inicio | **Panel**: ocupación de hoy, campañas activas, por vencer y recordatorios |
 | Reportes | **Ingresos**, **Por rubro o grupo**, **Ocupación** |
-| Comercial | **Clientes**, **Marcas**, **Campañas**, **Interacciones**, **Facturación** |
+| Comercial | **Clientes**, **Marcas**, **Campañas**, **Facturación** |
 | Inventario | **Carteles**, **Disponibilidad** |
 | Operación | **Proveedores**, **Costos**, **Formatos** |
 | Configuración | **Catálogos** |
@@ -108,9 +108,19 @@ marca puede estar en un solo grupo.
 - En **Comercial › Marcas**, **Ver ficha** abre la ficha de la marca: todas sus campañas con su
   estado, aunque las haya pagado otro cliente; sus interacciones (las que tienen la marca cargada y
   las de sus campañas), y, si la marca tiene grupo económico, las otras marcas del grupo.
-- Al registrar una interacción en **Comercial › Interacciones** podés elegir una **Marca** del
-  cliente aunque todavía no haya campaña, por ejemplo para una primera llamada sobre una marca
-  nueva. Si elegís marca, la lista de campañas muestra solo las de esa marca.
+- Las interacciones (reuniones y llamadas) se cargan desde la ficha del cliente: en
+  **Interacciones**, **Nueva interacción** abre el formulario con el cliente ya puesto, y
+  **Editar** corrige una que ya está. Podés elegir una **Marca** del cliente aunque todavía no haya
+  campaña, por ejemplo para una primera llamada sobre una marca nueva. Si elegís marca, la lista de
+  campañas muestra solo las de esa marca. **Asunto** es opcional: si lo dejás vacío, la
+  interacción aparece como «Sin asunto». En el detalle de la campaña y en la ficha de la marca las
+  interacciones se ven, pero no se cargan.
+- Si de una interacción queda algo por hacer, completá **Recordatorio**: la **Fecha de
+  recordatorio** y **Qué hacer** (por ejemplo, «Enviar presupuesto»); van juntos. Ese día el
+  recordatorio aparece en **Inicio › Panel**, en **Recordatorios**, para todo el equipo, y sigue
+  ahí (marcado **Vencido**) hasta que alguien toca **Hecho**. En la lista de interacciones se ve
+  si está **Pendiente** o **Hecho**; si cambiás la fecha o el texto de uno hecho, vuelve a quedar
+  pendiente.
 - Para volver a la lista, tocá **← Volver** o el nombre de la pantalla en la ruta de arriba (por
   ejemplo, «Clientes» en «Big Media / Comercial / Clientes / Agencia Cordillera»).
 
@@ -258,7 +268,8 @@ reglas todavía pueden cambiar (RN-001 a RN-003); si cambian, el manual se actua
   ejemplo "1 de 6"). Se filtra por departamento, formato y modalidad.
 - **Calendario**: los carteles mes por mes, para ver qué queda libre a futuro. Cada celda es una
   barra que se llena según lo ocupado ("1/6"), y queda en ámbar cuando el cartel está lleno.
-  Tocá una celda ocupada para ver la campaña.
+  Elegí el período con **Mes desde** y **Mes hasta** (hasta 12 meses) y tocá una celda ocupada
+  para ver la campaña y la reserva debajo de la fila del cartel.
 
 Las dos vistas se eligen arriba a la derecha.
 

@@ -1,14 +1,11 @@
-export type EstadoReserva = 'pendiente' | 'confirmada' | 'finalizada' | 'cancelada'
+/** Nace Confirmada y el sistema lleva el estado: no hay Pendientes (HU-035). */
+export type EstadoReserva = 'confirmada' | 'finalizada' | 'cancelada'
 
 export const ESTADOS_RESERVA: { value: EstadoReserva; label: string }[] = [
-  { value: 'pendiente', label: 'Pendiente' },
   { value: 'confirmada', label: 'Confirmada' },
   { value: 'finalizada', label: 'Finalizada' },
   { value: 'cancelada', label: 'Cancelada' },
 ]
-
-/** Estados con los que puede nacer una reserva (HU-035). */
-export const ESTADOS_INICIALES: EstadoReserva[] = ['pendiente', 'confirmada']
 
 export function etiquetaEstadoReserva(estado: EstadoReserva): string {
   return ESTADOS_RESERVA.find((item) => item.value === estado)?.label ?? estado
@@ -23,6 +20,8 @@ export type Reserva = {
   fecha_inicio: string
   fecha_fin: string
   estado: EstadoReserva
+  /** Finalizada si es Confirmada y ya terminó, calculado por fecha (HU-036). */
+  estado_visible: EstadoReserva
   precio_alquiler: string
   precio_impresion: string
   precio_fijacion: string
@@ -32,7 +31,6 @@ export type Reserva = {
 
 export type ParametrosDisponibilidad = {
   borde_inclusivo: boolean
-  tentativa_bloquea: boolean
   permitir_fecha_pasada: boolean
 }
 
@@ -45,8 +43,6 @@ export type CartelTanda = {
   tarifa_lista: string | null
   capacidad: number
   ocupados: number
-  /** Pendientes de otras campañas que no bloquean el cupo (RN-002). */
-  tentativas: number
   /** La campaña ya tiene una reserva de este cartel en el rango. */
   en_campania: boolean
 }
@@ -59,14 +55,31 @@ export type ResultadoTanda = {
 }
 
 /** Resultado de "Confirmar reservas" (HU-059). */
-export type ResultadoConfirmacion = {
-  confirmadas: number[]
-  conflictos: {
-    reserva: number
-    nombre: string
-    cartel_nombre: string
-    fecha_inicio: string
-    fecha_fin: string
-    ocupada_por: { campania: number; campania_nombre: string }[]
-  }[]
+/** Resultado de cancelar una campaña con sus reservas (HU-024). */
+export type ResultadoCancelacion = {
+  campania: number
+  estado: 'cancelada'
+  canceladas: number[]
+  terminadas: number[]
+}
+
+/** Reserva que ocupa un casillero en la vista Posiciones (HU-071). */
+export type Ocupante = {
+  reserva_id: number
+  marca_id: number | null
+  marca_nombre: string | null
+  campania_id: number
+  campania_nombre: string
+  es_esta_campania: boolean
+  estado: string
+  fecha_inicio: string
+  fecha_fin: string
+}
+
+/** Fila de la vista Posiciones: la de la tabla más los casilleros por slot (HU-071). */
+export type FilaPosiciones = CartelTanda & {
+  direccion: string
+  lleno: boolean
+  /** Uno por slot; reservas que se suceden comparten casillero. */
+  slots: Ocupante[][]
 }

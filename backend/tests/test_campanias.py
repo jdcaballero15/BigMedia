@@ -18,9 +18,13 @@ def crear_marca(nombre: str = "Sprite", cliente: Cliente | None = None) -> Marca
 
 
 def crear(client: Client, **campos: object):
+    """Crea una campaña completa: nace Confirmada y exige marca y fechas (RN-011)."""
+    completa: dict[str, object] = {"fecha_inicio": "2026-11-01", "fecha_fin": "2026-11-30"}
+    if "marca" not in campos:
+        completa["marca"] = crear_marca(f"Marca {Marca.objects.count() + 1}").pk
     return client.post(
         "/api/campanias/campanias/",
-        data=json.dumps(campos),
+        data=json.dumps({**completa, **campos}),
         content_type="application/json",
     )
 
@@ -31,15 +35,6 @@ def editar(client: Client, campania_id: int, **campos: object):
         data=json.dumps(campos),
         content_type="application/json",
     )
-
-
-@pytest.mark.django_db
-def test_crear_campania_sin_datos_se_guarda(operativo_client):
-    creada = crear(operativo_client)
-    assert creada.status_code == 201
-    cuerpo = creada.json()
-    assert cuerpo["estado"] == "cotizada"
-    assert Campania.objects.filter(pk=cuerpo["id"]).exists()
 
 
 @pytest.mark.django_db
@@ -64,51 +59,25 @@ def test_cliente_facturacion_propio_reemplaza_la_deduccion(operativo_client):
 
 
 @pytest.mark.django_db
-@pytest.mark.regla("RN-011")
-def test_confirmar_exige_marca_cliente_y_fechas(operativo_client):
-    creada = crear(operativo_client)
-    campania_id = creada.json()["id"]
-
-    incompleta = editar(operativo_client, campania_id, estado="confirmada")
-    assert incompleta.status_code == 400
-    assert "estado" in incompleta.json()
-    assert Campania.objects.get(pk=campania_id).estado == "cotizada"
-
-    marca = crear_marca("Quilmes")
-    editar(
-        operativo_client,
-        campania_id,
-        marca=marca.pk,
-        fecha_inicio="2026-11-01",
-        fecha_fin="2026-11-30",
-    )
-    completa = editar(operativo_client, campania_id, estado="confirmada")
-    assert completa.status_code == 200
-    assert Campania.objects.get(pk=campania_id).estado == "confirmada"
-
-
-@pytest.mark.django_db
-def test_canceladas_y_perdidas_siguen_en_la_lista(operativo_client):
-    perdida = crear(operativo_client).json()["id"]
+def test_canceladas_siguen_en_la_lista(operativo_client):
+    vigente = crear(operativo_client).json()["id"]
     cancelada = crear(operativo_client).json()["id"]
-    editar(operativo_client, perdida, estado="perdida")
-    editar(operativo_client, cancelada, estado="cancelada")
+    Campania.objects.filter(pk=cancelada).update(estado="cancelada")
 
     estados = {
         fila["id"]: fila["estado"]
         for fila in operativo_client.get("/api/campanias/campanias/").json()
     }
-    assert estados[perdida] == "perdida"
-    assert estados[cancelada] == "cancelada"
+    assert estados == {vigente: "confirmada", cancelada: "cancelada"}
 
 
 @pytest.mark.django_db
 def test_filtro_por_estado(operativo_client):
-    cotizada = crear(operativo_client).json()["id"]
+    confirmada = crear(operativo_client).json()["id"]
     otra = crear(operativo_client).json()["id"]
-    editar(operativo_client, otra, estado="perdida")
-    filtradas = operativo_client.get("/api/campanias/campanias/?estado=cotizada").json()
-    assert [fila["id"] for fila in filtradas] == [cotizada]
+    Campania.objects.filter(pk=otra).update(estado="cancelada")
+    filtradas = operativo_client.get("/api/campanias/campanias/?estado=confirmada").json()
+    assert [fila["id"] for fila in filtradas] == [confirmada]
 
 
 @pytest.mark.django_db
@@ -132,14 +101,6 @@ def test_filtros_invalidos_se_rechazan(operativo_client):
     assert "estado" in estado_malo.json()
     assert marca_mala.status_code == 400
     assert "marca" in marca_mala.json()
-
-
-@pytest.mark.django_db
-def test_estado_invalido_se_rechaza(operativo_client):
-    campania_id = crear(operativo_client).json()["id"]
-    respuesta = editar(operativo_client, campania_id, estado="otro")
-    assert respuesta.status_code == 400
-    assert "estado" in respuesta.json()
 
 
 @pytest.mark.django_db

@@ -44,7 +44,8 @@ class CampaniaSerializer(serializers.ModelSerializer[Campania]):
             "creado_en",
             "actualizado_en",
         ]
-        read_only_fields = ["creado_en", "actualizado_en"]
+        # El estado no se edita: la campaña nace Confirmada y se cancela con su propia acción.
+        read_only_fields = ["estado", "creado_en", "actualizado_en"]
 
     def get_cliente_factura(self, campania: Campania) -> int | None:
         cliente = campania.cliente_factura
@@ -68,12 +69,11 @@ class CampaniaSerializer(serializers.ModelSerializer[Campania]):
             )
             if valor is not None and not valor.activo and not sin_cambios:
                 raise serializers.ValidationError({campo: mensaje})
-        if attrs.get("estado") == Campania.Estado.CONFIRMADA:
-            futura = Campania(**{**self._estado_actual(), **attrs})
-            try:
-                services.validar_confirmacion(futura)
-            except DjangoValidationError as error:
-                raise serializers.ValidationError(error.message_dict) from error
+        futura = Campania(**{**self._estado_actual(), **attrs})
+        try:
+            services.validar_campania_completa(futura)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.message_dict) from error
         return attrs
 
     def _estado_actual(self) -> dict[str, Any]:
@@ -128,12 +128,21 @@ class LineaFormatoSerializer(serializers.ModelSerializer[LineaFormato]):
 
 
 class InteraccionSerializer(serializers.ModelSerializer[Interaccion]):
+    asunto = serializers.CharField(
+        required=False, allow_blank=True, default="", trim_whitespace=True
+    )
     cliente_nombre = serializers.CharField(source="cliente.nombre_visible", read_only=True)
     contacto_nombre = serializers.CharField(source="contacto.nombre", read_only=True, default=None)
     campania_nombre = serializers.SerializerMethodField()
     marca_nombre = serializers.CharField(source="marca.nombre", read_only=True, default=None)
     registrada_por_nombre = serializers.CharField(
         source="registrada_por.username", read_only=True, default=None
+    )
+    recordatorio_texto = serializers.CharField(
+        required=False, allow_blank=True, default="", trim_whitespace=True, max_length=200
+    )
+    recordatorio_hecho_por_nombre = serializers.CharField(
+        source="recordatorio_hecho_por.username", read_only=True, default=None
     )
 
     class Meta:
@@ -153,10 +162,14 @@ class InteraccionSerializer(serializers.ModelSerializer[Interaccion]):
             "marca",
             "marca_nombre",
             "registrada_por_nombre",
+            "recordatorio_fecha",
+            "recordatorio_texto",
+            "recordatorio_hecho_en",
+            "recordatorio_hecho_por_nombre",
             "creado_en",
             "actualizado_en",
         ]
-        read_only_fields = ["creado_en", "actualizado_en"]
+        read_only_fields = ["recordatorio_hecho_en", "creado_en", "actualizado_en"]
 
     def get_campania_nombre(self, interaccion: Interaccion) -> str | None:
         return str(interaccion.campania) if interaccion.campania is not None else None
@@ -183,6 +196,18 @@ class InteraccionSerializer(serializers.ModelSerializer[Interaccion]):
             services.validar_marca_de_interaccion(
                 cliente, marca, campania, actual is not None and actual.marca == marca
             )
+            self._validar_recordatorio(attrs, actual)
         except DjangoValidationError as error:
             raise serializers.ValidationError(error.message_dict) from error
         return attrs
+
+    def _validar_recordatorio(self, attrs: dict[str, Any], actual: Interaccion | None) -> None:
+        # En un PATCH, el `default=""` del texto no debe pisar el que ya tenía la interacción.
+        if self.partial and "recordatorio_texto" not in self.initial_data:
+            attrs.pop("recordatorio_texto", None)
+        fecha = attrs.get("recordatorio_fecha", getattr(actual, "recordatorio_fecha", None))
+        texto = attrs.get("recordatorio_texto", getattr(actual, "recordatorio_texto", ""))
+        services.validar_recordatorio(fecha, texto)
+        if services.recordatorio_cambia(actual, fecha, texto):
+            attrs["recordatorio_hecho_en"] = None
+            attrs["recordatorio_hecho_por"] = None

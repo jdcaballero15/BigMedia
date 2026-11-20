@@ -27,14 +27,14 @@ Este documento define 70 historias de usuario, agrupadas en 12 épicas, que cubr
 | E0 | Plataforma base | HU-001 a HU-002 |
 | E1 | Seguridad y acceso | HU-003 a HU-007 |
 | E2 | Inventario de soportes | HU-008 a HU-015 |
-| E3 | Clientes, marcas y CRM | HU-016 a HU-022 y HU-068 |
+| E3 | Clientes, marcas y CRM | HU-016 a HU-022, HU-068 y HU-072 |
 | E4 | Campañas | HU-023 a HU-027 y HU-069 |
 | E5 | Reservas y motor de disponibilidad | HU-028 a HU-040 |
 | E6 | Vista de disponibilidad | HU-041 a HU-042 |
 | E7 | Costos y rentabilidad | HU-043 a HU-046 |
 | E8 | Reportes y paneles | HU-047 a HU-052 |
 | E9 | Entrega y traspaso | HU-053 a HU-054 |
-| E10 | Armado de campañas y reserva masiva | HU-055 a HU-059 |
+| E10 | Armado de campañas y reserva masiva | HU-055 a HU-059 y HU-071 |
 | E11 | Facturación mensual | HU-060 a HU-067 y HU-070 |
 
 La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta alrededor de ella y nunca adentro.
@@ -48,7 +48,7 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** El administrador tiene sesión iniciada con permiso de configuración.
-- **Regla de negocio:** Hay dos parámetros: "la tentativa ocupa cupo" (sí o no) y "día de borde inclusivo" (sí o no; con inclusivo, si una reserva termina el 15 y otra empieza el 15, se pisan). Defaults provisorios hasta que Seba responda: la tentativa ocupa cupo visualmente y el borde es inclusivo. Desde el 2026-11-16 la pantalla Parámetros no aparece en el menú lateral: los parámetros quedan con los valores que tienen y el código de la pantalla se conserva para volver a mostrarla si hace falta cambiarlos.
+- **Regla de negocio:** Hay dos parámetros: "la tentativa ocupa cupo" (sí o no) y "día de borde inclusivo" (sí o no; con inclusivo, si una reserva termina el 15 y otra empieza el 15, se pisan). Defaults provisorios hasta que Seba responda: la tentativa ocupa cupo visualmente y el borde es inclusivo. Desde el 2026-11-16 la pantalla Parámetros no aparece en el menú lateral: los parámetros quedan con los valores que tienen y el código de la pantalla se conserva para volver a mostrarla si hace falta cambiarlos. Desde el 2026-11-17 no hay reservas tentativas (la campaña nace Confirmada, HU-024), así que el parámetro "la tentativa ocupa cupo" queda sin efecto (RN-002).
 - **Criterios de aceptación:**
   1. Dada la pantalla de configuración, cuando el administrador cambia un parámetro y guarda, entonces la validación de disponibilidad usa el nuevo valor de inmediato, sin reiniciar nada.
   2. Dado un usuario sin rol de administrador, cuando intenta abrir la configuración, entonces no tiene acceso.
@@ -304,13 +304,13 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 ### HU-020 Registrar interacciones comerciales
 
 - **Actor:** Operativo
-- **Descripción:** Como operativo, quiero registrar reuniones y llamadas con asunto, fecha, notas, cliente y campaña opcional, para no perder el rastro de las conversaciones comerciales.
+- **Descripción:** Como operativo, quiero registrar reuniones y llamadas con fecha, cliente, asunto y notas opcionales, y campaña opcional, para no perder el rastro de las conversaciones comerciales.
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** HU-016 completa.
-- **Regla de negocio:** El asunto, la fecha y el cliente son obligatorios. La campaña es opcional. Si el cliente es un intermediario formal, se puede indicar opcionalmente con cuál de sus contactos fue (HU-068). También se puede indicar opcionalmente la marca, para las conversaciones que ocurren antes de que exista una campaña: tiene que ser una marca del cliente y, si además hay campaña, la campaña tiene que ser de esa marca (RN-018).
+- **Regla de negocio:** La fecha y el cliente son obligatorios. El asunto es opcional; si se deja vacío, se muestra «Sin asunto». La campaña es opcional. Si el cliente es un intermediario formal, se puede indicar opcionalmente con cuál de sus contactos fue (HU-068). También se puede indicar opcionalmente la marca, para las conversaciones que ocurren antes de que exista una campaña: tiene que ser una marca del cliente y, si además hay campaña, la campaña tiene que ser de esa marca (RN-018).
 - **Criterios de aceptación:**
-  1. Dada una interacción sin asunto, cuando se guarda, entonces se rechaza.
+  1. Dada una interacción sin asunto, cuando se guarda, entonces se acepta y se muestra «Sin asunto» en la lista y las fichas.
   2. Dada una interacción con cliente y campaña, cuando se guarda, entonces aparece en la ficha de ambos.
   3. Dada la lista de interacciones, cuando se abre, entonces se ordena por fecha descendente.
   4. Dada una interacción con marca y sin campaña, cuando se guarda, entonces aparece en la ficha del cliente y en la de la marca (RN-018).
@@ -358,6 +358,22 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
   6. Dado un cliente intermediario formal con contactos activos, cuando se intenta cambiar su tipo, entonces el sistema pide inactivar antes los contactos.
   7. Dada la ficha de un intermediario formal (HU-021), cuando se abre, entonces se ven sus contactos y, en cada interacción, el contacto indicado si lo hubo.
 
+### HU-072 Recordatorio de una interacción
+
+- **Actor:** Operativo
+- **Descripción:** Como operativo, quiero ponerle a una interacción una fecha de recordatorio y qué hay que hacer (por ejemplo, «Enviar presupuesto» después de una reunión), para que ese día el equipo lo vea en el Panel y no se olvide.
+- **Prioridad:** Should
+- **Complejidad:** S
+- **Precondición:** HU-020 y HU-047 completas.
+- **Regla de negocio:** El recordatorio es opcional y se carga en la misma interacción, desde la ficha del cliente: lleva una fecha y un texto de qué hacer, que van juntos (no se acepta uno sin el otro). Un recordatorio está pendiente hasta que alguien con permiso de edición lo marca como hecho; al marcarlo se guarda cuándo y quién. Los recordatorios los ve todo el equipo, no solo quien cargó la interacción. Quedan fuera de alcance los avisos por correo y los recordatorios sin interacción.
+- **Criterios de aceptación:**
+  1. Dada una interacción con fecha de recordatorio y qué hacer, cuando se guarda, entonces en la ficha del cliente se ve el recordatorio con su fecha y si está pendiente o hecho.
+  2. Dada una fecha de recordatorio sin qué hacer, o un qué hacer sin fecha, cuando se guarda, entonces se rechaza.
+  3. Dado un recordatorio pendiente con fecha de hoy o anterior, cuando se abre el Panel, entonces aparece en «Recordatorios» con la fecha, qué hacer, el cliente y quién cargó la interacción, del más viejo al más nuevo; los de días anteriores se marcan como vencidos.
+  4. Dado un recordatorio pendiente con fecha futura, cuando se abre el Panel, entonces no aparece hasta ese día.
+  5. Dado un recordatorio en el Panel, cuando alguien con permiso de edición toca «Hecho», entonces deja de aparecer y la interacción conserva que se hizo, cuándo y quién.
+  6. Dado el rol Lectura, cuando abre el Panel, entonces ve los recordatorios sin el botón «Hecho».
+
 # E4 - Campañas
 
 ### HU-023 Crear campaña
@@ -377,15 +393,18 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
 ### HU-024 Estados de campaña
 
 - **Actor:** Operativo
-- **Descripción:** Como operativo, quiero mover la campaña entre cotizada, confirmada, cancelada y perdida, para reflejar su situación comercial.
+- **Descripción:** Como operativo, quiero que la campaña quede Confirmada desde que la creo y poder cancelarla, para reflejar su situación comercial sin pasos extra.
 - **Prioridad:** Must
 - **Complejidad:** S
 - **Precondición:** HU-023 completa.
-- **Regla de negocio:** "Perdida" es una cotización que nunca cerró (nunca fue plata real); "cancelada" es una confirmada que se cayó y quizás facturó seña. Se distinguen por defecto hasta que Seba responda la pregunta 6. "Campaña activa" significa estado Confirmada, sin filtrar por fecha: mide compromiso comercial, no ocupación del día. Para pasar a Confirmada se exigen cliente que factura, marca y fechas (HU-059).
+- **Regla de negocio:** Seba carga la campaña cuando el cliente ya la confirmó (2026-11-17), así que la campaña tiene dos estados: Confirmada, con el que nace, y Cancelada. No existen Cotizada ni Perdida. Para crearla se exigen cliente que factura, marca y fechas (RN-011). Al cancelarla, sus reservas que todavía no empezaron se cancelan, las que están en exhibición terminan ese día y las que ya terminaron no cambian (RN-006). Una campaña Cancelada no vuelve a Confirmada: se crea una nueva. "Campaña activa" significa estado Confirmada, sin filtrar por fecha: mide compromiso comercial, no ocupación del día.
 - **Criterios de aceptación:**
-  1. Dado el selector de estado, cuando se despliega, entonces ofrece los cuatro valores.
-  2. Dado un panel que cuenta campañas activas, cuando se calcula, entonces cuenta las Confirmadas sin importar sus fechas.
-  3. Dada una campaña cancelada o perdida, cuando se consulta, entonces sigue visible en el histórico.
+  1. Dada una campaña nueva, cuando se guarda, entonces queda Confirmada sin elegir un estado.
+  2. Dada una campaña nueva sin cliente que factura, marca o fechas, cuando se guarda, entonces se rechaza indicando qué falta.
+  3. Dada una campaña Confirmada con reservas futuras, en exhibición y terminadas, cuando se cancela, entonces las futuras quedan Canceladas, las que están en exhibición terminan ese día y las terminadas no cambian.
+  4. Dada una campaña Cancelada, cuando se intenta volver a Confirmada, entonces el sistema lo impide.
+  5. Dado un panel que cuenta campañas activas, cuando se calcula, entonces cuenta las Confirmadas sin importar sus fechas.
+  6. Dada una campaña Cancelada, cuando se consulta, entonces sigue visible en el histórico.
 
 ### HU-025 Monto y cantidad de reservas de la campaña
 
@@ -444,7 +463,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-010 y HU-023 completas.
-- **Regla de negocio:** La reserva es la intersección entre Campaña y Cartel y lleva sus propias fechas (nunca en la campaña). Cartel, fecha de inicio y fecha de fin son obligatorios siempre: no hay contratos abiertos. La fecha de fin no puede ser anterior a la de inicio. Una reserva bloquea cupo en las vistas de disponibilidad desde que tiene fecha de inicio y su estado no es Cancelada; Pendiente y Confirmada bloquean igual visualmente.
+- **Regla de negocio:** La reserva es la intersección entre Campaña y Cartel y lleva sus propias fechas (nunca en la campaña). Cartel, fecha de inicio y fecha de fin son obligatorios siempre: no hay contratos abiertos. La fecha de fin no puede ser anterior a la de inicio. Una reserva bloquea cupo en las vistas de disponibilidad desde que tiene fecha de inicio y su estado no es Cancelada; Toda reserva que no está Cancelada bloquea el cupo, en las vistas y en la validación (HU-031).
 - **Criterios de aceptación:**
   1. Dada una reserva sin cartel, sin fecha de inicio o sin fecha de fin, cuando se guarda por cualquier vía, entonces se rechaza.
   2. Dada una fecha de fin anterior a la de inicio, cuando se guarda, entonces se rechaza con un mensaje claro.
@@ -485,7 +504,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** XL
 - **Precondición:** HU-011 y HU-028 completas.
-- **Regla de negocio:** Es el objetivo central del proyecto y se valida siempre en el servidor, dentro de la misma operación que guarda la reserva, de modo que ninguna vía de entrada (pantalla, importación o API) pueda saltearla. La validación dura corre al pasar la reserva a Confirmada y cada vez que se edita una Confirmada (fechas, cartel o estado); no corre en Pendiente. Una reserva Cancelada libera el cupo y no valida. Se cuentan las reservas del mismo cartel, excluyendo la actual, que se solapen con el rango y cuyo estado ocupe cupo; si esa cantidad es igual o mayor a la capacidad del cartel, se bloquea.
+- **Regla de negocio:** Es el objetivo central del proyecto y se valida siempre en el servidor, dentro de la misma operación que guarda la reserva, de modo que ninguna vía de entrada (pantalla, importación o API) pueda saltearla. La validación dura corre al crear la reserva, que nace Confirmada (HU-057), y cada vez que se editan sus fechas o su cartel. Una reserva Cancelada libera el cupo y no valida. Se cuentan las reservas del mismo cartel, excluyendo la actual, que se solapen con el rango y cuyo estado ocupe cupo; si esa cantidad es igual o mayor a la capacidad del cartel, se bloquea.
 - **Criterios de aceptación:**
   1. Dado un cartel de capacidad 1 con una reserva confirmada, cuando se confirma otra con rango idéntico, contenido, contenedor o con solapamiento parcial por izquierda o derecha, entonces se bloquea.
   2. Dado un cartel digital con 12 de 20 cupos ocupados, cuando se confirma otra reserva, entonces se permite; con 20 de 20, se bloquea.
@@ -514,7 +533,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** HU-001 y HU-031 completas.
-- **Regla de negocio:** Con borde inclusivo el día 15 se pisa; con exclusivo, no. La tentativa siempre ocupa cupo visualmente; que también cuente para el bloqueo duro depende del parámetro.
+- **Regla de negocio:** Con borde inclusivo el día 15 se pisa; con exclusivo, no. La tentativa siempre ocupa cupo visualmente; que también cuente para el bloqueo duro depende del parámetro. Desde el 2026-11-17 no hay reservas tentativas, así que la parte de la tentativa queda sin efecto (RN-002).
 - **Criterios de aceptación:**
   1. Dado el borde inclusivo, cuando una reserva termina el 15 y otra empieza el 15 en un cartel de capacidad 1, entonces se bloquea; con exclusivo, se permite.
   2. Dado que la tentativa no cuenta para el bloqueo, cuando existe solo una tentativa en el rango, entonces no impide confirmar otra reserva.
@@ -536,15 +555,15 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 ### HU-035 Ciclo de vida de la reserva
 
 - **Actor:** Operativo
-- **Descripción:** Como operativo, quiero mover la reserva entre pendiente, confirmada, finalizada y cancelada solo por transiciones válidas, para no dejar datos incoherentes.
+- **Descripción:** Como operativo, quiero que el estado de la reserva lo lleve el sistema a partir de la campaña y de las fechas, para no cambiarlo a mano ni dejar datos incoherentes.
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-031 completa.
-- **Regla de negocio:** Transiciones válidas: pendiente a confirmada o cancelada; confirmada a finalizada o cancelada. Una cancelada solo vuelve a confirmada revalidando el cupo. Una finalizada no vuelve a un estado activo. Si una confirmada se reprograma o se cancela y recrea es una decisión abierta (pregunta 10).
+- **Regla de negocio:** La reserva tiene tres estados: Confirmada, Finalizada y Cancelada; no existe Pendiente (2026-11-17). Nace Confirmada (HU-057), pasa a Finalizada cuando su fecha de fin ya pasó (HU-036) y pasa a Cancelada al quitarla de la campaña (HU-037) o al cancelar la campaña (HU-024). Nadie edita el estado a mano, por ninguna vía. Una Cancelada no vuelve a Confirmada: si hace falta, se agrega el cartel de nuevo, con la validación de solapamiento. Una Finalizada no vuelve a un estado activo. Si una confirmada se reprograma o se cancela y recrea es una decisión abierta (pregunta 10).
 - **Criterios de aceptación:**
-  1. Dada una reserva cancelada, cuando se intenta confirmar, entonces se ejecuta la validación de solapamiento antes de permitirlo.
+  1. Dada una reserva, cuando se edita por cualquier vía, entonces su estado no se puede cambiar a mano.
   2. Dada una reserva finalizada, cuando se intenta reactivar, entonces el sistema lo impide.
-  3. Dada una transición inválida, cuando se intenta por cualquier vía, entonces se rechaza con un mensaje claro.
+  3. Dada una reserva cancelada, cuando se intenta volver a confirmar, entonces se rechaza con un mensaje claro.
 
 ### HU-036 Finalizar reservas vencidas automáticamente
 
@@ -556,7 +575,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Regla de negocio:** Una tarea programada diaria, de madrugada en horario de Argentina, pasa a Finalizada las reservas confirmadas cuya fecha de fin es anterior a hoy.
 - **Criterios de aceptación:**
   1. Dada una reserva confirmada con fecha de fin de ayer, cuando corre la tarea, entonces pasa a Finalizada.
-  2. Dada una reserva pendiente o cancelada, cuando corre la tarea, entonces no cambia.
+  2. Dada una reserva cancelada, cuando corre la tarea, entonces no cambia.
   3. Dado un fallo de la tarea, cuando ocurre, entonces queda registrado, se notifica al administrador y se reintenta en la próxima corrida.
   4. Dada una tarea ejecutada dos veces el mismo día, cuando termina, entonces el resultado es el mismo.
 
@@ -567,11 +586,12 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** S
 - **Precondición:** HU-035 completa.
-- **Regla de negocio:** Cancelar cambia el estado, nunca borra, y conserva el historial. Cancelar siempre se permite.
+- **Regla de negocio:** En la campaña la acción se llama "Quitar" y es lo único que se hace a mano sobre una reserva suelta (HU-035). Cancelar cambia el estado, nunca borra, y conserva el historial. Cancelar siempre se permite. Si la reserva ya está en exhibición, no se cancela: termina ese día, para conservar los días exhibidos (RN-006).
 - **Criterios de aceptación:**
   1. Dada una reserva confirmada, cuando se cancela, entonces el registro persiste con estado Cancelada.
   2. Dado el cupo recién liberado, cuando se crea otra reserva en el mismo rango, entonces se permite.
   3. Dado un operativo, cuando mira la reserva, entonces no existe una acción de eliminar.
+  4. Dada una reserva en exhibición, cuando se quita, entonces termina ese día, libera el cupo desde el día siguiente y conserva los días ya exhibidos.
 
 ### HU-038 Cargar reservas con fechas pasadas (retirada 2026-11-04: no hay histórico para importar, RN-012)
 
@@ -815,6 +835,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   2. Dada una línea con formato y sin cantidad, cuando se guarda, entonces se acepta.
   3. Dada una campaña con una línea de un formato, cuando se intenta agregar otra del mismo formato, entonces se rechaza con un mensaje claro.
   4. Dada una línea existente, cuando se cambia su cantidad o se quita, entonces las reservas ya creadas no se alteran.
+  5. Dado el formulario de «Nueva campaña», cuando se agregan líneas antes de guardar, entonces se guardan junto con la campaña al tocar «Guardar campaña»; si se cancela el alta, no se guarda ninguna.
 
 ### HU-056 Seleccionar carteles por formato con filtros
 
@@ -823,7 +844,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** L
 - **Precondición:** HU-014, HU-040 y HU-055 completas.
-- **Regla de negocio:** La pantalla abre con la campaña precargada y bloqueada. Las fechas vienen de la campaña si las tiene; si no, la pantalla las pide para esa tanda y no se puede crear ninguna reserva sin ellas. Siempre se pueden ajustar para la tanda. Se filtra por zona, proveedor y dirección (búsqueda parcial, sin distinguir mayúsculas ni tildes). Cada cartel se identifica por Dirección + Tamaño (o Dirección + Slots en séxtuples), nunca por código interno. Seleccionar más o menos de lo solicitado genera un aviso, no un bloqueo. Queda fuera de alcance la autoselección ("completar hasta la cantidad") y la importación de la lista desde una planilla.
+- **Regla de negocio:** La pantalla abre con la campaña precargada y bloqueada. También se abre desde el formulario de «Nueva campaña», antes de guardarla: ahí solo arma la selección, que se crea junto con la campaña al guardar (HU-057), y los carteles que al guardar ya no tienen cupo fallan con su motivo sin impedir que se guarden la campaña y las demás reservas. Las fechas vienen de la campaña si las tiene; si no, la pantalla las pide para esa tanda y no se puede crear ninguna reserva sin ellas. Siempre se pueden ajustar para la tanda. Se filtra por zona, proveedor y dirección (búsqueda parcial, sin distinguir mayúsculas ni tildes). Cada cartel se identifica por Dirección + Tamaño (o Dirección + Slots en séxtuples), nunca por código interno. Seleccionar más o menos de lo solicitado genera un aviso, no un bloqueo. Queda fuera de alcance la autoselección ("completar hasta la cantidad") y la importación de la lista desde una planilla.
 - **Criterios de aceptación:**
   1. Dada una línea de formato elegida, cuando se abre la lista, entonces solo muestra carteles de ese formato con cupo libre en el rango de fechas.
   2. Dada una campaña sin fechas, cuando se abre la pantalla, entonces pide fechas para la tanda y no permite continuar sin ellas.
@@ -831,6 +852,7 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   4. Dada la lista filtrada, cuando el operativo usa "Seleccionar todos los filtrados" y destilda excepciones, entonces la selección refleja exactamente eso.
   5. Dada una selección, cuando cambia, entonces un contador muestra el avance por formato (por ejemplo "Gran Formato 60 de 100") y el monto estimado; si la línea no tiene cantidad, muestra solo lo seleccionado.
   6. Dada una selección mayor o menor a la solicitada, cuando se intenta confirmar, entonces el sistema avisa pero permite continuar.
+  7. Dado el formulario de «Nueva campaña» con una línea de formato, cuando se eligen carteles y se guarda la campaña, entonces se crean la campaña, la línea y una reserva por cartel elegido; si alguno ya no tiene cupo, un resumen muestra cuál y por qué, y lo demás queda guardado.
 
 ### HU-057 Crear reservas en bloque
 
@@ -839,9 +861,9 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** XL
 - **Precondición:** HU-029, HU-030 y HU-056 completas.
-- **Regla de negocio:** Cada reserva se crea en estado Pendiente con cartel, fecha de inicio y fecha de fin (obligatorios siempre) y el precio de alquiler tomado de la tarifa de lista, editable después. El nombre se autogenera ("Marca - Cartel - Mes"; "Sin marca" si la campaña aún no la tiene, y se corrige solo al cargarla). El operativo nunca carga número ni código de reserva. La operación debe ser idempotente: reintentar no duplica lo ya creado. Queda fuera de alcance la edición masiva de reservas ya creadas.
+- **Regla de negocio:** Cada reserva se crea en estado Confirmada, con la validación de solapamiento en el servidor (HU-031): la que no entra falla con su motivo y no se crea. Lleva cartel, fecha de inicio y fecha de fin (obligatorios siempre) y el precio de alquiler tomado de la tarifa de lista, editable después. El nombre se autogenera ("Marca - Cartel - Mes"; "Sin marca" si la campaña aún no la tiene, y se corrige solo al cargarla). El operativo nunca carga número ni código de reserva. La operación debe ser idempotente: reintentar no duplica lo ya creado. Queda fuera de alcance la edición masiva de reservas ya creadas.
 - **Criterios de aceptación:**
-  1. Dada una selección de 200 posiciones, cuando se confirma, entonces se crean 200 reservas Pendientes en menos de 1 minuto (objetivo a validar), con progreso visible.
+  1. Dada una selección de 200 posiciones con cupo, cuando se confirma, entonces se crean 200 reservas Confirmadas en menos de 1 minuto (objetivo a validar), con progreso visible.
   2. Dada una reserva creada, cuando se abre, entonces tiene el precio de la tarifa de lista y un nombre autogenerado, sin que el operativo haya cargado nada más.
   3. Dada una tanda con fallos, cuando termina, entonces un resumen muestra cuántas se crearon y cuáles fallaron, con el motivo de cada una.
   4. Dadas las fallidas, cuando se reintentan, entonces solo se crean esas y no se duplican las ya creadas.
@@ -854,14 +876,14 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** M
 - **Precondición:** HU-055 y HU-057 completas.
-- **Regla de negocio:** Las reservas Canceladas no cuentan como reservadas. Si se cambian las fechas de la campaña y hay reservas Pendientes, el sistema pregunta si actualizarlas. Las reservas Confirmadas no se tocan sin pasar por la validación de solapamiento (HU-031).
+- **Regla de negocio:** Las reservas Canceladas no cuentan como reservadas. Cambiar las fechas de la campaña no cambia las de sus reservas: son Confirmadas y no se tocan sin pasar por la validación de solapamiento (HU-031). Hasta el 2026-11-17 se ofrecía actualizar las reservas Pendientes; ya no hay Pendientes.
 - **Criterios de aceptación:**
   1. Dada una campaña con una línea de 100 posiciones y 60 reservas activas, cuando se abre, entonces muestra 100 solicitadas, 60 reservadas y 40 faltantes.
   2. Dada una línea sin cantidad, cuando se abre, entonces muestra solo las reservadas.
-  3. Dado un cambio de fechas de la campaña con reservas Pendientes, cuando se guarda, entonces pregunta si se actualizan; si se acepta, se actualizan solo las Pendientes.
+  3. Dado un cambio de fechas de la campaña, cuando se guarda, entonces las fechas de sus reservas no cambian.
   4. Dado un cambio de fechas con reservas Confirmadas, cuando se guarda, entonces esas reservas no se modifican.
 
-### HU-059 Confirmar la campaña y sus reservas en bloque
+### HU-059 Confirmar la campaña y sus reservas en bloque (retirada 2026-11-17: la campaña nace Confirmada y cada reserva se confirma al crearla (HU-024, HU-057); no hay reservas Pendientes que confirmar)
 
 - **Actor:** Operativo
 - **Descripción:** Como operador comercial, quiero confirmar la campaña y luego todas sus reservas pendientes de una vez, viendo los conflictos, para cerrar el armado de la campaña en un solo paso.
@@ -877,6 +899,21 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
   5. Dados los conflictos ya resueltos, cuando se vuelve a usar "Confirmar reservas", entonces solo se procesan las que siguen Pendientes.
   6. Dado el recorrido completo, cuando el operador crea una campaña vacía, le agrega dos líneas de formato (100 y 100), reserva las 200 posiciones sin cargar ninguna a mano, completa cliente y marca y confirma las libres, entonces lo logra en menos de 5 minutos.
 
+### HU-071 Ver y asignar posiciones como en la planilla
+
+- **Actor:** Operativo
+- **Descripción:** Como operador comercial, quiero ver en "Agregar carteles" los carteles del formato como en la planilla de posiciones, una fila por dirección con un casillero por slot y la marca que ocupa cada uno, para elegir dónde ubicar la campaña mirando cuántos slots quedan libres, sin abrir el Excel.
+- **Prioridad:** Should
+- **Complejidad:** M
+- **Precondición:** HU-056 y HU-057 completas.
+- **Regla de negocio:** Es otra forma de ver la misma lista de "Agregar carteles": las fechas, los filtros, la selección, el contador y "Crear reservas" son los de HU-056 y HU-057. Lo que decide es cuántos slots quedan libres; el slot es genérico (RN-005), así que el sistema no guarda en qué slot físico va cada marca. Un slot está ocupado con el mismo criterio que la validación dura (RN-001, RN-003). Desde el 2026-11-17 no hay reservas Pendientes, así que la vista no muestra tentativas. La vista muestra también los carteles llenos, que no se pueden elegir. Cada marca tiene siempre el mismo color, asignado por el sistema. Quedan fuera de alcance la posición física del slot, las anotaciones de la planilla ("esquina", "mala visual") y la vista como consulta suelta fuera de una campaña.
+- **Criterios de aceptación:**
+  1. Dada una línea de formato abierta en "Agregar carteles", cuando se elige la vista Posiciones, entonces se ve una fila por cartel con su dirección, departamento y cantidad de slots, y tantos casilleros como slots tiene.
+  2. Dado un cartel con slots ocupados en el rango, cuando se muestra, entonces cada slot ocupado lleva la marca de la campaña que lo ocupa, con el color de esa marca; los de la campaña actual se distinguen, y los libres quedan vacíos.
+  3. Dado un cartel sin slots libres en el rango, cuando se muestra, entonces aparece atenuado y no se puede elegir.
+  4. Dado un slot libre, cuando se hace click, entonces el cartel queda seleccionado igual que con la casilla de la tabla, y el slot muestra la campaña actual; un segundo click lo libera.
+  5. Dada una selección, cuando se cambia entre Tabla y Posiciones, entonces la selección, los filtros y las fechas se conservan.
+
 # E11 - Facturación mensual
 
 ### HU-060 Registrar un ítem a facturar
@@ -886,18 +923,20 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Must
 - **Complejidad:** M
 - **Precondición:** HU-016 y HU-017 completas.
-- **Regla de negocio:** Ningún campo es obligatorio para guardar el ítem, igual que en la campaña; tampoco se exigen después, porque ya no hay envío (HU-066 retirada). Campos: mes de facturación (por defecto el mes actual, editable); cliente que factura y CUIT de facturación (precargado desde el cliente, editable por ítem); marca anunciante; descripción del servicio y período del servicio (desde y hasta); cantidad, precio unitario, importe neto y alícuota de IVA; tipo de servicio (alquiler, impresión y colocación, otro); tipo de soporte, Gob/Priv y tipo de venta (F/V); costos incluidos en la factura (un importe) y detalle del costo (texto libre); notas para Administración. El ítem puede vincularse opcionalmente a una campaña; esto es necesario porque "impresión y colocación" no es una reserva. La pantalla se llama «Facturación». El formulario de Nuevo ítem (y el de edición) tiene solo los siete datos de la planilla de Administración (RN-024), en este orden: cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo (el tipo de soporte). El mes de un ítem nuevo es el que está elegido en la lista. Los demás datos del ítem dejan de cargarse desde la pantalla: los ítems que ya los tienen los conservan, y el alta se simplifica a lo que pide Administración. La lista de ítems muestra solo esas siete columnas. Los costos incluidos y su detalle se escriben en el ítem y no tocan el módulo de costos ni la rentabilidad (HU-043, HU-063). Desde el 2026-11-16 el ítem no tiene estados ni número de factura: se carga, se edita mientras haga falta y se baja en Excel (HU-070). Nunca se borra: si se cargó por error, se da de baja (HU-006).
+- **Regla de negocio:** Ningún campo es obligatorio para guardar el ítem, igual que en la campaña; tampoco se exigen después, porque ya no hay envío (HU-066 retirada). Campos: mes de facturación (por defecto el mes actual, editable); cliente que factura y CUIT de facturación (precargado desde el cliente, editable por ítem); marca anunciante; descripción del servicio y período del servicio (desde y hasta); cantidad, precio unitario, importe neto y alícuota de IVA; tipo de servicio (alquiler, impresión y colocación, otro); tipo de soporte, Gob/Priv y tipo de venta (F/V); costos incluidos en la factura (un importe) y detalle del costo (texto libre); notas para Administración. El ítem puede vincularse opcionalmente a una campaña; esto es necesario porque "impresión y colocación" no es una reserva. La pantalla se llama «Facturación». El formulario de Nuevo ítem (y el de edición) tiene solo los siete datos de la planilla de Administración (RN-024), en este orden: cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo (el tipo de soporte). El mes de un ítem nuevo es el que está elegido en la lista. Los demás datos del ítem dejan de cargarse desde la pantalla: los ítems que ya los tienen los conservan, y el alta se simplifica a lo que pide Administración. La lista de ítems muestra solo esas siete columnas. Debajo de esos siete datos, el formulario tiene dos secciones más: «Orden de publicidad», para adjuntar el PDF del ítem (HU-062), y «Costos del ítem», para elegir costos ya cargados (HU-063). Si el ítem no tiene costos elegidos, los costos incluidos y su detalle se escriben a mano en el ítem y no tocan el módulo de costos ni la rentabilidad (HU-043). Si tiene costos elegidos, los costos incluidos son la suma de sus montos y el detalle son sus tipos, sin repetir y separados por « + » (por ejemplo «Impresión + Fijación»); los dos se calculan solos y no se editan a mano, y así salen en la lista, los totales y el Excel (HU-070). Desde el 2026-11-16 el ítem no tiene estados ni número de factura: se carga, se edita mientras haga falta y se baja en Excel (HU-070). Nunca se borra: si se cargó por error, se da de baja (HU-006).
 - **Criterios de aceptación:**
   1. Dado un ítem sin ningún dato, cuando se guarda, entonces se acepta.
   2. Dado un ítem nuevo, cuando se crea, entonces el mes de facturación es el mes actual y puede cambiarse.
   3. Dado un cliente elegido, cuando se carga, entonces el CUIT se precarga desde el cliente y puede editarse en el ítem sin modificar al cliente.
   4. Dado un ítem vinculado a una campaña, cuando se vincula, entonces cliente, marca y soporte se precargan desde ella.
   5. Dado un ítem sin campaña, cuando se carga, entonces todos sus datos se completan a mano.
-  6. Dado el formulario de Nuevo ítem, cuando se abre, entonces muestra solo cliente, importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo, en ese orden.
+  6. Dado el formulario de Nuevo ítem, cuando se abre, entonces muestra cliente, importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo, en ese orden, y debajo las secciones «Orden de publicidad» y «Costos del ítem».
   7. Dado un ítem cargado, cuando se edita, entonces se puede cambiar cualquiera de sus datos: el ítem no tiene estados (HU-065 retirada).
   8. Dado un ítem dado de baja, cuando se consultan la lista, los totales y el Excel (HU-070), entonces no aparece ni se suma, pero no se borra (HU-006).
-  7. Dado un ítem con costos incluidos y detalle del costo escritos a mano, cuando se guarda, entonces se conservan tal cual y no se crea ni cambia ningún costo del módulo de costos.
-  8. Dada la lista de ítems, cuando se muestra, entonces sus columnas son solo cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo.
+  9. Dado un ítem sin costos elegidos, con costos incluidos y detalle del costo escritos a mano, cuando se guarda, entonces se conservan tal cual y no se crea ni cambia ningún costo del módulo de costos.
+  10. Dada la lista de ítems, cuando se muestra, entonces sus columnas son solo cliente (razón social), importe neto total, costos incluidos, detalle costo, tipo de venta, Gob/Priv y tipo.
+  11. Dado un ítem con un costo de impresión de 50000 y uno de fijación de 30000 elegidos, cuando se consulta en la lista o en el Excel, entonces los costos incluidos son 80000 y el detalle «Impresión + Fijación», y el formulario no deja escribirlos a mano.
+  12. Dado un ítem al que se le quitan todos los costos elegidos, cuando se edita, entonces los costos incluidos y el detalle vuelven a escribirse a mano.
 
 ### HU-061 Cálculo de importes e IVA
 
@@ -920,12 +959,13 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** S
 - **Precondición:** HU-060 completa.
-- **Regla de negocio:** Por ahora la carga es manual, mirando el PDF; la lectura automática del PDF queda como mejora futura fuera de alcance. Si se carga un número de OC que ya existe, el sistema avisa de un posible duplicado, sin bloquear.
+- **Regla de negocio:** Por ahora la carga es manual, mirando el PDF; la lectura automática del PDF queda como mejora futura fuera de alcance. Si se carga un número de OC que ya existe, el sistema avisa de un posible duplicado, sin bloquear. Desde el 2026-11-18, en la pantalla el PDF del ítem se llama «Orden de publicidad»: es la orden que manda el cliente para ese ítem. Se adjunta, se reemplaza y se abre desde la sección «Orden de publicidad» del formulario del ítem (HU-060), y se abre también desde la lista. Es una por ítem y no se pide para guardar. Es independiente de las órdenes de publicidad de la campaña (HU-069): no se copia de ahí ni se manda allá. El número y la fecha de la OC no se cargan desde la pantalla (HU-060): los ítems que los tienen los conservan.
 - **Criterios de aceptación:**
   1. Dado un ítem, cuando se carga número, fecha de aprobación y PDF, entonces quedan guardados y el PDF se puede abrir desde el ítem.
   2. Dado un número de OC ya existente en otro ítem, cuando se guarda, entonces el sistema avisa e indica el ítem coincidente, y permite guardar.
   3. Dado un archivo adjunto que no es PDF o supera el tamaño máximo, cuando se intenta adjuntar, entonces se rechaza con un mensaje claro.
   4. Dado un ítem sin orden de compra, cuando se guarda, entonces se acepta.
+  5. Dado el formulario de un ítem, cuando se adjunta un PDF en «Orden de publicidad» y se guarda, entonces queda en el ítem y se abre desde el formulario y desde la lista; si se adjunta otro, reemplaza al anterior.
 
 ### HU-063 Costos del ítem y neto final
 
@@ -934,13 +974,17 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** M
 - **Precondición:** HU-043, HU-060 y HU-061 completas.
-- **Regla de negocio:** Cada ítem puede tener cero, uno o varios costos. Cada costo tiene tipo (comisión, proveedor, impresión), a quién se le paga y monto, que puede ser fijo o un porcentaje del neto (por ejemplo 15%). Son los mismos costos del módulo de costos y rentabilidad (HU-043): se cargan una sola vez y alimentan ambos usos. El ítem muestra costo total y neto final (importe neto menos costos). El total del mes se calcula solo y reemplaza las sumas manuales de la planilla actual (C15, D15 y C17).
+- **Regla de negocio:** Cada ítem puede tener cero, uno o varios costos. Cada costo tiene tipo (comisión, proveedor, impresión), a quién se le paga y monto, que puede ser fijo o un porcentaje del neto (por ejemplo 15%). Son los mismos costos del módulo de costos y rentabilidad (HU-043): se cargan una sola vez y alimentan ambos usos. El ítem muestra costo total y neto final (importe neto menos costos). El total del mes se calcula solo y reemplaza las sumas manuales de la planilla actual (C15, D15 y C17). Desde el 2026-11-18 los costos se eligen en la sección «Costos del ítem» del formulario (HU-060) entre todos los costos cargados que no están anulados ni en otro ítem, de cualquier campaña, con un buscador por campaña, cartel, tipo o a quién se le paga. Se pueden elegir varios, por ejemplo uno de impresión y uno de fijación (colocación), y se suman en los costos incluidos del ítem (HU-060). Un costo elegido se puede quitar del ítem: el costo no se borra ni se anula, solo queda libre para otro ítem, y el cambio queda registrado. Si un costo elegido se anula en el módulo de costos, deja de sumar en el ítem.
 - **Criterios de aceptación:**
   1. Dado un ítem con neto 10000 y un costo de 15% del neto, cuando se guarda, entonces el costo es 1500 y el neto final 8500.
   2. Dado un costo fijo, cuando se carga, entonces se resta tal cual del neto.
   3. Dado un cambio del neto, cuando se guarda, entonces los costos porcentuales se recalculan.
   4. Dado un ítem vinculado a una campaña, cuando se consulta la rentabilidad de la campaña, entonces cada costo se cuenta una sola vez, sin duplicarse.
   5. Dado un mes, cuando se consulta, entonces los totales de neto, costos y neto final coinciden con la suma manual de sus ítems.
+  6. Dado un costo de impresión y uno de fijación cargados en reservas de cualquier campaña, cuando se eligen en «Costos del ítem», entonces los dos quedan en el ítem y sus montos se suman en los costos incluidos (HU-060).
+  7. Dado un costo que ya está en otro ítem o está anulado, cuando se buscan costos para elegir, entonces no aparece.
+  8. Dado un costo elegido, cuando se quita del ítem, entonces deja de sumar, sigue vigente en el módulo de costos y se puede elegir en otro ítem.
+  9. Dado un costo elegido que se anula en el módulo de costos, cuando se consulta el ítem, entonces deja de sumar en sus costos incluidos.
 
 ### HU-064 Agrupar ítems en una factura y facturar a otro CUIT
 
@@ -1024,10 +1068,10 @@ Hay 12 decisiones del negocio que condicionan historias concretas. Hasta que se 
 | Tema | Historias afectadas | Quién responde | Default mientras tanto |
 | --- | --- | --- | --- |
 | Día de borde: ¿el 15 se pisa? | HU-001, HU-033 | Seba | Inclusivo (se pisa) |
-| ¿La tentativa cuenta para el bloqueo duro? | HU-001, HU-033 | Seba | Ocupa cupo visual; bloqueo duro solo al confirmar |
+| ¿La tentativa cuenta para el bloqueo duro? | HU-001, HU-033 | Seba | Sin efecto desde 2026-11-17: no hay tentativas (RN-002) |
 | Estados físicos del cartel y qué hacer con reservas activas si se rompe | HU-012, HU-039 | Seba | Alertar y bloquear reservas nuevas |
 | Listado de los 9 departamentos | HU-013 | Seba | Lista de zonas vacía y administrable |
-| ¿Se puede confirmar una campaña incompleta, o se exigen cliente, marca y fechas al confirmar? | HU-059 | Seba | Se exigen cliente, marca y fechas (propuesta) |
+| ¿Se puede confirmar una campaña incompleta, o se exigen cliente, marca y fechas al confirmar? | HU-024 | Seba | La campaña nace Confirmada y se exigen cliente, marca y fechas al crearla (RN-011) |
 | ¿Cambia el pagador de una marca, o una marca se compra por dos clientes? | HU-027 | Seba | Sin cliente propio en la campaña |
 | ¿Big Media es dueña de los carteles o revende? | HU-043, HU-046 | Gonzalo y Diego | Costos solo de impresión y fijación |
 | ¿Alcanza la vista de estado actual o hace falta ver a futuro? | HU-042 | Seba | Se construye como Should |
@@ -1058,7 +1102,7 @@ Casos que deben quedar cubiertos por pruebas automatizadas.
 | 6 | Rangos adyacentes (termina el 15, empieza el 15) | Según la configuración de día de borde |
 | 7 | Rangos separados por un día | Permite |
 | 8 | Conflicto con una reserva cancelada | Permite |
-| 9 | Conflicto con una reserva tentativa | Según la configuración de tentativa |
+| 9 | Conflicto con una reserva tentativa | Sin efecto desde 2026-11-17: no hay tentativas |
 | 10 | Cartel digital con 12 de 20 cupos ocupados | Permite |
 | 11 | Cartel digital con 20 de 20 cupos ocupados | Bloquea |
 | 12 | Edición que mueve las fechas a un rango ocupado | Bloquea |

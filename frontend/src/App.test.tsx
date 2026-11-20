@@ -319,6 +319,8 @@ test('agrupa el menú lateral en secciones y abre en clientes', async () => {
       name: 'Marcas',
     }),
   ).toBeDefined()
+  // Las interacciones se cargan desde la ficha del cliente, no tienen pantalla propia.
+  expect(within(nav).queryByRole('button', { name: 'Interacciones' })).toBeNull()
   expect(within(nav).getByRole('button', { name: 'Clientes' }).getAttribute('aria-current')).toBe(
     'page',
   )

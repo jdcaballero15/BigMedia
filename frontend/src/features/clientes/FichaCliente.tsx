@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiGet } from '../../shared/api'
 import { useDetalleRuta } from '../../shared/ruta'
+import { usePuedeEditar } from '../../shared/sesion'
 import CampaniasLista from '../campanias/CampaniasLista'
 import InteraccionesLista from '../campanias/InteraccionesLista'
 import ContactosDelCliente from './ContactosDelCliente'
@@ -102,6 +103,7 @@ type Props = {
 /** Ficha de un cliente como página: encabezado, secciones con contador y contactos (HU-021). */
 export default function FichaCliente({ ficha, revision, onVolver, onEditar }: Props) {
   const { cliente } = ficha
+  const puedeEditar = usePuedeEditar()
   // Recién creado abre en Marcas: ahí se avisa la marca homónima que creó la API.
   const [seccion, setSeccion] = useState<Seccion>(ficha.recienCreado ? 'marcas' : 'campanias')
   const [cantidades, setCantidades] = useState<Cantidades>({
@@ -111,7 +113,7 @@ export default function FichaCliente({ ficha, revision, onVolver, onEditar }: Pr
     contactos: null,
   })
   useDetalleRuta(cliente.nombre_visible, onVolver)
-  // Solo el intermediario formal tiene contactos múltiples (HU-068, RN-015).
+  // Solo la central de medios tiene contactos múltiples (HU-068, RN-015).
   const conContactos = cliente.tipo === 'intermediario_formal'
 
   // Estables: las listas vuelven a cargar si su callback cambia.
@@ -197,6 +199,7 @@ export default function FichaCliente({ ficha, revision, onVolver, onEditar }: Pr
               titulo={`Interacciones con ${cliente.nombre_visible}`}
               ocultar="cliente"
               onCargadas={contar.interacciones}
+              clienteParaCargar={puedeEditar ? cliente : undefined}
             />
           </div>
         </div>

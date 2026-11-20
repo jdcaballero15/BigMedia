@@ -7,7 +7,7 @@ import type { Interaccion } from './types'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 
-function cliente(id: number, nombre: string, tipo: Cliente['tipo'], activo = true): Cliente {
+function cliente(id: number, nombre: string, tipo: Cliente['tipo']): Cliente {
   return {
     id,
     nombre,
@@ -18,14 +18,12 @@ function cliente(id: number, nombre: string, tipo: Cliente['tipo'], activo = tru
     nombre_visible: nombre,
     telefono: '',
     correo: '',
-    activo,
+    activo: true,
   }
 }
 
 const central = cliente(1, 'Central Sur', 'intermediario_formal')
 const directo = cliente(2, 'Bodega Norte', 'directo')
-const inactivo = cliente(3, 'Cliente Dormido', 'directo', false)
-const clientes = [central, directo, inactivo]
 
 const ana: Contacto = {
   id: 11,
@@ -35,6 +33,8 @@ const ana: Contacto = {
   correo: '',
   telefono: '',
   notas: '',
+  rol: 'planificador',
+  planificador: null,
   principal: true,
   activo: true,
 }
@@ -69,24 +69,33 @@ function formulario() {
   return screen.getByRole('form', { name: 'Formulario de interacción' })
 }
 
-test('una interacción nueva propone Llamada y la fecha de hoy, y no ofrece clientes inactivos', () => {
+test('una interacción nueva propone Llamada y la fecha de hoy', () => {
   mockFetch()
-  render(<InteraccionForm clientes={clientes} onSave={vi.fn()} onCancel={vi.fn()} />)
+  render(<InteraccionForm cliente={directo} onSave={vi.fn()} onCancel={vi.fn()} />)
   expect((screen.getByLabelText('Tipo') as HTMLSelectElement).value).toBe('llamada')
   expect((screen.getByLabelText('Fecha') as HTMLInputElement).value).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-  expect(screen.queryByRole('option', { name: /Cliente Dormido/ })).toBeNull()
   expect(screen.queryByLabelText('Contacto')).toBeNull()
+})
+
+test('el cliente viene fijo y no se puede cambiar', () => {
+  mockFetch()
+  render(<InteraccionForm cliente={directo} onSave={vi.fn()} onCancel={vi.fn()} />)
+  const campo = screen.getByLabelText('Cliente') as HTMLInputElement
+  expect(campo.value).toBe('Bodega Norte')
+  expect(campo.readOnly).toBe(true)
+  expect(screen.queryByRole('option', { name: 'Central Sur' })).toBeNull()
 })
 
 test('con un intermediario formal ofrece sus contactos activos y sus campañas, y envía todo', async () => {
   mockFetch()
   const onSave = vi.fn().mockResolvedValue(undefined)
-  render(<InteraccionForm clientes={clientes} onSave={onSave} onCancel={vi.fn()} />)
+  render(<InteraccionForm cliente={central} onSave={onSave} onCancel={vi.fn()} />)
 
-  fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: '1' } })
   fireEvent.change(screen.getByLabelText('Tipo'), { target: { value: 'reunion' } })
   fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2026-10-20' } })
-  fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: '  Renovación  ' } })
+  fireEvent.change(screen.getByLabelText('Asunto (opcional)'), {
+    target: { value: '  Renovación  ' },
+  })
   fireEvent.change(screen.getByLabelText('Notas'), { target: { value: 'Pidió cotizar.' } })
   expect(await screen.findByRole('option', { name: 'Ana Prueba' })).toBeDefined()
   expect(await screen.findByRole('option', { name: 'Verano 2027' })).toBeDefined()
@@ -104,22 +113,18 @@ test('con un intermediario formal ofrece sus contactos activos y sus campañas, 
       contacto: 11,
       campania: 21,
       marca: null,
+      recordatorio_fecha: null,
+      recordatorio_texto: '',
     }),
   )
 })
 
-test('un cliente directo no ofrece contactos y cambiar de cliente limpia la campaña', async () => {
+test('un cliente directo no ofrece contactos y envía su cliente', async () => {
   mockFetch()
   const onSave = vi.fn().mockResolvedValue(undefined)
-  render(<InteraccionForm clientes={clientes} onSave={onSave} onCancel={vi.fn()} />)
-  fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: '1' } })
-  fireEvent.change(await screen.findByLabelText('Campaña (opcional)'), {
-    target: { value: '21' },
-  })
-  await screen.findByRole('option', { name: 'Verano 2027' })
-  fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: '2' } })
+  render(<InteraccionForm cliente={directo} onSave={onSave} onCancel={vi.fn()} />)
   expect(screen.queryByLabelText('Contacto')).toBeNull()
-  fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: 'Llamado' } })
+  fireEvent.change(screen.getByLabelText('Asunto (opcional)'), { target: { value: 'Llamado' } })
   fireEvent.click(within(formulario()).getByRole('button', { name: 'Guardar interacción' }))
   await waitFor(() =>
     expect(onSave).toHaveBeenCalledWith(
@@ -145,11 +150,15 @@ test('al editar conserva el contacto inactivado y la campaña que ya tenía', as
     marca: 33,
     marca_nombre: 'Marca Vieja',
     registrada_por_nombre: 'operativo',
+    recordatorio_fecha: '2026-09-10',
+    recordatorio_texto: 'Mandar propuesta',
+    recordatorio_hecho_en: null,
+    recordatorio_hecho_por_nombre: null,
   }
   render(
     <InteraccionForm
       interaccion={interaccion}
-      clientes={clientes}
+      cliente={central}
       onSave={vi.fn()}
       onCancel={vi.fn()}
     />,
@@ -161,16 +170,42 @@ test('al editar conserva el contacto inactivado y la campaña que ya tenía', as
   expect((screen.getByLabelText('Campaña (opcional)') as HTMLSelectElement).value).toBe('22')
   expect(await screen.findByRole('option', { name: 'Marca Vieja (inactiva)' })).toBeDefined()
   expect((screen.getByLabelText('Marca (opcional)') as HTMLSelectElement).value).toBe('33')
+  expect((screen.getByLabelText('Fecha de recordatorio') as HTMLInputElement).value).toBe(
+    '2026-09-10',
+  )
+  expect((screen.getByLabelText('Qué hacer') as HTMLInputElement).value).toBe('Mandar propuesta')
+})
+
+test('envía la fecha de recordatorio y qué hacer (HU-072)', async () => {
+  mockFetch()
+  const onSave = vi.fn().mockResolvedValue(undefined)
+  render(<InteraccionForm cliente={directo} onSave={onSave} onCancel={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText('Fecha de recordatorio'), {
+    target: { value: '2026-11-02' },
+  })
+  fireEvent.change(screen.getByLabelText('Qué hacer'), {
+    target: { value: '  Enviar presupuesto  ' },
+  })
+  fireEvent.click(within(formulario()).getByRole('button', { name: 'Guardar interacción' }))
+  await waitFor(() =>
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recordatorio_fecha: '2026-11-02',
+        recordatorio_texto: 'Enviar presupuesto',
+      }),
+    ),
+  )
 })
 
 test('con una marca y sin campaña envía la marca (RN-018)', async () => {
   mockFetch()
   const onSave = vi.fn().mockResolvedValue(undefined)
-  render(<InteraccionForm clientes={clientes} onSave={onSave} onCancel={vi.fn()} />)
-  fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: '1' } })
+  render(<InteraccionForm cliente={central} onSave={onSave} onCancel={vi.fn()} />)
   await screen.findByRole('option', { name: 'Marca Sol' })
   fireEvent.change(screen.getByLabelText('Marca (opcional)'), { target: { value: '31' } })
-  fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: 'Antes de la campaña' } })
+  fireEvent.change(screen.getByLabelText('Asunto (opcional)'), {
+    target: { value: 'Antes de la campaña' },
+  })
   fireEvent.click(within(formulario()).getByRole('button', { name: 'Guardar interacción' }))
   await waitFor(() =>
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ marca: 31, campania: null })),
@@ -179,8 +214,7 @@ test('con una marca y sin campaña envía la marca (RN-018)', async () => {
 
 test('con una marca elegida solo ofrece las campañas de esa marca (RN-018)', async () => {
   mockFetch()
-  render(<InteraccionForm clientes={clientes} onSave={vi.fn()} onCancel={vi.fn()} />)
-  fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: '1' } })
+  render(<InteraccionForm cliente={central} onSave={vi.fn()} onCancel={vi.fn()} />)
   expect(await screen.findByRole('option', { name: 'Otoño 2027' })).toBeDefined()
   fireEvent.change(screen.getByLabelText('Marca (opcional)'), { target: { value: '31' } })
   expect(screen.getByRole('option', { name: 'Verano 2027' })).toBeDefined()
@@ -190,8 +224,7 @@ test('con una marca elegida solo ofrece las campañas de esa marca (RN-018)', as
 test('elegir otra marca limpia una campaña que no es de esa marca (RN-018)', async () => {
   mockFetch()
   const onSave = vi.fn().mockResolvedValue(undefined)
-  render(<InteraccionForm clientes={clientes} onSave={onSave} onCancel={vi.fn()} />)
-  fireEvent.change(screen.getByLabelText('Cliente'), { target: { value: '1' } })
+  render(<InteraccionForm cliente={central} onSave={onSave} onCancel={vi.fn()} />)
   await screen.findByRole('option', { name: 'Otoño 2027' })
   fireEvent.change(screen.getByLabelText('Campaña (opcional)'), { target: { value: '23' } })
   fireEvent.change(screen.getByLabelText('Marca (opcional)'), { target: { value: '31' } })
@@ -206,7 +239,7 @@ test('muestra los errores de campo y el mensaje de la API', async () => {
   const onSave = vi
     .fn()
     .mockRejectedValue(new ApiError(400, { asunto: ['Este campo no puede estar en blanco.'] }))
-  render(<InteraccionForm clientes={clientes} onSave={onSave} onCancel={vi.fn()} />)
+  render(<InteraccionForm cliente={central} onSave={onSave} onCancel={vi.fn()} />)
   fireEvent.click(within(formulario()).getByRole('button', { name: 'Guardar interacción' }))
   expect(await screen.findByText('Este campo no puede estar en blanco.')).toBeDefined()
   expect(screen.getByRole('alert').textContent).toBe('No se pudo completar la operación.')
@@ -215,7 +248,7 @@ test('muestra los errores de campo y el mensaje de la API', async () => {
 test('cancelar avisa al padre', () => {
   mockFetch()
   const onCancel = vi.fn()
-  render(<InteraccionForm clientes={clientes} onSave={vi.fn()} onCancel={onCancel} />)
+  render(<InteraccionForm cliente={central} onSave={vi.fn()} onCancel={onCancel} />)
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
   expect(onCancel).toHaveBeenCalled()
 })

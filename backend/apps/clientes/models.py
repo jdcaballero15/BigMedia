@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from typing import Any
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.functions import Lower
 
@@ -59,9 +60,9 @@ class GrupoEconomico(models.Model):
 
 class Cliente(models.Model):
     class Tipo(models.TextChoices):
-        DIRECTO = "directo", "Directo"
-        INTERMEDIARIO = "intermediario", "Intermediario"
-        INTERMEDIARIO_FORMAL = "intermediario_formal", "Intermediario formal"
+        DIRECTO = "directo", "Cliente directo"
+        INTERMEDIARIO = "intermediario", "Intermediario (bolsero)"
+        INTERMEDIARIO_FORMAL = "intermediario_formal", "Central de medios"
 
     nombre = models.CharField(max_length=160, blank=True)
     razon_social = models.CharField("razón social", max_length=200, blank=True)
@@ -132,12 +133,20 @@ class Marca(models.Model):
 
 
 class Contacto(models.Model):
-    """Persona con quien se habla en un cliente intermediario formal (HU-068, RN-015).
+    """Persona con quien se habla en una central de medios (HU-068, RN-015).
 
     No lleva datos de facturación, que siguen en el cliente. No se borra: se inactiva (HU-006).
     """
 
+    class Rol(models.TextChoices):
+        PLANIFICADOR = "planificador", "Planificador"
+        ASISTENTE = "asistente", "Asistente"
+
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name="contactos")
+    rol = models.CharField(max_length=16, choices=Rol.choices, default=Rol.PLANIFICADOR)
+    planificador = models.ForeignKey(
+        "self", on_delete=models.PROTECT, related_name="asistentes", null=True, blank=True
+    )
     nombre = models.CharField(max_length=160)
     cargo = models.CharField("cargo o área", max_length=120, blank=True)
     correo = models.EmailField(blank=True)
@@ -149,7 +158,7 @@ class Contacto(models.Model):
     actualizado_en = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-principal", "nombre", "id"]
+        ordering = ["rol", "-principal", "nombre", "id"]
         constraints = [
             models.UniqueConstraint(
                 fields=["cliente"],
@@ -162,7 +171,41 @@ class Contacto(models.Model):
                 name="contacto_principal_activo",
                 violation_error_message="Un contacto inactivo no puede ser el principal.",
             ),
+            models.CheckConstraint(
+                condition=models.Q(rol="planificador", planificador__isnull=True)
+                | models.Q(rol="asistente", planificador__isnull=False),
+                name="contacto_rol_planificador_coherente",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(rol="asistente", principal=True),
+                name="contacto_asistente_no_principal",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(planificador=models.F("id")),
+                name="contacto_no_es_su_planificador",
+            ),
         ]
 
     def __str__(self) -> str:
         return self.nombre
+
+    def clean(self) -> None:
+        super().clean()
+        planificador = self.planificador
+        if (
+            self.rol == self.Rol.ASISTENTE
+            and planificador is not None
+            and (
+                planificador.pk == self.pk
+                or planificador.cliente_id != self.cliente_id
+                or planificador.rol != self.Rol.PLANIFICADOR
+                or not planificador.activo
+            )
+        ):
+            raise ValidationError({"planificador": "Elegí un planificador activo de esta central."})
+        if (
+            self.pk
+            and self.asistentes.filter(activo=True).exists()
+            and (not self.activo or self.rol != self.Rol.PLANIFICADOR)
+        ):
+            raise ValidationError({"rol": "Inactivá o reasigná antes sus asistentes activos."})

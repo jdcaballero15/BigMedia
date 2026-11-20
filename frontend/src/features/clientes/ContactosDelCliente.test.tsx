@@ -22,7 +22,15 @@ const central: Cliente = {
   correo: '',
   activo: true,
 }
-const base = { cliente: 4, cargo: '', correo: '', telefono: '', notas: '' }
+const base = {
+  cliente: 4,
+  cargo: '',
+  correo: '',
+  telefono: '',
+  notas: '',
+  rol: 'planificador' as const,
+  planificador: null,
+}
 const ana: Contacto = {
   ...base,
   id: 1,
@@ -33,6 +41,27 @@ const ana: Contacto = {
 }
 const beto: Contacto = { ...base, id: 2, nombre: 'Beto', principal: false, activo: true }
 const caro: Contacto = { ...base, id: 3, nombre: 'Caro', principal: false, activo: false }
+
+test('muestra a cada asistente debajo de su planificador', async () => {
+  const asistente: Contacto = {
+    ...base,
+    id: 5,
+    nombre: 'Dani',
+    rol: 'asistente',
+    planificador: ana.id,
+    principal: false,
+    activo: true,
+  }
+  mockFetch((url) => (url === LISTA ? ok([asistente, beto, ana]) : undefined))
+  render(<ContactosDelCliente cliente={central} />)
+  const lista = await screen.findByRole('list', { name: 'Contactos' })
+  expect(
+    within(lista)
+      .getAllByRole('listitem')
+      .map((fila) => fila.querySelector('strong')?.textContent),
+  ).toEqual(['Ana', 'Dani', 'Beto'])
+  expect(within(lista).getByText('Asistente de Ana')).toBeDefined()
+})
 
 type Route = (url: string, options?: RequestInit) => unknown
 
@@ -96,11 +125,33 @@ test('da de alta un contacto con el cliente', async () => {
         correo: '',
         telefono: '',
         notas: 'Llamar a la tarde',
+        rol: 'planificador',
+        planificador: null,
         principal: true,
         cliente: 4,
       },
     ],
   ])
+})
+
+test('carga un asistente con el planificador elegido', async () => {
+  const fetchMock = mockFetch((url, options) =>
+    url === URL && options?.method === 'POST' ? ok(beto) : undefined,
+  )
+  render(<ContactosDelCliente cliente={central} />)
+  fireEvent.click(await screen.findByRole('button', { name: 'Nuevo contacto' }))
+  fireEvent.change(screen.getByLabelText('Rol'), { target: { value: 'asistente' } })
+  fireEvent.change(screen.getByLabelText('Planificador'), { target: { value: '1' } })
+  fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Dani' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar contacto' }))
+  await waitFor(() => expect(escrituras(fetchMock)).toHaveLength(1))
+  expect(escrituras(fetchMock)[0][2]).toMatchObject({
+    cliente: 4,
+    nombre: 'Dani',
+    rol: 'asistente',
+    planificador: 1,
+    principal: false,
+  })
 })
 
 test('edita un contacto con PATCH y muestra los errores del servidor', async () => {

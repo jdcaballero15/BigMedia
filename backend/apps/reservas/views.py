@@ -23,7 +23,6 @@ from . import services
 from .models import ParametrosDisponibilidad, Reserva
 from .serializers import (
     CampaniaDeReservasSerializer,
-    MoverPendientesSerializer,
     ParametrosDisponibilidadSerializer,
     ReservasEnBloqueSerializer,
     ReservaSerializer,
@@ -56,59 +55,52 @@ class ReservaViewSet(viewsets.ModelViewSet[Reserva]):
     serializer_class = ReservaSerializer
 
     def perform_create(self, serializer: BaseSerializer[Reserva]) -> None:
-        estado = serializer.validated_data.get("estado", Reserva.Estado.PENDIENTE)
-        necesita = services.necesita_validar_cupo(None, estado, cambia_ocupacion=True)
-        self._guardar_con_disponibilidad(serializer, necesita)
+        # Nace Confirmada (HU-035): siempre valida el cupo.
+        self._guardar_con_disponibilidad(serializer, necesita=True)
 
     @action(detail=False, methods=["post"], url_path="en-bloque")
     def en_bloque(self, request: Request) -> Response:
-        """Una reserva Pendiente por cartel de la tanda (HU-057)."""
+        """Una reserva Confirmada por cartel de la tanda, si tiene cupo (HU-057)."""
         entrada = ReservasEnBloqueSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
         datos = entrada.validated_data
-        return Response(
-            services.crear_reservas_en_bloque(
-                datos["campania"], datos["carteles"], datos["fecha_inicio"], datos["fecha_fin"]
-            )
-        )
-
-    @action(detail=False, methods=["post"], url_path="confirmar-en-bloque")
-    def confirmar_en_bloque(self, request: Request) -> Response:
-        """Confirma las Pendientes de la campaña que entran y lista los conflictos (HU-059)."""
-        entrada = CampaniaDeReservasSerializer(data=request.data)
-        entrada.is_valid(raise_exception=True)
         try:
-            resultado = services.confirmar_reservas_de_campania(
-                entrada.validated_data["campania"], request.user
+            resultado = services.crear_reservas_en_bloque(
+                datos["campania"], datos["carteles"], datos["fecha_inicio"], datos["fecha_fin"]
             )
         except DjangoValidationError as error:
             raise ValidationError(error.message_dict) from error
         return Response(resultado)
 
-    @action(detail=False, methods=["post"], url_path="mover-pendientes")
-    def mover_pendientes(self, request: Request) -> Response:
-        """Lleva las Pendientes a las fechas nuevas de la campaña (HU-058, criterio 3)."""
-        entrada = MoverPendientesSerializer(data=request.data)
+    @action(detail=False, methods=["post"], url_path="cancelar-campania")
+    def cancelar_campania(self, request: Request) -> Response:
+        """Cancela la campaña y sus reservas en una sola transacción (HU-024, RN-006)."""
+        entrada = CampaniaDeReservasSerializer(data=request.data)
         entrada.is_valid(raise_exception=True)
-        datos = entrada.validated_data
         try:
-            movidas = services.mover_pendientes(
-                datos["campania"],
-                datos["fecha_inicio_anterior"],
-                datos["fecha_fin_anterior"],
-                request.user,
+            resultado = services.cancelar_campania(
+                entrada.validated_data["campania"].pk, request.user
             )
         except DjangoValidationError as error:
             raise ValidationError(error.message_dict) from error
-        return Response({"movidas": movidas})
+        return Response(resultado)
+
+    @action(detail=True, methods=["post"])
+    def quitar(self, request: Request, pk: str) -> Response:
+        """Saca la reserva de su campaña: la cancela o la termina hoy (HU-037, RN-006)."""
+        reserva = get_object_or_404(self.get_queryset(), pk=pk)
+        try:
+            actualizada = services.quitar_reserva(reserva.pk, request.user)
+        except DjangoValidationError as error:
+            raise ValidationError(error.message_dict) from error
+        return Response(self.get_serializer(actualizada).data)
 
     def perform_update(self, serializer: BaseSerializer[Reserva]) -> None:
         datos = serializer.validated_data
         instancia = cast(Reserva, serializer.instance)
-        nuevo_estado = datos.get("estado", instancia.estado)
         cambia_ocupacion = any(c in datos for c in ("fecha_inicio", "fecha_fin", "cartel"))
-        # No se revalida si solo cambia un precio (matriz caso 13).
-        necesita = services.necesita_validar_cupo(instancia.estado, nuevo_estado, cambia_ocupacion)
+        # No se revalida si solo cambia un precio (matriz caso 13) ni si está Cancelada.
+        necesita = cambia_ocupacion and instancia.estado != Reserva.Estado.CANCELADA
         # El cambio y su auditoría en la misma transacción: nunca un cambio sin su registro.
         anteriores = _campos_auditados(instancia)
         with transaction.atomic():
@@ -310,30 +302,49 @@ def _fecha_requerida(valor: str | None, campo: str) -> date:
         raise ValidationError({campo: "Formato de fecha inválido (AAAA-MM-DD)."}) from error
 
 
+def _parametros_de_tanda(
+    request: Request,
+) -> tuple[Campania | None, Formato, date, date, dict[str, Any]]:
+    """Campaña, formato, rango y filtros de "Agregar carteles", validados (HU-056, HU-071).
+
+    La campaña es opcional: en el alta todavía no existe y se eligen carteles antes de guardarla.
+    """
+    params = request.query_params
+    campania = (
+        get_object_or_404(Campania, pk=_id_positivo(params["campania"], "campania"))
+        if "campania" in params
+        else None
+    )
+    formato = get_object_or_404(Formato, pk=_id_positivo(params.get("formato", ""), "formato"))
+    desde = _fecha_requerida(params.get("desde"), "desde")
+    hasta = _fecha_requerida(params.get("hasta"), "hasta")
+    if hasta < desde:
+        raise ValidationError({"hasta": "La fecha de fin no puede ser anterior a la de inicio."})
+    filtros: dict[str, Any] = {
+        campo: _id_positivo(params[campo], campo)
+        for campo in ("zona", "proveedor")
+        if params.get(campo)
+    }
+    filtros["direccion"] = params.get("q", "")
+    return campania, formato, desde, hasta, filtros
+
+
 class CartelesParaTandaView(APIView):
     """Carteles de un formato con cupo libre en el rango, para "Agregar carteles" (HU-056)."""
 
     permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
 
     def get(self, request: Request) -> Response:
-        params = request.query_params
-        campania = get_object_or_404(
-            Campania, pk=_id_positivo(params.get("campania", ""), "campania")
-        )
-        formato = get_object_or_404(Formato, pk=_id_positivo(params.get("formato", ""), "formato"))
-        desde = _fecha_requerida(params.get("desde"), "desde")
-        hasta = _fecha_requerida(params.get("hasta"), "hasta")
-        if hasta < desde:
-            raise ValidationError(
-                {"hasta": "La fecha de fin no puede ser anterior a la de inicio."}
-            )
-        filtros: dict[str, Any] = {
-            campo: _id_positivo(params[campo], campo)
-            for campo in ("zona", "proveedor")
-            if params.get(campo)
-        }
-        filtros["direccion"] = params.get("q", "")
-        return Response(services.carteles_para_tanda(campania, formato, desde, hasta, filtros))
+        return Response(services.carteles_para_tanda(*_parametros_de_tanda(request)))
+
+
+class PosicionesView(APIView):
+    """Carteles de un formato con sus casilleros por slot, para la vista Posiciones (HU-071)."""
+
+    permission_classes = [permissions.IsAuthenticated, LecturaConSesionEdicionOperativo]
+
+    def get(self, request: Request) -> Response:
+        return Response(services.posiciones_de_formato(*_parametros_de_tanda(request)))
 
 
 class SeguimientoView(APIView):
@@ -350,7 +361,6 @@ class SeguimientoView(APIView):
 def _parametros_auditados(parametros: ParametrosDisponibilidad) -> dict[str, str]:
     return {
         "borde_inclusivo": str(parametros.borde_inclusivo),
-        "tentativa_bloquea": str(parametros.tentativa_bloquea),
         "permitir_fecha_pasada": str(parametros.permitir_fecha_pasada),
     }
 

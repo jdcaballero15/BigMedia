@@ -114,11 +114,12 @@ erDiagram
     Cliente ||--o{ Marca : "cliente"
     Rubro |o--o{ Marca : "rubro"
     Cliente ||--o{ Contacto : "cliente"
+    Contacto |o--o{ Contacto : "planificador de asistentes"
     Cliente {
         string nombre
         string razon_social
         string cuit
-        string tipo "directo, intermediario o intermediario formal"
+        string tipo "cliente directo, intermediario (bolsero) o central de medios"
         string telefono
         string correo
         bool activo
@@ -133,6 +134,8 @@ erDiagram
     }
     Contacto {
         string nombre
+        string rol "planificador o asistente"
+        int planificador_id "solo asistentes"
         string cargo
         string correo
         string telefono
@@ -146,7 +149,7 @@ erDiagram
 | `Cliente` | A quién se le factura | `nombre`, `razon_social`, `cuit`, `tipo` | Todo es opcional. El CUIT se valida (dígito verificador) y es único si está cargado. Sin nombre se muestra "Cliente sin nombre #id" |
 | `Marca` | Marca que se anuncia, de un cliente | `cliente`, `rubro` (opcional) | Una campaña sin cliente propio factura al cliente de su marca (RN-014) |
 | `Rubro` | Categoría de la marca, para reportes | `nombre` | Nombre único |
-| `Contacto` | Persona de un intermediario formal | `cliente`, `principal` | Solo en clientes intermediario formal (RN-015). Un solo principal por cliente, y tiene que estar activo |
+| `Contacto` | Planificador o asistente de una central de medios | `cliente`, `rol`, `planificador`, `principal` | Solo en centrales de medios (RN-015). Cada asistente activo depende de un planificador activo de la misma central. Un solo planificador principal por cliente, y tiene que estar activo |
 
 ## `campanias`
 

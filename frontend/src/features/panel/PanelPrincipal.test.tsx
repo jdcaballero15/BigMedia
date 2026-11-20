@@ -4,6 +4,15 @@ import PanelPrincipal from './PanelPrincipal'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 
+/** El Panel pide sus cifras y, aparte, los recordatorios (HU-072). */
+function fetchDelPanel(panel: unknown, recordatorios: unknown[] = []) {
+  return vi.fn(async (input: string) => {
+    if (input === '/api/reservas/panel/') return ok(panel)
+    if (input === '/api/campanias/interacciones/?recordatorio=pendiente') return ok(recordatorios)
+    throw new Error(`URL inesperada: ${input}`)
+  })
+}
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
@@ -12,23 +21,21 @@ afterEach(() => {
 test('muestra los contadores y las reservas por vencer', async () => {
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue(
-      ok({
-        carteles_libres: 3,
-        carteles_ocupados: 2,
-        campanias_activas: 4,
-        por_vencer: [
-          {
-            id: 1,
-            nombre: 'McDonalds - Centro - Nov 2026',
-            cartel_nombre: 'Centro',
-            campania: 9,
-            fecha_inicio: '2026-11-01',
-            fecha_fin: '2026-11-15',
-          },
-        ],
-      }),
-    ),
+    fetchDelPanel({
+      carteles_libres: 3,
+      carteles_ocupados: 2,
+      campanias_activas: 4,
+      por_vencer: [
+        {
+          id: 1,
+          nombre: 'McDonalds - Centro - Nov 2026',
+          cartel_nombre: 'Centro',
+          campania: 9,
+          fecha_inicio: '2026-11-01',
+          fecha_fin: '2026-11-15',
+        },
+      ],
+    }),
   )
   render(<PanelPrincipal />)
   expect(await screen.findByText('McDonalds - Centro - Nov 2026')).toBeDefined()
@@ -39,11 +46,12 @@ test('muestra los contadores y las reservas por vencer', async () => {
 test('panel_cifras_salenDeLaApiConElPorcentajeDeOcupacion', async () => {
   vi.stubGlobal(
     'fetch',
-    vi
-      .fn()
-      .mockResolvedValue(
-        ok({ carteles_libres: 3, carteles_ocupados: 1, campanias_activas: 7, por_vencer: [] }),
-      ),
+    fetchDelPanel({
+      carteles_libres: 3,
+      carteles_ocupados: 1,
+      campanias_activas: 7,
+      por_vencer: [],
+    }),
   )
   render(<PanelPrincipal />)
 
@@ -63,17 +71,15 @@ test('panel_reservaQueVenceHoy_llevaLaEtiquetaSoloEsa', async () => {
   const reserva = { campania: 1, cartel_nombre: 'Centro', fecha_inicio: '2026-10-01' }
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue(
-      ok({
-        carteles_libres: 0,
-        carteles_ocupados: 0,
-        campanias_activas: 0,
-        por_vencer: [
-          { ...reserva, id: 1, nombre: 'Vence hoy SA', fecha_fin: '2026-10-28' },
-          { ...reserva, id: 2, nombre: 'Vence mañana SA', fecha_fin: '2026-10-29' },
-        ],
-      }),
-    ),
+    fetchDelPanel({
+      carteles_libres: 0,
+      carteles_ocupados: 0,
+      campanias_activas: 0,
+      por_vencer: [
+        { ...reserva, id: 1, nombre: 'Vence hoy SA', fecha_fin: '2026-10-28' },
+        { ...reserva, id: 2, nombre: 'Vence mañana SA', fecha_fin: '2026-10-29' },
+      ],
+    }),
   )
   try {
     render(<PanelPrincipal />)
@@ -88,4 +94,19 @@ test('panel_reservaQueVenceHoy_llevaLaEtiquetaSoloEsa', async () => {
   } finally {
     vi.useRealTimers()
   }
+})
+
+test('el panel suma el bloque de recordatorios', async () => {
+  vi.stubGlobal(
+    'fetch',
+    fetchDelPanel({
+      carteles_libres: 0,
+      carteles_ocupados: 0,
+      campanias_activas: 0,
+      por_vencer: [],
+    }),
+  )
+  render(<PanelPrincipal />)
+  expect(await screen.findByRole('heading', { name: 'Recordatorios' })).toBeDefined()
+  expect(await screen.findByText('No hay recordatorios para hoy.')).toBeDefined()
 })

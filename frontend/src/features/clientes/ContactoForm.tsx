@@ -10,30 +10,43 @@ export type ContactoInput = {
   correo: string
   telefono: string
   notas: string
+  rol: 'planificador' | 'asistente'
+  planificador: number | null
   principal: boolean
 }
 
 type Props = {
   contacto?: Contacto | null
+  planificadores: Contacto[]
   onSave: (input: ContactoInput) => Promise<void>
   onCancel: () => void
 }
 
-export default function ContactoForm({ contacto, onSave, onCancel }: Props) {
+export default function ContactoForm({ contacto, planificadores, onSave, onCancel }: Props) {
   const [nombre, setNombre] = useState(contacto?.nombre ?? '')
   const [cargo, setCargo] = useState(contacto?.cargo ?? '')
   const [correo, setCorreo] = useState(contacto?.correo ?? '')
   const [telefono, setTelefono] = useState(contacto?.telefono ?? '')
   const [notas, setNotas] = useState(contacto?.notas ?? '')
   const [principal, setPrincipal] = useState(contacto?.principal ?? false)
+  const [rol, setRol] = useState(contacto?.rol ?? 'planificador')
+  const [planificador, setPlanificador] = useState(contacto?.planificador ?? null)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
   const [saving, setSaving] = useState(false)
+  const hayPlanificadorActivo = planificadores.some((opcion) => opcion.activo)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setErrors({})
     setGeneralError('')
+    const planificadorDisponible = planificadores.some(
+      (opcion) => opcion.id === planificador && opcion.activo,
+    )
+    if (rol === 'asistente' && !planificadorDisponible) {
+      setErrors({ planificador: ['Primero agregá un planificador activo en esta central.'] })
+      return
+    }
     setSaving(true)
     try {
       await onSave({
@@ -42,7 +55,9 @@ export default function ContactoForm({ contacto, onSave, onCancel }: Props) {
         correo: correo.trim(),
         telefono: telefono.trim(),
         notas: notas.trim(),
-        principal,
+        rol,
+        planificador: rol === 'asistente' ? planificador : null,
+        principal: rol === 'planificador' && principal,
       })
     } catch (cause) {
       if (cause instanceof ApiError) setErrors(cause.fields)
@@ -66,6 +81,44 @@ export default function ContactoForm({ contacto, onSave, onCancel }: Props) {
         </button>
       </div>
       <div className="form-grid">
+        <label>
+          Rol
+          <select value={rol} onChange={(event) => setRol(event.target.value as Contacto['rol'])}>
+            <option value="planificador">Planificador</option>
+            <option
+              value="asistente"
+              disabled={!hayPlanificadorActivo && contacto?.rol !== 'asistente'}
+            >
+              Asistente
+            </option>
+          </select>
+          <FieldErrors messages={errors.rol} />
+          {!hayPlanificadorActivo && (
+            <small className="campo-ayuda">
+              Primero agregá un planificador para poder cargar asistentes.
+            </small>
+          )}
+        </label>
+        {rol === 'asistente' && (
+          <label>
+            Planificador
+            <select
+              value={planificador ?? ''}
+              onChange={(event) => setPlanificador(Number(event.target.value) || null)}
+              required
+            >
+              <option value="">Elegí un planificador</option>
+              {planificadores
+                .filter((opcion) => opcion.activo && opcion.id !== contacto?.id)
+                .map((opcion) => (
+                  <option key={opcion.id} value={opcion.id}>
+                    {opcion.nombre}
+                  </option>
+                ))}
+            </select>
+            <FieldErrors messages={errors.planificador} />
+          </label>
+        )}
         <label>
           Nombre
           <input value={nombre} onChange={(event) => setNombre(event.target.value)} required />
@@ -91,7 +144,7 @@ export default function ContactoForm({ contacto, onSave, onCancel }: Props) {
           <textarea value={notas} onChange={(event) => setNotas(event.target.value)} />
           <FieldErrors messages={errors.notas} />
         </label>
-        {(contacto?.activo ?? true) && (
+        {rol === 'planificador' && (contacto?.activo ?? true) && (
           <label className="checkline">
             <input
               type="checkbox"

@@ -95,7 +95,7 @@ class MarcaViewSet(ClientesBaseViewSet):
 
 
 class ContactoViewSet(ClientesBaseViewSet):
-    """Contactos de un intermediario formal (HU-068); sin DELETE, se inactivan."""
+    """Contactos de una central de medios (HU-068); sin DELETE, se inactivan."""
 
     queryset = Contacto.objects.all()
     serializer_class = ContactoSerializer

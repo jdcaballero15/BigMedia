@@ -18,35 +18,26 @@ from config.texto import normalizar_busqueda
 
 from .models import MESES_ABREV, ParametrosDisponibilidad, Reserva
 
-# Transiciones de estado válidas del ciclo de vida de la reserva (HU-035).
-# La revalidación de cupo al confirmar/reactivar es de la unidad del motor (HU-031).
-TRANSICIONES: dict[str, set[str]] = {
-    Reserva.Estado.PENDIENTE: {Reserva.Estado.CONFIRMADA, Reserva.Estado.CANCELADA},
-    Reserva.Estado.CONFIRMADA: {Reserva.Estado.FINALIZADA, Reserva.Estado.CANCELADA},
-    Reserva.Estado.CANCELADA: {Reserva.Estado.CONFIRMADA},
-    Reserva.Estado.FINALIZADA: set(),
-}
+# Estados que ocupan cupo de forma dura y por eso cuentan en la validación (HU-031). Desde el
+# 2026-11-17 no hay Pendientes: toda reserva nace Confirmada y su estado lo lleva el sistema
+# (HU-035); RN-002 quedó sin efecto.
+ESTADOS_QUE_BLOQUEAN = {Reserva.Estado.CONFIRMADA.value, Reserva.Estado.FINALIZADA.value}
 
 
-def validar_transicion(actual: str, nuevo: str) -> None:
-    if nuevo == actual:
-        return
-    if nuevo not in TRANSICIONES.get(actual, set()):
-        raise ValidationError({"estado": f"No se puede pasar de {actual} a {nuevo}."})
+def validar_campania_admite_reservas(campania: Campania) -> None:
+    """Una campaña Cancelada no admite reservas nuevas (HU-024)."""
+    if campania.estado == Campania.Estado.CANCELADA:
+        raise ValidationError({"campania": "La campaña está cancelada: no admite reservas."})
 
 
-# Una reserva nace Pendiente o Confirmada (HU-035); las históricas Finalizadas entran por HU-038.
-ESTADOS_INICIALES = {Reserva.Estado.PENDIENTE, Reserva.Estado.CONFIRMADA}
+def estado_visible(reserva: Reserva) -> str:
+    """El estado que se muestra: una Confirmada que ya terminó es Finalizada (HU-036).
 
-# Estados que ocupan cupo de forma dura y por eso pasan por la validación (HU-031).
-ESTADOS_CON_VALIDACION_DURA = {Reserva.Estado.CONFIRMADA, Reserva.Estado.FINALIZADA}
-
-
-def validar_estado_inicial(estado: str) -> None:
-    if estado not in ESTADOS_INICIALES:
-        raise ValidationError(
-            {"estado": "Una reserva nueva solo puede crearse Pendiente o Confirmada."}
-        )
+    Se calcula por fecha, sin tarea programada: el estado guardado no cambia.
+    """
+    if reserva.estado == Reserva.Estado.CONFIRMADA and reserva.fecha_fin < hoy():
+        return Reserva.Estado.FINALIZADA.value
+    return reserva.estado
 
 
 def hoy() -> date:
@@ -76,24 +67,11 @@ def validar_cartel_reservable(cartel: Cartel) -> None:
 
 
 def filtrar_vigentes(reservas: QuerySet[Reserva], dia: date | None = None) -> QuerySet[Reserva]:
-    """Reservas activas: Pendientes y Confirmadas que no terminaron (HU-039)."""
+    """Reservas activas: Confirmadas que no terminaron (HU-039)."""
     dia = dia or timezone.localdate()
-    return reservas.filter(
-        estado__in=(Reserva.Estado.PENDIENTE, Reserva.Estado.CONFIRMADA),
-        fecha_fin__gte=dia,
-    ).order_by("fecha_inicio", "id")
-
-
-def necesita_validar_cupo(anterior: str | None, nuevo: str, cambia_ocupacion: bool) -> bool:
-    """Si guardar la reserva exige validar el cupo. `anterior` es None en un alta.
-
-    Valida cuando la reserva queda ocupando de forma dura y antes no lo hacía, o cuando ya
-    ocupaba y cambian sus fechas o su cartel. Confirmada -> Finalizada sin otros cambios no
-    revalida: ese cupo ya estaba validado.
-    """
-    if nuevo not in ESTADOS_CON_VALIDACION_DURA:
-        return False
-    return anterior not in ESTADOS_CON_VALIDACION_DURA or cambia_ocupacion
+    return reservas.filter(estado=Reserva.Estado.CONFIRMADA, fecha_fin__gte=dia).order_by(
+        "fecha_inicio", "id"
+    )
 
 
 def ocupacion_del_cartel(cartel: Cartel, dia: date | None = None) -> dict[str, int]:
@@ -402,14 +380,6 @@ def parametros_disponibilidad() -> ParametrosDisponibilidad:
     return parametros
 
 
-def _estados_que_bloquean(tentativa_bloquea: bool) -> set[str]:
-    """Estados que ocupan cupo para el bloqueo duro (RN-002)."""
-    estados: set[str] = {Reserva.Estado.CONFIRMADA.value, Reserva.Estado.FINALIZADA.value}
-    if tentativa_bloquea:
-        estados.add(Reserva.Estado.PENDIENTE.value)
-    return estados
-
-
 def _fin_efectivo(fin: date, borde_inclusivo: bool) -> date:
     """Último día que la reserva ocupa el cartel según el día de borde (RN-001)."""
     return fin if borde_inclusivo else fin - timedelta(days=1)
@@ -427,9 +397,7 @@ def conflictos_de(reserva: Reserva) -> list[Reserva]:
     borde = parametros.borde_inclusivo
     fin_nueva = _fin_efectivo(reserva.fecha_fin, borde)
     otras = (
-        Reserva.objects.filter(
-            cartel=reserva.cartel, estado__in=_estados_que_bloquean(parametros.tentativa_bloquea)
-        )
+        Reserva.objects.filter(cartel=reserva.cartel, estado__in=ESTADOS_QUE_BLOQUEAN)
         .exclude(pk=reserva.pk)
         .select_related("campania")
     )
@@ -590,30 +558,29 @@ def _reservas_por_cartel(
         estado__in=Reserva.ESTADOS_QUE_OCUPAN,
         fecha_inicio__lte=hasta,
         fecha_fin__gte=desde,
-    )
+    ).select_related("campania__marca")
     por_cartel: dict[int, list[Reserva]] = {}
     for reserva in reservas:
         por_cartel.setdefault(reserva.cartel_id, []).append(reserva)
     return por_cartel
 
 
+def _es_de(reserva: Reserva, campania: Campania | None) -> bool:
+    """Si la reserva es de la campaña; sin campaña (alta sin guardar) ninguna lo es."""
+    return campania is not None and reserva.campania_id == campania.pk
+
+
 def _fila_tanda(
     cartel: Cartel,
     solapadas: list[Reserva],
-    campania: Campania,
+    campania: Campania | None,
     rango: tuple[date, date],
     parametros: ParametrosDisponibilidad,
 ) -> dict[str, Any] | None:
     """Fila de "Agregar carteles", o None si el cartel no tiene cupo libre en el rango."""
-    bloquean = _estados_que_bloquean(parametros.tentativa_bloquea)
-    ocupados = _pico_en_rango(
-        [r for r in solapadas if r.estado in bloquean], *rango, parametros.borde_inclusivo
-    )
+    ocupados = _pico_en_rango(solapadas, *rango, parametros.borde_inclusivo)
     if ocupados >= cartel.capacidad:
         return None
-    tentativas = sum(
-        1 for r in solapadas if r.estado not in bloquean and r.campania_id != campania.pk
-    )
     return {
         "id": cartel.pk,
         "nombre_visible": cartel.nombre_visible,
@@ -622,28 +589,12 @@ def _fila_tanda(
         "tarifa_lista": str(cartel.tarifa_lista) if cartel.tarifa_lista is not None else None,
         "capacidad": cartel.capacidad,
         "ocupados": ocupados,
-        "tentativas": tentativas,
-        "en_campania": any(r.campania_id == campania.pk for r in solapadas),
+        "en_campania": any(_es_de(r, campania) for r in solapadas),
     }
 
 
-def carteles_para_tanda(
-    campania: Campania,
-    formato: Formato,
-    desde: date,
-    hasta: date,
-    filtros: dict[str, Any] | None = None,
-) -> list[dict[str, Any]]:
-    """Carteles del formato con cupo libre en el rango, para "Agregar carteles" (HU-056).
-
-    "Libre" es lo mismo que exige la validación dura (HU-031): pico diario (RN-003), día de borde
-    (RN-001) y Pendientes según el parámetro (RN-002). Las Pendientes de otras campañas que no
-    bloquean se informan como `tentativas`; `en_campania` marca los que la campaña ya reservó.
-    `filtros` admite `zona`, `proveedor` (IDs) y `direccion` (parcial, sin tildes).
-    """
-    filtros = filtros or {}
-    parametros = parametros_disponibilidad()
-    fin = _fin_efectivo(hasta, parametros.borde_inclusivo)
+def _carteles_filtrados(formato: Formato, filtros: dict[str, Any]) -> QuerySet[Cartel]:
+    """Carteles operativos del formato que cumplen los filtros de "Agregar carteles"."""
     carteles = Cartel.objects.filter(formato=formato, estado__operativo=True, estado__es_baja=False)
     for campo in ("zona", "proveedor"):
         if filtros.get(campo) is not None:
@@ -651,20 +602,140 @@ def carteles_para_tanda(
     if filtros.get("direccion"):
         buscado = normalizar_busqueda(str(filtros["direccion"]).strip())
         carteles = carteles.filter(direccion_busqueda__icontains=buscado)
+    return carteles
+
+
+def _solapadas_en_rango(
+    reservas: list[Reserva], desde: date, fin: date, borde_inclusivo: bool
+) -> list[Reserva]:
+    """Reservas que ocupan algún día de [desde, fin] según el día de borde (RN-001)."""
+    return [
+        r
+        for r in reservas
+        if r.fecha_inicio <= fin and desde <= _fin_efectivo(r.fecha_fin, borde_inclusivo)
+    ]
+
+
+def carteles_para_tanda(
+    campania: Campania | None,
+    formato: Formato,
+    desde: date,
+    hasta: date,
+    filtros: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Carteles del formato con cupo libre en el rango, para "Agregar carteles" (HU-056).
+
+    "Libre" es lo mismo que exige la validación dura (HU-031): pico diario (RN-003) y día de borde
+    (RN-001). `en_campania` marca los que la campaña ya reservó.
+    `filtros` admite `zona`, `proveedor` (IDs) y `direccion` (parcial, sin tildes).
+    """
+    parametros = parametros_disponibilidad()
+    fin = _fin_efectivo(hasta, parametros.borde_inclusivo)
+    carteles = _carteles_filtrados(formato, filtros or {})
     por_cartel = _reservas_por_cartel(carteles, desde, hasta)
     filas = []
     for cartel in carteles.select_related("formato", "zona", "proveedor").order_by(
         "direccion", "id"
     ):
-        solapadas = [
-            r
-            for r in por_cartel.get(cartel.pk, [])
-            if r.fecha_inicio <= fin
-            and desde <= _fin_efectivo(r.fecha_fin, parametros.borde_inclusivo)
-        ]
+        solapadas = _solapadas_en_rango(
+            por_cartel.get(cartel.pk, []), desde, fin, parametros.borde_inclusivo
+        )
         fila = _fila_tanda(cartel, solapadas, campania, (desde, fin), parametros)
         if fila is not None:
             filas.append(fila)
+    return filas
+
+
+def repartir_en_slots(
+    reservas: list[Reserva], capacidad: int, borde_inclusivo: bool
+) -> list[list[Reserva]]:
+    """Reparte reservas en `capacidad` casilleros con partición de intervalos (HU-071).
+
+    Ordenadas por inicio, cada reserva va al primer casillero que ya se liberó: reservas que se
+    suceden comparten casillero y se usan exactamente tantos como el pico diario (RN-003). Si hay
+    más solapadas que casilleros (sobreventa anterior a la validación), el resto va al último
+    casillero para no esconder ninguna.
+    """
+    slots: list[list[Reserva]] = [[] for _ in range(capacidad)]
+    for reserva in sorted(reservas, key=lambda r: (r.fecha_inicio, r.pk)):
+        destino = next(
+            (
+                slot
+                for slot in slots
+                if not slot
+                or _fin_efectivo(slot[-1].fecha_fin, borde_inclusivo) < reserva.fecha_inicio
+            ),
+            slots[-1],
+        )
+        destino.append(reserva)
+    return slots
+
+
+def _ocupante(reserva: Reserva, campania: Campania | None) -> dict[str, Any]:
+    """Datos de una reserva para un casillero de la vista Posiciones."""
+    marca = reserva.campania.marca
+    return {
+        "reserva_id": reserva.pk,
+        "marca_id": marca.pk if marca else None,
+        "marca_nombre": marca.nombre if marca else None,
+        "campania_id": reserva.campania_id,
+        "campania_nombre": reserva.campania.nombre,
+        "es_esta_campania": _es_de(reserva, campania),
+        "estado": reserva.estado,
+        "fecha_inicio": reserva.fecha_inicio.isoformat(),
+        "fecha_fin": reserva.fecha_fin.isoformat(),
+    }
+
+
+def _fila_posiciones(
+    cartel: Cartel,
+    solapadas: list[Reserva],
+    campania: Campania | None,
+    rango: tuple[date, date],
+    parametros: ParametrosDisponibilidad,
+) -> dict[str, Any]:
+    """Fila de la vista Posiciones: la de la tabla más los casilleros."""
+    ocupados = _pico_en_rango(solapadas, *rango, parametros.borde_inclusivo)
+    slots = repartir_en_slots(solapadas, cartel.capacidad, parametros.borde_inclusivo)
+    return {
+        "id": cartel.pk,
+        "nombre_visible": cartel.nombre_visible,
+        "direccion": cartel.direccion,
+        "zona_nombre": cartel.zona.nombre,
+        "proveedor_nombre": cartel.proveedor.nombre if cartel.proveedor else None,
+        "tarifa_lista": str(cartel.tarifa_lista) if cartel.tarifa_lista is not None else None,
+        "capacidad": cartel.capacidad,
+        "ocupados": ocupados,
+        "lleno": ocupados >= cartel.capacidad,
+        "en_campania": any(_es_de(r, campania) for r in solapadas),
+        "slots": [[_ocupante(r, campania) for r in slot] for slot in slots],
+    }
+
+
+def posiciones_de_formato(
+    campania: Campania | None,
+    formato: Formato,
+    desde: date,
+    hasta: date,
+    filtros: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Carteles del formato, llenos incluidos, con sus casilleros por slot (HU-071).
+
+    Mismo criterio de ocupado y mismos filtros que `carteles_para_tanda`; ordenados por zona y
+    dirección, como la planilla de posiciones.
+    """
+    parametros = parametros_disponibilidad()
+    fin = _fin_efectivo(hasta, parametros.borde_inclusivo)
+    carteles = _carteles_filtrados(formato, filtros or {})
+    por_cartel = _reservas_por_cartel(carteles, desde, hasta)
+    filas = []
+    for cartel in carteles.select_related("formato", "zona", "proveedor").order_by(
+        "zona__nombre", "direccion", "id"
+    ):
+        solapadas = _solapadas_en_rango(
+            por_cartel.get(cartel.pk, []), desde, fin, parametros.borde_inclusivo
+        )
+        filas.append(_fila_posiciones(cartel, solapadas, campania, (desde, fin), parametros))
     return filas
 
 
@@ -703,6 +774,14 @@ def _crear_en_tanda(
             fecha_fin=hasta,
             precio_alquiler=tarifa if tarifa is not None else Decimal("0.00"),
         )
+        # Nace Confirmada: se valida el cupo con el cartel ya bloqueado (HU-031, HU-034).
+        try:
+            validar_disponibilidad(reserva)
+        except ValidationError as error:
+            return "fallidas", {
+                "cartel": cartel_id,
+                "motivo": error.message_dict["disponibilidad"][0],
+            }
         reserva.save()
     return "creadas", {"cartel": cartel_id, "reserva": reserva.pk}
 
@@ -710,12 +789,13 @@ def _crear_en_tanda(
 def crear_reservas_en_bloque(
     campania: Campania, carteles: list[int], desde: date, hasta: date
 ) -> dict[str, list[dict[str, Any]]]:
-    """Una reserva Pendiente por cartel (HU-057), con la tarifa de lista y el nombre autogenerado.
+    """Una reserva Confirmada por cartel (HU-057), con la tarifa de lista y el nombre autogenerado.
 
     Es idempotente: una reserva no Cancelada de la misma campaña, cartel y fechas se informa como
-    existente y no se duplica. Cada cartel va en su propia transacción, así una falla no frena al
-    resto. Como en el alta individual, crear una Pendiente no valida cupo: eso pasa al confirmar.
+    existente y no se duplica. Cada cartel va en su propia transacción y valida su cupo con el
+    cartel bloqueado: el que no entra va a `fallidas` con el motivo y no frena al resto.
     """
+    validar_campania_admite_reservas(campania)
     resultado: dict[str, list[dict[str, Any]]] = {"creadas": [], "existentes": [], "fallidas": []}
     for cartel_id in dict.fromkeys(carteles):
         grupo, item = _crear_en_tanda(campania, cartel_id, desde, hasta)
@@ -723,112 +803,70 @@ def crear_reservas_en_bloque(
     return resultado
 
 
-def _conflicto(reserva: Reserva, culpables: list[Reserva]) -> dict[str, Any]:
-    campanias = {otra.campania_id: str(otra.campania) for otra in culpables}
-    return {
-        "reserva": reserva.pk,
-        "nombre": reserva.nombre,
-        "cartel_nombre": reserva.cartel.nombre_visible,
-        "fecha_inicio": reserva.fecha_inicio.isoformat(),
-        "fecha_fin": reserva.fecha_fin.isoformat(),
-        "ocupada_por": [
-            {"campania": pk, "campania_nombre": nombre} for pk, nombre in campanias.items()
-        ],
-    }
+def _quitar(reserva: Reserva, dia: date, usuario: AbstractBaseUser | AnonymousUser) -> str:
+    """Saca la reserva de su campaña (RN-006) y devuelve qué le pasó.
 
-
-def _confirmar_pendiente(
-    reserva_pk: int, usuario: AbstractBaseUser | AnonymousUser
-) -> tuple[bool, dict[str, Any] | None]:
-    """Confirma una Pendiente con el cartel bloqueado (HU-034).
-
-    Devuelve si se confirmó y, si no entra, su conflicto. Si mientras tanto dejó de estar
-    Pendiente, no se confirmó ni tiene conflicto.
+    Si todavía no empezó, se cancela. Si está en exhibición, termina `dia` y conserva los días
+    exhibidos. Acortar solo libera días, así que no revalida cupo. Queda en auditoría.
     """
+    anteriores = {"estado": reserva.estado, "fecha_fin": reserva.fecha_fin.isoformat()}
+    if reserva.fecha_inicio > dia:
+        reserva.estado = Reserva.Estado.CANCELADA
+        resultado = "canceladas"
+    else:
+        reserva.fecha_fin = dia
+        resultado = "terminadas"
+    reserva.save()
+    nuevos = {"estado": reserva.estado, "fecha_fin": reserva.fecha_fin.isoformat()}
+    auditoria_services.registrar_cambios("reserva", reserva.pk, anteriores, nuevos, usuario)
+    return resultado
+
+
+def quitar_reserva(reserva_pk: int, usuario: AbstractBaseUser | AnonymousUser) -> Reserva:
+    """La acción "Quitar" de una reserva suelta (HU-037): la cancela o la termina hoy."""
+    dia = hoy()
     with transaction.atomic():
-        cartel_pk = Reserva.objects.values_list("cartel_id", flat=True).get(pk=reserva_pk)
-        Cartel.objects.select_for_update().get(pk=cartel_pk)
-        # Se relee con el cartel bloqueado: otro pedido pudo haberla confirmado o cancelado.
-        reserva = Reserva.objects.select_related("cartel__formato", "campania__marca").get(
-            pk=reserva_pk
+        reserva = (
+            Reserva.objects.select_for_update(of=("self",))
+            .select_related("cartel__formato", "campania__marca")
+            .get(pk=reserva_pk)
         )
-        if reserva.estado != Reserva.Estado.PENDIENTE:
-            return False, None
-        culpables = conflictos_de(reserva)
-        if culpables:
-            return False, _conflicto(reserva, culpables)
-        reserva.estado = Reserva.Estado.CONFIRMADA
-        reserva.save()
+        if reserva.estado == Reserva.Estado.CANCELADA:
+            raise ValidationError({"reserva": "La reserva ya está cancelada."})
+        if estado_visible(reserva) == Reserva.Estado.FINALIZADA:
+            raise ValidationError({"reserva": "La reserva ya terminó: no se puede quitar."})
+        _quitar(reserva, dia, usuario)
+    return reserva
+
+
+def cancelar_campania(
+    campania_pk: int, usuario: AbstractBaseUser | AnonymousUser
+) -> dict[str, Any]:
+    """Cancela la campaña y sus reservas en una sola transacción (HU-024, RN-006).
+
+    Las reservas que todavía no empezaron se cancelan, las que están en exhibición terminan hoy y
+    las que ya terminaron no cambian. Una campaña Cancelada no vuelve a Confirmada.
+    """
+    dia = hoy()
+    resultado: dict[str, Any] = {"canceladas": [], "terminadas": []}
+    with transaction.atomic():
+        campania = Campania.objects.select_for_update().get(pk=campania_pk)
+        if campania.estado == Campania.Estado.CANCELADA:
+            raise ValidationError({"campania": "La campaña ya está cancelada."})
+        vigentes = Reserva.objects.select_for_update(of=("self",)).select_related(
+            "cartel__formato", "campania__marca"
+        )
+        for reserva in vigentes.filter(
+            campania=campania, estado=Reserva.Estado.CONFIRMADA, fecha_fin__gte=dia
+        ).order_by("id"):
+            resultado[_quitar(reserva, dia, usuario)].append(reserva.pk)
+        campania.estado = Campania.Estado.CANCELADA
+        campania.save(update_fields=["estado", "actualizado_en"])
         auditoria_services.registrar_cambios(
-            "reserva",
-            reserva.pk,
-            {"estado": Reserva.Estado.PENDIENTE.value},
-            {"estado": Reserva.Estado.CONFIRMADA.value},
+            "campania",
+            campania.pk,
+            {"estado": Campania.Estado.CONFIRMADA.value},
+            {"estado": Campania.Estado.CANCELADA.value},
             usuario,
         )
-    return True, None
-
-
-def confirmar_reservas_de_campania(
-    campania: Campania, usuario: AbstractBaseUser | AnonymousUser
-) -> dict[str, list[Any]]:
-    """Confirma las Pendientes de la campaña que entran y lista las que no (HU-059).
-
-    Exige la campaña Confirmada. Cada Pendiente va en su propia transacción con el cartel
-    bloqueado, con la misma validación que la confirmación individual (HU-031, HU-034). Repetir
-    solo procesa lo que sigue Pendiente.
-    """
-    if campania.estado != Campania.Estado.CONFIRMADA:
-        raise ValidationError({"campania": "Primero confirmá la campaña."})
-    pendientes = Reserva.objects.filter(
-        campania=campania, estado=Reserva.Estado.PENDIENTE
-    ).order_by("creado_en", "id")
-    confirmadas: list[int] = []
-    conflictos: list[dict[str, Any]] = []
-    for reserva_pk in list(pendientes.values_list("pk", flat=True)):
-        confirmada, conflicto = _confirmar_pendiente(reserva_pk, usuario)
-        if confirmada:
-            confirmadas.append(reserva_pk)
-        if conflicto is not None:
-            conflictos.append(conflicto)
-    return {"confirmadas": confirmadas, "conflictos": conflictos}
-
-
-def mover_pendientes(
-    campania: Campania,
-    inicio_anterior: date,
-    fin_anterior: date,
-    usuario: AbstractBaseUser | AnonymousUser,
-) -> list[int]:
-    """Lleva a las fechas actuales de la campaña sus Pendientes con las fechas anteriores (HU-058).
-
-    Solo mueve las que tenían exactamente las fechas anteriores de la campaña: una tanda cargada
-    con otras fechas no se pisa. Las Confirmadas no se tocan. Como toda edición de una Pendiente,
-    no valida cupo (RN-002); eso pasa al confirmar.
-    """
-    if campania.fecha_inicio is None or campania.fecha_fin is None:
-        raise ValidationError({"campania": "La campaña no tiene fechas."})
-    validar_fecha_no_pasada(campania.fecha_fin)
-    movidas: list[int] = []
-    with transaction.atomic():
-        reservas = Reserva.objects.select_related("cartel__formato", "campania__marca").filter(
-            campania=campania,
-            estado=Reserva.Estado.PENDIENTE,
-            fecha_inicio=inicio_anterior,
-            fecha_fin=fin_anterior,
-        )
-        for reserva in reservas.order_by("id"):
-            anteriores = {
-                "fecha_inicio": str(reserva.fecha_inicio),
-                "fecha_fin": str(reserva.fecha_fin),
-            }
-            reserva.fecha_inicio = campania.fecha_inicio
-            reserva.fecha_fin = campania.fecha_fin
-            reserva.save()
-            nuevos = {
-                "fecha_inicio": str(reserva.fecha_inicio),
-                "fecha_fin": str(reserva.fecha_fin),
-            }
-            auditoria_services.registrar_cambios("reserva", reserva.pk, anteriores, nuevos, usuario)
-            movidas.append(reserva.pk)
-    return movidas
+    return {"campania": campania.pk, "estado": campania.estado, **resultado}

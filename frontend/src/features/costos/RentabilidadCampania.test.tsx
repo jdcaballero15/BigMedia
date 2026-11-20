@@ -23,6 +23,6 @@ test('muestra los totales y el margen de la campaña', async () => {
     ),
   )
   render(<RentabilidadCampania campaniaId={5} />)
-  expect(await screen.findByText('1500.00')).toBeDefined()
-  expect(screen.getByText(/900.00 \(60%\)/)).toBeDefined()
+  expect(await screen.findByText('$1.500,00')).toBeDefined()
+  expect(screen.getByText(/\$900,00 \(60%\)/)).toBeDefined()
 })

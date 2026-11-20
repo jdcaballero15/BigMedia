@@ -1,10 +1,9 @@
-export type EstadoCampania = 'cotizada' | 'confirmada' | 'cancelada' | 'perdida'
+/** La campaña nace Confirmada y solo puede pasar a Cancelada (HU-024). */
+export type EstadoCampania = 'confirmada' | 'cancelada'
 
 export const ESTADOS_CAMPANIA: { value: EstadoCampania; label: string }[] = [
-  { value: 'cotizada', label: 'Cotizada' },
   { value: 'confirmada', label: 'Confirmada' },
   { value: 'cancelada', label: 'Cancelada' },
-  { value: 'perdida', label: 'Perdida' },
 ]
 
 export function etiquetaEstado(estado: EstadoCampania): string {
@@ -66,6 +65,11 @@ export type Interaccion = {
   marca: number | null
   marca_nombre: string | null
   registrada_por_nombre: string | null
+  /** Recordatorio opcional (HU-072): fecha y qué hacer van juntos. */
+  recordatorio_fecha: string | null
+  recordatorio_texto: string
+  recordatorio_hecho_en: string | null
+  recordatorio_hecho_por_nombre: string | null
 }
 
 /** Solicitado, reservado y faltante de un formato en la campaña (HU-055, HU-058). */

@@ -40,6 +40,8 @@ function item(id: number, extra: Partial<ItemFacturacion> = {}): ItemFacturacion
     tipo_venta_nombre: null,
     costos_incluidos: null,
     detalle_costo: '',
+    costos_calculados: false,
+    costos_elegidos: [],
     notas: '',
     orden_compra_numero: '',
     orden_compra_fecha: null,
@@ -78,6 +80,7 @@ function stubFetch(
     if (input.includes('/campanias/campanias/')) return ok([])
     if (input.includes('/facturacion/catalogos/')) return ok({ sectores: [], tipos_venta: [] })
     if (input.includes('/items/totales/')) return ok(totales)
+    if (input.includes('/items/costos-elegibles/')) return ok([])
     if (input.includes('/facturacion/items/')) return ok(items)
     throw new Error(`URL inesperada: ${input}`)
   })
@@ -326,16 +329,16 @@ test('si fallan las referencias lo avisa', async () => {
   ).toBeDefined()
 })
 
-// --- HU-062: orden de compra en el listado y aviso de duplicado ---
+// --- HU-062: orden de publicidad en el listado y aviso de OC duplicada ---
 
-test('abre el PDF de la orden de compra desde el menú', async () => {
+test('abre la orden de publicidad desde el menú', async () => {
   const abrir = vi.spyOn(window, 'open').mockReturnValue(null)
   stubFetch([item(1, { orden_compra_pdf: { nombre: 'oc.pdf', tamanio: 9 } }), item(2)])
   render(<ItemsPage />)
   const sinPdf = (await screen.findByText('Ítem 2')).closest('tr') as HTMLElement
-  expect(acciones(sinPdf)).not.toContain('Ver PDF de la OC')
+  expect(acciones(sinPdf)).not.toContain('Abrir orden de publicidad')
   const fila = screen.getByText('Ítem 1').closest('tr') as HTMLElement
-  elegir(fila, 'Ver PDF de la OC')
+  elegir(fila, 'Abrir orden de publicidad')
   expect(abrir).toHaveBeenCalledWith(
     '/api/facturacion/items/1/orden-compra-pdf/',
     '_blank',
@@ -361,6 +364,29 @@ test('al guardar con una OC repetida avisa con el ítem coincidente', async () =
   )
   fireEvent.click(within(aviso).getByRole('button', { name: 'Entendido' }))
   expect(screen.queryByRole('status', { name: 'Aviso de orden de compra' })).toBeNull()
+})
+
+test('con orden de publicidad adjunta guarda el ítem en multipart, con los costos como JSON', async () => {
+  const fetchMock = stubFetch([item(1)], (_input, options) =>
+    options?.method === 'PATCH' ? guardado(item(1)) : undefined,
+  )
+  render(<ItemsPage />)
+  const fila = (await screen.findByText('Ítem 1')).closest('tr') as HTMLElement
+  elegir(fila, 'Editar')
+  const pdf = new File(['%PDF-1.4'], 'op.pdf', { type: 'application/pdf' })
+  fireEvent.change(screen.getByLabelText('Adjuntar PDF'), { target: { files: [pdf] } })
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar ítem' }))
+  await waitFor(() =>
+    expect(fetchMock.mock.calls.some(([, options]) => options?.method === 'PATCH')).toBe(true),
+  )
+  const [url, options] = fetchMock.mock.calls.find(([, o]) => o?.method === 'PATCH') ?? []
+  expect(url).toBe('/api/facturacion/items/1/')
+  const cuerpo = options?.body as FormData
+  expect(cuerpo).toBeInstanceOf(FormData)
+  expect((cuerpo.get('orden_publicidad') as File).name).toBe('op.pdf')
+  expect(cuerpo.get('costos')).toBe('[]')
+  expect(cuerpo.get('cliente')).toBe('1')
+  expect(cuerpo.get('costos_incluidos')).toBe('')
 })
 
 // --- HU-064: agrupar y quitar del grupo ---

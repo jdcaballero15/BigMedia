@@ -12,7 +12,8 @@ const reserva = {
   cartel_nombre: 'Av. San Martín 1234 · 6x3',
   fecha_inicio: '2026-08-01',
   fecha_fin: '2026-08-31',
-  estado: 'pendiente',
+  estado: 'confirmada',
+  estado_visible: 'confirmada',
   precio_alquiler: '150000.00',
   precio_impresion: '0.00',
   precio_fijacion: '0.00',
@@ -97,85 +98,97 @@ test('pide también los carteles de baja para mostrar el ya asignado', async () 
   )
 })
 
-const resultadoConfirmacion = {
-  confirmadas: [3],
-  conflictos: [
-    {
-      reserva: 4,
-      nombre: 'Axe - Av. Corrientes 1 · 6x3 - Ago 2026',
-      cartel_nombre: 'Av. Corrientes 1 · 6x3',
-      fecha_inicio: '2026-08-01',
-      fecha_fin: '2026-08-31',
-      ocupada_por: [{ campania: 8, campania_nombre: 'Invierno' }],
-    },
-  ],
+function abrirMenu() {
+  fireEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
 }
 
-test('con varias reservas confirmadas y en conflicto lo dice en plural', async () => {
-  const conflicto = resultadoConfirmacion.conflictos[0]
-  stubFetch((input, options) =>
-    input.includes('/confirmar-en-bloque/') && options?.method === 'POST'
-      ? ok({ confirmadas: [3, 5], conflictos: [conflicto, { ...conflicto, reserva: 6 }] })
-      : undefined,
-  )
-  render(<ReservasCampania campaniaId={5} campaniaConfirmada onCambio={vi.fn()} />)
-  await screen.findByText(reserva.nombre)
-  fireEvent.click(screen.getByRole('button', { name: 'Confirmar reservas' }))
-  const resultado = await screen.findByRole('status', { name: 'Resultado de la confirmación' })
-  expect(within(resultado).getByText('Se confirmaron 2 reservas.')).toBeDefined()
-  expect(within(resultado).getByText('2 quedaron Pendientes por falta de cupo:')).toBeDefined()
-})
-
-test('confirma las Pendientes en bloque y lista los conflictos', async () => {
+test('quitar una reserva pide confirmación y la saca de la campaña', async () => {
   const onCambio = vi.fn()
+  vi.stubGlobal(
+    'confirm',
+    vi.fn(() => true),
+  )
   const fetchMock = stubFetch((input, options) =>
-    input.includes('/confirmar-en-bloque/') && options?.method === 'POST'
-      ? ok(resultadoConfirmacion)
+    input.includes('/quitar/') && options?.method === 'POST'
+      ? ok({ ...reserva, estado: 'cancelada', estado_visible: 'cancelada' })
       : undefined,
   )
-  render(<ReservasCampania campaniaId={5} campaniaConfirmada onCambio={onCambio} />)
+  render(<ReservasCampania campaniaId={5} onCambio={onCambio} />)
   await screen.findByText(reserva.nombre)
-  fireEvent.click(screen.getByRole('button', { name: 'Confirmar reservas' }))
-  const resultado = await screen.findByRole('status', { name: 'Resultado de la confirmación' })
-  expect(within(resultado).getByText('Se confirmó 1 reserva.')).toBeDefined()
-  expect(within(resultado).getByText('1 quedó Pendiente por falta de cupo:')).toBeDefined()
+  abrirMenu()
+  fireEvent.click(screen.getByRole('button', { name: 'Quitar' }))
+  await waitFor(() => expect(onCambio).toHaveBeenCalledTimes(1))
   expect(
-    within(resultado).getByText(
-      'Av. Corrientes 1 · 6x3, 01/08/2026 → 31/08/2026: ocupado por Invierno',
+    fetchMock.mock.calls.some(
+      ([url, options]) =>
+        String(url) === '/api/reservas/reservas/3/quitar/' && options?.method === 'POST',
     ),
-  ).toBeDefined()
-  const [, options] =
-    fetchMock.mock.calls.find(([url]) => String(url).includes('/confirmar-en-bloque/')) ?? []
-  expect(JSON.parse(String(options?.body))).toEqual({ campania: 5 })
-  expect(onCambio).toHaveBeenCalledTimes(1)
+  ).toBe(true)
 })
 
-test('sin la campaña Confirmada no ofrece confirmar en bloque', async () => {
-  stubFetch()
+test('si no se confirma, quitar no llama al servidor', async () => {
+  vi.stubGlobal(
+    'confirm',
+    vi.fn(() => false),
+  )
+  const fetchMock = stubFetch()
   render(<ReservasCampania campaniaId={5} />)
   await screen.findByText(reserva.nombre)
-  expect(screen.queryByRole('button', { name: 'Confirmar reservas' })).toBeNull()
+  abrirMenu()
+  fireEvent.click(screen.getByRole('button', { name: 'Quitar' }))
+  expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/quitar/'))).toBe(false)
 })
 
-test('sin Pendientes no ofrece confirmar en bloque', async () => {
+test('una reserva en exhibición avisa que termina hoy', async () => {
+  const confirmar = vi.fn((_mensaje?: string) => false)
+  vi.stubGlobal('confirm', confirmar)
   stubFetch((input) =>
-    input.includes('/reservas/reservas/') ? ok([{ ...reserva, estado: 'confirmada' }]) : undefined,
-  )
-  render(<ReservasCampania campaniaId={5} campaniaConfirmada />)
-  await screen.findByText(reserva.nombre)
-  expect(screen.queryByRole('button', { name: 'Confirmar reservas' })).toBeNull()
-})
-
-test('si falla la confirmación en bloque lo avisa', async () => {
-  stubFetch((input) =>
-    input.includes('/confirmar-en-bloque/')
-      ? { ok: false, status: 400, json: async () => ({}) }
+    input.includes('/reservas/reservas/')
+      ? ok([{ ...reserva, fecha_inicio: '2020-01-01', fecha_fin: '2099-12-31' }])
       : undefined,
   )
-  render(<ReservasCampania campaniaId={5} campaniaConfirmada />)
+  render(<ReservasCampania campaniaId={5} />)
   await screen.findByText(reserva.nombre)
-  fireEvent.click(screen.getByRole('button', { name: 'Confirmar reservas' }))
-  expect((await screen.findByRole('alert')).textContent).toBe(
-    'No se pudieron confirmar las reservas.',
+  abrirMenu()
+  fireEvent.click(screen.getByRole('button', { name: 'Quitar' }))
+  expect(String(confirmar.mock.calls[0]?.[0])).toContain('termina hoy')
+})
+
+test('si falla quitar lo avisa', async () => {
+  vi.stubGlobal(
+    'confirm',
+    vi.fn(() => true),
   )
+  stubFetch((input) =>
+    input.includes('/quitar/')
+      ? { ok: false, status: 400, json: async () => ({ reserva: ['La reserva ya terminó.'] }) }
+      : undefined,
+  )
+  render(<ReservasCampania campaniaId={5} />)
+  await screen.findByText(reserva.nombre)
+  abrirMenu()
+  fireEvent.click(screen.getByRole('button', { name: 'Quitar' }))
+  expect(await screen.findByRole('alert')).toBeDefined()
+})
+
+test('una reserva finalizada o cancelada no ofrece quitar y muestra su estado', async () => {
+  stubFetch((input) =>
+    input.includes('/reservas/reservas/')
+      ? ok([{ ...reserva, estado_visible: 'finalizada' }])
+      : undefined,
+  )
+  render(<ReservasCampania campaniaId={5} />)
+  await screen.findByText(reserva.nombre)
+  expect(screen.getByText('Finalizada')).toBeDefined()
+  abrirMenu()
+  expect(screen.queryByRole('button', { name: 'Quitar' })).toBeNull()
+})
+
+test('con la campaña cancelada no ofrece nueva reserva ni quitar', async () => {
+  stubFetch()
+  render(<ReservasCampania campaniaId={5} campaniaCancelada />)
+  await screen.findByText(reserva.nombre)
+  expect(screen.queryByRole('button', { name: 'Nueva reserva' })).toBeNull()
+  abrirMenu()
+  expect(screen.queryByRole('button', { name: 'Quitar' })).toBeNull()
 })

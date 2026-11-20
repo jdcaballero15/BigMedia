@@ -77,7 +77,7 @@ def describir_duplicado(marca: Marca) -> str:
 
 
 def acepta_contactos(cliente: Cliente) -> bool:
-    """Solo el intermediario formal tiene contactos múltiples (RN-015, provisoria)."""
+    """Solo una central de medios tiene contactos múltiples (RN-015)."""
     return cliente.tipo == Cliente.Tipo.INTERMEDIARIO_FORMAL
 
 

@@ -83,8 +83,7 @@ test('campaniasLista_filtroPorEstado_muestraSoloEseEstadoYAvisaLaCantidad', asyn
     within(filtros).getByRole('button', { name: 'Cancelada' }).getAttribute('aria-pressed'),
   ).toBe('true')
   expect(screen.queryByText('Verano 2027')).toBeNull()
-  fireEvent.click(within(filtros).getByRole('button', { name: 'Perdida' }))
-  expect(screen.getByText('No hay campañas en ese estado.')).toBeDefined()
+  expect(within(filtros).queryByRole('button', { name: 'Perdida' })).toBeNull()
   fireEvent.click(within(filtros).getByRole('button', { name: 'Todas' }))
   expect(screen.getByText('Verano 2027')).toBeDefined()
 })

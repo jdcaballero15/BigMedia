@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
-import { apiGet, apiWrite } from '../../shared/api'
+import { apiGet } from '../../shared/api'
 import CampoFecha from '../../shared/CampoFecha'
 import { FECHA_INVALIDA } from '../../shared/fechas'
 import { formatearMonto, sumarMontos } from '../facturacion/montos'
 import type { Catalogo } from '../inventario/types'
-import type { CartelTanda, ResultadoTanda } from './types'
-
-/** Carteles por pedido: la pantalla manda la selección por lotes para mostrar el avance. */
-export const TAMANO_LOTE = 25
+import { crearPorLotes } from './tandas'
+import type { CartelTanda, FilaPosiciones, ResultadoTanda } from './types'
+import VistaPosiciones from './VistaPosiciones'
 
 export type LineaTanda = {
   formato: number
@@ -16,18 +15,44 @@ export type LineaTanda = {
   reservadas: number
 }
 
+/** Carteles elegidos en el alta de campaña, con las fechas de la tanda (HU-056 criterio 7). */
+export type SeleccionAlta = { carteles: CartelTanda[]; desde: string; hasta: string }
+
 type Props = {
-  campaniaId: number
+  /** null en el alta: la campaña todavía no existe y solo se arma la selección. */
+  campaniaId: number | null
   /** Fechas de la campaña, "" si no las tiene: entonces se piden para la tanda. */
   fechaInicio: string
   fechaFin: string
   linea: LineaTanda
   onCerrar: () => void
   /** Se llama cuando se crearon reservas, para recargar el seguimiento y la lista. */
-  onCreadas: () => void
+  onCreadas?: () => void
+  /** Modo "solo elegir" del alta: devuelve la selección en vez de crear reservas. */
+  onElegir?: (seleccion: SeleccionAlta) => void
+  seleccionInicial?: CartelTanda[]
 }
 
 type Filtros = { zona: string; proveedor: string; q: string }
+type Vista = 'tabla' | 'posiciones'
+
+const CLAVE_VISTA = 'agregar-carteles-vista'
+
+function vistaGuardada(): Vista {
+  try {
+    return localStorage.getItem(CLAVE_VISTA) === 'posiciones' ? 'posiciones' : 'tabla'
+  } catch {
+    return 'tabla'
+  }
+}
+
+function guardarVista(vista: Vista) {
+  try {
+    localStorage.setItem(CLAVE_VISTA, vista)
+  } catch {
+    // Sin almacenamiento la vista vuelve a Tabla la próxima vez; no es un error.
+  }
+}
 type Fase = { tipo: 'eligiendo' } | { tipo: 'creando'; hechos: number; total: number }
 
 function fechaValida(valor: string): boolean {
@@ -40,43 +65,26 @@ function textoAvance(linea: LineaTanda, seleccionados: number): string {
   return `${linea.formato_nombre} ${total} de ${linea.solicitadas}`
 }
 
-/** Crea las reservas de a lotes y junta los resúmenes; un lote que falla entero va a fallidas. */
-async function crearPorLotes(
-  base: { campania: number; fecha_inicio: string; fecha_fin: string },
-  carteles: number[],
-  onAvance: (hechos: number) => void,
-): Promise<ResultadoTanda> {
-  const total: ResultadoTanda = { creadas: [], existentes: [], fallidas: [] }
-  for (let desde = 0; desde < carteles.length; desde += TAMANO_LOTE) {
-    const lote = carteles.slice(desde, desde + TAMANO_LOTE)
-    try {
-      const parcial = await apiWrite<ResultadoTanda>('/api/reservas/reservas/en-bloque/', 'POST', {
-        ...base,
-        carteles: lote,
-      })
-      total.creadas.push(...parcial.creadas)
-      total.existentes.push(...parcial.existentes)
-      total.fallidas.push(...parcial.fallidas)
-    } catch {
-      const motivo = 'No se pudo completar el pedido. Reintentá.'
-      total.fallidas.push(...lote.map((cartel) => ({ cartel, motivo })))
-    }
-    onAvance(desde + lote.length)
-  }
-  return total
+function textoConfirmar(soloElegir: boolean, aviso: boolean): string {
+  if (soloElegir) return aviso ? 'Usar igual' : 'Usar selección'
+  return aviso ? 'Crear igual' : 'Crear reservas'
 }
 
 /** "Agregar carteles" desde una línea de formato (HU-056) y creación en bloque (HU-057). */
 export default function AgregarCarteles(props: Props) {
-  const { campaniaId, linea, onCerrar, onCreadas } = props
+  const { campaniaId, linea, onCerrar, onCreadas, onElegir } = props
   const [desde, setDesde] = useState(props.fechaInicio)
   const [hasta, setHasta] = useState(props.fechaFin)
   const [filtros, setFiltros] = useState<Filtros>({ zona: '', proveedor: '', q: '' })
   const [zonas, setZonas] = useState<Catalogo[]>([])
   const [proveedores, setProveedores] = useState<Catalogo[]>([])
   const [filas, setFilas] = useState<CartelTanda[] | null>(null)
+  const [vista, setVista] = useState<Vista>(vistaGuardada)
+  const [filasPosiciones, setFilasPosiciones] = useState<FilaPosiciones[] | null>(null)
   const [error, setError] = useState('')
-  const [seleccion, setSeleccion] = useState<Map<number, CartelTanda>>(new Map())
+  const [seleccion, setSeleccion] = useState<Map<number, CartelTanda>>(
+    () => new Map((props.seleccionInicial ?? []).map((fila) => [fila.id, fila])),
+  )
   const [aviso, setAviso] = useState(false)
   const [fase, setFase] = useState<Fase>({ tipo: 'eligiendo' })
   const [resultado, setResultado] = useState<ResultadoTanda | null>(null)
@@ -105,7 +113,7 @@ export default function AgregarCarteles(props: Props) {
   }, [])
 
   const consulta = new URLSearchParams({
-    campania: String(campaniaId),
+    ...(campaniaId !== null && { campania: String(campaniaId) }),
     formato: String(linea.formato),
     desde,
     hasta,
@@ -117,12 +125,17 @@ export default function AgregarCarteles(props: Props) {
   useEffect(() => {
     if (!fechasListas) return
     let active = true
-    void apiGet<CartelTanda[]>(`/api/reservas/carteles-para-tanda/?${consulta}`)
-      .then((rows) => {
-        if (active) {
-          setFilas(rows)
-          setError('')
-        }
+    const pedido =
+      vista === 'tabla'
+        ? apiGet<CartelTanda[]>(`/api/reservas/carteles-para-tanda/?${consulta}`).then((rows) => {
+            if (active) setFilas(rows)
+          })
+        : apiGet<FilaPosiciones[]>(`/api/reservas/posiciones/?${consulta}`).then((rows) => {
+            if (active) setFilasPosiciones(rows)
+          })
+    void pedido
+      .then(() => {
+        if (active) setError('')
       })
       .catch(() => {
         if (active) setError('No se pudieron cargar los carteles.')
@@ -130,12 +143,18 @@ export default function AgregarCarteles(props: Props) {
     return () => {
       active = false
     }
-  }, [consulta, fechasListas, recarga])
+  }, [consulta, fechasListas, recarga, vista])
+
+  function cambiarVista(nueva: Vista) {
+    setVista(nueva)
+    guardarVista(nueva)
+  }
 
   function cambiarFecha(campo: 'desde' | 'hasta', valor: string) {
     // Con otras fechas cambia qué carteles están libres: la selección empieza de nuevo.
     setSeleccion(new Map())
     setFilas(null)
+    setFilasPosiciones(null)
     if (campo === 'desde') setDesde(valor)
     else setHasta(valor)
   }
@@ -152,12 +171,15 @@ export default function AgregarCarteles(props: Props) {
   function seleccionarFiltrados() {
     setSeleccion((actual) => {
       const nueva = new Map(actual)
-      for (const fila of filas ?? []) if (!fila.en_campania) nueva.set(fila.id, fila)
+      const elegibles =
+        vista === 'tabla' ? (filas ?? []) : (filasPosiciones ?? []).filter((fila) => !fila.lleno)
+      for (const fila of elegibles) if (!fila.en_campania) nueva.set(fila.id, fila)
       return nueva
     })
   }
 
   async function crear(carteles: number[]) {
+    if (campaniaId === null) return
     setAviso(false)
     setFase({ tipo: 'creando', hechos: 0, total: carteles.length })
     const base = { campania: campaniaId, fecha_inicio: desde, fecha_fin: hasta }
@@ -168,7 +190,7 @@ export default function AgregarCarteles(props: Props) {
     setSeleccion(new Map())
     setResultado(total)
     setRecarga((actual) => actual + 1)
-    if (total.creadas.length > 0) onCreadas()
+    if (total.creadas.length > 0) onCreadas?.()
   }
 
   function confirmar() {
@@ -177,10 +199,13 @@ export default function AgregarCarteles(props: Props) {
       setAviso(true)
       return
     }
-    void crear([...seleccion.keys()])
+    if (onElegir) onElegir({ carteles: [...seleccion.values()], desde, hasta })
+    else void crear([...seleccion.keys()])
   }
 
-  const nombres = new Map((filas ?? []).map((fila) => [fila.id, fila.nombre_visible]))
+  const listados = [...(filas ?? []), ...(filasPosiciones ?? [])]
+  const nombres = new Map(listados.map((fila) => [fila.id, fila.nombre_visible]))
+  const filasActivas = vista === 'tabla' ? filas : filasPosiciones
   for (const [id, fila] of seleccion) nombres.set(id, fila.nombre_visible)
   const monto = sumarMontos([...seleccion.values()].map((fila) => fila.tarifa_lista ?? '0'))
 
@@ -236,6 +261,19 @@ export default function AgregarCarteles(props: Props) {
             onChange={(event) => setFiltros({ ...filtros, q: event.target.value })}
           />
         </label>
+        <div className="row-actions" role="group" aria-label="Vista">
+          {(['tabla', 'posiciones'] as const).map((opcion) => (
+            <button
+              key={opcion}
+              type="button"
+              className={vista === opcion ? 'button-primary' : 'button-ghost'}
+              aria-pressed={vista === opcion}
+              onClick={() => cambiarVista(opcion)}
+            >
+              {opcion === 'tabla' ? 'Tabla' : 'Posiciones'}
+            </button>
+          ))}
+        </div>
       </div>
       {error && (
         <p className="error" role="alert">
@@ -266,7 +304,7 @@ export default function AgregarCarteles(props: Props) {
               type="button"
               className="button-ghost"
               onClick={seleccionarFiltrados}
-              disabled={!filas?.length}
+              disabled={!filasActivas?.length}
             >
               Seleccionar todos los filtrados
             </button>
@@ -276,7 +314,7 @@ export default function AgregarCarteles(props: Props) {
               onClick={confirmar}
               disabled={seleccion.size === 0 || !fechasListas}
             >
-              {aviso ? 'Crear igual' : 'Crear reservas'}
+              {textoConfirmar(Boolean(onElegir), aviso)}
             </button>
           </div>
         </div>
@@ -284,10 +322,15 @@ export default function AgregarCarteles(props: Props) {
       {aviso && (
         <p className="notice" role="alert">
           La selección no coincide con lo solicitado ({linea.reservadas + seleccion.size} de{' '}
-          {linea.solicitadas}). Podés crear igual o ajustar la selección.
+          {linea.solicitadas}). Podés {onElegir ? 'usarla' : 'crear'} igual o ajustar la selección.
         </p>
       )}
-      {fechasListas && <TablaTanda filas={filas} seleccion={seleccion} onAlternar={alternar} />}
+      {fechasListas && vista === 'tabla' && (
+        <TablaTanda filas={filas} seleccion={seleccion} onAlternar={alternar} />
+      )}
+      {fechasListas && vista === 'posiciones' && (
+        <VistaPosiciones filas={filasPosiciones} seleccion={seleccion} onAlternar={alternar} />
+      )}
     </section>
   )
 }
@@ -328,9 +371,6 @@ function TablaTanda({ filas, seleccion, onAlternar }: TablaProps) {
             <td className="primary-cell">
               {fila.nombre_visible}
               {fila.en_campania && <small className="muted"> · ya en la campaña</small>}
-              {fila.tentativas > 0 && (
-                <small className="notice"> · {fila.tentativas} tentativas</small>
-              )}
             </td>
             <td>{fila.zona_nombre}</td>
             <td>{fila.proveedor_nombre ?? '—'}</td>

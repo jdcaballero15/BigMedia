@@ -12,7 +12,7 @@ from django.test import Client
 from apps.campanias.models import Campania
 from apps.clientes.models import Cliente, Marca
 from apps.inventario.models import Cartel, EstadoCartel, Formato, Zona
-from apps.reservas.models import ParametrosDisponibilidad, Reserva
+from apps.reservas.models import Reserva
 
 URL = "/api/reservas/reservas/en-bloque/"
 
@@ -53,11 +53,11 @@ def _campania_con_marca() -> Campania:
     return Campania.objects.create(nombre="Verano", marca=marca)
 
 
-# --- Criterio 2: Pendiente con tarifa de lista y nombre ---
+# --- Criterio 2: Confirmada con tarifa de lista y nombre ---
 
 
 @pytest.mark.django_db
-def test_crea_pendientes_con_tarifa_de_lista_y_nombre(operativo_client, formato):
+def test_crea_confirmadas_con_tarifa_de_lista_y_nombre(operativo_client, formato):
     campania = _campania_con_marca()
     uno = _cartel(formato, "Av. Uno 100")
     sin_tarifa = _cartel(formato, "Av. Dos 200", tarifa=None)
@@ -70,7 +70,7 @@ def test_crea_pendientes_con_tarifa_de_lista_y_nombre(operativo_client, formato)
     assert cuerpo["fallidas"] == []
 
     reserva = Reserva.objects.get(cartel=uno)
-    assert reserva.estado == Reserva.Estado.PENDIENTE
+    assert reserva.estado == Reserva.Estado.CONFIRMADA
     assert reserva.campania_id == campania.pk
     assert (reserva.fecha_inicio, reserva.fecha_fin) == (date(2026, 11, 1), date(2026, 11, 30))
     assert reserva.precio_alquiler == Decimal("1500.00")
@@ -162,26 +162,10 @@ def test_otras_fechas_u_otra_campania_no_cuentan_como_existente(operativo_client
         operativo_client, campania, [cartel.pk], fecha_inicio="2026-12-01", fecha_fin="2026-12-31"
     )
     assert len(otras_fechas.json()["creadas"]) == 1
-    otra = _post(operativo_client, Campania.objects.create(), [cartel.pk])
-    assert len(otra.json()["creadas"]) == 1
-
-
-@pytest.mark.django_db
-@pytest.mark.regla("RN-002")
-def test_con_tentativa_bloqueante_crea_igual_las_pendientes(operativo_client, formato):
-    ParametrosDisponibilidad.objects.filter(pk=1).update(tentativa_bloquea=True)
-    cartel = _cartel(formato, "Av. Llena 1")
-    ocupante = Reserva(
-        campania=Campania.objects.create(),
-        cartel=cartel,
-        fecha_inicio=date(2026, 11, 1),
-        fecha_fin=date(2026, 11, 30),
-        estado=Reserva.Estado.CONFIRMADA,
-    )
-    ocupante.save()
-    # Como el alta individual: crear una Pendiente no valida cupo; eso pasa al confirmar.
-    cuerpo = _post(operativo_client, Campania.objects.create(), [cartel.pk]).json()
-    assert len(cuerpo["creadas"]) == 1
+    # Otra campaña no la toma como existente: intenta crearla y no entra por cupo.
+    otra = _post(operativo_client, Campania.objects.create(), [cartel.pk]).json()
+    assert otra["existentes"] == []
+    assert [item["cartel"] for item in otra["fallidas"]] == [cartel.pk]
 
 
 # --- Validaciones del pedido y permisos ---
