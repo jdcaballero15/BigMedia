@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
 import Cifras from '../../shared/Cifras'
 import { dateAIso, formatearFecha } from '../../shared/fechas'
+import RecordatoriosPanel from './RecordatoriosPanel'
 
 type PorVencer = {
   id: number
@@ -105,6 +106,7 @@ export default function PanelPrincipal() {
           </div>
         </>
       )}
+      <RecordatoriosPanel />
     </section>
   )
 }

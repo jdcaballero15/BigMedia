@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.core.exceptions import ValidationError
@@ -14,7 +16,7 @@ from apps.auditoria.models import RegistroAuditoria
 from apps.clientes.models import Cliente, Contacto, Marca
 from apps.inventario.models import Formato
 
-from .models import Campania, LineaFormato, OrdenPublicidad
+from .models import Campania, Interaccion, LineaFormato, OrdenPublicidad
 
 # Campo con el que la auditoría de la campaña registra adjuntar y dar de baja una orden.
 CAMPO_AUDITORIA_OP = "orden_publicidad"
@@ -101,6 +103,37 @@ def validar_marca_de_interaccion(
         raise ValidationError({"marca": "Seleccioná una marca activa."})
     if campania is not None and campania.marca_id != marca.pk:
         raise ValidationError({"campania": "La campaña no es de esa marca."})
+
+
+def validar_recordatorio(fecha: date | None, texto: str) -> None:
+    """La fecha y qué hacer del recordatorio van juntos, o no va ninguno (HU-072)."""
+    if fecha is not None and not texto:
+        raise ValidationError({"recordatorio_texto": "Indicá qué hay que hacer ese día."})
+    if fecha is None and texto:
+        raise ValidationError({"recordatorio_fecha": "Indicá la fecha del recordatorio."})
+
+
+def recordatorio_cambia(actual: Interaccion | None, fecha: date | None, texto: str) -> bool:
+    """Si cambia la fecha o el texto de un recordatorio hecho, vuelve a quedar pendiente."""
+    return (
+        actual is not None
+        and actual.recordatorio_hecho_en is not None
+        and (actual.recordatorio_fecha != fecha or actual.recordatorio_texto != texto)
+    )
+
+
+def marcar_recordatorio_hecho(interaccion_id: int, usuario: AbstractBaseUser) -> Interaccion:
+    """Marca el recordatorio como hecho y guarda cuándo y quién (HU-072, criterio 5)."""
+    with transaction.atomic():
+        interaccion = Interaccion.objects.select_for_update().get(pk=interaccion_id)
+        if interaccion.recordatorio_fecha is None:
+            raise ValidationError({"recordatorio": "La interacción no tiene recordatorio."})
+        if interaccion.recordatorio_hecho_en is not None:
+            raise ValidationError({"recordatorio": "El recordatorio ya está hecho."})
+        interaccion.recordatorio_hecho_en = timezone.now()
+        interaccion.recordatorio_hecho_por_id = usuario.pk
+        interaccion.save(update_fields=["recordatorio_hecho_en", "recordatorio_hecho_por_id"])
+    return interaccion
 
 
 def validar_linea_formato(

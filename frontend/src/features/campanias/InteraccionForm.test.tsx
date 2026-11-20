@@ -113,6 +113,8 @@ test('con un intermediario formal ofrece sus contactos activos y sus campañas, 
       contacto: 11,
       campania: 21,
       marca: null,
+      recordatorio_fecha: null,
+      recordatorio_texto: '',
     }),
   )
 })
@@ -148,6 +150,10 @@ test('al editar conserva el contacto inactivado y la campaña que ya tenía', as
     marca: 33,
     marca_nombre: 'Marca Vieja',
     registrada_por_nombre: 'operativo',
+    recordatorio_fecha: '2026-09-10',
+    recordatorio_texto: 'Mandar propuesta',
+    recordatorio_hecho_en: null,
+    recordatorio_hecho_por_nombre: null,
   }
   render(
     <InteraccionForm
@@ -164,6 +170,31 @@ test('al editar conserva el contacto inactivado y la campaña que ya tenía', as
   expect((screen.getByLabelText('Campaña (opcional)') as HTMLSelectElement).value).toBe('22')
   expect(await screen.findByRole('option', { name: 'Marca Vieja (inactiva)' })).toBeDefined()
   expect((screen.getByLabelText('Marca (opcional)') as HTMLSelectElement).value).toBe('33')
+  expect((screen.getByLabelText('Fecha de recordatorio') as HTMLInputElement).value).toBe(
+    '2026-09-10',
+  )
+  expect((screen.getByLabelText('Qué hacer') as HTMLInputElement).value).toBe('Mandar propuesta')
+})
+
+test('envía la fecha de recordatorio y qué hacer (HU-072)', async () => {
+  mockFetch()
+  const onSave = vi.fn().mockResolvedValue(undefined)
+  render(<InteraccionForm cliente={directo} onSave={onSave} onCancel={vi.fn()} />)
+  fireEvent.change(screen.getByLabelText('Fecha de recordatorio'), {
+    target: { value: '2026-11-02' },
+  })
+  fireEvent.change(screen.getByLabelText('Qué hacer'), {
+    target: { value: '  Enviar presupuesto  ' },
+  })
+  fireEvent.click(within(formulario()).getByRole('button', { name: 'Guardar interacción' }))
+  await waitFor(() =>
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recordatorio_fecha: '2026-11-02',
+        recordatorio_texto: 'Enviar presupuesto',
+      }),
+    ),
+  )
 })
 
 test('con una marca y sin campaña envía la marca (RN-018)', async () => {

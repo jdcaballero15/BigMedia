@@ -15,7 +15,7 @@ Los grupos son estos:
 
 | Grupo | Pantallas |
 | --- | --- |
-| Inicio | **Panel**: ocupación de hoy, campañas activas y por vencer |
+| Inicio | **Panel**: ocupación de hoy, campañas activas, por vencer y recordatorios |
 | Reportes | **Ingresos**, **Por rubro o grupo**, **Ocupación** |
 | Comercial | **Clientes**, **Marcas**, **Campañas**, **Facturación** |
 | Inventario | **Carteles**, **Disponibilidad** |
@@ -115,6 +115,12 @@ marca puede estar en un solo grupo.
   campañas muestra solo las de esa marca. **Asunto** es opcional: si lo dejás vacío, la
   interacción aparece como «Sin asunto». En el detalle de la campaña y en la ficha de la marca las
   interacciones se ven, pero no se cargan.
+- Si de una interacción queda algo por hacer, completá **Recordatorio**: la **Fecha de
+  recordatorio** y **Qué hacer** (por ejemplo, «Enviar presupuesto»); van juntos. Ese día el
+  recordatorio aparece en **Inicio › Panel**, en **Recordatorios**, para todo el equipo, y sigue
+  ahí (marcado **Vencido**) hasta que alguien toca **Hecho**. En la lista de interacciones se ve
+  si está **Pendiente** o **Hecho**; si cambiás la fecha o el texto de uno hecho, vuelve a quedar
+  pendiente.
 - Para volver a la lista, tocá **← Volver** o el nombre de la pantalla en la ruta de arriba (por
   ejemplo, «Clientes» en «Big Media / Comercial / Clientes / Agencia Cordillera»).
 

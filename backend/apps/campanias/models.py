@@ -121,6 +121,17 @@ class Interaccion(models.Model):
         null=True,
         editable=False,
     )
+    # Recordatorio opcional (HU-072): fecha y qué hacer van juntos; queda pendiente hasta hecho.
+    recordatorio_fecha = models.DateField(null=True, blank=True)
+    recordatorio_texto = models.CharField(max_length=200, blank=True)
+    recordatorio_hecho_en = models.DateTimeField(null=True, editable=False)
+    recordatorio_hecho_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="recordatorios_hechos",
+        null=True,
+        editable=False,
+    )
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
 

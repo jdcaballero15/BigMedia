@@ -15,6 +15,8 @@ export type InteraccionInput = {
   contacto: number | null
   campania: number | null
   marca: number | null
+  recordatorio_fecha: string | null
+  recordatorio_texto: string
 }
 
 type Props = {
@@ -44,6 +46,8 @@ export default function InteraccionForm({ interaccion, cliente, onSave, onCancel
   const [contacto, setContacto] = useState(String(interaccion?.contacto ?? ''))
   const [campania, setCampania] = useState(String(interaccion?.campania ?? ''))
   const [marca, setMarca] = useState(String(interaccion?.marca ?? ''))
+  const [recordatorioFecha, setRecordatorioFecha] = useState(interaccion?.recordatorio_fecha ?? '')
+  const [recordatorioTexto, setRecordatorioTexto] = useState(interaccion?.recordatorio_texto ?? '')
   const [opciones, setOpciones] = useState<Opciones>(SIN_OPCIONES)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
@@ -110,6 +114,8 @@ export default function InteraccionForm({ interaccion, cliente, onSave, onCancel
         contacto: contacto ? Number(contacto) : null,
         campania: campania ? Number(campania) : null,
         marca: marca ? Number(marca) : null,
+        recordatorio_fecha: recordatorioFecha || null,
+        recordatorio_texto: recordatorioTexto.trim(),
       })
     } catch (cause) {
       if (cause instanceof ApiError) setErrors(cause.fields)
@@ -207,6 +213,27 @@ export default function InteraccionForm({ interaccion, cliente, onSave, onCancel
         <textarea rows={3} value={notas} onChange={(event) => setNotas(event.target.value)} />
         <FieldErrors messages={errors.notas} />
       </label>
+      <fieldset className="form-grid">
+        <legend>Recordatorio (opcional)</legend>
+        <label>
+          Fecha de recordatorio
+          <input
+            type="date"
+            value={recordatorioFecha}
+            onChange={(event) => setRecordatorioFecha(event.target.value)}
+          />
+          <FieldErrors messages={errors.recordatorio_fecha} />
+        </label>
+        <label>
+          Qué hacer
+          <input
+            value={recordatorioTexto}
+            placeholder="Por ejemplo, enviar presupuesto"
+            onChange={(event) => setRecordatorioTexto(event.target.value)}
+          />
+          <FieldErrors messages={errors.recordatorio_texto} />
+        </label>
+      </fieldset>
       {generalError && (
         <p className="error" role="alert">
           {generalError}

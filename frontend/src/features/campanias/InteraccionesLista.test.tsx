@@ -35,6 +35,10 @@ const llamada: Interaccion = {
   marca: 31,
   marca_nombre: 'Marca Sol',
   registrada_por_nombre: 'operativo',
+  recordatorio_fecha: null,
+  recordatorio_texto: '',
+  recordatorio_hecho_en: null,
+  recordatorio_hecho_por_nombre: null,
 }
 
 type Route = (url: string, options?: RequestInit) => unknown
@@ -192,4 +196,32 @@ test('cancelar cierra el formulario sin guardar', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
   expect(screen.queryByRole('form', { name: 'Formulario de interacción' })).toBeNull()
   expect(fetchMock.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false)
+})
+
+test('la columna Recordatorio muestra la fecha, qué hacer y si está pendiente o hecho', async () => {
+  mockFetch((url) => {
+    if (url === '/api/campanias/interacciones/?cliente=2')
+      return ok([
+        { ...llamada, recordatorio_fecha: '2026-11-02', recordatorio_texto: 'Enviar presupuesto' },
+        {
+          ...llamada,
+          id: 6,
+          recordatorio_fecha: '2026-11-05',
+          recordatorio_texto: 'Llamar',
+          recordatorio_hecho_en: '2026-11-05T12:00:00-03:00',
+          recordatorio_hecho_por_nombre: 'operativo',
+        },
+        { ...llamada, id: 7 },
+      ])
+    return undefined
+  })
+  render(<InteraccionesLista filtro={{ cliente: 2 }} titulo="Interacciones" />)
+  const tabla = await screen.findByRole('table', { name: 'Interacciones' })
+  expect(within(tabla).getByRole('columnheader', { name: 'Recordatorio' })).toBeDefined()
+  const filas = within(tabla).getAllByRole('row').slice(1)
+  expect(within(filas[0]).getByText('02/11/2026 · Enviar presupuesto')).toBeDefined()
+  expect(within(filas[0]).getByText('Pendiente')).toBeDefined()
+  expect(within(filas[1]).getByText('05/11/2026 · Llamar')).toBeDefined()
+  expect(within(filas[1]).getByText('Hecho')).toBeDefined()
+  expect(within(filas[2]).queryByText('Pendiente')).toBeNull()
 })
