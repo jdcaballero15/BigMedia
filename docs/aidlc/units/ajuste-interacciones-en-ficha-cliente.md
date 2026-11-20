@@ -67,4 +67,4 @@ Ninguna. HU-020 no dice desde qué pantalla se carga; sus criterios siguen valie
   `format:check`, `lint`, `typecheck` sin errores, `test:coverage` (433 passed; sentencias
   92.67 %, ramas 83.74 %, líneas 94.62 %) y `build` (built in 1.18s). Aprobado por Gonza
   (2026-11-19).
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #150
