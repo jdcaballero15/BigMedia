@@ -89,4 +89,4 @@ Ninguna. HU-072 no trae una regla RN nueva.
   archivos; sentencias 92.75 %, ramas 83.84 %, líneas 94.67 %) y `build` (built in 275ms). El
   19/11 `test:coverage` falló tres veces por tiempo con la máquina saturada (carga 250); con la
   carga normal pasó entero. Aprobado por Gonza (2026-11-20).
-- Gate 3 (PR): pendiente
+- Gate 3 (PR): #152 (historias en #151)
