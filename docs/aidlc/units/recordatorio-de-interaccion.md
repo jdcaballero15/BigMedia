@@ -1,6 +1,6 @@
 # Unidad: recordatorio-de-interaccion
 
-- **Estado:** en curso · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** campanias
+- **Estado:** en revisión · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** campanias
 - **Origen:** HU-072 (pedido de Gonza, 2026-11-19) · **Rama:** `feature/campanias-recordatorio-de-interaccion`
 
 ## Objetivo
