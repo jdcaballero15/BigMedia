@@ -81,7 +81,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E10 Armado de campañas y reserva masiva | [ajuste-campania-alta-con-posiciones](units/ajuste-campania-alta-con-posiciones.md) | campanias, reservas | HU-023, HU-055, HU-056, HU-057 | ajuste-campania-siempre-confirmada | Juan Diego | feature/frontend-campania-alta-con-posiciones | en revisión |
 | E11 Facturación mensual | [ajuste-item-op-y-costos](units/ajuste-item-op-y-costos.md) | facturacion | HU-060, HU-062, HU-063 (ajuste), RN-024 | facturacion-sin-estados, costos-del-item, docs/historias-item-con-op-y-costos | Juan Diego | feature/facturacion-item-op-y-costos | mergeada |
 | E3 Clientes, marcas y CRM | [ajuste-tipos-cliente-y-jerarquia-contactos](units/ajuste-tipos-cliente-y-jerarquia-contactos.md) | clientes | pedido de Juan Diego (2026-11-18), HU-016, HU-068, RN-015 | contactos-intermediario | Juan Diego | feature/clientes-centrales-planificadores | en curso |
-| E3 Clientes, marcas y CRM | [ajuste-interacciones-en-ficha-cliente](units/ajuste-interacciones-en-ficha-cliente.md) | frontend | pedido de Gonza (2026-11-19), HU-020, HU-021 | interacciones, fichas-cliente-y-marca | Gonza | feature/frontend-interacciones-en-ficha-cliente | en curso |
+| E3 Clientes, marcas y CRM | [ajuste-interacciones-en-ficha-cliente](units/ajuste-interacciones-en-ficha-cliente.md) | frontend | pedido de Gonza (2026-11-19), HU-020, HU-021 | interacciones, fichas-cliente-y-marca | Gonza | feature/frontend-interacciones-en-ficha-cliente | en revisión |
 
 ## Notas
 

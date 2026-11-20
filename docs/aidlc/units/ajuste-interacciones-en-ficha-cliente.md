@@ -1,6 +1,6 @@
 # Unidad: ajuste-interacciones-en-ficha-cliente
 
-- **Estado:** en curso · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** frontend
+- **Estado:** en revisión · **Épica:** E3 Clientes, marcas y CRM · **App dueña:** frontend
 - **Origen:** pedido de Gonza (2026-11-19), HU-020, HU-021 · **Rama:** `feature/frontend-interacciones-en-ficha-cliente`
 
 ## Objetivo
