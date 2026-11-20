@@ -27,7 +27,7 @@ Este documento define 70 historias de usuario, agrupadas en 12 épicas, que cubr
 | E0 | Plataforma base | HU-001 a HU-002 |
 | E1 | Seguridad y acceso | HU-003 a HU-007 |
 | E2 | Inventario de soportes | HU-008 a HU-015 |
-| E3 | Clientes, marcas y CRM | HU-016 a HU-022 y HU-068 |
+| E3 | Clientes, marcas y CRM | HU-016 a HU-022, HU-068 y HU-072 |
 | E4 | Campañas | HU-023 a HU-027 y HU-069 |
 | E5 | Reservas y motor de disponibilidad | HU-028 a HU-040 |
 | E6 | Vista de disponibilidad | HU-041 a HU-042 |
@@ -357,6 +357,22 @@ La épica E5 es el núcleo del sistema: si hay que recortar alcance, se recorta 
   5. Dado un contacto inactivado, cuando se elige un contacto en una interacción, entonces no aparece como opción, pero se conserva en las interacciones pasadas.
   6. Dado un cliente intermediario formal con contactos activos, cuando se intenta cambiar su tipo, entonces el sistema pide inactivar antes los contactos.
   7. Dada la ficha de un intermediario formal (HU-021), cuando se abre, entonces se ven sus contactos y, en cada interacción, el contacto indicado si lo hubo.
+
+### HU-072 Recordatorio de una interacción
+
+- **Actor:** Operativo
+- **Descripción:** Como operativo, quiero ponerle a una interacción una fecha de recordatorio y qué hay que hacer (por ejemplo, «Enviar presupuesto» después de una reunión), para que ese día el equipo lo vea en el Panel y no se olvide.
+- **Prioridad:** Should
+- **Complejidad:** S
+- **Precondición:** HU-020 y HU-047 completas.
+- **Regla de negocio:** El recordatorio es opcional y se carga en la misma interacción, desde la ficha del cliente: lleva una fecha y un texto de qué hacer, que van juntos (no se acepta uno sin el otro). Un recordatorio está pendiente hasta que alguien con permiso de edición lo marca como hecho; al marcarlo se guarda cuándo y quién. Los recordatorios los ve todo el equipo, no solo quien cargó la interacción. Quedan fuera de alcance los avisos por correo y los recordatorios sin interacción.
+- **Criterios de aceptación:**
+  1. Dada una interacción con fecha de recordatorio y qué hacer, cuando se guarda, entonces en la ficha del cliente se ve el recordatorio con su fecha y si está pendiente o hecho.
+  2. Dada una fecha de recordatorio sin qué hacer, o un qué hacer sin fecha, cuando se guarda, entonces se rechaza.
+  3. Dado un recordatorio pendiente con fecha de hoy o anterior, cuando se abre el Panel, entonces aparece en «Recordatorios» con la fecha, qué hacer, el cliente y quién cargó la interacción, del más viejo al más nuevo; los de días anteriores se marcan como vencidos.
+  4. Dado un recordatorio pendiente con fecha futura, cuando se abre el Panel, entonces no aparece hasta ese día.
+  5. Dado un recordatorio en el Panel, cuando alguien con permiso de edición toca «Hecho», entonces deja de aparecer y la interacción conserva que se hizo, cuándo y quién.
+  6. Dado el rol Lectura, cuando abre el Panel, entonces ve los recordatorios sin el botón «Hecho».
 
 # E4 - Campañas
 
