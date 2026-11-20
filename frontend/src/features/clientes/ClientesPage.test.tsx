@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import ClientesPage from './ClientesPage'
 import type { Cliente, Marca } from './types'
 import { abrirAcciones } from '../../shared/pruebas'
+import { PuedeEditarContext } from '../../shared/sesion'
 
 const ok = (data: unknown) => ({ ok: true, status: 200, json: async () => data })
 const fail = (status: number, data: unknown) => ({ ok: false, status, json: async () => data })
@@ -415,4 +416,38 @@ test('la ficha de un cliente sin campañas muestra las secciones vacías sin err
   expect(await screen.findByText('Todavía no hay campañas.')).toBeDefined()
   expect(await screen.findByText('Todavía no hay interacciones registradas.')).toBeDefined()
   expect(screen.queryByRole('alert')).toBeNull()
+})
+
+test('en la ficha se cargan las interacciones del cliente, con el cliente fijo', async () => {
+  mockFetch((url) => {
+    if (url === '/api/clientes/clientes/') return ok([agencia])
+    if (url.startsWith('/api/clientes/')) return ok([])
+    return undefined
+  })
+  render(<ClientesPage />)
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
+  verSeccion('Interacciones')
+  const interacciones = screen.getByRole('region', { name: 'Interacciones con Agencia Andes' })
+  fireEvent.click(await within(interacciones).findByRole('button', { name: 'Nueva interacción' }))
+  const form = screen.getByRole('form', { name: 'Formulario de interacción' })
+  expect((within(form).getByLabelText('Cliente') as HTMLInputElement).value).toBe('Agencia Andes')
+})
+
+test('el rol de solo lectura ve las interacciones de la ficha sin poder cargarlas', async () => {
+  mockFetch((url) => {
+    if (url === '/api/clientes/clientes/') return ok([agencia])
+    if (url.startsWith('/api/clientes/')) return ok([])
+    return undefined
+  })
+  render(
+    <PuedeEditarContext.Provider value={false}>
+      <ClientesPage />
+    </PuedeEditarContext.Provider>,
+  )
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ficha' }))
+  verSeccion('Interacciones')
+  expect(await screen.findByText('Todavía no hay interacciones registradas.')).toBeDefined()
+  expect(screen.queryByRole('button', { name: 'Nueva interacción' })).toBeNull()
 })

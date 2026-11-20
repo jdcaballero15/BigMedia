@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError, apiGet } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
-import { vigentes } from '../../shared/opciones'
 import type { Cliente, Contacto, Marca } from '../clientes/types'
 import type { Campania, Interaccion, TipoInteraccion } from './types'
 import { TIPOS_INTERACCION } from './types'
@@ -20,14 +19,15 @@ export type InteraccionInput = {
 
 type Props = {
   interaccion?: Interaccion | null
-  clientes: Cliente[]
+  /** El cliente de la ficha: viene fijo y no se puede cambiar. */
+  cliente: Cliente
   onSave: (input: InteraccionInput) => Promise<void>
   onCancel: () => void
 }
 
-type Opciones = { cliente: string; contactos: Contacto[]; campanias: Campania[]; marcas: Marca[] }
+type Opciones = { contactos: Contacto[]; campanias: Campania[]; marcas: Marca[] }
 
-const SIN_OPCIONES = { contactos: [], campanias: [], marcas: [] }
+const SIN_OPCIONES: Opciones = { contactos: [], campanias: [], marcas: [] }
 
 function hoy(): string {
   const ahora = new Date()
@@ -35,77 +35,63 @@ function hoy(): string {
   return `${ahora.getFullYear()}-${dos(ahora.getMonth() + 1)}-${dos(ahora.getDate())}`
 }
 
-/** Alta y edición de una interacción comercial (HU-020). */
-export default function InteraccionForm({ interaccion, clientes, onSave, onCancel }: Props) {
+/** Alta y edición de una interacción comercial desde la ficha del cliente (HU-020). */
+export default function InteraccionForm({ interaccion, cliente, onSave, onCancel }: Props) {
   const [tipo, setTipo] = useState<TipoInteraccion>(interaccion?.tipo ?? 'llamada')
   const [asunto, setAsunto] = useState(interaccion?.asunto ?? '')
   const [fecha, setFecha] = useState(interaccion?.fecha ?? hoy())
   const [notas, setNotas] = useState(interaccion?.notas ?? '')
-  const [cliente, setCliente] = useState(String(interaccion?.cliente ?? ''))
   const [contacto, setContacto] = useState(String(interaccion?.contacto ?? ''))
   const [campania, setCampania] = useState(String(interaccion?.campania ?? ''))
   const [marca, setMarca] = useState(String(interaccion?.marca ?? ''))
-  const [opciones, setOpciones] = useState<Opciones>({ cliente: '', ...SIN_OPCIONES })
+  const [opciones, setOpciones] = useState<Opciones>(SIN_OPCIONES)
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const clienteElegido = clientes.find((item) => String(item.id) === cliente)
-  const esFormal = clienteElegido?.tipo === 'intermediario_formal'
+  const esFormal = cliente.tipo === 'intermediario_formal'
 
-  // Contactos activos, campañas y marcas activas del cliente elegido.
+  // Contactos activos, campañas y marcas activas del cliente.
   useEffect(() => {
-    if (!cliente) return
     let active = true
     void Promise.all([
       esFormal
-        ? apiGet<Contacto[]>(`/api/clientes/contactos/?cliente=${cliente}`)
+        ? apiGet<Contacto[]>(`/api/clientes/contactos/?cliente=${cliente.id}`)
         : Promise.resolve([]),
-      apiGet<Campania[]>(`/api/campanias/campanias/?cliente=${cliente}`),
-      apiGet<Marca[]>(`/api/clientes/marcas/?cliente=${cliente}`),
+      apiGet<Campania[]>(`/api/campanias/campanias/?cliente=${cliente.id}`),
+      apiGet<Marca[]>(`/api/clientes/marcas/?cliente=${cliente.id}`),
     ])
       .then(([contactos, campanias, marcas]) => {
-        if (active) setOpciones({ cliente, contactos, campanias, marcas })
+        if (active) setOpciones({ contactos, campanias, marcas })
       })
       .catch(() => {
-        if (active) setOpciones({ cliente, ...SIN_OPCIONES })
+        if (active) setOpciones(SIN_OPCIONES)
       })
     return () => {
       active = false
     }
-  }, [cliente, esFormal])
+  }, [cliente.id, esFormal])
 
-  const cargadas = opciones.cliente === cliente ? opciones : SIN_OPCIONES
   // El contacto que ya tenía la interacción se muestra aunque después se haya inactivado.
   const contactoGuardado =
     interaccion?.contacto != null &&
-    String(interaccion.cliente) === cliente &&
-    !cargadas.contactos.some((item) => item.id === interaccion.contacto)
+    !opciones.contactos.some((item) => item.id === interaccion.contacto)
       ? [{ id: interaccion.contacto, nombre: `${interaccion.contacto_nombre ?? ''} (inactivo)` }]
       : []
-  const opcionesContacto = [...cargadas.contactos, ...contactoGuardado]
+  const opcionesContacto = [...opciones.contactos, ...contactoGuardado]
   // Igual con la marca; y con una marca elegida, solo sus campañas (RN-018).
   const marcaGuardada =
-    interaccion?.marca != null &&
-    String(interaccion.cliente) === cliente &&
-    !cargadas.marcas.some((item) => item.id === interaccion.marca)
+    interaccion?.marca != null && !opciones.marcas.some((item) => item.id === interaccion.marca)
       ? [{ id: interaccion.marca, nombre: `${interaccion.marca_nombre ?? ''} (inactiva)` }]
       : []
-  const opcionesMarca = [...cargadas.marcas, ...marcaGuardada]
+  const opcionesMarca = [...opciones.marcas, ...marcaGuardada]
   const opcionesCampania = marca
-    ? cargadas.campanias.filter((item) => String(item.marca) === marca)
-    : cargadas.campanias
-
-  function elegirCliente(valor: string) {
-    setCliente(valor)
-    setContacto('')
-    setCampania('')
-    setMarca('')
-  }
+    ? opciones.campanias.filter((item) => String(item.marca) === marca)
+    : opciones.campanias
 
   function elegirMarca(valor: string) {
     setMarca(valor)
-    const elegida = cargadas.campanias.find((item) => String(item.id) === campania)
+    const elegida = opciones.campanias.find((item) => String(item.id) === campania)
     if (valor && elegida && String(elegida.marca) !== valor) setCampania('')
   }
 
@@ -120,7 +106,7 @@ export default function InteraccionForm({ interaccion, clientes, onSave, onCance
         asunto: asunto.trim(),
         fecha,
         notas: notas.trim(),
-        cliente: cliente ? Number(cliente) : null,
+        cliente: cliente.id,
         contacto: contacto ? Number(contacto) : null,
         campania: campania ? Number(campania) : null,
         marca: marca ? Number(marca) : null,
@@ -149,15 +135,7 @@ export default function InteraccionForm({ interaccion, clientes, onSave, onCance
       <div className="form-grid">
         <label>
           Cliente
-          <select value={cliente} onChange={(event) => elegirCliente(event.target.value)}>
-            <option value="">Seleccionar</option>
-            {vigentes(clientes, interaccion?.cliente).map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.nombre_visible}
-                {item.activo ? '' : ' (inactivo)'}
-              </option>
-            ))}
-          </select>
+          <input value={cliente.nombre_visible} readOnly />
           <FieldErrors messages={errors.cliente} />
         </label>
         <label>
@@ -197,11 +175,7 @@ export default function InteraccionForm({ interaccion, clientes, onSave, onCance
         )}
         <label>
           Marca (opcional)
-          <select
-            value={marca}
-            disabled={!cliente}
-            onChange={(event) => elegirMarca(event.target.value)}
-          >
+          <select value={marca} onChange={(event) => elegirMarca(event.target.value)}>
             <option value="">Sin marca</option>
             {opcionesMarca.map((item) => (
               <option key={item.id} value={item.id}>
@@ -213,11 +187,7 @@ export default function InteraccionForm({ interaccion, clientes, onSave, onCance
         </label>
         <label>
           Campaña (opcional)
-          <select
-            value={campania}
-            disabled={!cliente}
-            onChange={(event) => setCampania(event.target.value)}
-          >
+          <select value={campania} onChange={(event) => setCampania(event.target.value)}>
             <option value="">Sin campaña</option>
             {opcionesCampania.map((item) => (
               <option key={item.id} value={item.id}>
@@ -225,8 +195,7 @@ export default function InteraccionForm({ interaccion, clientes, onSave, onCance
               </option>
             ))}
             {interaccion?.campania != null &&
-              String(interaccion.cliente) === cliente &&
-              !cargadas.campanias.some((item) => item.id === interaccion.campania) && (
+              !opciones.campanias.some((item) => item.id === interaccion.campania) && (
                 <option value={interaccion.campania}>{interaccion.campania_nombre}</option>
               )}
           </select>
