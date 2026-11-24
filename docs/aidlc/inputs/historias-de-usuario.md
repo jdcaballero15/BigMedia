@@ -736,11 +736,11 @@ Esta historia se fusionó en HU-059: la confirmación en bloque es parcial (las 
 - **Prioridad:** Should
 - **Complejidad:** L
 - **Precondición:** HU-028 completa y datos reales cargados.
-- **Regla de negocio:** La ocupación se mide en días-cupo: días-cupo ocupados sobre días-cupo disponibles, usando la capacidad real del cartel. Los séxtuples tienen capacidad variable y se tratan igual que los digitales, no como binarios. Por defecto se muestran separados por modalidad; nunca se promedian carteles fijos con LED.
+- **Regla de negocio:** La ocupación se mide en días-cupo: días-cupo ocupados sobre días-cupo disponibles, usando la capacidad real del cartel. Los séxtuples tienen capacidad variable y se tratan igual que los digitales, no como binarios. Por defecto se muestran separados por formato (cada formato tiene una sola modalidad, así que nunca se promedian carteles fijos con LED).
 - **Criterios de aceptación:**
   1. Dado un cartel fijo de capacidad 1 ocupado 15 de 30 días, cuando se mide, entonces su ocupación es 50%.
   2. Dado un LED de capacidad 20 con 10 cupos ocupados todo el mes, cuando se mide, entonces su ocupación es 50%.
-  3. Dado el reporte, cuando se abre, entonces ofrece ranking de carteles, evolución mensual y mapa de calor cartel por mes, segmentable por modalidad y zona.
+  3. Dado el reporte, cuando se abre, entonces ofrece ranking de carteles, evolución mensual y mapa de calor cartel por mes, segmentable por formato.
 
 ### HU-049 Reporte de ingresos por cliente y marca
 
