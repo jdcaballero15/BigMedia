@@ -257,12 +257,8 @@ class ReporteOcupacionView(APIView):
             raise ValidationError(
                 {"hasta": f"El rango no puede superar los {services.MESES_CALENDARIO_MAX} meses."}
             )
-        zona = _id_positivo(params["zona"], "zona") if params.get("zona") else None
-        return Response(
-            services.reporte_ocupacion(
-                desde, hasta, zona=zona, modalidad=params.get("modalidad") or None
-            )
-        )
+        formato = _id_positivo(params["formato"], "formato") if params.get("formato") else None
+        return Response(services.reporte_ocupacion(desde, hasta, formato=formato))
 
     @staticmethod
     def _mes(valor: str | None, por_defecto: date) -> date:

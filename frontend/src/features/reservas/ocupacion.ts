@@ -18,9 +18,10 @@ export type CartelOcupacion = {
   celdas: CeldaOcupacion[]
 }
 
-export type ModalidadOcupacion = {
+export type FormatoOcupacion = {
+  formato: number
+  nombre: string
   modalidad: string
-  etiqueta: string
   ocupacion: number
   por_mes: { periodo: string; porcentaje: number }[]
 }
@@ -28,7 +29,7 @@ export type ModalidadOcupacion = {
 export type ReporteOcupacion = {
   periodos: PeriodoOcupacion[]
   carteles: CartelOcupacion[]
-  modalidades: ModalidadOcupacion[]
+  formatos: FormatoOcupacion[]
 }
 
 const formateador = new Intl.NumberFormat('es-AR', {

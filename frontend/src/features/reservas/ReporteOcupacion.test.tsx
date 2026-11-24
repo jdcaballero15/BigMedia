@@ -39,10 +39,11 @@ const reporte = {
       ],
     },
   ],
-  modalidades: [
+  formatos: [
     {
+      formato: 3,
+      nombre: 'Cartelera',
       modalidad: 'fija',
-      etiqueta: 'Fija',
       ocupacion: 75.0,
       por_mes: [
         { periodo: '2026-10', porcentaje: 100.0 },
@@ -50,8 +51,9 @@ const reporte = {
       ],
     },
     {
+      formato: 4,
+      nombre: 'LED',
       modalidad: 'digital',
-      etiqueta: 'Digital',
       ocupacion: 25.0,
       por_mes: [
         { periodo: '2026-10', porcentaje: 25.0 },
@@ -63,10 +65,10 @@ const reporte = {
 
 function stubFetch(data: unknown = reporte) {
   const fetchMock = vi.fn(async (input: string) => {
-    if (input.includes('/inventario/zonas/'))
+    if (input.includes('/inventario/formatos/'))
       return ok([
-        { id: 1, nombre: 'Ciudad' },
-        { id: 2, nombre: 'Maipú' },
+        { id: 3, nombre: 'Cartelera' },
+        { id: 4, nombre: 'LED' },
       ])
     if (input.includes('/reservas/reporte-ocupacion/')) return ok(data)
     throw new Error(`URL inesperada: ${input}`)
@@ -89,11 +91,50 @@ test('muestra el mapa de calor con los carteles en orden y las columnas de meses
   expect(screen.getAllByText(formatearPorcentaje(75)).length).toBeGreaterThan(0)
 })
 
-test('muestra la evolución por modalidad', async () => {
+test('muestra la evolución por formato, un renglón por formato', async () => {
   stubFetch()
   render(<ReporteOcupacionPage />)
-  expect(await screen.findByText('Evolución por modalidad')).toBeDefined()
-  expect(screen.getByRole('table', { name: 'Ocupación por modalidad' })).toBeDefined()
+  expect(await screen.findByText('Evolución por formato')).toBeDefined()
+  const tabla = screen.getByRole('table', { name: 'Ocupación por formato' })
+  expect(within(tabla).getByText('Cartelera')).toBeDefined()
+  expect(within(tabla).getByText('LED')).toBeDefined()
+  expect(screen.queryByText('Evolución por modalidad')).toBeNull()
+})
+
+test('no ofrece filtros de departamento ni de modalidad', async () => {
+  stubFetch()
+  render(<ReporteOcupacionPage />)
+  await screen.findByText('Av. San Martín 1234')
+  expect(screen.queryByLabelText('Departamento')).toBeNull()
+  expect(screen.queryByLabelText('Modalidad')).toBeNull()
+  expect(screen.getByLabelText('Formato')).toBeDefined()
+})
+
+test('elegir un formato pide el reporte con formato=<id>', async () => {
+  const fetchMock = stubFetch()
+  render(<ReporteOcupacionPage />)
+  await screen.findByText('Av. San Martín 1234')
+  await screen.findByRole('option', { name: 'LED' })
+  fireEvent.change(screen.getByLabelText('Formato'), { target: { value: '4' } })
+  await waitFor(() =>
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes('formato=4'))).toBe(true),
+  )
+  expect(fetchMock.mock.calls.some(([u]) => /zona=|modalidad=/.test(String(u)))).toBe(false)
+})
+
+test('el PDF indica el formato elegido en el texto de filtros', async () => {
+  stubFetch()
+  render(<ReporteOcupacionPage />)
+  await screen.findByText('Av. San Martín 1234')
+  await screen.findByRole('option', { name: 'LED' })
+  fireEvent.change(screen.getByLabelText('Formato'), { target: { value: '4' } })
+  await screen.findByText('Av. San Martín 1234')
+  fireEvent.click(screen.getByRole('button', { name: 'Exportar PDF' }))
+  const llamadas = vi.mocked(descargarPdf).mock.calls
+  const [, , filtros, columnas] = llamadas[llamadas.length - 1]
+  expect(filtros).toContain('Formato: LED')
+  expect(filtros).not.toContain('Departamento')
+  expect(columnas).toContain('Formato')
 })
 
 test('cambiar el período vuelve a pedir el reporte', async () => {
@@ -116,7 +157,7 @@ test('exporta el reporte a PDF', async () => {
 })
 
 test('sin carteles muestra el estado vacío', async () => {
-  stubFetch({ periodos: [], carteles: [], modalidades: [] })
+  stubFetch({ periodos: [], carteles: [], formatos: [] })
   render(<ReporteOcupacionPage />)
   expect(await screen.findByText('No hay carteles para estos filtros.')).toBeDefined()
 })
@@ -143,14 +184,14 @@ test('marca los carteles de baja que tuvieron reservas en el período', async ()
   expect(screen.getByText('Ruta 40 km 10')).toBeDefined()
 })
 
-test('reporteOcupacion_resumen_muestraLaOcupacionDeCadaModalidadYLosCarteles', async () => {
+test('reporteOcupacion_resumen_muestraLaOcupacionDeCadaFormatoYLosCarteles', async () => {
   stubFetch()
   render(<ReporteOcupacionPage />)
 
   const resumen = await screen.findByLabelText('Resumen del período')
-  expect(within(resumen).getByText('Ocupación fija').parentElement?.className).toBe(
+  expect(within(resumen).getByText('Ocupación Cartelera').parentElement?.className).toBe(
     'cifra cifra-principal',
   )
-  expect(within(resumen).getByText('Ocupación digital')).toBeDefined()
+  expect(within(resumen).getByText('Ocupación LED')).toBeDefined()
   expect(within(resumen).getByText('Carteles en el reporte')).toBeDefined()
 })
