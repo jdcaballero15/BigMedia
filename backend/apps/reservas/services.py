@@ -266,13 +266,14 @@ def _ocupacion_celda(
     return min(ocupados, disponibles), disponibles
 
 
-def _totales_por_modalidad(
-    acumulado: dict[str, dict[str, list[int]]], meses: list[dict[str, Any]]
+def _totales_por_formato(
+    acumulado: dict[int, dict[str, list[int]]],
+    formatos: dict[int, Formato],
+    meses: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Evolución y total por modalidad, sin mezclar fijos con LED (HU-048)."""
-    etiquetas = dict(Formato.Modalidad.choices)
+    """Evolución y total por formato; cada uno tiene una sola modalidad (HU-048)."""
     salida: list[dict[str, Any]] = []
-    for modalidad, por_mes in acumulado.items():
+    for formato_id, por_mes in acumulado.items():
         total_ocupados = total_disponibles = 0
         evolucion: list[dict[str, Any]] = []
         for mes in meses:
@@ -284,28 +285,28 @@ def _totales_por_modalidad(
             total_disponibles += disponibles
         salida.append(
             {
-                "modalidad": modalidad,
-                "etiqueta": etiquetas.get(modalidad, modalidad),
+                "formato": formato_id,
+                "nombre": formatos[formato_id].nombre,
+                "modalidad": formatos[formato_id].modalidad,
                 "ocupacion": _porcentaje(total_ocupados, total_disponibles),
                 "por_mes": evolucion,
             }
         )
-    salida.sort(key=lambda m: m["modalidad"])
+    salida.sort(key=lambda f: f["nombre"])
     return salida
 
 
 def reporte_ocupacion(
     desde: date,
     hasta: date,
-    zona: int | None = None,
-    modalidad: str | None = None,
+    formato: int | None = None,
 ) -> dict[str, Any]:
     """Ocupación en días-cupo por cartel y mes: mapa de calor, ranking y evolución (HU-048).
 
     Para cada cartel no dado de baja, o de baja con reservas en el período (HU-006), y cada mes
     del período calcula los días-cupo ocupados sobre los
     disponibles (`capacidad x días`). Las filas se ordenan por ocupación del período (ranking) y los
-    totales por modalidad no mezclan fijos con digitales.
+    totales por formato nunca mezclan fijos con digitales.
     """
     meses = _meses_del_rango(desde, hasta)
     en_periodo = Reserva.objects.filter(
@@ -316,10 +317,8 @@ def reporte_ocupacion(
     carteles = Cartel.objects.filter(
         Q(estado__es_baja=False) | Q(pk__in=en_periodo.values("cartel_id"))
     ).select_related("formato", "zona", "estado")
-    if zona is not None:
-        carteles = carteles.filter(zona_id=zona)
-    if modalidad:
-        carteles = carteles.filter(formato__modalidad=modalidad)
+    if formato is not None:
+        carteles = carteles.filter(formato_id=formato)
     carteles = carteles.order_by("direccion", "id")
 
     reservas = en_periodo.filter(cartel__in=carteles)
@@ -328,8 +327,10 @@ def reporte_ocupacion(
         por_cartel.setdefault(reserva.cartel_id, []).append(reserva)
 
     filas: list[dict[str, Any]] = []
-    acumulado: dict[str, dict[str, list[int]]] = {}
+    acumulado: dict[int, dict[str, list[int]]] = {}
+    formatos: dict[int, Formato] = {}
     for cartel in carteles:
+        formatos[cartel.formato_id] = cartel.formato
         propias = por_cartel.get(cartel.pk, [])
         celdas: list[dict[str, Any]] = []
         total_ocupados = total_disponibles = 0
@@ -345,9 +346,7 @@ def reporte_ocupacion(
             )
             total_ocupados += ocupados
             total_disponibles += disponibles
-            slot = acumulado.setdefault(cartel.formato.modalidad, {}).setdefault(
-                mes["clave"], [0, 0]
-            )
+            slot = acumulado.setdefault(cartel.formato_id, {}).setdefault(mes["clave"], [0, 0])
             slot[0] += ocupados
             slot[1] += disponibles
         filas.append(
@@ -367,7 +366,7 @@ def reporte_ocupacion(
     return {
         "periodos": periodos,
         "carteles": filas,
-        "modalidades": _totales_por_modalidad(acumulado, meses),
+        "formatos": _totales_por_formato(acumulado, formatos, meses),
     }
 
 

@@ -81,12 +81,27 @@ def test_ranking_ordena_por_ocupacion_descendente(operativo_client):
 
 
 @pytest.mark.django_db
-def test_totales_por_modalidad_no_mezclan_fijos_con_digitales(operativo_client):
-    reservar(cartel(formato("fija"), 1), date(2026, 11, 1), date(2026, 11, 30))  # fija 100 %
-    reservar(cartel(formato("digital"), 1), date(2026, 11, 1), date(2026, 11, 15))  # digital 50 %
+def test_totales_por_formato_sin_mezclar_modalidades(operativo_client):
+    fija, digital = formato("fija"), formato("digital")
+    reservar(cartel(fija, 1), date(2026, 11, 1), date(2026, 11, 30))  # fija 100 %
+    reservar(cartel(digital, 1), date(2026, 11, 1), date(2026, 11, 15))  # digital 50 %
     datos = ocupacion(operativo_client, "2026-11", "2026-11").json()
-    por_modalidad = {m["modalidad"]: m["ocupacion"] for m in datos["modalidades"]}
-    assert por_modalidad == {"fija": 100.0, "digital": 50.0}
+    assert "modalidades" not in datos
+    por_formato = {f["formato"]: f for f in datos["formatos"]}
+    assert set(por_formato) == {fija.id, digital.id}
+    assert por_formato[fija.id]["ocupacion"] == 100.0
+    assert por_formato[fija.id]["nombre"] == fija.nombre
+    assert por_formato[fija.id]["modalidad"] == "fija"
+    assert por_formato[digital.id]["ocupacion"] == 50.0
+    assert por_formato[digital.id]["por_mes"] == [{"periodo": "2026-11", "porcentaje": 50.0}]
+
+
+@pytest.mark.django_db
+def test_totales_por_formato_omite_formato_sin_carteles(operativo_client):
+    fija = formato("fija")
+    reservar(cartel(fija, 1), date(2026, 11, 1), date(2026, 11, 30))
+    datos = ocupacion(operativo_client, "2026-11", "2026-11").json()
+    assert [f["formato"] for f in datos["formatos"]] == [fija.id]
 
 
 @pytest.mark.django_db
@@ -99,20 +114,30 @@ def test_reserva_cancelada_no_ocupa(operativo_client):
 
 
 @pytest.mark.django_db
-def test_filtro_por_modalidad_acota(operativo_client):
-    reservar(cartel(formato("fija"), 1), date(2026, 11, 1), date(2026, 11, 30))
-    reservar(cartel(formato("digital"), 1), date(2026, 11, 1), date(2026, 11, 30))
-    datos = ocupacion(operativo_client, "2026-11", "2026-11", modalidad="fija").json()
-    assert {f["modalidad"] for f in datos["carteles"]} == {"fija"}
+def test_filtro_formato_solo_ese_formato(operativo_client):
+    fija, digital = formato("fija"), formato("digital")
+    reservar(cartel(fija, 1), date(2026, 11, 1), date(2026, 11, 30))
+    reservar(cartel(digital, 1), date(2026, 11, 1), date(2026, 11, 30))
+    datos = ocupacion(operativo_client, "2026-11", "2026-11", formato=str(digital.id)).json()
+    assert {f["formato_nombre"] for f in datos["carteles"]} == {digital.nombre}
+    assert [f["formato"] for f in datos["formatos"]] == [digital.id]
 
 
 @pytest.mark.django_db
-def test_filtro_por_zona_acota(operativo_client):
+@pytest.mark.parametrize("valor", ["0", "-1", "abc"])
+def test_filtro_formato_invalido_devuelve_400(operativo_client, valor):
+    assert ocupacion(operativo_client, formato=valor).status_code == 400
+
+
+@pytest.mark.django_db
+def test_zona_y_modalidad_ya_no_filtran(operativo_client):
     ciudad = cartel(formato("fija"), 1, zona="Ciudad")
     reservar(ciudad, date(2026, 11, 1), date(2026, 11, 30))
-    reservar(cartel(formato("fija"), 1, zona="Maipú"), date(2026, 11, 1), date(2026, 11, 30))
-    datos = ocupacion(operativo_client, "2026-11", "2026-11", zona=str(ciudad.zona_id)).json()
-    assert [f["id"] for f in datos["carteles"]] == [ciudad.id]
+    reservar(cartel(formato("digital"), 1, zona="Maipú"), date(2026, 11, 1), date(2026, 11, 30))
+    datos = ocupacion(
+        operativo_client, "2026-11", "2026-11", zona=str(ciudad.zona_id), modalidad="fija"
+    ).json()
+    assert len(datos["carteles"]) == 2
 
 
 @pytest.mark.django_db

@@ -5,18 +5,18 @@ import { formatearPeriodo } from '../../shared/fechas'
 import { descargarPdf } from '../../shared/pdf'
 import Cifras from '../../shared/Cifras'
 import SelectorPeriodo from '../../shared/SelectorPeriodo'
-import type { Catalogo } from '../inventario/types'
+import type { Formato } from '../inventario/types'
 import {
   colorOcupacion,
   formatearPorcentaje,
   nombreCartel,
   type CartelOcupacion,
-  type ModalidadOcupacion,
+  type FormatoOcupacion,
   type PeriodoOcupacion,
   type ReporteOcupacion,
 } from './ocupacion'
 
-const vacio: ReporteOcupacion = { periodos: [], carteles: [], modalidades: [] }
+const vacio: ReporteOcupacion = { periodos: [], carteles: [], formatos: [] }
 const anioActual = new Date().getFullYear()
 
 function valorCartel(cartel: CartelOcupacion, periodo: string): number | null {
@@ -24,26 +24,25 @@ function valorCartel(cartel: CartelOcupacion, periodo: string): number | null {
   return celda ? celda.porcentaje : null
 }
 
-function valorModalidad(modalidad: ModalidadOcupacion, periodo: string): number | null {
-  const mes = modalidad.por_mes.find((m) => m.periodo === periodo)
+function valorFormato(item: FormatoOcupacion, periodo: string): number | null {
+  const mes = item.por_mes.find((m) => m.periodo === periodo)
   return mes ? mes.porcentaje : null
 }
 
 export default function ReporteOcupacionPage() {
   const [desde, setDesde] = useState(`${anioActual}-01`)
   const [hasta, setHasta] = useState(`${anioActual}-12`)
-  const [zona, setZona] = useState('')
-  const [modalidad, setModalidad] = useState('')
-  const [zonas, setZonas] = useState<Catalogo[]>([])
+  const [formato, setFormato] = useState('')
+  const [formatos, setFormatos] = useState<Formato[]>([])
   const [datos, setDatos] = useState<ReporteOcupacion>(vacio)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     let active = true
-    void apiGet<Catalogo[]>('/api/inventario/zonas/')
+    void apiGet<Formato[]>('/api/inventario/formatos/')
       .then((filas) => {
-        if (active) setZonas(filas)
+        if (active) setFormatos(filas)
       })
       .catch(() => {
         if (active) setError('No se pudieron cargar los filtros.')
@@ -56,8 +55,7 @@ export default function ReporteOcupacionPage() {
   useEffect(() => {
     let active = true
     const params = new URLSearchParams({ desde, hasta })
-    if (zona) params.set('zona', zona)
-    if (modalidad) params.set('modalidad', modalidad)
+    if (formato) params.set('formato', formato)
     void apiGet<ReporteOcupacion>(`/api/reservas/reporte-ocupacion/?${params}`)
       .then((reporte) => {
         if (active) {
@@ -74,7 +72,7 @@ export default function ReporteOcupacionPage() {
     return () => {
       active = false
     }
-  }, [desde, hasta, zona, modalidad])
+  }, [desde, hasta, formato])
 
   function cambiar(apply: () => void) {
     setLoading(true)
@@ -84,6 +82,7 @@ export default function ReporteOcupacionPage() {
   function exportar() {
     const columnas = [
       'Cartel',
+      'Formato',
       'Modalidad',
       'Departamento',
       ...datos.periodos.map((p) => p.etiqueta),
@@ -91,6 +90,7 @@ export default function ReporteOcupacionPage() {
     ]
     const filas = datos.carteles.map((cartel) => [
       nombreCartel(cartel),
+      cartel.formato_nombre,
       cartel.modalidad,
       cartel.zona_nombre,
       ...datos.periodos.map((p) => valorCartel(cartel, p.clave) ?? 0),
@@ -101,15 +101,15 @@ export default function ReporteOcupacionPage() {
 
   function filtrosTexto(): string {
     const partes = [`Período: ${formatearPeriodo(desde)} a ${formatearPeriodo(hasta)}`]
-    const depto = zonas.find((z) => String(z.id) === zona)
-    if (depto) partes.push(`Departamento: ${depto.nombre}`)
-    if (modalidad) partes.push(`Modalidad: ${modalidad === 'fija' ? 'Fija' : 'Digital'}`)
+    const elegido = formatos.find((f) => String(f.id) === formato)
+    if (elegido) partes.push(`Formato: ${elegido.nombre}`)
     return partes.join(' · ')
   }
 
   function exportarPdf() {
     const columnas = [
       'Cartel',
+      'Formato',
       'Modalidad',
       'Departamento',
       ...datos.periodos.map((p) => p.etiqueta),
@@ -122,6 +122,7 @@ export default function ReporteOcupacionPage() {
       }
       return [
         nombreCartel(cartel),
+        cartel.formato_nombre,
         cartel.modalidad === 'fija' ? 'Fija' : 'Digital',
         cartel.zona_nombre,
         ...datos.periodos.map((p) => valor(p.clave)),
@@ -170,25 +171,17 @@ export default function ReporteOcupacionPage() {
           }
         />
         <label>
-          Departamento
-          <select value={zona} onChange={(event) => cambiar(() => setZona(event.target.value))}>
+          Formato
+          <select
+            value={formato}
+            onChange={(event) => cambiar(() => setFormato(event.target.value))}
+          >
             <option value="">Todos</option>
-            {zonas.map((item) => (
+            {formatos.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.nombre}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          Modalidad
-          <select
-            value={modalidad}
-            onChange={(event) => cambiar(() => setModalidad(event.target.value))}
-          >
-            <option value="">Todas</option>
-            <option value="fija">Fija</option>
-            <option value="digital">Digital</option>
           </select>
         </label>
       </div>
@@ -196,8 +189,8 @@ export default function ReporteOcupacionPage() {
         <Cifras
           titulo="Resumen del período"
           cifras={[
-            ...datos.modalidades.map((item, indice) => ({
-              etiqueta: `Ocupación ${item.etiqueta.toLowerCase()}`,
+            ...datos.formatos.map((item, indice) => ({
+              etiqueta: `Ocupación ${item.nombre}`,
               valor: formatearPorcentaje(item.ocupacion),
               tono: indice === 0 ? ('principal' as const) : undefined,
             })),
@@ -210,18 +203,18 @@ export default function ReporteOcupacionPage() {
           {error}
         </p>
       )}
-      {!loading && datos.modalidades.length > 0 && (
+      {!loading && datos.formatos.length > 0 && (
         <div className="card table-wrap section-gap">
           <div className="card-heading">
             <div>
-              <h3>Evolución por modalidad</h3>
-              <p className="muted">Ocupación de cada modalidad, mes a mes.</p>
+              <h3>Evolución por formato</h3>
+              <p className="muted">Ocupación de cada formato, mes a mes.</p>
             </div>
           </div>
-          <table aria-label="Ocupación por modalidad">
+          <table aria-label="Ocupación por formato">
             <thead>
               <tr>
-                <th>Modalidad</th>
+                <th>Formato</th>
                 {datos.periodos.map((periodo) => (
                   <th key={periodo.clave}>{periodo.etiqueta}</th>
                 ))}
@@ -229,8 +222,8 @@ export default function ReporteOcupacionPage() {
               </tr>
             </thead>
             <tbody>
-              {datos.modalidades.map((item) => (
-                <FilaModalidad key={item.modalidad} item={item} periodos={datos.periodos} />
+              {datos.formatos.map((item) => (
+                <FilaFormato key={item.formato} item={item} periodos={datos.periodos} />
               ))}
             </tbody>
           </table>
@@ -272,18 +265,12 @@ export default function ReporteOcupacionPage() {
   )
 }
 
-function FilaModalidad({
-  item,
-  periodos,
-}: {
-  item: ModalidadOcupacion
-  periodos: PeriodoOcupacion[]
-}) {
+function FilaFormato({ item, periodos }: { item: FormatoOcupacion; periodos: PeriodoOcupacion[] }) {
   return (
     <tr>
-      <td className="primary-cell">{item.etiqueta}</td>
+      <td className="primary-cell">{item.nombre}</td>
       {periodos.map((periodo) => {
-        const valor = valorModalidad(item, periodo.clave)
+        const valor = valorFormato(item, periodo.clave)
         return <td key={periodo.clave}>{valor === null ? '—' : formatearPorcentaje(valor)}</td>
       })}
       <td>{formatearPorcentaje(item.ocupacion)}</td>

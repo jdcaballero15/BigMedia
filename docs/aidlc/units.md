@@ -83,6 +83,7 @@ Estados: `pendiente` · `en curso` · `en revisión` (PR abierto) · `mergeada`.
 | E3 Clientes, marcas y CRM | [ajuste-tipos-cliente-y-jerarquia-contactos](units/ajuste-tipos-cliente-y-jerarquia-contactos.md) | clientes | pedido de Juan Diego (2026-11-18), HU-016, HU-068, RN-015 | contactos-intermediario | Juan Diego | feature/clientes-centrales-planificadores | en curso |
 | E3 Clientes, marcas y CRM | [ajuste-interacciones-en-ficha-cliente](units/ajuste-interacciones-en-ficha-cliente.md) | frontend | pedido de Gonza (2026-11-19), HU-020, HU-021 | interacciones, fichas-cliente-y-marca | Gonza | feature/frontend-interacciones-en-ficha-cliente | en revisión |
 | E3 Clientes, marcas y CRM | [recordatorio-de-interaccion](units/recordatorio-de-interaccion.md) | campanias | HU-072 | ajuste-interacciones-en-ficha-cliente, docs/historias-recordatorio-de-interaccion | Gonza | feature/campanias-recordatorio-de-interaccion | en revisión |
+| E8 Reportes y paneles | [ajuste-reporte-ocupacion-por-formato](units/ajuste-reporte-ocupacion-por-formato.md) | reservas | pedido de Juan Diego (2026-11-20), HU-048 (ajuste) | reporte-ocupacion, reporte-ocupacion-frontend, docs/historias-ocupacion-por-formato | Juan Diego | feature/reservas-ocupacion-por-formato | en revisión |
 
 ## Notas
 
