@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.core.exceptions import ValidationError
@@ -14,24 +16,28 @@ from apps.auditoria.models import RegistroAuditoria
 from apps.clientes.models import Cliente, Contacto, Marca
 from apps.inventario.models import Formato
 
-from .models import Campania, LineaFormato, OrdenPublicidad
+from .models import Campania, Interaccion, LineaFormato, OrdenPublicidad
 
 # Campo con el que la auditoría de la campaña registra adjuntar y dar de baja una orden.
 CAMPO_AUDITORIA_OP = "orden_publicidad"
 
 
-def validar_confirmacion(campania: Campania) -> None:
-    """Para confirmar se exigen marca, cliente que factura y ambas fechas (RN-011)."""
-    faltantes = []
+def validar_campania_completa(campania: Campania) -> None:
+    """La campaña nace Confirmada: marca, cliente que factura y fechas son obligatorios (RN-011).
+
+    Corre al crearla y al editarla. Cada dato que falta se informa en su propio campo.
+    """
+    errores: dict[str, str] = {}
     if campania.marca_id is None:
-        faltantes.append("la marca")
+        errores["marca"] = "Elegí la marca."
     if campania.cliente_factura is None:
-        faltantes.append("el cliente que factura")
-    if campania.fecha_inicio is None or campania.fecha_fin is None:
-        faltantes.append("las fechas")
-    if faltantes:
-        detalle = ", ".join(faltantes)
-        raise ValidationError({"estado": f"Para confirmar falta cargar {detalle}."})
+        errores["cliente_facturacion"] = "Elegí el cliente que factura o una marca con cliente."
+    if campania.fecha_inicio is None:
+        errores["fecha_inicio"] = "Cargá la fecha de inicio."
+    if campania.fecha_fin is None:
+        errores["fecha_fin"] = "Cargá la fecha de fin."
+    if errores:
+        raise ValidationError(errores)
 
 
 def estampar_cliente_anterior(marca: Marca, cliente_anterior: Cliente) -> None:
@@ -97,6 +103,37 @@ def validar_marca_de_interaccion(
         raise ValidationError({"marca": "Seleccioná una marca activa."})
     if campania is not None and campania.marca_id != marca.pk:
         raise ValidationError({"campania": "La campaña no es de esa marca."})
+
+
+def validar_recordatorio(fecha: date | None, texto: str) -> None:
+    """La fecha y qué hacer del recordatorio van juntos, o no va ninguno (HU-072)."""
+    if fecha is not None and not texto:
+        raise ValidationError({"recordatorio_texto": "Indicá qué hay que hacer ese día."})
+    if fecha is None and texto:
+        raise ValidationError({"recordatorio_fecha": "Indicá la fecha del recordatorio."})
+
+
+def recordatorio_cambia(actual: Interaccion | None, fecha: date | None, texto: str) -> bool:
+    """Si cambia la fecha o el texto de un recordatorio hecho, vuelve a quedar pendiente."""
+    return (
+        actual is not None
+        and actual.recordatorio_hecho_en is not None
+        and (actual.recordatorio_fecha != fecha or actual.recordatorio_texto != texto)
+    )
+
+
+def marcar_recordatorio_hecho(interaccion_id: int, usuario: AbstractBaseUser) -> Interaccion:
+    """Marca el recordatorio como hecho y guarda cuándo y quién (HU-072, criterio 5)."""
+    with transaction.atomic():
+        interaccion = Interaccion.objects.select_for_update().get(pk=interaccion_id)
+        if interaccion.recordatorio_fecha is None:
+            raise ValidationError({"recordatorio": "La interacción no tiene recordatorio."})
+        if interaccion.recordatorio_hecho_en is not None:
+            raise ValidationError({"recordatorio": "El recordatorio ya está hecho."})
+        interaccion.recordatorio_hecho_en = timezone.now()
+        interaccion.recordatorio_hecho_por_id = usuario.pk
+        interaccion.save(update_fields=["recordatorio_hecho_en", "recordatorio_hecho_por_id"])
+    return interaccion
 
 
 def validar_linea_formato(

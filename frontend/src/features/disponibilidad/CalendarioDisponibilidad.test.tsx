@@ -30,6 +30,7 @@ const reserva = {
   campania_nombre: 'Verano',
   fecha_inicio: '2026-11-10',
   fecha_fin: '2026-11-20',
+  estado: 'confirmada',
 }
 
 function stubFetch() {
@@ -82,5 +83,40 @@ test('tocar una celda ocupada muestra la campaña que la ocupa', async () => {
       fetchMock.mock.calls.some(([url]) => String(url).includes('/reservas/reservas/?cartel=7')),
     ).toBe(true),
   )
+  expect(await screen.findByText(/McDonalds/)).toBeDefined()
+  expect(screen.getByText(/Verano/).closest('tr')).not.toBeNull()
+})
+
+test('permite elegir un mes futuro para consultar disponibilidad', async () => {
+  const fetchMock = stubFetch()
+  render(<CalendarioDisponibilidad />)
+  await screen.findByText('Av. San Martín 1234 · 6x3')
+  fireEvent.change(screen.getByLabelText('Mes desde'), { target: { value: '2027-02' } })
+  await waitFor(() =>
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('desde=2027-02-01'))).toBe(
+      true,
+    ),
+  )
+})
+
+test('el detalle de una celda ocupada omite reservas canceladas', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: string) => {
+      if (input.includes('/inventario/zonas/')) return ok([])
+      if (input.includes('/inventario/formatos/')) return ok([])
+      if (input.includes('/reservas/calendario/')) return ok(calendario)
+      if (input.includes('/reservas/reservas/'))
+        return ok([
+          reserva,
+          { ...reserva, id: 4, nombre: 'Cancelada de prueba', estado: 'cancelada' },
+        ])
+      throw new Error(`URL inesperada: ${input}`)
+    }),
+  )
+  render(<CalendarioDisponibilidad />)
+  await screen.findByText('Av. San Martín 1234 · 6x3')
+  fireEvent.click(screen.getByRole('button', { name: /2026-11: 1 de 1/ }))
   expect(await screen.findByText(/Verano/)).toBeDefined()
+  expect(screen.queryByText(/Cancelada de prueba/)).toBeNull()
 })

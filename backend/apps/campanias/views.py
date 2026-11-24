@@ -10,6 +10,7 @@ from django.db import transaction
 from django.db.models import Q, QuerySet
 from django.http import FileResponse, HttpResponseBase, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -17,7 +18,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
-from apps.auditoria import services as auditoria_services
 from config.permisos import LecturaConSesionEdicionOperativo
 from config.texto import normalizar_busqueda
 
@@ -66,18 +66,10 @@ class CampaniaViewSet(viewsets.ModelViewSet[Campania]):
     def perform_update(self, serializer: BaseSerializer[Campania]) -> None:
         archivos = self._ordenes_publicidad()
         instancia = cast(Campania, serializer.instance)
-        anterior = instancia.estado
+        # El estado no cambia por acá: cancelar es una acción de reservas, que lo audita.
         with transaction.atomic():
             serializer.save()
             services.adjuntar_ordenes_publicidad(instancia, archivos, self._usuario())
-            nuevo = cast(Campania, serializer.instance).estado
-            auditoria_services.registrar_cambios(
-                "campania",
-                instancia.pk,
-                {"estado": anterior},
-                {"estado": nuevo},
-                self.request.user,
-            )
 
     def get_queryset(self) -> QuerySet[Campania]:
         queryset = super().get_queryset()
@@ -148,7 +140,28 @@ class InteraccionViewSet(viewsets.ModelViewSet[Interaccion]):
             # Las que llevan la marca y las de sus campañas, aunque no la tengan cargada (RN-018).
             marca = _id_positivo(params["marca"], "marca")
             queryset = queryset.filter(Q(marca_id=marca) | Q(campania__marca_id=marca))
+        if "recordatorio" in params:
+            queryset = self._pendientes(queryset, params["recordatorio"])
         return queryset
+
+    @staticmethod
+    def _pendientes(queryset: QuerySet[Interaccion], valor: str) -> QuerySet[Interaccion]:
+        """Recordatorios sin hacer con fecha de hoy o anterior, del más viejo (HU-072)."""
+        if valor != "pendiente":
+            raise ValidationError({"recordatorio": "El único valor posible es «pendiente»."})
+        return queryset.filter(
+            recordatorio_fecha__lte=timezone.localdate(), recordatorio_hecho_en__isnull=True
+        ).order_by("recordatorio_fecha", "id")
+
+    @action(detail=True, methods=["post"], url_path="recordatorio-hecho")
+    def recordatorio_hecho(self, request: Request, pk: str) -> Response:
+        """Marca el recordatorio como hecho (HU-072, criterio 5)."""
+        interaccion = get_object_or_404(self.get_queryset(), pk=pk)
+        try:
+            services.marcar_recordatorio_hecho(interaccion.pk, cast(AbstractBaseUser, request.user))
+        except DjangoValidationError as error:
+            raise ValidationError(error.message_dict) from error
+        return Response(self.get_serializer(self.get_queryset().get(pk=interaccion.pk)).data)
 
 
 class OrdenPublicidadViewSet(viewsets.GenericViewSet[OrdenPublicidad]):

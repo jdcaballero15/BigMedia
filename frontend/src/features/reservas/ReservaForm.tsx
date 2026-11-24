@@ -5,15 +5,13 @@ import CampoFecha from '../../shared/CampoFecha'
 import { erroresDeFechas } from '../../shared/fechas'
 import { FieldErrors } from '../../shared/FieldErrors'
 import type { Cartel } from '../inventario/types'
-import type { EstadoReserva, Reserva } from './types'
-import { ESTADOS_INICIALES, ESTADOS_RESERVA } from './types'
+import type { Reserva } from './types'
 
 export type ReservaInput = {
   campania: number
   cartel: number | null
   fecha_inicio: string
   fecha_fin: string
-  estado: EstadoReserva
   precio_alquiler: string
   precio_impresion: string
   precio_fijacion: string
@@ -31,17 +29,12 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
   const [cartel, setCartel] = useState(String(reserva?.cartel ?? ''))
   const [fechaInicio, setFechaInicio] = useState(reserva?.fecha_inicio ?? '')
   const [fechaFin, setFechaFin] = useState(reserva?.fecha_fin ?? '')
-  const [estado, setEstado] = useState<EstadoReserva>(reserva?.estado ?? 'pendiente')
   const [alquiler, setAlquiler] = useState(reserva?.precio_alquiler ?? '')
   const [impresion, setImpresion] = useState(reserva?.precio_impresion ?? '0')
   const [fijacion, setFijacion] = useState(reserva?.precio_fijacion ?? '0')
   const [errors, setErrors] = useState<Record<string, string[]>>({})
   const [generalError, setGeneralError] = useState('')
   const [saving, setSaving] = useState(false)
-  // Una reserva nueva nace Pendiente o Confirmada; al editar, el servidor valida la transición.
-  const estadosOfrecidos = reserva
-    ? ESTADOS_RESERVA
-    : ESTADOS_RESERVA.filter((item) => ESTADOS_INICIALES.includes(item.value))
 
   function elegirCartel(value: string) {
     setCartel(value)
@@ -65,7 +58,6 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
         cartel: cartel ? Number(cartel) : null,
         fecha_inicio: fechaInicio,
         fecha_fin: fechaFin,
-        estado,
         precio_alquiler: alquiler || '0',
         precio_impresion: impresion || '0',
         precio_fijacion: fijacion || '0',
@@ -112,20 +104,6 @@ export default function ReservaForm({ campaniaId, reserva, carteles, onSave, onC
               ))}
           </select>
           <FieldErrors messages={errors.cartel} />
-        </label>
-        <label>
-          Estado
-          <select
-            value={estado}
-            onChange={(event) => setEstado(event.target.value as EstadoReserva)}
-          >
-            {estadosOfrecidos.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-          <FieldErrors messages={errors.estado} />
         </label>
         <CampoFecha
           label="Fecha de inicio"

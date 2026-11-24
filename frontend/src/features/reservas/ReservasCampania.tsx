@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { apiGet, apiWrite } from '../../shared/api'
-import { formatearFecha } from '../../shared/fechas'
+import { dateAIso, formatearFecha } from '../../shared/fechas'
 import type { Cartel } from '../inventario/types'
 import ReservaForm from './ReservaForm'
 import type { ReservaInput } from './ReservaForm'
-import type { Reserva, ResultadoConfirmacion } from './types'
+import type { Reserva } from './types'
 import { etiquetaEstadoReserva } from './types'
 import CostosReserva from '../costos/CostosReserva'
 import { usePuedeEditar } from '../../shared/sesion'
@@ -15,12 +15,17 @@ type Props = {
   /** Cambia cuando se crean reservas desde otra sección (por ejemplo, "Agregar carteles"). */
   revisionExterna?: number
   onCambio?: () => void
-  /** "Confirmar reservas" solo se ofrece con la campaña Confirmada (HU-059). */
-  campaniaConfirmada?: boolean
+  /** Una campaña Cancelada no admite reservas nuevas ni quitar (HU-024). */
+  campaniaCancelada?: boolean
+}
+
+/** Hoy en "aaaa-mm-dd", para saber si una reserva ya está en exhibición. */
+function hoy(): string {
+  return dateAIso(new Date())
 }
 
 export default function ReservasCampania(props: Props) {
-  const { campaniaId, revisionExterna = 0, onCambio, campaniaConfirmada = false } = props
+  const { campaniaId, revisionExterna = 0, onCambio, campaniaCancelada = false } = props
   const puedeEditar = usePuedeEditar()
   const [reservas, setReservas] = useState<Reserva[]>([])
   const [carteles, setCarteles] = useState<Cartel[]>([])
@@ -29,8 +34,6 @@ export default function ReservasCampania(props: Props) {
   const [editing, setEditing] = useState<Reserva | 'new' | null>(null)
   const [costosDe, setCostosDe] = useState<number | null>(null)
   const [revision, setRevision] = useState(0)
-  const [confirmacion, setConfirmacion] = useState<ResultadoConfirmacion | null>(null)
-  const [confirmando, setConfirmando] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -76,49 +79,35 @@ export default function ReservasCampania(props: Props) {
     onCambio?.()
   }
 
-  async function confirmarReservas() {
-    setConfirmando(true)
+  /** Saca la reserva de la campaña: la cancela o, si está en exhibición, la termina hoy (HU-037). */
+  async function quitar(reserva: Reserva) {
+    const enExhibicion = reserva.fecha_inicio <= hoy()
+    const aviso = enExhibicion
+      ? `¿Quitar ${reserva.cartel_nombre}? Ya está en exhibición: termina hoy y libera el cartel.`
+      : `¿Quitar ${reserva.cartel_nombre}? La reserva se cancela y libera el cartel.`
+    if (!window.confirm(aviso)) return
     try {
-      const resultado = await apiWrite<ResultadoConfirmacion>(
-        '/api/reservas/reservas/confirmar-en-bloque/',
-        'POST',
-        { campania: campaniaId },
-      )
-      setConfirmacion(resultado)
+      await apiWrite(`/api/reservas/reservas/${reserva.id}/quitar/`, 'POST', {})
       setError('')
       setRevision((current) => current + 1)
       onCambio?.()
-    } catch {
-      setError('No se pudieron confirmar las reservas.')
-    } finally {
-      setConfirmando(false)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'No se pudo quitar la reserva.')
     }
   }
-
-  const hayPendientes = reservas.some((item) => item.estado === 'pendiente')
 
   return (
     <div className="card section-gap">
       <div className="section-heading">
         <h3>Reservas</h3>
-        {puedeEditar && (
+        {puedeEditar && !campaniaCancelada && (
           <div className="row-actions">
-            {campaniaConfirmada && hayPendientes && (
-              <button
-                className="button-primary"
-                onClick={() => void confirmarReservas()}
-                disabled={confirmando}
-              >
-                Confirmar reservas
-              </button>
-            )}
             <button className="button-primary" onClick={() => setEditing('new')}>
               Nueva reserva
             </button>
           </div>
         )}
       </div>
-      {confirmacion && <ResumenConfirmacion resultado={confirmacion} />}
       {editing !== null && (
         <ReservaForm
           key={editing === 'new' ? 'new' : editing.id}
@@ -158,7 +147,7 @@ export default function ReservasCampania(props: Props) {
                 <td>
                   {formatearFecha(item.fecha_inicio)} → {formatearFecha(item.fecha_fin)}
                 </td>
-                <td>{etiquetaEstadoReserva(item.estado)}</td>
+                <td>{etiquetaEstadoReserva(item.estado_visible)}</td>
                 <td>{item.total}</td>
                 <td className="row-actions">
                   <button
@@ -170,6 +159,12 @@ export default function ReservasCampania(props: Props) {
                   <MenuFila
                     acciones={[
                       { etiqueta: 'Editar', onClick: () => setEditing(item), edicion: true },
+                      !campaniaCancelada &&
+                        item.estado_visible === 'confirmada' && {
+                          etiqueta: 'Quitar',
+                          onClick: () => void quitar(item),
+                          edicion: true,
+                        },
                     ]}
                   />
                 </td>
@@ -179,37 +174,6 @@ export default function ReservasCampania(props: Props) {
         </table>
       )}
       {costosDe !== null && <CostosReserva reservaId={costosDe} />}
-    </div>
-  )
-}
-
-function ResumenConfirmacion({ resultado }: { resultado: ResultadoConfirmacion }) {
-  const { confirmadas, conflictos } = resultado
-  return (
-    <div role="status" aria-label="Resultado de la confirmación">
-      <p>
-        {confirmadas.length === 1
-          ? 'Se confirmó 1 reserva.'
-          : `Se confirmaron ${confirmadas.length} reservas.`}
-      </p>
-      {conflictos.length > 0 && (
-        <>
-          <p className="error">
-            {conflictos.length === 1
-              ? '1 quedó Pendiente por falta de cupo:'
-              : `${conflictos.length} quedaron Pendientes por falta de cupo:`}
-          </p>
-          <ul aria-label="Conflictos">
-            {conflictos.map((item) => (
-              <li key={item.reserva}>
-                {item.cartel_nombre}, {formatearFecha(item.fecha_inicio)} →{' '}
-                {formatearFecha(item.fecha_fin)}: ocupado por{' '}
-                {item.ocupada_por.map((otra) => otra.campania_nombre).join(', ')}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
     </div>
   )
 }

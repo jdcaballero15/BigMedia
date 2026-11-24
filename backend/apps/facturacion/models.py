@@ -282,14 +282,15 @@ class OrdenCompraPdf(models.Model):
 
 
 class CostoDeItem(models.Model):
-    """Une un ítem a facturar con sus costos (HU-063). Un costo va en un solo ítem.
+    """Une un ítem a facturar con sus costos (HU-063). Un costo va en un solo ítem a la vez.
 
     Vive en `facturacion` porque `costos` no puede importar de esta app. El costo es propio del
-    ítem (sin reserva) o uno de una reserva de la campaña del ítem, vinculado sin copiarlo.
+    ítem (sin reserva) o uno de una reserva de cualquier campaña, elegido sin copiarlo. Quitarlo
+    del ítem no borra el vínculo: lo marca quitado y el costo queda libre para otro ítem.
     """
 
     item = models.ForeignKey(ItemFacturacion, on_delete=models.PROTECT, related_name="costos")
-    costo = models.OneToOneField(Costo, on_delete=models.PROTECT, related_name="item_vinculado")
+    costo = models.ForeignKey(Costo, on_delete=models.PROTECT, related_name="vinculos_item")
     vinculado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -298,11 +299,27 @@ class CostoDeItem(models.Model):
         editable=False,
     )
     vinculado_en = models.DateTimeField(auto_now_add=True)
+    quitado_en = models.DateTimeField(null=True, blank=True, editable=False)
+    quitado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="costos_quitados_de_items",
+        null=True,
+        blank=True,
+        editable=False,
+    )
 
     class Meta:
         ordering = ["id"]
         verbose_name = "costo del ítem"
         verbose_name_plural = "costos de los ítems"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["costo"],
+                condition=models.Q(quitado_en__isnull=True),
+                name="costo_en_un_solo_item_activo",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.item} · {self.costo}"

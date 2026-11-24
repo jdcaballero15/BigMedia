@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ApiError, apiGet, apiWrite } from '../../shared/api'
+import { ApiError, apiGet, apiUpload, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import { usePuedeEditar } from '../../shared/sesion'
 import type { Cliente } from '../clientes/types'
@@ -31,6 +31,17 @@ function monto(valor: string | null): string {
 }
 
 type AvisoOrdenCompra = { numero: string; items: AvisosItem['orden_compra'] }
+
+/** Multipart del ítem con su orden de publicidad: vacío va como "" (el servidor lo toma como
+ * nulo) y los costos elegidos como JSON (HU-062, HU-063). */
+function formularioItem(input: ItemInput, ordenPublicidad: File): FormData {
+  const form = new FormData()
+  for (const [campo, valor] of Object.entries(input)) {
+    form.append(campo, Array.isArray(valor) ? JSON.stringify(valor) : (valor ?? '').toString())
+  }
+  form.append('orden_publicidad', ordenPublicidad)
+  return form
+}
 
 /** Facturación: ítems del mes, totales, OC y grupos (HU-060 a HU-064) y su Excel (HU-070). */
 export default function ItemsPage() {
@@ -92,12 +103,15 @@ export default function ItemsPage() {
 
   const recargar = () => setRevision((actual) => actual + 1)
 
-  async function guardar(input: ItemInput) {
+  async function guardar(input: ItemInput, ordenPublicidad: File | null) {
     if (editando === null) return
-    const guardado =
+    const [url, metodo] =
       editando === 'nuevo'
-        ? await apiWrite<ItemGuardado>(ITEMS, 'POST', input)
-        : await apiWrite<ItemGuardado>(`${ITEMS}${editando.id}/`, 'PATCH', input)
+        ? [ITEMS, 'POST' as const]
+        : [`${ITEMS}${editando.id}/`, 'PATCH' as const]
+    const guardado = ordenPublicidad
+      ? await apiUpload<ItemGuardado>(url, formularioItem(input, ordenPublicidad), metodo)
+      : await apiWrite<ItemGuardado>(url, metodo, input)
     const coincidentes = guardado.avisos.orden_compra
     setAviso(
       coincidentes.length ? { numero: guardado.orden_compra_numero, items: coincidentes } : null,
@@ -325,7 +339,7 @@ function FilaItem(props: FilaProps) {
                 onClick: () => void escribir(`${ITEMS}${item.id}/quitar-del-grupo/`),
               },
               item.orden_compra_pdf !== null && {
-                etiqueta: 'Ver PDF de la OC',
+                etiqueta: 'Abrir orden de publicidad',
                 onClick: () => window.open(urlPdfOrdenCompra(item.id), '_blank', 'noreferrer'),
               },
             ]}

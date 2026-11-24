@@ -14,7 +14,7 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.db import IntegrityError, transaction
-from django.db.models import Count, DecimalField, Q, QuerySet, Sum, Value
+from django.db.models import Count, DecimalField, Prefetch, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from openpyxl import Workbook
@@ -26,6 +26,7 @@ from apps.costos import services as costos_services
 from apps.costos.models import Costo
 from apps.reservas.models import MESES_ABREV, Reserva
 from apps.reservas.services import reparto_por_mes
+from config.texto import normalizar_busqueda
 
 from .models import (
     CostoDeItem,
@@ -275,9 +276,9 @@ def totales_del_mes(mes: date) -> dict[str, Any]:
         cantidad=Count("id"), neto=Sum("neto"), iva=Sum("iva"), total=Sum("total")
     )
     costos = (
-        Costo.objects.filter(item_vinculado__item__in=items, anulado=False).aggregate(
-            total=Sum("monto")
-        )["total"]
+        Costo.objects.filter(
+            vinculos_item__item__in=items, vinculos_item__quitado_en__isnull=True, anulado=False
+        ).aggregate(total=Sum("monto"))["total"]
         or CERO
     )
     neto = fila["neto"] or CERO
@@ -297,7 +298,10 @@ def con_costo_total(items: QuerySet[ItemFacturacion]) -> QuerySet[ItemFacturacio
     """Anota `costo_total_anotado`: la suma de los costos no anulados de cada ítem."""
     return items.annotate(
         costo_total_anotado=Coalesce(
-            Sum("costos__costo__monto", filter=Q(costos__costo__anulado=False)),
+            Sum(
+                "costos__costo__monto",
+                filter=Q(costos__costo__anulado=False, costos__quitado_en__isnull=True),
+            ),
             Value(CERO),
             output_field=DecimalField(max_digits=14, decimal_places=2),
         )
@@ -309,10 +313,8 @@ def costo_total(item: ItemFacturacion) -> Decimal:
     anotado: Decimal | None = getattr(item, "costo_total_anotado", None)
     if anotado is not None:
         return al_centavo(anotado)
-    total = Costo.objects.filter(item_vinculado__item=item, anulado=False).aggregate(
-        total=Sum("monto")
-    )["total"]
-    return al_centavo(total or CERO)
+    total = sum((costo.monto for costo in costos_elegidos(item) if not costo.anulado), CERO)
+    return al_centavo(total)
 
 
 def neto_final(item: ItemFacturacion) -> Decimal | None:
@@ -329,25 +331,102 @@ def monto_por_porcentaje(neto: Decimal | None, porcentaje: Decimal) -> Decimal:
     return al_centavo(neto * porcentaje / Decimal(100))
 
 
+def _costos_activos_del_item(item: ItemFacturacion) -> QuerySet[Costo]:
+    # Las dos condiciones en un solo filter: aplican al mismo vínculo.
+    return Costo.objects.filter(vinculos_item__item=item, vinculos_item__quitado_en__isnull=True)
+
+
 def costos_del_item(item: ItemFacturacion) -> QuerySet[Costo]:
+    """Costos elegidos del ítem, anulados incluidos, en el orden en que se eligieron."""
     return (
-        Costo.objects.filter(item_vinculado__item=item)
-        .select_related("proveedor", "reserva__cartel")
-        .order_by("item_vinculado__id")
+        _costos_activos_del_item(item)
+        .select_related(*RELACIONES_COSTO)
+        .order_by("vinculos_item__id")
     )
 
 
-def costos_vinculables(item: ItemFacturacion) -> QuerySet[Costo]:
-    """Costos no anulados de reservas de la campaña del ítem que no están en otro ítem."""
-    if item.campania_id is None:
-        return Costo.objects.none()
-    return (
-        Costo.objects.filter(
-            reserva__campania_id=item.campania_id, anulado=False, item_vinculado__isnull=True
-        )
-        .select_related("proveedor", "reserva__cartel")
-        .order_by("id")
+RELACIONES_COSTO = ("proveedor", "reserva__cartel__formato", "reserva__campania")
+
+
+def prefetch_costos_elegidos() -> Prefetch[Any]:
+    """Para listar ítems con sus costos elegidos sin una consulta por ítem."""
+    return Prefetch(
+        "costos",
+        queryset=CostoDeItem.objects.filter(quitado_en__isnull=True)
+        .select_related(*(f"costo__{relacion}" for relacion in RELACIONES_COSTO))
+        .order_by("id"),
+        to_attr="vinculos_activos",
     )
+
+
+def costos_elegidos(item: ItemFacturacion) -> list[Costo]:
+    """Costos elegidos del ítem (usa el prefetch si lo trae), anulados incluidos."""
+    vinculos: list[CostoDeItem] | None = getattr(item, "vinculos_activos", None)
+    if vinculos is not None:
+        return [vinculo.costo for vinculo in vinculos]
+    return list(costos_del_item(item))
+
+
+def _vigentes_elegidos(item: ItemFacturacion) -> list[Costo]:
+    return [costo for costo in costos_elegidos(item) if not costo.anulado]
+
+
+def costos_calculados(item: ItemFacturacion) -> bool:
+    """Con algún costo elegido vigente, los costos incluidos y su detalle se calculan (HU-060)."""
+    return bool(_vigentes_elegidos(item))
+
+
+def costos_incluidos_del_item(item: ItemFacturacion) -> Decimal | None:
+    """Suma de los costos elegidos vigentes o, si no hay, lo escrito a mano (HU-060)."""
+    vigentes_ = _vigentes_elegidos(item)
+    if not vigentes_:
+        return item.costos_incluidos
+    return al_centavo(sum((costo.monto for costo in vigentes_), CERO))
+
+
+def detalle_costo_del_item(item: ItemFacturacion) -> str:
+    """Tipos de los costos elegidos vigentes, sin repetir, o lo escrito a mano (HU-060)."""
+    vigentes_ = _vigentes_elegidos(item)
+    if not vigentes_:
+        return item.detalle_costo
+    tipos = dict.fromkeys(costo.get_tipo_display() for costo in vigentes_)
+    return " + ".join(tipos)
+
+
+def _coincide_tipo(busqueda: str) -> list[str]:
+    return [
+        valor
+        for valor, etiqueta in Costo.Tipo.choices
+        if busqueda in normalizar_busqueda(str(etiqueta))
+    ]
+
+
+def costos_elegibles(busqueda: str = "") -> QuerySet[Costo]:
+    """Costos no anulados de cualquier reserva que no están en un ítem (HU-063, criterio 7).
+
+    Se buscan por campaña, cartel, tipo o a quién se le paga, sin distinguir tildes.
+    """
+    costos = (
+        Costo.objects.filter(anulado=False, reserva__isnull=False)
+        .exclude(pk__in=CostoDeItem.objects.filter(quitado_en__isnull=True).values("costo_id"))
+        .select_related(*RELACIONES_COSTO)
+        .order_by("-fecha", "-id")
+    )
+    termino = normalizar_busqueda(busqueda.strip())
+    if not termino:
+        return costos
+    return costos.filter(
+        Q(reserva__campania__nombre_busqueda__contains=termino)
+        | Q(reserva__cartel__direccion_busqueda__contains=termino)
+        | Q(tipo__in=_coincide_tipo(termino))
+        | Q(destinatario__icontains=busqueda.strip())
+        | Q(proveedor__nombre__icontains=busqueda.strip())
+    )
+
+
+def costos_vinculables(_item: ItemFacturacion) -> QuerySet[Costo]:
+    """Costos que se pueden vincular a un ítem: los elegibles de cualquier campaña (HU-063)."""
+    return costos_elegibles()
 
 
 def _describir(costo: Costo) -> str:
@@ -397,27 +476,59 @@ def agregar_costo(item_id: int, datos: dict[str, Any], usuario: AbstractBaseUser
 
 
 def vincular_costo(item_id: int, costo_id: int, usuario: AbstractBaseUser) -> Costo:
-    """Vincula al ítem un costo de una reserva de su campaña, sin copiarlo (HU-063, criterio 4)."""
+    """Vincula al ítem un costo de una reserva de cualquier campaña, sin copiarlo (HU-063)."""
     with transaction.atomic():
         item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
         _exigir_vigente(item, "cargar costos")
-        if item.campania_id is None:
-            raise ValidationError(
-                {"campania": "Solo se vinculan costos de reserva a un ítem con campaña."}
-            )
-        costo = costos_vinculables(item).select_for_update(of=("self",)).filter(pk=costo_id).first()
-        if costo is None:
-            raise ValidationError(
-                {"costo": "El costo no es de una reserva de la campaña o ya está en otro ítem."}
-            )
-        try:
-            with transaction.atomic():
-                CostoDeItem.objects.create(item=item, costo=costo, vinculado_por_id=usuario.pk)
-        except IntegrityError as error:
-            # Otro ítem lo vinculó a la vez: la unicidad del costo lo frena.
-            raise ValidationError({"costo": "El costo ya está en otro ítem."}) from error
-        _auditar_costo(item, "", f"Vínculo: {_describir(costo)}", usuario)
+        return _vincular(item, costo_id, usuario, "costo")
+
+
+def _vincular(item: ItemFacturacion, costo_id: int, usuario: AbstractBaseUser, campo: str) -> Costo:
+    """Vincula un costo elegible, auditado. Va dentro de la transacción del llamador."""
+    costo = costos_elegibles().select_for_update(of=("self",)).filter(pk=costo_id).first()
+    if costo is None:
+        raise ValidationError({campo: f"El costo #{costo_id} está anulado o ya está en otro ítem."})
+    try:
+        with transaction.atomic():
+            CostoDeItem.objects.create(item=item, costo=costo, vinculado_por_id=usuario.pk)
+    except IntegrityError as error:
+        # Otro ítem lo eligió a la vez: la unicidad del vínculo activo lo frena.
+        raise ValidationError({campo: f"El costo #{costo_id} ya está en otro ítem."}) from error
+    _auditar_costo(item, "", f"Vínculo: {_describir(costo)}", usuario)
     return costo
+
+
+def _quitar(vinculo: CostoDeItem, usuario: AbstractBaseUser) -> None:
+    vinculo.quitado_en = timezone.now()
+    vinculo.quitado_por_id = usuario.pk
+    vinculo.save(update_fields=["quitado_en", "quitado_por"])
+    _auditar_costo(
+        vinculo.item, _describir(vinculo.costo), f"Quitado: {_describir(vinculo.costo)}", usuario
+    )
+
+
+def elegir_costos(item_id: int, costo_ids: list[int], usuario: AbstractBaseUser) -> None:
+    """Deja como elegidos del ítem exactamente esos costos (HU-063, criterios 6 a 8).
+
+    Vincula los nuevos y quita los que faltan, sin borrarlos ni anularlos. Los costos propios del
+    ítem (sin reserva) no se quitan: se anulan. Va en la transacción del llamador si la hay.
+    """
+    with transaction.atomic():
+        item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
+        _exigir_vigente(item, "elegir costos")
+        pedidos = list(dict.fromkeys(costo_ids))
+        activos = {
+            vinculo.costo_id: vinculo
+            for vinculo in CostoDeItem.objects.select_for_update(of=("self",))
+            .filter(item=item, quitado_en__isnull=True)
+            .select_related("costo", "item")
+        }
+        for costo_id, vinculo in activos.items():
+            if costo_id not in pedidos and vinculo.costo.reserva_id is not None:
+                _quitar(vinculo, usuario)
+        for costo_id in pedidos:
+            if costo_id not in activos:
+                _vincular(item, costo_id, usuario, "costos")
 
 
 def anular_costo(item_id: int, costo_id: int, motivo: str, usuario: AbstractBaseUser) -> Costo:
@@ -431,7 +542,7 @@ def anular_costo(item_id: int, costo_id: int, motivo: str, usuario: AbstractBase
     with transaction.atomic():
         item = ItemFacturacion.objects.select_for_update().get(pk=item_id)
         _exigir_vigente(item, "anular costos")
-        costo = Costo.objects.select_for_update().get(item_vinculado__item=item, pk=costo_id)
+        costo = _costos_activos_del_item(item).select_for_update().get(pk=costo_id)
         if costo.reserva_id is not None:
             raise ValidationError({"costo": "Es un costo de una reserva: anulalo desde Costos."})
         if costo.anulado:
@@ -445,7 +556,7 @@ def anular_costo(item_id: int, costo_id: int, motivo: str, usuario: AbstractBase
 
 def recalcular_porcentuales(item: ItemFacturacion) -> None:
     """Vuelve a calcular los costos en porcentaje con el neto actual (HU-063, criterio 3)."""
-    for costo in Costo.objects.select_for_update().filter(item_vinculado__item=item):
+    for costo in _costos_activos_del_item(item).select_for_update():
         if costo.porcentaje is None:
             continue
         nuevo = monto_por_porcentaje(item.neto, costo.porcentaje)
@@ -618,13 +729,14 @@ def _agregar_totales(hoja: Worksheet, primera: int, ultima: int) -> None:
     hoja.append(["Neto", f"=B{totales}-C{totales}"])
 
 
-# «Descargar Excel» de la lista (HU-070): solo las siete columnas de la planilla real (RN-024),
-# con los costos incluidos y el detalle escritos en el ítem (HU-060), no los del módulo de costos.
+# «Descargar Excel» de la lista (HU-070): solo las siete columnas de la planilla real (RN-024).
+# Los costos incluidos y el detalle son los calculados de los costos elegidos o, si el ítem no
+# tiene, los escritos a mano (HU-060).
 COLUMNAS_DESCARGA: list[tuple[str, Any]] = [
     ("CLIENTE (RAZON SOCIAL)", cliente_razon_social),
     ("IMPORTE NETO TOTAL", lambda i: _numero(i.neto)),
-    ("COSTOS INCLUIDOS EN FC", lambda i: _numero(i.costos_incluidos)),
-    ("DETALLE COSTO", lambda i: i.detalle_costo or None),
+    ("COSTOS INCLUIDOS EN FC", lambda i: _numero(costos_incluidos_del_item(i))),
+    ("DETALLE COSTO", lambda i: detalle_costo_del_item(i) or None),
     ("TIPO DE VENTA (F/V)", lambda i: i.tipo_venta.nombre if i.tipo_venta else None),
     ("GOB/PRIV", lambda i: i.sector.nombre if i.sector else None),
     ("TIPO (cartel/led/ppl/sextuples)", lambda i: i.tipo_soporte or None),

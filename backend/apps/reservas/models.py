@@ -13,19 +13,19 @@ MESES_ABREV = [
 
 class Reserva(models.Model):
     class Estado(models.TextChoices):
-        PENDIENTE = "pendiente", "Pendiente"
+        # Nace Confirmada y el sistema lleva el estado: no hay Pendientes (HU-035).
         CONFIRMADA = "confirmada", "Confirmada"
         FINALIZADA = "finalizada", "Finalizada"
         CANCELADA = "cancelada", "Cancelada"
 
     # Un estado ocupa cupo cuando no está cancelada (HU-028, HU-040).
-    ESTADOS_QUE_OCUPAN = (Estado.PENDIENTE, Estado.CONFIRMADA, Estado.FINALIZADA)
+    ESTADOS_QUE_OCUPAN = (Estado.CONFIRMADA, Estado.FINALIZADA)
 
     campania = models.ForeignKey(Campania, on_delete=models.PROTECT, related_name="reservas")
     cartel = models.ForeignKey(Cartel, on_delete=models.PROTECT, related_name="reservas")
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
-    estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.PENDIENTE)
+    estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.CONFIRMADA)
     precio_alquiler = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     precio_impresion = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
     precio_fijacion = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
@@ -73,8 +73,6 @@ class ParametrosDisponibilidad(models.Model):
 
     # Día de borde (RN-001): si una reserva termina el día en que empieza otra, se pisan.
     borde_inclusivo = models.BooleanField(default=True)
-    # Si la reserva pendiente (tentativa) ocupa cupo para el bloqueo duro (RN-002).
-    tentativa_bloquea = models.BooleanField(default=False)
     # Si se puede cargar a mano una reserva que ya terminó (RN-012).
     permitir_fecha_pasada = models.BooleanField(default=False)
 

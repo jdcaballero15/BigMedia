@@ -36,6 +36,12 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
     cliente_razon_social = serializers.SerializerMethodField()
     costo_total = serializers.SerializerMethodField()
     neto_final = serializers.SerializerMethodField()
+    costos_calculados = serializers.SerializerMethodField()
+    costos_elegidos = serializers.SerializerMethodField()
+    # Se guardan con el ítem, en la misma transacción (HU-062, HU-063): la lista completa de
+    # costos elegidos (JSON, también en multipart) y el PDF de la orden de publicidad.
+    costos = serializers.JSONField(write_only=True, required=False)
+    orden_publicidad = serializers.FileField(write_only=True, required=False)
     # Se acepta con o sin guiones y se guardan los 11 dígitos (como en clientes).
     cuit_facturacion = serializers.CharField(max_length=13, allow_blank=True, required=False)
 
@@ -71,6 +77,10 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
             "tipo_venta_nombre",
             "costos_incluidos",
             "detalle_costo",
+            "costos_calculados",
+            "costos_elegidos",
+            "costos",
+            "orden_publicidad",
             "notas",
             "orden_compra_numero",
             "orden_compra_fecha",
@@ -82,6 +92,34 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
             "actualizado_en",
         ]
         read_only_fields = ["iva", "total", "grupo", "creado_en", "actualizado_en"]
+
+    def to_representation(self, instance: ItemFacturacion) -> dict[str, Any]:
+        datos = super().to_representation(instance)
+        # Con costos elegidos se muestran los calculados (HU-060).
+        incluidos = services.costos_incluidos_del_item(instance)
+        datos["costos_incluidos"] = f"{incluidos:.2f}" if incluidos is not None else None
+        datos["detalle_costo"] = services.detalle_costo_del_item(instance)
+        return datos
+
+    def get_costos_calculados(self, item: ItemFacturacion) -> bool:
+        return services.costos_calculados(item)
+
+    def get_costos_elegidos(self, item: ItemFacturacion) -> list[dict[str, Any]]:
+        costos = CostoElegibleSerializer(services.costos_elegidos(item), many=True)
+        return list(costos.data)
+
+    def validate_costos(self, value: object) -> list[int]:
+        if not isinstance(value, list) or not all(
+            isinstance(costo, int) and not isinstance(costo, bool) and costo > 0 for costo in value
+        ):
+            raise serializers.ValidationError("Indicá los costos como una lista de números.")
+        return value
+
+    def validate_orden_publicidad(self, value: Any) -> Any:
+        try:
+            return services.validar_pdf(value)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError(error.message_dict["archivo"]) from error
 
     def get_orden_compra_pdf(self, item: ItemFacturacion) -> dict[str, Any] | None:
         """Nombre y tamaño del PDF de la OC, sin el contenido (HU-062)."""
@@ -126,7 +164,34 @@ class ItemFacturacionSerializer(serializers.ModelSerializer[ItemFacturacion]):
                 {"periodo_hasta": "El fin del período no puede ser anterior al inicio."}
             )
         self._completar_neto(attrs)
+        if self._tendra_costos_elegidos(attrs.get("costos")):
+            # Calculados: lo escrito a mano queda guardado para cuando no haya costos (HU-060).
+            attrs.pop("costos_incluidos", None)
+            attrs.pop("detalle_costo", None)
         return attrs
+
+    def _tendra_costos_elegidos(self, pedidos: list[int] | None) -> bool:
+        if pedidos:
+            return True
+        if self.instance is None:
+            return False
+        actuales = services.costos_elegidos(self.instance)
+        if pedidos is None:
+            return any(not costo.anulado for costo in actuales)
+        # Los propios del ítem no se quitan al elegir (HU-063).
+        return any(not costo.anulado and costo.reserva_id is None for costo in actuales)
+
+    def _separar_extras(self, validated_data: dict[str, Any]) -> None:
+        self.costos_pedidos: list[int] | None = validated_data.pop("costos", None)
+        self.pdf_orden_publicidad: Any = validated_data.pop("orden_publicidad", None)
+
+    def create(self, validated_data: dict[str, Any]) -> ItemFacturacion:
+        self._separar_extras(validated_data)
+        return super().create(validated_data)
+
+    def update(self, instance: ItemFacturacion, validated_data: dict[str, Any]) -> ItemFacturacion:
+        self._separar_extras(validated_data)
+        return super().update(instance, validated_data)
 
     def _validar_catalogos_activos(self, attrs: dict[str, Any]) -> None:
         for campo in ("sector", "tipo_venta"):
@@ -216,3 +281,41 @@ class NuevoCostoSerializer(serializers.Serializer[dict[str, Any]]):
         required=False,
         allow_null=True,
     )
+
+
+class CostoElegibleSerializer(serializers.ModelSerializer[Costo]):
+    """Costo para elegir en un ítem o ya elegido (HU-063), con su campaña y su cartel."""
+
+    tipo_nombre = serializers.CharField(source="get_tipo_display", read_only=True)
+    a_quien = serializers.SerializerMethodField()
+    campania_nombre = serializers.SerializerMethodField()
+    cartel_nombre = serializers.SerializerMethodField()
+    propio = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Costo
+        fields = [
+            "id",
+            "tipo",
+            "tipo_nombre",
+            "monto",
+            "fecha",
+            "anulado",
+            "a_quien",
+            "campania_nombre",
+            "cartel_nombre",
+            "propio",
+        ]
+        read_only_fields = fields
+
+    def get_a_quien(self, costo: Costo) -> str:
+        return costo.proveedor.nombre if costo.proveedor is not None else costo.destinatario
+
+    def get_campania_nombre(self, costo: Costo) -> str | None:
+        return str(costo.reserva.campania) if costo.reserva is not None else None
+
+    def get_cartel_nombre(self, costo: Costo) -> str | None:
+        return costo.reserva.cartel.nombre_visible if costo.reserva is not None else None
+
+    def get_propio(self, costo: Costo) -> bool:
+        return costo.reserva_id is None

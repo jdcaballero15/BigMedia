@@ -15,6 +15,7 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
     total = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
     cartel_nombre = serializers.CharField(source="cartel.nombre_visible", read_only=True)
     campania_nombre = serializers.SerializerMethodField()
+    estado_visible = serializers.SerializerMethodField()
 
     class Meta:
         model = Reserva
@@ -27,6 +28,7 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
             "fecha_inicio",
             "fecha_fin",
             "estado",
+            "estado_visible",
             "precio_alquiler",
             "precio_impresion",
             "precio_fijacion",
@@ -35,7 +37,9 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
             "creado_en",
             "actualizado_en",
         ]
-        read_only_fields = ["creado_en", "actualizado_en"]
+        # El estado lo lleva el sistema (HU-035): nace Confirmada y cambia con "Quitar" o al
+        # cancelar la campaña.
+        read_only_fields = ["estado", "creado_en", "actualizado_en"]
         extra_kwargs = {
             "precio_alquiler": {"required": False, "min_value": Decimal("0")},
             "precio_impresion": {"required": False, "min_value": Decimal("0")},
@@ -44,6 +48,9 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
 
     def get_campania_nombre(self, reserva: Reserva) -> str:
         return str(reserva.campania)
+
+    def get_estado_visible(self, reserva: Reserva) -> str:
+        return services.estado_visible(reserva)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         inicio = attrs.get("fecha_inicio") or getattr(self.instance, "fecha_inicio", None)
@@ -59,7 +66,6 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
             and cartel is not None
             and self.instance.cartel_id == cartel.pk
         )
-        nuevo_estado = attrs.get("estado")
         cambia_fin = "fecha_fin" in attrs and (
             self.instance is None or attrs["fecha_fin"] != self.instance.fecha_fin
         )
@@ -68,10 +74,8 @@ class ReservaSerializer(serializers.ModelSerializer[Reserva]):
                 services.validar_fecha_no_pasada(attrs["fecha_fin"])
             if cartel is not None and not sin_cambios:
                 services.validar_cartel_reservable(cartel)
-            if self.instance is None:
-                services.validar_estado_inicial(nuevo_estado or Reserva.Estado.PENDIENTE)
-            elif nuevo_estado is not None:
-                services.validar_transicion(self.instance.estado, nuevo_estado)
+            if self.instance is None and attrs.get("campania") is not None:
+                services.validar_campania_admite_reservas(attrs["campania"])
         except DjangoValidationError as error:
             raise serializers.ValidationError(error.message_dict) from error
         return attrs
@@ -108,19 +112,12 @@ class ReservasEnBloqueSerializer(serializers.Serializer[dict[str, Any]]):
 
 
 class CampaniaDeReservasSerializer(serializers.Serializer[dict[str, Any]]):
-    """Pedido de confirmación en bloque de las Pendientes de una campaña (HU-059)."""
+    """Pedido de cancelar una campaña con sus reservas (HU-024)."""
 
     campania = serializers.PrimaryKeyRelatedField(queryset=Campania.objects.all())
-
-
-class MoverPendientesSerializer(CampaniaDeReservasSerializer):
-    """Fechas que tenía la campaña antes del cambio (HU-058, criterio 3)."""
-
-    fecha_inicio_anterior = serializers.DateField()
-    fecha_fin_anterior = serializers.DateField()
 
 
 class ParametrosDisponibilidadSerializer(serializers.ModelSerializer[ParametrosDisponibilidad]):
     class Meta:
         model = ParametrosDisponibilidad
-        fields = ["borde_inclusivo", "tentativa_bloquea", "permitir_fecha_pasada"]
+        fields = ["borde_inclusivo", "permitir_fecha_pasada"]

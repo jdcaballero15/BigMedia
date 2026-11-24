@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../../shared/api'
+import { formatearMonto } from '../facturacion/montos'
 
 type Rentabilidad = {
   cantidad_reservas: number
@@ -43,16 +44,16 @@ export default function RentabilidadCampania({ campaniaId }: { campaniaId: numbe
           </div>
           <div>
             <dt>Ingreso</dt>
-            <dd>{datos.ingreso}</dd>
+            <dd>{formatearMonto(datos.ingreso)}</dd>
           </div>
           <div>
             <dt>Costo</dt>
-            <dd>{datos.costo}</dd>
+            <dd>{formatearMonto(datos.costo)}</dd>
           </div>
           <div>
             <dt>Margen</dt>
             <dd>
-              {datos.margen}
+              {formatearMonto(datos.margen)}
               {datos.porcentaje !== null ? ` (${datos.porcentaje}%)` : ''}
             </dd>
           </div>

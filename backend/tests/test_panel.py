@@ -65,7 +65,7 @@ def test_reservas_por_vencer_en_la_ventana(operativo_client):
     car = cartel()
     cerca = reservar(car, 10)  # vence en 10 días -> entra
     reservar(cartel(), 40)  # vence en 40 días -> fuera
-    reservar(cartel(), 5, estado="pendiente")  # no confirmada -> fuera
+    reservar(cartel(), 5, estado="cancelada")  # cancelada -> fuera
     datos = panel(operativo_client).json()
     ids = [r["id"] for r in datos["por_vencer"]]
     assert ids == [cerca.id]

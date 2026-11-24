@@ -41,7 +41,7 @@ def test_alta_cliente_con_nombre_razon_social_y_tipo_queda_disponible(operativo_
     body = response.json()
     assert body["nombre"] == "Agencia Andina"
     assert body["tipo"] == "intermediario_formal"
-    assert body["tipo_nombre"] == "Intermediario formal"
+    assert body["tipo_nombre"] == "Central de medios"
     assert body["cuit"] == ""
     assert body["activo"] is True
     assert set(body) == {

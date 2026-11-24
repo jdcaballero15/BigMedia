@@ -229,7 +229,7 @@ def test_costo_de_reserva_vinculado_cuenta_una_vez_en_la_campania(operativo_clie
 
 
 @pytest.mark.django_db
-def test_los_costos_vinculables_son_los_de_las_reservas_de_la_campania(operativo_client):
+def test_los_costos_vinculables_son_los_libres_de_cualquier_campania(operativo_client):
     campania = Campania.objects.create()
     reserva = _reserva(campania)
     libre = Costo.objects.create(
@@ -238,22 +238,23 @@ def test_los_costos_vinculables_son_los_de_las_reservas_de_la_campania(operativo
     Costo.objects.create(
         reserva=reserva, tipo="otro", monto=Decimal("1.00"), fecha=date(2026, 11, 1), anulado=True
     )
-    Costo.objects.create(
+    de_otra = Costo.objects.create(
         reserva=_reserva(Campania.objects.create()),
         tipo="otro",
         monto=Decimal("1.00"),
-        fecha=date(2026, 11, 1),
+        fecha=date(2026, 11, 2),
     )
     item = _item(campania=campania)
     respuesta = operativo_client.get(_url(item, "vinculables/"))
     assert respuesta.status_code == 200
-    assert [c["id"] for c in respuesta.json()] == [libre.pk]
+    assert [c["id"] for c in respuesta.json()] == [de_otra.pk, libre.pk]
     _post(operativo_client, _url(item, "vincular/"), {"costo": libre.pk})
-    assert operativo_client.get(_url(item, "vinculables/")).json() == []
+    restantes = operativo_client.get(_url(item, "vinculables/")).json()
+    assert [c["id"] for c in restantes] == [de_otra.pk]
 
 
 @pytest.mark.django_db
-def test_no_se_vincula_un_costo_de_otra_campania_ni_dos_veces(operativo_client):
+def test_se_vincula_un_costo_de_otra_campania_pero_no_dos_veces(operativo_client):
     campania = Campania.objects.create()
     ajeno = Costo.objects.create(
         reserva=_reserva(Campania.objects.create()),
@@ -266,7 +267,7 @@ def test_no_se_vincula_un_costo_de_otra_campania_ni_dos_veces(operativo_client):
     )
     item = _item(campania=campania)
     otro_item = _item(campania=campania)
-    assert _post(operativo_client, _url(item, "vincular/"), {"costo": ajeno.pk}).status_code == 400
+    assert _post(operativo_client, _url(item, "vincular/"), {"costo": ajeno.pk}).status_code == 201
     assert _post(operativo_client, _url(item, "vincular/"), {"costo": propio.pk}).status_code == 201
     repetido = _post(operativo_client, _url(otro_item, "vincular/"), {"costo": propio.pk})
     assert repetido.status_code == 400
@@ -283,7 +284,7 @@ def test_vincular_exige_un_costo_valido(operativo_client, valor):
 
 
 @pytest.mark.django_db
-def test_no_se_vincula_un_costo_anulado_ni_en_un_item_sin_campania(operativo_client):
+def test_no_se_vincula_un_costo_anulado_con_o_sin_campania_en_el_item(operativo_client):
     campania = Campania.objects.create()
     anulado = Costo.objects.create(
         reserva=_reserva(campania),
@@ -297,7 +298,7 @@ def test_no_se_vincula_un_costo_anulado_ni_en_un_item_sin_campania(operativo_cli
     assert respuesta.status_code == 400
     sin_campania = _post(operativo_client, _url(_item(), "vincular/"), {"costo": anulado.pk})
     assert sin_campania.status_code == 400
-    assert "campania" in sin_campania.json()
+    assert "costo" in sin_campania.json()
     assert operativo_client.get(_url(_item(), "vinculables/")).json() == []
 
 

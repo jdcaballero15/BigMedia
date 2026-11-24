@@ -25,7 +25,7 @@ const campania: Campania = {
   cliente_factura_nombre: '',
   fecha_inicio: null,
   fecha_fin: null,
-  estado: 'cotizada',
+  estado: 'confirmada',
   ordenes_publicidad: [],
 }
 

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { ApiError, apiGet, apiWrite } from '../../shared/api'
 import { FieldErrors } from '../../shared/FieldErrors'
 import type { Costo, Margen, TipoCosto } from './types'
+import { formatearMonto } from '../facturacion/montos'
 import { TIPOS_COSTO } from './types'
 import { usePuedeEditar } from '../../shared/sesion'
 
@@ -57,7 +58,8 @@ export default function CostosReserva({ reservaId }: { reservaId: number }) {
       <h4>Costos y margen</h4>
       {margen && (
         <p>
-          Ingreso {margen.ingreso} · Costo {margen.costo} · Margen {margen.margen}
+          Ingreso {formatearMonto(margen.ingreso)} · Costo {formatearMonto(margen.costo)} · Margen{' '}
+          {formatearMonto(margen.margen)}
           {margen.porcentaje !== null ? ` (${margen.porcentaje}%)` : ''}
         </p>
       )}
@@ -70,7 +72,7 @@ export default function CostosReserva({ reservaId }: { reservaId: number }) {
         <ul>
           {costos.map((costo) => (
             <li key={costo.id}>
-              {costo.tipo_nombre}: {costo.monto}
+              {costo.tipo_nombre}: {formatearMonto(costo.monto)}
               {costo.anulado ? ' (anulado)' : ''}
             </li>
           ))}

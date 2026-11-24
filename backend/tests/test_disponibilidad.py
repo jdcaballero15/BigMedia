@@ -44,25 +44,18 @@ def reserva(car: Cartel, inicio: str, fin: str, estado: str = "confirmada") -> R
     return r
 
 
-def confirmar(client: Client, car: Cartel, inicio: str, fin: str):
-    """Crea una reserva pendiente y la confirma; devuelve la respuesta del confirmar."""
-    creada = client.post(
+def confirmar(client: Client, car: Cartel, inicio: str, fin: str, campania_pk: int | None = None):
+    """Crea la reserva, que nace Confirmada y valida el cupo (HU-035); devuelve la respuesta."""
+    return client.post(
         "/api/reservas/reservas/",
         data=json.dumps(
             {
-                "campania": campania().pk,
+                "campania": campania_pk or campania().pk,
                 "cartel": car.pk,
                 "fecha_inicio": inicio,
                 "fecha_fin": fin,
-                "estado": "pendiente",
             }
         ),
-        content_type="application/json",
-    )
-    assert creada.status_code == 201, creada.content
-    return client.patch(
-        f"/api/reservas/reservas/{creada.json()['id']}/",
-        data=json.dumps({"estado": "confirmada"}),
         content_type="application/json",
     )
 
@@ -117,38 +110,21 @@ def test_caso_6_adyacente_exclusivo_permite(operativo_client):
     ParametrosDisponibilidad.objects.update(borde_inclusivo=False)
     car = cartel(capacidad=1)
     reserva(car, "2026-11-01", "2026-11-15")
-    assert confirmar(operativo_client, car, "2026-11-15", "2026-11-30").status_code == 200
+    assert confirmar(operativo_client, car, "2026-11-15", "2026-11-30").status_code == 201
 
 
 @pytest.mark.django_db
 def test_caso_7_separados_por_un_dia_permite(operativo_client):
     car = cartel(capacidad=1)
     reserva(car, "2026-11-01", "2026-11-14")
-    assert confirmar(operativo_client, car, "2026-11-16", "2026-11-30").status_code == 200
+    assert confirmar(operativo_client, car, "2026-11-16", "2026-11-30").status_code == 201
 
 
 @pytest.mark.django_db
 def test_caso_8_conflicto_con_cancelada_permite(operativo_client):
     car = cartel(capacidad=1)
     reserva(car, "2026-11-01", "2026-11-15", estado="cancelada")
-    assert confirmar(operativo_client, car, "2026-11-01", "2026-11-15").status_code == 200
-
-
-@pytest.mark.django_db
-@pytest.mark.regla("RN-002")
-def test_caso_9_tentativa_no_bloquea_por_defecto(operativo_client):
-    car = cartel(capacidad=1)
-    reserva(car, "2026-11-01", "2026-11-15", estado="pendiente")
-    assert confirmar(operativo_client, car, "2026-11-01", "2026-11-15").status_code == 200
-
-
-@pytest.mark.django_db
-@pytest.mark.regla("RN-002")
-def test_caso_9_tentativa_bloquea_con_config(operativo_client):
-    ParametrosDisponibilidad.objects.update(tentativa_bloquea=True)
-    car = cartel(capacidad=1)
-    reserva(car, "2026-11-01", "2026-11-15", estado="pendiente")
-    assert confirmar(operativo_client, car, "2026-11-01", "2026-11-15").status_code == 400
+    assert confirmar(operativo_client, car, "2026-11-01", "2026-11-15").status_code == 201
 
 
 @pytest.mark.django_db
@@ -157,7 +133,7 @@ def test_caso_10_y_11_digital_cupos(operativo_client):
     car = cartel(capacidad=20)
     for _ in range(12):
         reserva(car, "2026-11-01", "2026-11-30")
-    assert confirmar(operativo_client, car, "2026-11-01", "2026-11-30").status_code == 200  # 13/20
+    assert confirmar(operativo_client, car, "2026-11-01", "2026-11-30").status_code == 201  # 13/20
     for _ in range(7):
         reserva(car, "2026-11-01", "2026-11-30")
     assert confirmar(operativo_client, car, "2026-11-01", "2026-11-30").status_code == 400  # 20/20
@@ -176,7 +152,7 @@ def test_pico_diario_permite_reservas_no_simultaneas(operativo_client):
     car2 = cartel(capacidad=2)
     reserva(car2, "2026-11-01", "2026-11-10")
     reserva(car2, "2026-11-20", "2026-11-30")
-    assert confirmar(operativo_client, car2, "2026-11-01", "2026-11-30").status_code == 200
+    assert confirmar(operativo_client, car2, "2026-11-01", "2026-11-30").status_code == 201
 
 
 @pytest.mark.django_db
@@ -184,7 +160,7 @@ def test_caso_12_edicion_mueve_fechas_a_ocupado_bloquea(operativo_client):
     car = cartel(capacidad=1)
     reserva(car, "2026-11-01", "2026-11-15")
     confirmada = confirmar(operativo_client, car, "2026-12-01", "2026-12-15")
-    assert confirmada.status_code == 200
+    assert confirmada.status_code == 201
     movida = operativo_client.patch(
         f"/api/reservas/reservas/{confirmada.json()['id']}/",
         data=json.dumps({"fecha_inicio": "2026-11-01", "fecha_fin": "2026-11-15"}),
@@ -197,7 +173,7 @@ def test_caso_12_edicion_mueve_fechas_a_ocupado_bloquea(operativo_client):
 def test_caso_13_edicion_solo_precio_no_revalida(operativo_client):
     car = cartel(capacidad=1)
     confirmada = confirmar(operativo_client, car, "2026-11-01", "2026-11-15")
-    assert confirmada.status_code == 200
+    assert confirmada.status_code == 201
     # Otra confirmada idéntica ya no entra; pero editar solo el precio de la primera no revalida.
     reserva(car, "2026-11-01", "2026-11-15")  # ahora el cartel está lleno
     solo_precio = operativo_client.patch(
@@ -209,15 +185,16 @@ def test_caso_13_edicion_solo_precio_no_revalida(operativo_client):
 
 
 @pytest.mark.django_db
-def test_caso_14_pasar_a_cancelada_siempre_permite(operativo_client):
+def test_caso_14_quitar_siempre_permite(operativo_client):
     car = cartel(capacidad=1)
     confirmada = confirmar(operativo_client, car, "2026-11-01", "2026-11-15")
-    cancelada = operativo_client.patch(
-        f"/api/reservas/reservas/{confirmada.json()['id']}/",
-        data=json.dumps({"estado": "cancelada"}),
+    cancelada = operativo_client.post(
+        f"/api/reservas/reservas/{confirmada.json()['id']}/quitar/",
+        data="{}",
         content_type="application/json",
     )
     assert cancelada.status_code == 200
+    assert cancelada.json()["estado"] == "cancelada"
 
 
 @pytest.mark.django_db
@@ -245,17 +222,13 @@ def _operativo() -> AbstractBaseUser:
     return user
 
 
-def _confirmar_en_hilo(user_pk: int, reserva_pk: int) -> int:
-    """Confirma una reserva en su propio hilo/conexión; devuelve el status HTTP."""
+def _reservar_en_hilo(user_pk: int, car: Cartel, campania_pk: int, inicio: str, fin: str) -> int:
+    """Crea una reserva en su propio hilo/conexión; devuelve el status HTTP."""
     try:
         client = Client()
         client.force_login(get_user_model().objects.get(pk=user_pk))
-        respuesta = client.patch(
-            f"/api/reservas/reservas/{reserva_pk}/",
-            data=json.dumps({"estado": "confirmada"}),
-            content_type="application/json",
-        )
-        return respuesta.status_code
+        respuesta = confirmar(client, car, inicio, fin, campania_pk)
+        return int(respuesta.status_code)
     finally:
         connection.close()
 
@@ -265,10 +238,15 @@ def _confirmar_en_hilo(user_pk: int, reserva_pk: int) -> int:
 def test_caso_15_confirmaciones_simultaneas_ultimo_cupo():
     car = cartel(capacidad=1)
     user = _operativo()
-    pendientes = [reserva(car, "2026-11-01", "2026-11-15", estado="pendiente").pk for _ in range(2)]
+    campanias = [campania().pk for _ in range(2)]
     with ThreadPoolExecutor(max_workers=2) as pool:
-        resultados = list(pool.map(lambda pk: _confirmar_en_hilo(user.pk, pk), pendientes))
-    assert sorted(resultados) == [200, 400]
+        resultados = list(
+            pool.map(
+                lambda pk: _reservar_en_hilo(user.pk, car, pk, "2026-11-01", "2026-11-15"),
+                campanias,
+            )
+        )
+    assert sorted(resultados) == [201, 400]
     assert Reserva.objects.filter(cartel=car, estado="confirmada").count() == 1
 
 
@@ -277,11 +255,14 @@ def test_caso_15_confirmaciones_simultaneas_ultimo_cupo():
 def test_50_confirmaciones_concurrentes_capacidad_20_nunca_sobrevende():
     car = cartel(capacidad=20)
     user = _operativo()
-    pendientes = [
-        reserva(car, "2026-11-01", "2026-11-30", estado="pendiente").pk for _ in range(50)
-    ]
+    campanias = [campania().pk for _ in range(50)]
     with ThreadPoolExecutor(max_workers=10) as pool:
-        list(pool.map(lambda pk: _confirmar_en_hilo(user.pk, pk), pendientes))
+        list(
+            pool.map(
+                lambda pk: _reservar_en_hilo(user.pk, car, pk, "2026-11-01", "2026-11-30"),
+                campanias,
+            )
+        )
     assert Reserva.objects.filter(cartel=car, estado="confirmada").count() == 20
 
 

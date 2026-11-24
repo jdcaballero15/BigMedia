@@ -12,10 +12,9 @@ from config.texto import normalizar_busqueda
 
 class Campania(models.Model):
     class Estado(models.TextChoices):
-        COTIZADA = "cotizada", "Cotizada"
+        # La campaña nace Confirmada y solo puede pasar a Cancelada (HU-024).
         CONFIRMADA = "confirmada", "Confirmada"
         CANCELADA = "cancelada", "Cancelada"
-        PERDIDA = "perdida", "Perdida"
 
     nombre = models.CharField(max_length=200, blank=True)
     marca = models.ForeignKey(
@@ -30,7 +29,7 @@ class Campania(models.Model):
     )
     fecha_inicio = models.DateField(null=True, blank=True)
     fecha_fin = models.DateField(null=True, blank=True)
-    estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.COTIZADA)
+    estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.CONFIRMADA)
     nombre_busqueda = models.CharField(max_length=200, editable=False, db_index=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
@@ -101,7 +100,7 @@ class Interaccion(models.Model):
         LLAMADA = "llamada", "Llamada"
 
     tipo = models.CharField(max_length=12, choices=Tipo.choices)
-    asunto = models.CharField(max_length=200)
+    asunto = models.CharField(max_length=200, blank=True)
     fecha = models.DateField()
     notas = models.TextField(blank=True)
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name="interacciones")
@@ -122,6 +121,17 @@ class Interaccion(models.Model):
         null=True,
         editable=False,
     )
+    # Recordatorio opcional (HU-072): fecha y qué hacer van juntos; queda pendiente hasta hecho.
+    recordatorio_fecha = models.DateField(null=True, blank=True)
+    recordatorio_texto = models.CharField(max_length=200, blank=True)
+    recordatorio_hecho_en = models.DateTimeField(null=True, editable=False)
+    recordatorio_hecho_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="recordatorios_hechos",
+        null=True,
+        editable=False,
+    )
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
 
@@ -131,7 +141,7 @@ class Interaccion(models.Model):
         verbose_name_plural = "interacciones"
 
     def __str__(self) -> str:
-        return f"{self.fecha} · {self.asunto}"
+        return f"{self.fecha} · {self.asunto or 'Sin asunto'}"
 
 
 def ruta_orden_publicidad(instancia: "OrdenPublicidad", _nombre: str) -> str:

@@ -1,7 +1,7 @@
 """Tests de auditoría: registro inmutable de cambios en reservas (HU-007)."""
 
 import json
-from datetime import timedelta
+from datetime import date, timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -36,7 +36,9 @@ def crear_cartel() -> Cartel:
 def crear_campania() -> Campania:
     cliente = Cliente.objects.create(nombre="Test SA", razon_social="Test SA", tipo="directo")
     marca = Marca.objects.create(nombre="Test", cliente=cliente)
-    return Campania.objects.create(marca=marca)
+    return Campania.objects.create(
+        marca=marca, fecha_inicio=date(2026, 8, 1), fecha_fin=date(2026, 9, 30)
+    )
 
 
 def crear(client: Client, **campos: object):
@@ -66,7 +68,7 @@ def listar_auditoria(client: Client, **params: object):
 
 @pytest.mark.django_db
 def test_editar_reserva_genera_registros_auditoria(operativo_client):
-    """Al editar fecha_fin y estado de una reserva, quedan registros de auditoría."""
+    """Al editar fecha_fin y el precio de una reserva, quedan registros de auditoría."""
     cartel = crear_cartel()
     campania = crear_campania()
     creada = crear(
@@ -79,22 +81,20 @@ def test_editar_reserva_genera_registros_auditoria(operativo_client):
     assert creada.status_code == 201
     reserva_id = creada.json()["id"]
 
-    resp = editar(operativo_client, reserva_id, fecha_fin="2026-09-30", estado="confirmada")
+    resp = editar(operativo_client, reserva_id, fecha_fin="2026-09-30", precio_alquiler="500.00")
     assert resp.status_code == 200
 
     registros = RegistroAuditoria.objects.filter(entidad="reserva", entidad_id=reserva_id)
     campos_cambiados = {r.campo for r in registros}
-    assert "fecha_fin" in campos_cambiados
-    assert "estado" in campos_cambiados
+    assert campos_cambiados == {"fecha_fin", "precio_alquiler"}
 
     # Verificar valores anteriores y nuevos
     reg_fecha = registros.get(campo="fecha_fin")
     assert reg_fecha.valor_anterior == "2026-08-31"
     assert reg_fecha.valor_nuevo == "2026-09-30"
 
-    reg_estado = registros.get(campo="estado")
-    assert reg_estado.valor_anterior == "pendiente"
-    assert reg_estado.valor_nuevo == "confirmada"
+    reg_precio = registros.get(campo="precio_alquiler")
+    assert reg_precio.valor_nuevo == "500.00"
 
     # El usuario está registrado (no es None)
     assert reg_fecha.usuario is not None
@@ -527,20 +527,23 @@ def editar_cartel(client: Client, cartel_id: int, **campos: object):
 
 
 @pytest.mark.django_db
-def test_cambiar_estado_campania_genera_registro_auditoria(operativo_client):
-    """Al cambiar el estado de una campaña por PATCH, queda un RegistroAuditoria."""
+def test_cancelar_campania_genera_registro_auditoria(operativo_client):
+    """Al cancelar una campaña, queda un RegistroAuditoria de su estado (HU-024)."""
     campania = crear_campania()
-    assert campania.estado == "cotizada"
+    assert campania.estado == "confirmada"
 
-    # Se usa "cancelada" (no requiere marca ni fechas, a diferencia de "confirmada").
-    resp = editar_campania(operativo_client, campania.pk, estado="cancelada")
+    resp = operativo_client.post(
+        "/api/reservas/reservas/cancelar-campania/",
+        data=json.dumps({"campania": campania.pk}),
+        content_type="application/json",
+    )
     assert resp.status_code == 200
 
     registros = RegistroAuditoria.objects.filter(entidad="campania", entidad_id=campania.pk)
     assert registros.count() == 1
     reg = registros.get()
     assert reg.campo == "estado"
-    assert reg.valor_anterior == "cotizada"
+    assert reg.valor_anterior == "confirmada"
     assert reg.valor_nuevo == "cancelada"
     assert reg.usuario is not None
 
